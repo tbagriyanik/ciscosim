@@ -676,42 +676,36 @@ export function NetworkTopology({
         }
         
         if (isActuallyDragging) {
-          const rect = canvasRef.current.getBoundingClientRect();
-          const newX = (e.clientX - rect.left - pan.x - dragOffset.x) / zoom;
-          const newY = (e.clientY - rect.top - pan.y - dragOffset.y) / zoom;
-          
-          // Clamp to canvas bounds
-          const canvasDims = getCanvasDimensions();
-          const clampedX = Math.max(50, Math.min(newX, canvasDims.width - 120));
-          const clampedY = Math.max(50, Math.min(newY, canvasDims.height - 150));
-          
-          // Store position in ref for animation frame
-          lastDragPositionRef.current = { x: clampedX, y: clampedY };
-          
-          // Use requestAnimationFrame for smooth updates - only update if frame not pending
-          if (!dragAnimationFrameRef.current) {
-            dragAnimationFrameRef.current = requestAnimationFrame(() => {
-              if (lastDragPositionRef.current && draggedDevice) {
-                // Directly update devices state with functional update
-                setDevices((prev) => {
-                  const newDevices = prev.map((d) =>
-                    d.id === draggedDevice
-                      ? { ...d, x: lastDragPositionRef.current!.x, y: lastDragPositionRef.current!.y }
-                      : d
-                  );
-                  // Only return new array if position actually changed
-                  const oldDevice = prev.find(d => d.id === draggedDevice);
-                  if (oldDevice && 
-                      Math.abs(oldDevice.x - lastDragPositionRef.current!.x) < 0.1 && 
-                      Math.abs(oldDevice.y - lastDragPositionRef.current!.y) < 0.1) {
-                    return prev; // Return same reference if no change
-                  }
-                  return newDevices;
-                });
+          // Throttling with requestAnimationFrame
+          if (dragAnimationFrameRef.current !== null) return;
+
+          dragAnimationFrameRef.current = requestAnimationFrame(() => {
+            const rect = canvasRef.current!.getBoundingClientRect();
+            const newX = (e.clientX - rect.left - pan.x - dragOffset.x) / zoom;
+            const newY = (e.clientY - rect.top - pan.y - dragOffset.y) / zoom;
+            
+            // Clamp to canvas bounds
+            const canvasDims = getCanvasDimensions();
+            const clampedX = Math.max(20, Math.min(newX, canvasDims.width - 100));
+            const clampedY = Math.max(20, Math.min(newY, canvasDims.height - 100));
+            
+            setDevices((prev) => {
+              const deviceIndex = prev.findIndex(d => d.id === draggedDevice);
+              if (deviceIndex === -1) return prev;
+              
+              const oldDevice = prev[deviceIndex];
+              // Only update if change is significant (> 0.1px) to avoid micro-renders
+              if (Math.abs(oldDevice.x - clampedX) < 0.1 && Math.abs(oldDevice.y - clampedY) < 0.1) {
+                return prev;
               }
-              dragAnimationFrameRef.current = null;
+              
+              const newDevices = [...prev];
+              newDevices[deviceIndex] = { ...oldDevice, x: clampedX, y: clampedY };
+              return newDevices;
             });
-          }
+            
+            dragAnimationFrameRef.current = null;
+          });
         }
       } else if (isDrawingConnection) {
         const coords = getCanvasCoords(e.clientX, e.clientY);
