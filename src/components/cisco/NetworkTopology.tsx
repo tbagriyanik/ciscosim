@@ -75,16 +75,16 @@ const CABLE_COLORS = {
 const DRAG_THRESHOLD = 5;
 const LONG_PRESS_DURATION = 500; // ms
 
-// Virtual canvas dimensions (strictly enforced)
-const VIRTUAL_CANVAS_WIDTH_MOBILE = 800;
-const VIRTUAL_CANVAS_HEIGHT_MOBILE = 600;
-const VIRTUAL_CANVAS_WIDTH_DESKTOP = 1600;
-const VIRTUAL_CANVAS_HEIGHT_DESKTOP = 900;
+// Virtual canvas dimensions (strictly enforced) - significantly increased for mobile panning
+const VIRTUAL_CANVAS_WIDTH_MOBILE = 3000;
+const VIRTUAL_CANVAS_HEIGHT_MOBILE = 2000;
+const VIRTUAL_CANVAS_WIDTH_DESKTOP = 3000;
+const VIRTUAL_CANVAS_HEIGHT_DESKTOP = 2000;
 
 // Zoom limits
-const MIN_ZOOM = 0.25;
+const MIN_ZOOM = 0.15;
 const MAX_ZOOM = 4.0;
-const DEFAULT_ZOOM = 0.8; // Slightly zoomed out by default to see the frame
+const DEFAULT_ZOOM = 0.6; // More zoomed out to show the larger canvas
 
 export function NetworkTopology({
   cableInfo,
@@ -2095,7 +2095,7 @@ export function NetworkTopology({
           {/* Canvas */}
           <div
             ref={canvasRef}
-            className="h-[350px] sm:h-[450px] md:h-[550px] lg:h-[650px] xl:h-[750px] 2xl:h-[850px] overflow-hidden cursor-grab active:cursor-grabbing relative touch-none select-none"
+            className="h-[500px] sm:h-[450px] md:h-[550px] lg:h-[650px] xl:h-[750px] 2xl:h-[850px] overflow-hidden cursor-grab active:cursor-grabbing relative touch-none select-none"
             onMouseDown={handleCanvasMouseDown}
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
