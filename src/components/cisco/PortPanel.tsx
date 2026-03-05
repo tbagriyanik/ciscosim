@@ -20,6 +20,7 @@ interface PortPanelProps {
   ports: Record<string, Port>;
   t: Translations;
   theme: string;
+  deviceName?: string;
   deviceModel?: string;
   activeDeviceId?: string;
   topologyConnections?: TopologyConnection[];
@@ -39,7 +40,7 @@ const statusTextEn: Record<string, string> = {
   blocked: 'Blocked'
 };
 
-export function PortPanel({ ports, t, theme, deviceModel, activeDeviceId, topologyConnections }: PortPanelProps) {
+export function PortPanel({ ports, t, theme, deviceName, deviceModel, activeDeviceId, topologyConnections }: PortPanelProps) {
   const isDark = theme === 'dark';
   
   // Count open/closed ports
@@ -164,7 +165,10 @@ export function PortPanel({ ports, t, theme, deviceModel, activeDeviceId, topolo
               <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" />
               </svg>
-              {t.switchTitle}
+              {deviceName || t.switchTitle}
+              <span className={`text-[10px] sm:text-xs font-mono px-2 py-0.5 rounded ${isDark ? 'bg-slate-700 text-slate-400' : 'bg-slate-100 text-slate-500'} ml-2`}>
+                {deviceModel}
+              </span>
             </CardTitle>
             <div className="flex items-center gap-2">
               <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>

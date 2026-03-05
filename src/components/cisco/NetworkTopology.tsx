@@ -893,11 +893,32 @@ export function NetworkTopology({
     }
   }, [onDeviceDoubleClick, onDeviceSelect]);
 
-  // Handle right-click context menu
+  // Handle right-click context menu with viewport clamping
   const handleContextMenu = useCallback((e: ReactMouseEvent, deviceId?: string) => {
     e.preventDefault();
     e.stopPropagation();
-    setContextMenu({ x: e.clientX, y: e.clientY, deviceId: deviceId || null });
+    
+    // Estimate menu dimensions (approximate)
+    const menuWidth = 180;
+    const menuHeight = deviceId ? 400 : 200; // Device menu is taller
+    
+    // Clamp coordinates to stay within viewport
+    let x = e.clientX;
+    let y = e.clientY;
+    
+    if (x + menuWidth > window.innerWidth) {
+      x = window.innerWidth - menuWidth - 10;
+    }
+    
+    if (y + menuHeight > window.innerHeight) {
+      y = window.innerHeight - menuHeight - 10;
+    }
+    
+    // Ensure it doesn't go off the top/left either
+    x = Math.max(10, x);
+    y = Math.max(10, y);
+    
+    setContextMenu({ x, y, deviceId: deviceId || null });
   }, []);
 
   // Handle device touch start - for mobile dragging

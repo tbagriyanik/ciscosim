@@ -613,35 +613,51 @@ export default function Home() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        // Close all open menus
+        // Close all open menus and dialogs
         if (showActiveDeviceDropdown) {
           setShowActiveDeviceDropdown(false);
         }
         if (showMobileMenu) {
           setShowMobileMenu(false);
         }
+        if (confirmDialog) {
+          setConfirmDialog(null);
+        }
+        if (saveDialog) {
+          setSaveDialog(null);
+        }
+        if (showPCPanel) {
+          setShowPCPanel(false);
+        }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [showActiveDeviceDropdown, showMobileMenu]);
+  }, [showActiveDeviceDropdown, showMobileMenu, confirmDialog, saveDialog, showPCPanel]);
 
   // Close menus on mobile back button (popstate)
   useEffect(() => {
     const handlePopState = () => {
-      // Close all open menus when user presses back button on mobile
-      if (showActiveDeviceDropdown) {
-        setShowActiveDeviceDropdown(false);
-      }
-      if (showMobileMenu) {
-        setShowMobileMenu(false);
-      }
+      // Close all open menus and dialogs when user presses back button
+      setShowActiveDeviceDropdown(false);
+      setShowMobileMenu(false);
+      setConfirmDialog(null);
+      setSaveDialog(null);
+      setShowPCPanel(false);
     };
 
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, [showActiveDeviceDropdown, showMobileMenu]);
+  }, []);
+
+  // Use history pushState for better mobile back button experience when modals open
+  useEffect(() => {
+    const anyModalOpen = showActiveDeviceDropdown || showMobileMenu || confirmDialog || saveDialog || showPCPanel;
+    if (anyModalOpen) {
+      window.history.pushState({ modal: true }, '');
+    }
+  }, [showActiveDeviceDropdown, showMobileMenu, confirmDialog, saveDialog, showPCPanel]);
 
   // Save project to JSON file
   const handleSaveProject = useCallback(() => {
@@ -987,15 +1003,18 @@ export default function Home() {
             {activeDeviceId && (() => {
               // Get display name for active device (from topology or state)
               const activeDevice = topologyDevices?.find(d => d.id === activeDeviceId);
-              const displayName = state.hostname || activeDevice?.name || 'Device';
+              const hostname = deviceStates.get(activeDeviceId)?.hostname || activeDevice?.name || 'Device';
+              const typeLabel = activeDeviceType === 'pc' ? 'PC' : activeDeviceType === 'router' ? 'Router' : 'Switch';
               
               return (
               <div className="relative device-dropdown-container">
                 <button
                   onClick={() => setShowActiveDeviceDropdown(!showActiveDeviceDropdown)}
-                  className={`flex items-center gap-2 px-2 py-1.5 text-sm cursor-pointer transition-colors rounded-lg ${
-                    isDark ? 'text-cyan-400 hover:bg-slate-800/50' : 'text-cyan-700 hover:bg-slate-100'
-                  }`}
+                  className={`flex items-center gap-2 px-3 py-2 text-sm font-semibold cursor-pointer transition-all rounded-xl border ${
+                    isDark 
+                      ? 'text-cyan-400 bg-slate-800/50 border-slate-700 hover:bg-slate-700/50 hover:border-cyan-500/50' 
+                      : 'text-cyan-700 bg-white border-slate-200 hover:bg-slate-50 hover:border-cyan-500/50'
+                  } shadow-sm`}
                 >
                   {activeDeviceType === 'pc' ? (
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1010,10 +1029,7 @@ export default function Home() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" />
                     </svg>
                   )}
-                  <span>{displayName}</span>
-                  <span className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                    ({activeDeviceType === 'pc' ? 'PC' : activeDeviceType === 'router' ? 'Router' : 'Switch'})
-                  </span>
+                  <span>{hostname} ({typeLabel})</span>
                   <svg className={`w-3 h-3 transition-transform ${showActiveDeviceDropdown ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
@@ -1317,6 +1333,7 @@ export default function Home() {
                 ports={state.ports}
                 t={t} 
                 theme={theme}
+                deviceName={state.hostname}
                 deviceModel={activeDeviceType === 'router' ? 'CISCO-1941' : 'WS-C2960-24TT-L'}
                 activeDeviceId={activeDeviceId}
                 topologyConnections={topologyConnections || undefined}
@@ -1341,6 +1358,7 @@ export default function Home() {
               <VlanPanel
                 vlans={state.vlans}
                 ports={state.ports}
+                deviceName={state.hostname}
                 onExecuteCommand={handleCommand}
                 t={t}
                 theme={theme}
