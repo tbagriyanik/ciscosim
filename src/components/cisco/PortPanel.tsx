@@ -1,0 +1,226 @@
+'use client';
+
+import { Port, getPortLEDColor, PortLEDColor } from '@/lib/cisco/types';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Badge } from '@/components/ui/badge';
+import { Translations } from '@/contexts/LanguageContext';
+
+// Connection type for topology
+interface TopologyConnection {
+  id: string;
+  sourceDeviceId: string;
+  sourcePort: string;
+  targetDeviceId: string;
+  targetPort: string;
+  active: boolean;
+}
+
+interface PortPanelProps {
+  ports: Record<string, Port>;
+  t: Translations;
+  theme: string;
+  deviceModel?: string;
+  activeDeviceId?: string;
+  topologyConnections?: TopologyConnection[];
+}
+
+const ledColorClasses: Record<PortLEDColor, string> = {
+  green: 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)] animate-pulse',
+  gray: 'bg-gray-500 hover:bg-gray-400 transition-colors',
+  orange: 'bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.6)] led-blink',
+  off: 'bg-gray-700 hover:bg-gray-600 transition-colors'
+};
+
+const statusTextEn: Record<string, string> = {
+  connected: 'Connected',
+  notconnect: 'Not Connected',
+  disabled: 'Disabled',
+  blocked: 'Blocked'
+};
+
+export function PortPanel({ ports, t, theme, deviceModel, activeDeviceId, topologyConnections }: PortPanelProps) {
+  const isDark = theme === 'dark';
+  
+  // Count open/closed ports
+  const openPortsCount = Object.values(ports).filter(p => !p.shutdown).length;
+  const totalPortsCount = Object.keys(ports).length;
+  
+  // Check if a port is connected in topology
+  const isPortConnectedInTopology = (portId: string): boolean => {
+    if (!topologyConnections || !activeDeviceId) return false;
+    return topologyConnections.some(conn => 
+      conn.active && (
+        (conn.sourceDeviceId === activeDeviceId && conn.sourcePort === portId) ||
+        (conn.targetDeviceId === activeDeviceId && conn.targetPort === portId)
+      )
+    );
+  };
+  
+  const faPorts = Object.values(ports)
+    .filter(p => p.type === 'fastethernet')
+    .sort((a, b) => {
+      const aNum = parseInt(a.id.split('/')[1]);
+      const bNum = parseInt(b.id.split('/')[1]);
+      return aNum - bNum;
+    });
+
+  const giPorts = Object.values(ports)
+    .filter(p => p.type === 'gigabitethernet')
+    .sort((a, b) => {
+      const aNum = parseInt(a.id.split('/')[1]);
+      const bNum = parseInt(b.id.split('/')[1]);
+      return aNum - bNum;
+    });
+
+  const renderPort = (port: Port) => {
+    // Check if port is connected in topology
+    const isConnectedInTopology = isPortConnectedInTopology(port.id);
+    
+    // Determine LED color based on topology connection and port state
+    let ledColor: PortLEDColor;
+    let statusLabel: string;
+    
+    if (port.shutdown) {
+      ledColor = 'off';
+      statusLabel = t.language === 'tr' ? t.closed : 'Disabled';
+    } else if (isConnectedInTopology) {
+      // Port has an active connection in topology - show green
+      ledColor = 'green';
+      statusLabel = t.language === 'tr' ? t.connected : 'Connected';
+    } else {
+      // No topology connection - show gray (idle)
+      ledColor = 'gray';
+      statusLabel = t.language === 'tr' ? t.idle : 'Not Connected';
+    }
+    
+    return (
+      <Tooltip key={port.id}>
+        <TooltipTrigger asChild>
+          <div
+            className={`flex flex-col items-center p-1.5 sm:p-2 rounded-lg transition-all duration-200 cursor-default min-w-[45px] sm:min-w-[60px] hover:bg-slate-700/30 ${isDark ? 'hover:bg-slate-700/30' : 'hover:bg-slate-200'}`}
+          >
+            <div className="relative mb-1">
+              <div 
+                className={`w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full ${ledColorClasses[ledColor]} transition-all duration-300`}
+              />
+              {ledColor === 'green' && (
+                <div className="absolute inset-0 rounded-full bg-green-400 animate-ping opacity-50" />
+              )}
+            </div>
+            <span className={`text-[10px] sm:text-xs font-mono ${isDark ? 'text-slate-300' : 'text-slate-700'} uppercase transition-colors`}>
+              {port.id}
+            </span>
+            <Badge 
+              variant={port.mode === 'trunk' ? 'default' : 'secondary'}
+              className={`text-[8px] sm:text-[10px] px-1 py-0 h-3 sm:h-4 mt-0.5 transition-all duration-200 ${port.mode === 'trunk' ? 'bg-purple-500/20 text-purple-400 border-purple-500/30' : ''}`}
+            >
+              {port.mode === 'trunk' ? 'TRUNK' : `V${port.vlan}`}
+            </Badge>
+          </div>
+        </TooltipTrigger>
+        <TooltipContent 
+          side="bottom" 
+          className={`${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'} ${isDark ? 'text-white' : 'text-slate-900'} p-3 max-w-xs`}
+        >
+          <div className="space-y-1 text-xs">
+            <div className="font-bold text-cyan-400 uppercase">{port.id}</div>
+            <div className={isDark ? 'text-slate-300' : 'text-slate-600'}>
+              <span className={isDark ? 'text-slate-500' : 'text-slate-400'}>{t.status}:</span> {statusLabel}
+            </div>
+            <div className={isDark ? 'text-slate-300' : 'text-slate-600'}>
+              <span className={isDark ? 'text-slate-500' : 'text-slate-400'}>{t.mode}:</span> {port.mode.toUpperCase()}
+            </div>
+            <div className={isDark ? 'text-slate-300' : 'text-slate-600'}>
+              <span className={isDark ? 'text-slate-500' : 'text-slate-400'}>VLAN:</span> {port.mode === 'trunk' ? 'Trunk' : port.vlan}
+            </div>
+            <div className={isDark ? 'text-slate-300' : 'text-slate-600'}>
+              <span className={isDark ? 'text-slate-500' : 'text-slate-400'}>{t.speed}:</span> {port.speed === 'auto' ? 'Auto' : port.speed + ' Mbps'}
+            </div>
+            <div className={isDark ? 'text-slate-300' : 'text-slate-600'}>
+              <span className={isDark ? 'text-slate-500' : 'text-slate-400'}>{t.duplex}:</span> {port.duplex === 'auto' ? 'Auto' : port.duplex.toUpperCase()}
+            </div>
+            {port.name && (
+              <div className={isDark ? 'text-slate-300' : 'text-slate-600'}>
+                <span className={isDark ? 'text-slate-500' : 'text-slate-400'}>{t.description}:</span> {port.name}
+              </div>
+            )}
+          </div>
+        </TooltipContent>
+      </Tooltip>
+    );
+  };
+
+  const cardBg = isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200';
+  const innerBg = isDark ? 'bg-slate-900' : 'bg-slate-100';
+  const innerBorder = isDark ? 'border-slate-600' : 'border-slate-300';
+
+  return (
+    <TooltipProvider>
+      <Card className={`${cardBg}`}>
+        <CardHeader className="pb-2">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-cyan-400 text-base sm:text-lg flex items-center gap-2">
+              <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" />
+              </svg>
+              {t.switchTitle}
+            </CardTitle>
+            <div className="flex items-center gap-2">
+              <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                {openPortsCount}/{totalPortsCount} {t.language === 'tr' ? 'açık' : 'open'}
+              </span>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className={`${innerBg} rounded-lg p-2 sm:p-4 border ${innerBorder}`}>
+            <div className={`flex items-center justify-between mb-3 sm:mb-4 pb-2 border-b ${isDark ? 'border-slate-700' : 'border-slate-300'}`}>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                <span className={`text-[10px] sm:text-xs ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{deviceModel || 'WS-C2960-24TT-L'}</span>
+              </div>
+              <div className="flex gap-2">
+                <span className={`text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>PWR</span>
+                <span className={`text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>SYST</span>
+              </div>
+            </div>
+            
+            <div className="mb-3 sm:mb-4">
+              <div className={`text-[10px] sm:text-xs ${isDark ? 'text-slate-500' : 'text-slate-500'} mb-2`}>{t.fastEthernetPorts}</div>
+              <div className="grid grid-cols-6 sm:grid-cols-8 gap-0.5 sm:gap-1">
+                {faPorts.map(renderPort)}
+              </div>
+            </div>
+            
+            <div className={`pt-2 border-t ${isDark ? 'border-slate-700' : 'border-slate-300'}`}>
+              <div className={`text-[10px] sm:text-xs ${isDark ? 'text-slate-500' : 'text-slate-500'} mb-2`}>{t.gigabitPorts}</div>
+              <div className="flex gap-2 justify-center">
+                {giPorts.map(renderPort)}
+              </div>
+            </div>
+          </div>
+          
+          <div className="mt-3 sm:mt-4 flex flex-wrap gap-3 sm:gap-4 justify-center text-[10px] sm:text-xs">
+            <div className="flex items-center gap-1">
+              <div className="w-2 sm:w-2.5 h-2 sm:h-2.5 rounded-full bg-green-500" />
+              <span className={isDark ? 'text-slate-400' : 'text-slate-600'}>{t.connected}</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-2 sm:w-2.5 h-2 sm:h-2.5 rounded-full bg-gray-500" />
+              <span className={isDark ? 'text-slate-400' : 'text-slate-600'}>{t.closed}</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-2 sm:w-2.5 h-2 sm:h-2.5 rounded-full bg-orange-500" />
+              <span className={isDark ? 'text-slate-400' : 'text-slate-600'}>{t.blocked}</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-2 sm:w-2.5 h-2 sm:h-2.5 rounded-full bg-gray-700" />
+              <span className={isDark ? 'text-slate-400' : 'text-slate-600'}>{t.idle}</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </TooltipProvider>
+  );
+}
