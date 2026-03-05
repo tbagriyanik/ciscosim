@@ -375,24 +375,6 @@ export function NetworkTopology({
     return () => window.removeEventListener('click', handleClickOutside);
   }, [contextMenu]);
 
-  // Close context menu and rename modal on mobile back button (popstate)
-  useEffect(() => {
-    const handlePopState = () => {
-      if (contextMenu) {
-        setContextMenu(null);
-      }
-      if (renamingDevice) {
-        cancelRename();
-      }
-      if (configuringIP) {
-        cancelIPConfig();
-      }
-    };
-
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
-  }, [contextMenu, renamingDevice, cancelRename, configuringIP, cancelIPConfig]);
-
   // Handle canvas pan start
   const handleCanvasMouseDown = useCallback((e: ReactMouseEvent) => {
     if (e.button === 2) {
