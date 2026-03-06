@@ -3,6 +3,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { SwitchState, CableInfo, CommandResult } from '@/lib/cisco/types';
 import { createInitialState, createInitialRouterState } from '@/lib/cisco/initialState';
+import type { SwitchState } from '@/lib/cisco/types';
 import { NetworkTopology, CanvasDevice, CanvasConnection } from '@/components/cisco/NetworkTopology';
 import { PCPanel } from '@/components/cisco/PCPanel';
 import { executeCommand, getPrompt } from '@/lib/cisco/executor';
@@ -132,6 +133,45 @@ export default function Home() {
   // UI state for dropdowns
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showActiveDeviceDropdown, setShowActiveDeviceDropdown] = useState(false);
+
+  // Broadcast to other components (like NetworkTopology)
+  const broadcastCloseMenus = useCallback((source) => {
+    window.dispatchEvent(new CustomEvent('close-menus-broadcast', { detail: { source } }));
+  }, []);
+
+  const closeLocalMenus = useCallback((exclude) => {
+    if (exclude !== 'mobile') setShowMobileMenu(false);
+    if (exclude !== 'device') setShowActiveDeviceDropdown(false);
+    if (exclude !== 'modal') {
+      setConfirmDialog(null);
+      setSaveDialog(null);
+    }
+  }, []);
+
+  const openMobileMenu = useCallback(() => {
+    closeLocalMenus('mobile');
+    broadcastCloseMenus('mobile');
+    setShowMobileMenu(true);
+  }, [closeLocalMenus, broadcastCloseMenus]);
+
+  const openDeviceDropdown = useCallback(() => {
+    closeLocalMenus('device');
+    broadcastCloseMenus('device');
+    setShowActiveDeviceDropdown(true);
+  }, [closeLocalMenus, broadcastCloseMenus]);
+
+  // Listen for broadcasts from others
+  useEffect(() => {
+    const handleMenuBroadcast = (e) => {
+      const source = e.detail?.source;
+      if (source && source !== 'mobile' && source !== 'device' && source !== 'modal') {
+        setShowMobileMenu(false);
+        setShowActiveDeviceDropdown(false);
+      }
+    };
+    window.addEventListener('close-menus-broadcast', handleMenuBroadcast);
+    return () => window.removeEventListener('close-menus-broadcast', handleMenuBroadcast);
+  }, []);
 
   const prompt = getPrompt(state);
 
@@ -329,15 +369,78 @@ export default function Home() {
           });
         }
 
-        // Handle reload confirmation success
+        // Handle TELNET: find device in topology by IP and switch CLI to it
+        if (result.telnetTarget && topologyDevices) {
+          const targetIp = result.telnetTarget;
+          const targetDevice = topologyDevices.find((d: any) => d.ip === targetIp);
+          if (targetDevice && targetDevice.type !== 'pc') {
+            const connMsg: TerminalOutput = {
+              id: (Date.now() + 2).toString(),
+              type: 'output',
+              content: ` Open\n\n**** Connected to ${targetDevice.name} (${targetIp}) via VTY ****\n`
+            };
+            setDeviceOutputs((prev: any) => {
+              const newMap = new Map(prev);
+              const current = newMap.get(deviceId) || [];
+              newMap.set(deviceId, [...current, connMsg]);
+              return newMap;
+            });
+            getOrCreateDeviceState(targetDevice.id, targetDevice.type as 'switch' | 'router');
+            getOrCreateDeviceOutputs(targetDevice.id);
+            setActiveDeviceId(targetDevice.id);
+            setActiveDeviceType(targetDevice.type as 'switch' | 'router');
+          } else {
+            const noHostMsg: TerminalOutput = {
+              id: (Date.now() + 2).toString(),
+              type: 'error',
+              content: `\n% Connection timed out; remote host not responding\n`
+            };
+            setDeviceOutputs((prev: any) => {
+              const newMap = new Map(prev);
+              const current = newMap.get(deviceId) || [];
+              newMap.set(deviceId, [...current, noHostMsg]);
+              return newMap;
+            });
+          }
+        }
+
+        // Handle RELOAD: fully reset device state and show boot sequence
+        if (result.reloadDevice && skipConfirm) {
+          const deviceTypeFull = deviceId.includes('router') ? 'router' : 'switch';
+          const freshState = deviceTypeFull === 'router' ? createInitialRouterState() : createInitialState();
+          const oldState = deviceStates.get(deviceId);
+          const finalState: SwitchState = {
+            ...freshState,
+            hostname: oldState?.hostname || freshState.hostname,
+            commandHistory: oldState?.commandHistory || []
+          };
+          const bootMessages: TerminalOutput[] = [
+            { id: (Date.now() + 2).toString(), type: 'output', content: '\n\nSystem Bootstrap, Version 12.1(11r)EA1\nCopyright (c) 2004 by cisco Systems, Inc.\n' },
+            { id: (Date.now() + 3).toString(), type: 'output', content: 'C2960 Boot Loader (C2960-HBOOT-M) Version 12.2(25r)FX\nLoading "flash:c2960-lanbase-mz.150-2.SE4.bin"...\n################################################################################\n' },
+            { id: (Date.now() + 4).toString(), type: 'output', content: '[OK]\n\nCisco IOS Software, Version 15.0(2)SE4\nPress RETURN to get started!\n\n' },
+          ];
+          setDeviceStates((prev: any) => {
+            const newMap = new Map(prev);
+            newMap.set(deviceId, finalState);
+            return newMap;
+          });
+          setDeviceOutputs((prev: any) => {
+            const newMap = new Map(prev);
+            newMap.set(deviceId, bootMessages);
+            return newMap;
+          });
+          setIsLoading(false);
+          return;
+        }
+
+        // Handle reload confirmation success (legacy)
         if (result.confirmationAction === 'reload' && skipConfirm) {
-          // Show reload message and reset
           const reloadOutput: TerminalOutput = {
             id: (Date.now() + 2).toString(),
             type: 'output',
             content: '\n[OK]\nReload requested...\n'
           };
-          setDeviceOutputs(prev => {
+          setDeviceOutputs((prev: any) => {
             const newMap = new Map(prev);
             const current = newMap.get(deviceId) || [];
             newMap.set(deviceId, [...current, reloadOutput]);
@@ -415,7 +518,7 @@ export default function Home() {
     } finally {
       setIsLoading(false);
     }
-  }, [language, getOrCreateDeviceState, getOrCreateDeviceOutputs]);
+  }, [language, getOrCreateDeviceState, getOrCreateDeviceOutputs, topologyDevices, deviceStates]);
 
   // Handle command using active device
   const handleCommand = useCallback(async (command: string) => {
@@ -609,29 +712,50 @@ export default function Home() {
     }
   }, [showActiveDeviceDropdown]);
 
-  // Close device dropdown on ESC
+    // Handle back button on mobile: popstate shuts down everything
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
+    const handlePopState = () => {
+      setShowActiveDeviceDropdown(false);
+      setShowMobileMenu(false);
+      setConfirmDialog(null);
+      setSaveDialog(null);
+      setShowPCPanel(false);
+      window.dispatchEvent(new CustomEvent('close-menus-broadcast', { detail: { source: 'back' } }));
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  // History pushState for back button tracking
+  useEffect(() => {
+    const anyModalOpen = showActiveDeviceDropdown || showMobileMenu || confirmDialog || saveDialog || showPCPanel;
+    if (anyModalOpen) {
+      window.history.pushState({ modal: true }, '');
+    }
+  }, [showActiveDeviceDropdown, showMobileMenu, confirmDialog, saveDialog, showPCPanel]);
+
+  // Handle key events: ESC to close, ENTER to confirm
+  useEffect(() => {
+    const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
-        // Close all open menus and dialogs
-        if (showActiveDeviceDropdown) {
-          setShowActiveDeviceDropdown(false);
-        }
-        if (showMobileMenu) {
-          setShowMobileMenu(false);
-        }
-        if (confirmDialog) {
-          setConfirmDialog(null);
-        }
-        if (saveDialog) {
-          setSaveDialog(null);
-        }
-        if (showPCPanel) {
-          setShowPCPanel(false);
+        setShowActiveDeviceDropdown(false);
+        setShowMobileMenu(false);
+        setConfirmDialog(null);
+        setSaveDialog(null);
+        setShowPCPanel(false);
+        window.dispatchEvent(new CustomEvent('close-menus-broadcast', { detail: { source: 'escape' } }));
+      }
+      
+      if (e.key === 'Enter') {
+        if (confirmDialog?.show) {
+          e.preventDefault();
+          confirmDialog.onConfirm();
+        } else if (saveDialog?.show) {
+          e.preventDefault();
+          saveDialog.onConfirm(true);
         }
       }
     };
-
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [showActiveDeviceDropdown, showMobileMenu, confirmDialog, saveDialog, showPCPanel]);
@@ -901,7 +1025,7 @@ export default function Home() {
 
             {/* Mobile Menu Button */}
             <button
-              onClick={() => setShowMobileMenu(!showMobileMenu)}
+              onClick={openMobileMenu}
               className={`md:hidden p-2 rounded-lg ${isDark ? 'bg-slate-800 hover:bg-slate-700' : 'bg-slate-200 hover:bg-slate-300'}`}
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1009,7 +1133,7 @@ export default function Home() {
               return (
               <div className="relative device-dropdown-container">
                 <button
-                  onClick={() => setShowActiveDeviceDropdown(!showActiveDeviceDropdown)}
+                  onClick={openDeviceDropdown}
                   className={`flex items-center gap-2 px-3 py-2 text-sm font-semibold cursor-pointer transition-all rounded-xl border ${
                     isDark 
                       ? 'text-cyan-400 bg-slate-800/50 border-slate-700 hover:bg-slate-700/50 hover:border-cyan-500/50' 

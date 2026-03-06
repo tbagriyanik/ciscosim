@@ -380,7 +380,33 @@ export function NetworkTopology({
 
   // Handle keyboard events (Delete key and ESC for context menu)
   useEffect(() => {
+    // 1. Listen for mutual exclusion broadcast
+    const handleCloseBroadcast = (e: any) => {
+      const source = e.detail?.source;
+      if (source !== 'topology') {
+        setContextMenu(null);
+        // If it's ESC or back button or other menus, also close modals
+        if (source === 'escape' || source === 'backbutton' || source === 'back' || source === 'mobile' || source === 'device') {
+          if (configuringDevice) cancelDeviceConfig();
+          if (pingSource) setPingSource(null);
+          if (showPortSelector) {
+            setShowPortSelector(false);
+            setPortSelectorStep('source');
+            setSelectedSourcePort(null);
+          }
+          if (selectAllMode) setSelectAllMode(false);
+        }
+      }
+    };
+    window.addEventListener('close-menus-broadcast', handleCloseBroadcast);
+
     const handleKeyDown = (e: KeyboardEvent) => {
+      // ESC to close context menu
+      if (e.key === 'Escape') {
+        setContextMenu(null);
+        // Page level handles other things
+      }
+
       // Close context menu on ESC
       if (e.key === 'Escape') {
         setContextMenu(null);
@@ -435,7 +461,10 @@ export function NetworkTopology({
     };
 
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('close-menus-broadcast', handleCloseBroadcast);
+    };
   }, [selectedCanvasDevice, deleteDevice, configuringDevice, cancelDeviceConfig, selectAllMode, selectAllDevices, saveToHistory, devices, onDeviceDelete]);
 
   // Close context menu when clicking outside
@@ -459,6 +488,7 @@ export function NetworkTopology({
     if (e.button === 2) {
       // Right click on canvas - show context menu
       e.preventDefault();
+      window.dispatchEvent(new CustomEvent('close-menus-broadcast', { detail: { source: 'topology' } }));
       setContextMenu({ x: e.clientX, y: e.clientY, deviceId: null });
     } else if (e.button === 0 && !(e.target as HTMLElement).closest('[data-device-id]')) {
       setIsPanning(true);
@@ -721,6 +751,7 @@ export function NetworkTopology({
     x = Math.max(10, x);
     y = Math.max(10, y);
 
+    window.dispatchEvent(new CustomEvent('close-menus-broadcast', { detail: { source: 'topology' } }));
     setContextMenu({ x, y, deviceId: deviceId || null });
   }, []);
 

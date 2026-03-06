@@ -3092,12 +3092,15 @@ function cmdTraceroute(state: SwitchState, input: string): CommandResult {
 
 // Telnet
 function cmdTelnet(state: SwitchState, input: string): CommandResult {
-  const match = input.match(/^telnet\s+(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})/i);
-  if (!match) return { success: false, error: '% Invalid IP address' };
+  const match = input.match(/^telnet\s+(\S+)/i);
+  if (!match) return { success: false, error: '% Incomplete command.' };
   
+  const target = match[1];
+  // Signal to the page layer to find and open that device
   return {
     success: true,
-    output: `Trying ${match[1]} ... Open\n\nUser Access Verification\n\nUsername:`
+    output: `Trying ${target} ...`,
+    telnetTarget: target
   };
 }
 
@@ -3121,15 +3124,13 @@ function cmdReload(state: SwitchState, input: string): CommandResult {
     };
   }
   
-  // Check if already confirmed (skipConfirm passed from page.tsx)
-  // When confirmed, actually reload - reset to initial state
   return {
     success: true,
     requiresConfirmation: true,
     confirmationMessage: 'Proceed with reload? [confirm]',
     confirmationAction: 'reload',
-    output: 'Proceed with reload? [confirm]\n\nWARNING: System will reload!',
-    // When confirmed, this newState will be applied
+    output: 'System configuration has been modified. Save? [yes/no]: no\nProceed with reload? [confirm]',
+    reloadDevice: true,
     newState: {
       currentMode: 'user',
       currentInterface: undefined,
@@ -3137,7 +3138,7 @@ function cmdReload(state: SwitchState, input: string): CommandResult {
       currentLine: undefined,
       currentVlan: undefined,
       awaitingPassword: false,
-      commandHistory: state.commandHistory // Preserve history
+      commandHistory: state.commandHistory
     }
   };
 }
