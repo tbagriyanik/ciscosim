@@ -243,6 +243,7 @@ export function NetworkTopology({
   const [ipValue, setIpValue] = useState('');
   const [subnetValue, setSubnetValue] = useState('');
   const [gatewayValue, setGatewayValue] = useState('');
+  const [dnsValue, setDnsValue] = useState('');
   const configInputRef = useRef<HTMLInputElement>(null);
 
   // Rename state
@@ -250,7 +251,7 @@ export function NetworkTopology({
   const [renameValue, setRenameValue] = useState('');
 
   // UI state
-  const [isPaletteOpen, setIsPaletteOpen] = useState(false);
+  
 
   // Touch/Mobile state
   const isMobile = useIsMobile();
@@ -296,12 +297,18 @@ export function NetworkTopology({
       setConfiguringDevice(deviceId);
       setTempNameValue(device.name);
       setIpValue(device.ip || '');
-      // Default subnet mask
-      setSubnetValue('255.255.255.0');
-      // Default gateway (first usable IP in subnet)
-      const ipParts = (device.ip || '192.168.1.10').split('.');
-      ipParts[3] = '1';
-      setGatewayValue(ipParts.join('.'));
+      setSubnetValue(device.subnet || '255.255.255.0');
+      
+      if (device.gateway) {
+        setGatewayValue(device.gateway);
+      } else {
+        const ipParts = (device.ip || '192.168.1.10').split('.');
+        ipParts[3] = '1';
+        setGatewayValue(ipParts.join('.'));
+      }
+      
+      setDnsValue(device.dns || '8.8.8.8');
+      
       setContextMenu(null);
       // Focus input after render
       setTimeout(() => configInputRef.current?.focus(), 0);
@@ -315,6 +322,7 @@ export function NetworkTopology({
     setIpValue('');
     setSubnetValue('');
     setGatewayValue('');
+    setDnsValue('');
   }, []);
 
   // Confirm device config
@@ -332,8 +340,15 @@ export function NetworkTopology({
     saveToHistory();
     setDevices((prev) =>
       prev.map((d) =>
-        d.id === configuringDevice
-          ? { ...d, name: tempNameValue.trim() || d.name, ip: ipValue.trim() }
+        d.id === configuringDevice 
+          ? { 
+              ...d, 
+              name: tempNameValue.trim() || d.name, 
+              ip: ipValue.trim(),
+              subnet: subnetValue.trim(),
+              gateway: gatewayValue.trim(),
+              dns: dnsValue.trim()
+            } 
           : d
       )
     );
@@ -1141,7 +1156,7 @@ export function NetworkTopology({
             : generateRouterPorts(),
     };
     setDevices((prev) => [...prev, newDevice]);
-    setIsPaletteOpen(false);
+    
   }, [devices.length, saveToHistory, generateUniqueIp]);
 
   // Notify parent of topology changes
@@ -1150,6 +1165,24 @@ export function NetworkTopology({
       onTopologyChange(devices, connections);
     }
   }, [devices, connections, onTopologyChange]);
+  // Sync device counters with current devices to prevent ID collisions
+  useEffect(() => {
+    if (devices.length > 0) {
+      const counters = { pc: 0, switch: 0, router: 0 };
+      devices.forEach(d => {
+        const match = d.id.match(/^(\w+)-(\d+)$/);
+        if (match) {
+          const type = match[1] as 'pc' | 'switch' | 'router';
+          const num = parseInt(match[2]);
+          if (counters[type] !== undefined) {
+            counters[type] = Math.max(counters[type], num);
+          }
+        }
+      });
+      deviceCounterRef.current = counters;
+    }
+  }, [devices]);
+
 
   // Delete connection
   const deleteConnection = useCallback((connectionId: string) => {
@@ -1812,7 +1845,7 @@ export function NetworkTopology({
                 key={type}
                 onClick={() => {
                   onCableChange({ ...cableInfo, cableType: type });
-                  setIsPaletteOpen(false);
+                  
                 }}
                 className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-xl border text-sm font-medium transition-all min-h-[48px] ${cableInfo.cableType === type
                   ? `${CABLE_COLORS[type].bg} text-white border-transparent`
@@ -1919,35 +1952,75 @@ export function NetworkTopology({
         : 'bg-gradient-to-br from-blue-50/50 via-white to-slate-50/80 border-slate-300/50'
         }`}
     >
-      {/* Header */}
+      {/* Header with Tools */}
       <div
-        className={`px-4 py-3 border-b ${isDark ? 'border-slate-700/50 bg-gradient-to-r from-slate-800/80 via-slate-700/60 to-slate-800/80' : 'border-slate-200/50 bg-gradient-to-r from-blue-50/30 via-white/50 to-blue-50/30'}`}
+        className={`px-4 py-2 border-b ${isDark ? 'border-slate-700/50 bg-slate-800/80' : 'border-slate-200/50 bg-white/80'} backdrop-blur-md sticky top-0 z-40`}
       >
-        <div className="flex items-center justify-between">
-          <h3
-            className={`text-sm font-bold flex items-center gap-2 ${isDark ? 'text-white' : 'text-slate-800'}`}
-          >
-            <svg className="w-5 h-5 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 0 0 2-2V7a2 2 0 0 0 -2-2H7a2 2 0 0 0 -2 2v10a2 2 0 0 0 2 2zM9 9h6v6H9V9z"
-              />
-            </svg>
-            {language === 'tr' ? 'Ağ Topolojisi' : 'Network Topology'}
-          </h3>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <h3 className={`text-sm font-bold flex items-center gap-2 ${isDark ? 'text-white' : 'text-slate-800'}`}>
+              <svg className="w-5 h-5 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 0 0 2-2V7a2 2 0 0 0 -2-2H7a2 2 0 0 0 -2 2v10a2 2 0 0 0 2 2zM9 9h6v6H9V9z" />
+              </svg>
+              <span className="hidden lg:inline">{language === 'tr' ? 'Ağ Topolojisi' : 'Network Topology'}</span>
+            </h3>
 
-          {/* Connection status */}
-          <div className="flex items-center gap-2">
-            {/* Connect Ports Button */}
+            <div className={`h-6 w-px ${isDark ? 'bg-slate-700' : 'bg-slate-200'} hidden md:block`} />
+
+            {/* Device Tools */}
+            <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-500/5">
+              {(['pc', 'switch', 'router'] as const).map((type) => (
+                <button
+                  key={type}
+                  onClick={() => addDevice(type)}
+                  title={type.toUpperCase()}
+                  className={`p-1.5 rounded-lg border transition-all ${isDark
+                    ? 'border-slate-700 bg-slate-800/50 hover:bg-slate-700 hover:border-cyan-500'
+                    : 'border-slate-200 bg-white hover:bg-slate-50 hover:border-cyan-500'
+                    }`}
+                >
+                  <div className={`${type === 'pc' ? 'text-blue-500' : type === 'switch' ? 'text-emerald-500' : 'text-purple-500'}`}>
+                    <div className="scale-75">
+                      {DEVICE_ICONS[type]}
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            <div className={`h-6 w-px ${isDark ? 'bg-slate-700' : 'bg-slate-200'} hidden sm:block`} />
+
+            {/* Cable Tools */}
+            <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-500/5">
+              {(['straight', 'crossover', 'console'] as CableType[]).map((type) => (
+                <button
+                  key={type}
+                  onClick={() => onCableChange({ ...cableInfo, cableType: type })}
+                  title={getCableTypeName(type, language)}
+                  className={`relative p-1.5 rounded-lg border transition-all ${cableInfo.cableType === type
+                    ? 'border-cyan-500 bg-cyan-500/10'
+                    : isDark
+                      ? 'border-slate-700 bg-slate-800/50 hover:bg-slate-700'
+                      : 'border-slate-200 bg-white hover:bg-slate-50'
+                    }`}
+                >
+                  <div className={`w-4 h-1 rounded-full ${CABLE_COLORS[type].bg}`} />
+                  {cableInfo.cableType === type && (
+                    <div className="absolute -top-1 -right-1 w-2 h-2 bg-cyan-500 rounded-full animate-pulse" />
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 justify-end">
             <button
               onClick={() => {
                 setShowPortSelector(true);
                 setPortSelectorStep('source');
                 setSelectedSourcePort(null);
               }}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${isDark
+              className={`flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-semibold shadow-sm transition-all ${isDark
                 ? 'bg-cyan-600 hover:bg-cyan-700 text-white'
                 : 'bg-cyan-500 hover:bg-cyan-600 text-white'
                 }`}
@@ -1955,99 +2028,13 @@ export function NetworkTopology({
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 0 0 -5.656 0l-4 4a4 4 0 1 0 5.656 5.656l1.102-1.101m-.758-4.899a4 4 0 0 0 5.656 0l4-4a4 4 0 0 0 -5.656-5.656l-1.1 1.1" />
               </svg>
-              <span className="hidden sm:inline">{language === 'tr' ? 'Bağlantı Kur' : 'Connect'}</span>
+              {language === 'tr' ? 'Bağla' : 'Connect'}
             </button>
           </div>
         </div>
       </div>
 
-      <div className="flex">
-        {/* Device Palette - Desktop Only */}
-        <div
-          className={`hidden md:flex w-24 border-r ${isDark ? 'border-slate-700/50 bg-gradient-to-b from-slate-800/60 to-slate-900/60' : 'border-slate-200/50 bg-gradient-to-b from-blue-50/40 to-slate-50/60'} p-2 flex-col gap-2`}
-        >
-          <div className={`text-[10px] font-medium ${isDark ? 'text-slate-400' : 'text-slate-600'} mb-1`}>
-            {language === 'tr' ? 'Cihazlar' : 'Devices'}
-          </div>
-
-          {/* PC Button */}
-          <button
-            onClick={() => addDevice('pc')}
-            className={`flex flex-col items-center gap-1 p-2 rounded-lg border transition-all min-h-[52px] ${isDark
-              ? 'border-slate-600 bg-slate-700/50 hover:bg-slate-700 hover:border-blue-500'
-              : 'border-slate-300 bg-white hover:bg-slate-100 hover:border-blue-500'
-              }`}
-          >
-            <div className="text-blue-500">{DEVICE_ICONS.pc}</div>
-            <span className={`text-[10px] font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>PC</span>
-          </button>
-
-          {/* Switch Button */}
-          <button
-            onClick={() => addDevice('switch')}
-            className={`flex flex-col items-center gap-1 p-2 rounded-lg border transition-all min-h-[52px] ${isDark
-              ? 'border-slate-600 bg-slate-700/50 hover:bg-slate-700 hover:border-emerald-500'
-              : 'border-slate-300 bg-white hover:bg-slate-100 hover:border-emerald-500'
-              }`}
-          >
-            <div className="text-emerald-500">{DEVICE_ICONS.switch}</div>
-            <span className={`text-[10px] font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-              Switch
-            </span>
-          </button>
-
-          {/* Router Button */}
-          <button
-            onClick={() => addDevice('router')}
-            className={`flex flex-col items-center gap-1 p-2 rounded-lg border transition-all min-h-[52px] ${isDark
-              ? 'border-slate-600 bg-slate-700/50 hover:bg-slate-700 hover:border-purple-500'
-              : 'border-slate-300 bg-white hover:bg-slate-100 hover:border-purple-500'
-              }`}
-          >
-            <div className="text-purple-500">{DEVICE_ICONS.router}</div>
-            <span className={`text-[10px] font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-              Router
-            </span>
-          </button>
-
-          <div className={`my-2 border-t ${isDark ? 'border-slate-700' : 'border-slate-200'}`} />
-
-          <div className={`text-[10px] font-medium ${isDark ? 'text-slate-400' : 'text-slate-600'} mb-1`}>
-            {language === 'tr' ? 'Kablo' : 'Cable'}
-          </div>
-
-          {/* Cable Type Selector */}
-          {(['straight', 'crossover', 'console'] as CableType[]).map((type) => (
-            <button
-              key={type}
-              onClick={() => onCableChange({ ...cableInfo, cableType: type })}
-              className={`flex items-center gap-2 p-2 rounded-lg border text-left transition-all min-h-[44px] ${cableInfo.cableType === type
-                ? `${CABLE_COLORS[type].bg} text-white border-transparent`
-                : isDark
-                  ? 'border-slate-600 bg-slate-700/50 hover:bg-slate-700'
-                  : 'border-slate-300 bg-white hover:bg-slate-100'
-                }`}
-            >
-              <div className={`w-3 h-3 rounded ${CABLE_COLORS[type].bg}`} />
-              <span className={`text-[9px] font-medium ${cableInfo.cableType === type ? 'text-white' : isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-                {type === 'straight'
-                  ? language === 'tr'
-                    ? 'Düz'
-                    : 'Straight'
-                  : type === 'crossover'
-                    ? language === 'tr'
-                      ? 'Çapraz'
-                      : 'X-over'
-                    : language === 'tr'
-                      ? 'Konsol'
-                      : 'Console'}
-              </span>
-            </button>
-          ))}
-        </div>
-
-        {/* Canvas Area */}
-        <div className={`flex-1 relative ${isMobile ? 'pb-20' : ''}`}>
+      <div className="flex-1 relative">
           {/* Select All Mode Indicator */}
           {selectAllMode && (
             <div className={`absolute top-2 left-1/2 -translate-x-1/2 z-30 px-4 py-2 rounded-lg shadow-lg flex items-center gap-3 ${isDark ? 'bg-cyan-600/90 text-white' : 'bg-cyan-500 text-white'
@@ -2781,7 +2768,7 @@ export function NetworkTopology({
       )}
 
       {/* Mobile Bottom Sheet */}
-      {renderMobilePalette()}
+      
 
       {/* Mobile Bottom Action Bar */}
       {isMobile && renderMobileBottomBar()}
