@@ -264,6 +264,9 @@ export function NetworkTopology({
   const [lastTapTime, setLastTapTime] = useState(0);
   const [lastTappedDevice, setLastTappedDevice] = useState<string | null>(null);
 
+  // Advanced Canvas Pan/Zoom Touch state
+  const [lastTouchCenter, setLastTouchCenter] = useState<{ x: number; y: number } | null>(null);
+
   // Ping and port selector state
   const [pingSource, setPingSource] = useState<string | null>(null);
   const [showPortSelector, setShowPortSelector] = useState(false);
@@ -814,6 +817,10 @@ export function NetworkTopology({
   const handleTouchStart = useCallback((e: ReactTouchEvent) => {
     if (!canvasRef.current) return;
 
+    // Check if target is not a device
+    const isDevice = (e.target as HTMLElement).closest('[data-device-id]') || false;
+    if (isDevice) return; // handled by handleDeviceTouchStart
+
     // Cancel any existing long-press timer
     if (longPressTimer) {
       clearTimeout(longPressTimer);
@@ -823,20 +830,83 @@ export function NetworkTopology({
     if (e.touches.length === 1) {
       const t = e.touches[0];
       setTouchStart({ x: t.clientX, y: t.clientY });
+      setIsPanning(true);
+      setPanStart({ x: t.clientX - pan.x, y: t.clientY - pan.y });
 
       // Start long-press to open context menu
       const timer = setTimeout(() => {
         setContextMenu({ x: t.clientX, y: t.clientY, deviceId: null });
         setLongPressTimer(null);
+        setIsPanning(false);
       }, LONG_PRESS_DURATION);
       setLongPressTimer(timer);
     } else if (e.touches.length === 2) {
-      // Pinch start - track initial distance
+      setIsPanning(false);
+      // Pinch start - track initial distance and center
       const a = e.touches[0];
       const b = e.touches[1];
       setLastTouchDistance(getDistance(a.clientX, a.clientY, b.clientX, b.clientY));
+      setLastTouchCenter({
+        x: (a.clientX + b.clientX) / 2,
+        y: (a.clientY + b.clientY) / 2
+      });
     }
-  }, [longPressTimer, getDistance]);
+  }, [longPressTimer, pan, getDistance]);
+
+  const handleTouchMove = useCallback((e: ReactTouchEvent) => {
+    if (!canvasRef.current) return;
+    const isDevice = (e.target as HTMLElement).closest('[data-device-id]') || false;
+    if (isDevice) return;
+
+    if (longPressTimer) {
+      clearTimeout(longPressTimer);
+      setLongPressTimer(null);
+    }
+
+    if (e.touches.length === 1 && isPanning) {
+      const t = e.touches[0];
+      setPan({ x: t.clientX - panStart.x, y: t.clientY - panStart.y });
+    } else if (e.touches.length === 2 && lastTouchDistance !== null && lastTouchCenter !== null) {
+      const a = e.touches[0];
+      const b = e.touches[1];
+      
+      const newDistance = getDistance(a.clientX, a.clientY, b.clientX, b.clientY);
+      const newCenter = {
+        x: (a.clientX + b.clientX) / 2,
+        y: (a.clientY + b.clientY) / 2
+      };
+
+      // Calculate zoom factor
+      const zoomFactor = newDistance / lastTouchDistance;
+      let newZoom = zoom * zoomFactor;
+      newZoom = Math.max(MIN_ZOOM, Math.min(newZoom, MAX_ZOOM));
+
+      if (newZoom !== zoom) {
+        // Adjust pan to zoom relative to the gesture center
+        const rect = canvasRef.current.getBoundingClientRect();
+        const cursorX = newCenter.x - rect.left;
+        const cursorY = newCenter.y - rect.top;
+
+        const deltaX = cursorX - (cursorX - pan.x) * (newZoom / zoom);
+        const deltaY = cursorY - (cursorY - pan.y) * (newZoom / zoom);
+
+        // Also add the pan movement of the center point itself
+        const panDeltaX = newCenter.x - lastTouchCenter.x;
+        const panDeltaY = newCenter.y - lastTouchCenter.y;
+
+        setZoom(newZoom);
+        setPan({ x: deltaX + panDeltaX, y: deltaY + panDeltaY });
+      } else {
+        // If zoom didn't change (hit limits), at least we can pan
+        const panDeltaX = newCenter.x - lastTouchCenter.x;
+        const panDeltaY = newCenter.y - lastTouchCenter.y;
+        setPan(prev => ({ x: prev.x + panDeltaX, y: prev.y + panDeltaY }));
+      }
+
+      setLastTouchDistance(newDistance);
+      setLastTouchCenter(newCenter);
+    }
+  }, [isPanning, panStart, longPressTimer, pan, zoom, lastTouchDistance, lastTouchCenter, getDistance]);
 
   const handleTouchEnd = useCallback((e: globalThis.TouchEvent | ReactTouchEvent) => {
     // Clear long-press timer
@@ -846,11 +916,58 @@ export function NetworkTopology({
     }
 
     // If no more touches, reset pinch/touch tracking
-    if ((e as ReactTouchEvent).touches ? (e as ReactTouchEvent).touches.length === 0 : true) {
+    const touchesLength = (e as ReactTouchEvent).touches ? (e as ReactTouchEvent).touches.length : 0;
+    if (touchesLength === 0) {
       setLastTouchDistance(null);
+      setLastTouchCenter(null);
       setTouchStart(null);
+      setIsPanning(false);
+    } else if (touchesLength === 1) {
+      // Revert to panning with one finger if the other is lifted
+      const t = (e as ReactTouchEvent).touches[0];
+      setIsPanning(true);
+      setPanStart({ x: t.clientX - pan.x, y: t.clientY - pan.y });
+      setLastTouchDistance(null);
+      setLastTouchCenter(null);
     }
-  }, [longPressTimer]);
+  }, [longPressTimer, pan]);
+
+  // Handle Wheel Event for Zooming
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      e.preventDefault(); // prevent window scroll
+      
+      const rect = canvas.getBoundingClientRect();
+      const cursorX = e.clientX - rect.left;
+      const cursorY = e.clientY - rect.top;
+      
+      const zoomSensitivity = 0.0015;
+      const delta = -e.deltaY;
+      
+      setZoom(prevZoom => {
+        let newZoom = prevZoom * Math.exp(delta * zoomSensitivity);
+        newZoom = Math.max(MIN_ZOOM, Math.min(newZoom, MAX_ZOOM));
+        
+        // Only adjust pan if zoom actually changed
+        if (newZoom !== prevZoom) {
+          setPan(prevPan => {
+            return {
+              x: cursorX - (cursorX - prevPan.x) * (newZoom / prevZoom),
+              y: cursorY - (cursorY - prevPan.y) * (newZoom / prevZoom)
+            };
+          });
+        }
+        return newZoom;
+      });
+    };
+
+    // passive: false is required to preventDefault on wheel
+    canvas.addEventListener('wheel', handleWheel, { passive: false });
+    return () => canvas.removeEventListener('wheel', handleWheel);
+  }, []);
 
   // Handle port click for connection
   const handlePortClick = useCallback((e: ReactMouseEvent, deviceId: string, portId: string) => {
@@ -1723,7 +1840,18 @@ export function NetworkTopology({
         {/* Zoom Controls */}
         <div className="flex items-center gap-1 bg-slate-800 rounded-lg p-1">
           <button
-            onClick={() => setZoom((z) => Math.max(MIN_ZOOM, z - 0.25))}
+            onClick={() => setZoom((z) => {
+               const newZoom = Math.max(MIN_ZOOM, z - 0.25);
+               if (!canvasRef.current) return newZoom;
+               const rect = canvasRef.current.getBoundingClientRect();
+               const cursorX = rect.width / 2;
+               const cursorY = rect.height / 2;
+               setPan(prevPan => ({
+                 x: cursorX - (cursorX - prevPan.x) * (newZoom / z),
+                 y: cursorY - (cursorY - prevPan.y) * (newZoom / z)
+               }));
+               return newZoom;
+            })}
             className="flex items-center justify-center w-10 h-10 rounded hover:bg-slate-700 text-slate-300"
           >
             −
@@ -1732,7 +1860,18 @@ export function NetworkTopology({
             {Math.round(zoom * 100)}%
           </span>
           <button
-            onClick={() => setZoom((z) => Math.min(MAX_ZOOM, z + 0.25))}
+            onClick={() => setZoom((z) => {
+               const newZoom = Math.min(MAX_ZOOM, z + 0.25);
+               if (!canvasRef.current) return newZoom;
+               const rect = canvasRef.current.getBoundingClientRect();
+               const cursorX = rect.width / 2;
+               const cursorY = rect.height / 2;
+               setPan(prevPan => ({
+                 x: cursorX - (cursorX - prevPan.x) * (newZoom / z),
+                 y: cursorY - (cursorY - prevPan.y) * (newZoom / z)
+               }));
+               return newZoom;
+            })}
             className="flex items-center justify-center w-10 h-10 rounded hover:bg-slate-700 text-slate-300"
           >
             +
@@ -1914,6 +2053,7 @@ export function NetworkTopology({
             className="h-[500px] sm:h-[450px] md:h-[550px] lg:h-[650px] xl:h-[750px] 2xl:h-[850px] overflow-hidden cursor-grab active:cursor-grabbing relative touch-none select-none"
             onMouseDown={handleCanvasMouseDown}
             onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
             onClick={() => {
               if (isDrawingConnection) {
@@ -1934,7 +2074,7 @@ export function NetworkTopology({
               style={{
                 transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
                 transformOrigin: '0 0',
-                transition: isPanning ? 'none' : 'transform 0.15s ease-out',
+                transition: isPanning ? 'none' : 'transform 0.05s linear',
               }}
               className="select-none"
             >
@@ -2028,7 +2168,18 @@ export function NetworkTopology({
               } shadow-lg`}
           >
             <button
-              onClick={() => setZoom((z) => Math.max(MIN_ZOOM, z - 0.25))}
+              onClick={() => setZoom((z) => {
+                 const newZoom = Math.max(MIN_ZOOM, z - 0.25);
+                 if (!canvasRef.current) return newZoom;
+                 const rect = canvasRef.current.getBoundingClientRect();
+                 const cursorX = rect.width / 2;
+                 const cursorY = rect.height / 2;
+                 setPan(prevPan => ({
+                   x: cursorX - (cursorX - prevPan.x) * (newZoom / z),
+                   y: cursorY - (cursorY - prevPan.y) * (newZoom / z)
+                 }));
+                 return newZoom;
+              })}
               className={`w-7 h-7 flex items-center justify-center rounded ${isDark ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-slate-100 text-slate-600'
                 }`}
             >
@@ -2038,7 +2189,18 @@ export function NetworkTopology({
               {Math.round(zoom * 100)}%
             </span>
             <button
-              onClick={() => setZoom((z) => Math.min(MAX_ZOOM, z + 0.25))}
+              onClick={() => setZoom((z) => {
+                 const newZoom = Math.min(MAX_ZOOM, z + 0.25);
+                 if (!canvasRef.current) return newZoom;
+                 const rect = canvasRef.current.getBoundingClientRect();
+                 const cursorX = rect.width / 2;
+                 const cursorY = rect.height / 2;
+                 setPan(prevPan => ({
+                   x: cursorX - (cursorX - prevPan.x) * (newZoom / z),
+                   y: cursorY - (cursorY - prevPan.y) * (newZoom / z)
+                 }));
+                 return newZoom;
+              })}
               className={`w-7 h-7 flex items-center justify-center rounded ${isDark ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-slate-100 text-slate-600'
                 }`}
             >
