@@ -723,8 +723,6 @@ function getInlineHelp(mode: CommandMode, partialInput: string, prompt: string):
         lines.push(`  ${cmd}`);
       }
     });
-    lines.push('');
-    lines.push('  <cr>');
   }
   
   lines.push('');
@@ -1698,8 +1696,63 @@ function cmdSwitchportAccessVlan(state: SwitchState, input: string): CommandResu
 }
 
 function cmdSwitchportTrunkAllowedVlan(state: SwitchState, input: string): CommandResult {
-  // Bu komut için şimdilik sadece success dönüyoruz
-  return { success: true };
+  const interfaces = state.selectedInterfaces || (state.currentInterface ? [state.currentInterface] : []);
+  
+  if (interfaces.length === 0) {
+    return { success: false, error: '% No interface selected' };
+  }
+  
+  const match = input.match(/^switchport\s+trunk\s+allowed\s+vlan\s+(all|add|remove)?\s*((\d+[,-\d]*))?$/i);
+  if (!match) return { success: false, error: '% Invalid value' };
+  
+  const action = (match[1] || '').toLowerCase();
+  const vlanString = match[2];
+  
+  const parseVlanList = (str: string): number[] => {
+    const result: number[] = [];
+    const parts = str.split(',');
+    for (const part of parts) {
+      if (part.includes('-')) {
+        const [start, end] = part.split('-').map(Number);
+        if (!isNaN(start) && !isNaN(end)) {
+          for (let i = start; i <= end; i++) result.push(i);
+        }
+      } else {
+        const val = Number(part);
+        if (!isNaN(val)) result.push(val);
+      }
+    }
+    return result;
+  };
+
+  const newPorts = { ...state.ports };
+  
+  for (const portId of interfaces) {
+    if (newPorts[portId]) {
+      const port = newPorts[portId];
+      let currentAllowed = Array.isArray(port.allowedVlans) ? [...port.allowedVlans] : port.allowedVlans === 'all' ? Array.from({length: 4094}, (_, i) => i + 1) : [];
+      
+      if (action === 'all') {
+        newPorts[portId] = { ...port, allowedVlans: 'all' };
+      } else if (action === 'add' && vlanString) {
+        const toAdd = parseVlanList(vlanString);
+        const updated = Array.from(new Set([...currentAllowed, ...toAdd])).sort((a,b) => a-b);
+        newPorts[portId] = { ...port, allowedVlans: updated };
+      } else if (action === 'remove' && vlanString) {
+        const toRemove = parseVlanList(vlanString);
+        const updated = currentAllowed.filter(v => !toRemove.includes(v)).sort((a,b) => a-b);
+        newPorts[portId] = { ...port, allowedVlans: updated };
+      } else {
+        const newList = parseVlanList(vlanString || action);
+        newPorts[portId] = { ...port, allowedVlans: newList };
+      }
+    }
+  }
+
+  return {
+    success: true,
+    newState: { ports: newPorts }
+  };
 }
 
 // VLAN config komutları

@@ -48,6 +48,10 @@ export default function Home() {
     initialMap.set('switch-1', createInitialState());
     return initialMap;
   });
+  const deviceStatesRef = useRef(deviceStates);
+  useEffect(() => {
+    deviceStatesRef.current = deviceStates;
+  }, [deviceStates]);
 
   // Per-device terminal outputs
   const [deviceOutputs, setDeviceOutputs] = useState<Map<string, TerminalOutput[]>>(() => {
@@ -298,13 +302,22 @@ export default function Home() {
 
   // Handle command for a specific device
   const handleCommandForDevice = useCallback(async (deviceId: string, command: string, skipConfirm = false) => {
+    // If command is multi-line (pasted), execute each line separately
+    if (command.includes('\n')) {
+      const lines = command.split('\n').filter(l => l.trim() !== '');
+      for (const line of lines) {
+        await handleCommandForDevice(deviceId, line.trim(), skipConfirm);
+      }
+      return;
+    }
+
     setIsLoading(true);
 
     try {
       // Determine device type from deviceId
       const deviceType = deviceId.includes('router') ? 'router' : deviceId.includes('pc') ? 'pc' : 'switch';
       
-      const deviceState = getOrCreateDeviceState(deviceId, deviceType as 'pc' | 'switch' | 'router');
+      const deviceState = deviceStatesRef.current.get(deviceId) || (deviceType === 'router' ? createInitialRouterState() : createInitialState());
       const deviceOutput = getOrCreateDeviceOutputs(deviceId);
       const devicePrompt = getPrompt(deviceState);
 
@@ -478,17 +491,13 @@ export default function Home() {
         }
 
         if (result.newState) {
-          setDeviceStates(prev => {
-            const newMap = new Map(prev);
-            const current = newMap.get(deviceId);
-            if (current) {
-              newMap.set(deviceId, {
-                ...current,
-                ...result.newState
-              });
-            }
-            return newMap;
-          });
+          const nextState = {
+            ...(deviceStatesRef.current.get(deviceId) || deviceState),
+            ...result.newState
+          };
+          // Update ref immediately for sequential commands
+          deviceStatesRef.current.set(deviceId, nextState);
+          setDeviceStates(new Map(deviceStatesRef.current));
         }
       } else {
         const errorOutput: TerminalOutput = {
@@ -504,17 +513,12 @@ export default function Home() {
         });
 
         if (result.newState) {
-          setDeviceStates(prev => {
-            const newMap = new Map(prev);
-            const current = newMap.get(deviceId);
-            if (current) {
-              newMap.set(deviceId, {
-                ...current,
-                ...result.newState
-              });
-            }
-            return newMap;
-          });
+          const nextState = {
+            ...(deviceStatesRef.current.get(deviceId) || deviceState),
+            ...result.newState
+          };
+          deviceStatesRef.current.set(deviceId, nextState);
+          setDeviceStates(new Map(deviceStatesRef.current));
         }
       }
     } catch (error) {

@@ -1562,11 +1562,25 @@ export function NetworkTopology({
   const renderDevice = (device: CanvasDevice, isDragging: boolean = false) => {
     const isSelected = selectedCanvasDevice === device.id || selectAllMode;
     // Check if device has any connections
-    const hasConnection = connections.some(
-      conn => conn.sourceDeviceId === device.id || conn.targetDeviceId === device.id
-    );
-    // Green if connected, red if not connected
-    const statusColor = hasConnection ? 'bg-green-500' : 'bg-red-500';
+    const deviceConnections = connections.filter(c => c.sourceDeviceId === device.id || c.targetDeviceId === device.id);
+    const hasConnection = deviceConnections.length > 0;
+    const hasError = deviceConnections.some(conn => {
+      const source = devices.find(d => d.id === conn.sourceDeviceId);
+      const target = devices.find(d => d.id === conn.targetDeviceId);
+      if (!source || !target) return false;
+      return !isCableCompatible({
+        connected: true,
+        cableType: conn.cableType,
+        sourceDevice: source.type === 'router' ? 'switch' : source.type,
+        targetDevice: target.type === 'router' ? 'switch' : target.type,
+        sourcePort: conn.sourcePort,
+        targetPort: conn.targetPort,
+      });
+    });
+
+    const statusColor = hasError 
+      ? (isDark ? 'fill-red-500' : 'fill-red-600') 
+      : (hasConnection ? (isDark ? 'fill-green-500' : 'fill-green-600') : (isDark ? 'fill-slate-800' : 'fill-slate-300'));
 
     // Calculate device height based on number of ports (8 per row for switch/router)
     const portsPerRow = device.type === 'pc' ? 2 : 8;
@@ -1646,7 +1660,7 @@ export function NetworkTopology({
         </g>
 
         {/* Status LED */}
-        <circle cx={deviceWidth - 10} cy={10} r={5} className={statusColor} />
+        <circle cx={deviceWidth - 10} cy={10} r={5} className={`${statusColor} transition-colors duration-300`} />
 
         {/* Device name */}
         <text x={deviceWidth / 2} y={58} fill={isDark ? '#f1f5f9' : '#1e293b'} fontSize="10" textAnchor="middle" fontWeight="bold" className="select-none pointer-events-none">
@@ -2610,6 +2624,40 @@ export function NetworkTopology({
                           ? 'bg-slate-900/50 border-slate-700 text-white placeholder-slate-700 focus:border-cyan-500/50' 
                           : 'bg-white border-slate-200 text-slate-900 placeholder-slate-300 focus:border-cyan-500/50'
                       } outline-none`}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className={`text-[10px] font-bold uppercase tracking-widest ml-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                      {language === 'tr' ? 'Varsayılan Ağ Geçidi' : 'Default Gateway'}
+                    </label>
+                    <input
+                      type="text"
+                      value={gatewayValue}
+                      onChange={(e) => setGatewayValue(e.target.value)}
+                      className={`w-full px-4 py-2.5 rounded-xl border font-mono font-bold transition-all duration-300 ${
+                        isDark 
+                          ? 'bg-slate-900/50 border-slate-700 text-white placeholder-slate-700 focus:border-cyan-500/50' 
+                          : 'bg-white border-slate-200 text-slate-900 placeholder-slate-300 focus:border-cyan-500/50'
+                      } outline-none`}
+                      placeholder="192.168.1.1"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className={`text-[10px] font-bold uppercase tracking-widest ml-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                      {language === 'tr' ? 'DNS Sunucusu' : 'DNS Server'}
+                    </label>
+                    <input
+                      type="text"
+                      value={dnsValue}
+                      onChange={(e) => setDnsValue(e.target.value)}
+                      className={`w-full px-4 py-2.5 rounded-xl border font-mono font-bold transition-all duration-300 ${
+                        isDark 
+                          ? 'bg-slate-900/50 border-slate-700 text-white placeholder-slate-700 focus:border-cyan-500/50' 
+                          : 'bg-white border-slate-200 text-slate-900 placeholder-slate-300 focus:border-cyan-500/50'
+                      } outline-none`}
+                      placeholder="8.8.8.8"
                     />
                   </div>
                 </div>

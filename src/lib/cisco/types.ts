@@ -26,6 +26,7 @@ export interface Port {
   previousStatus?: PortStatus;  // shutdown öncesi durum (no shutdown için)
   ipAddress?: string;           // For L3 ports or SVI
   subnetMask?: string;
+  allowedVlans?: number[] | 'all'; // For trunk ports
   portSecurity?: {
     enabled: boolean;
     maxMac: number;
@@ -85,6 +86,7 @@ export interface SwitchState {
   // New optional properties for extended features
   domainName?: string;
   defaultGateway?: string;
+  dnsServer?: string;
   sshVersion?: 1 | 2;
   cdpEnabled?: boolean;
   spanningTreeMode?: 'pvst' | 'rapid-pvst' | 'mst';

@@ -10,7 +10,7 @@ interface PCPanelProps {
   cableInfo: CableInfo;
   isVisible: boolean;
   onClose: () => void;
-  topologyDevices?: { id: string; type: string; name: string; ip: string; ports: { id: string; status: string }[] }[];
+  topologyDevices?: { id: string; type: string; name: string; ip: string; subnet?: string; gateway?: string; dns?: string; ports: { id: string; status: string }[] }[];
   topologyConnections?: { sourceDeviceId: string; sourcePort: string; targetDeviceId: string; targetPort: string }[];
 }
 
@@ -26,7 +26,7 @@ const pcOutputsStore = new Map<string, OutputLine[]>();
 const pcCommandHistoryStore = new Map<string, string[]>();
 
 // PC IP configurations per device
-const pcConfigs = new Map<string, { ip: string; subnet: string; gateway: string; mac: string }>();
+const pcConfigs = new Map<string, { ip: string; subnet: string; gateway: string; dns: string; mac: string }>();
 
 const MAX_SUGGESTIONS = 5;
 const MAX_HISTORY_BUTTONS = 8;
@@ -47,6 +47,7 @@ function getPCConfig(deviceId: string) {
       ip: `192.168.1.${10 + num - 1}`,
       subnet: '255.255.255.0',
       gateway: '192.168.1.1',
+      dns: '8.8.8.8',
       mac: `00-1A-2B-3C-4D-${String(num).padStart(2, '0')}`
     });
   }
@@ -115,9 +116,12 @@ export function PCPanel({ deviceId, cableInfo, isVisible, onClose, topologyDevic
   const outputRef = useRef<HTMLDivElement>(null);
   
   const config = getPCConfig(deviceId);
-  const pcIP = config.ip;
-  const pcSubnet = config.subnet;
-  const pcGateway = config.gateway;
+  const deviceFromTopology = topologyDevices.find(d => d.id === deviceId);
+  
+  const pcIP = deviceFromTopology?.ip || config.ip;
+  const pcSubnet = deviceFromTopology?.subnet || config.subnet;
+  const pcGateway = deviceFromTopology?.gateway || config.gateway;
+  const pcDNS = deviceFromTopology?.dns || config.dns;
   const pcMAC = config.mac;
   
   const isCompatible = isCableCompatible(cableInfo);
@@ -581,7 +585,7 @@ export function PCPanel({ deviceId, cableInfo, isVisible, onClose, topologyDevic
       addOutput('output', `   IPv4 Adresi. . . . . . . . . . . . : ${pcIP}\n`);
       addOutput('output', `   Alt Ağ Maskesi. . . . . . . . . . . : ${pcSubnet}\n`);
       addOutput('output', `   Varsayılan Ağ Geçidi. . . . . . . . : ${pcGateway}\n`);
-      addOutput('output', '   DNS Sunucuları. . . . . . . . . . . : 8.8.8.8\n\n');
+      addOutput('output', `   DNS Sunucuları. . . . . . . . . . . : ${pcDNS}\n\n`);
     } else {
       addOutput('output', '   Host Name . . . . . . . . . . . . . : DESKTOP-NETSIM\n');
       addOutput('output', '   Primary Dns Suffix  . . . . . . . . :\n');
@@ -597,7 +601,7 @@ export function PCPanel({ deviceId, cableInfo, isVisible, onClose, topologyDevic
       addOutput('output', `   IPv4 Address. . . . . . . . . . . . : ${pcIP}\n`);
       addOutput('output', `   Subnet Mask . . . . . . . . . . . . : ${pcSubnet}\n`);
       addOutput('output', `   Default Gateway . . . . . . . . . . : ${pcGateway}\n`);
-      addOutput('output', '   DNS Servers . . . . . . . . . . . . : 8.8.8.8\n\n');
+      addOutput('output', `   DNS Servers . . . . . . . . . . . . : ${pcDNS}\n\n`);
     }
   };
   

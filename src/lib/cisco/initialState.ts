@@ -17,7 +17,8 @@ function createInitialPorts(): Record<string, Port> {
       duplex: 'auto',
       speed: 'auto',
       shutdown: true, // BAŞLANGIÇTA KAPALI - kullanıcı açmalı
-      type: 'fastethernet'
+      type: 'fastethernet',
+      allowedVlans: 'all'
     };
   }
   
@@ -33,7 +34,8 @@ function createInitialPorts(): Record<string, Port> {
       duplex: 'auto',
       speed: 'auto',
       shutdown: true, // BAŞLANGIÇTA KAPALI - kullanıcı açmalı
-      type: 'gigabitethernet'
+      type: 'gigabitethernet',
+      allowedVlans: 'all'
     };
   }
   
@@ -148,7 +150,8 @@ function createInitialRouterPorts(): Record<string, Port> {
       duplex: 'auto',
       speed: 'auto',
       shutdown: false,
-      type: 'gigabitethernet'
+      type: 'gigabitethernet',
+      allowedVlans: 'all'
     };
   }
   

@@ -937,9 +937,6 @@ export function Terminal({ deviceId, deviceName, prompt, state, onCommand, onCle
         lines.push(`  ${cmd}`);
       }
     });
-    
-    lines.push('');
-    lines.push(`<cr>`);
     lines.push('');
     
     return lines.join('\n');

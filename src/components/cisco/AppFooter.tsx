@@ -90,26 +90,6 @@ export function AppFooter({ state, selectedDevice, activeDeviceId, activeDeviceN
           </div>
         </div>
 
-        {/* Tips - Only show when CLI is active */}
-        {isCLIActive && (
-          <div className={`flex items-center gap-4 px-5 py-2.5 rounded-2xl ${dark ? 'bg-slate-800/40 border border-slate-700/30' : 'bg-slate-100/80 border border-slate-200/50'} shadow-inner`}>
-            <span className="text-cyan-500 text-[10px] font-black uppercase tracking-widest">{t.tips}:</span>
-            <div className="flex items-center gap-6 text-xs border-l border-slate-700/20 pl-4 ml-1">
-              <div className="flex items-center gap-2 group cursor-help transition-all hover:scale-105">
-                <kbd className={`px-2 py-1 rounded-lg text-[10px] font-bold shadow-sm transition-all ${dark ? 'bg-slate-700 text-slate-300 border border-slate-600 group-hover:border-cyan-500/50 group-hover:bg-slate-600' : 'bg-white text-slate-600 border border-slate-200 group-hover:border-cyan-500/50 shadow-black/5'}`}>TAB</kbd>
-                <span className={`transition-colors font-medium ${dark ? 'text-slate-400 group-hover:text-slate-200' : 'text-slate-500 group-hover:text-slate-800'}`}>{t.tabComplete}</span>
-              </div>
-              <div className="flex items-center gap-2 group cursor-help transition-all hover:scale-105">
-                <kbd className={`px-2 py-1 rounded-lg text-[10px] font-bold shadow-sm transition-all ${dark ? 'bg-slate-700 text-slate-300 border border-slate-600 group-hover:border-cyan-500/50 group-hover:bg-slate-600' : 'bg-white text-slate-600 border border-slate-200 group-hover:border-cyan-500/50 shadow-black/5'}`}>↑↓</kbd>
-                <span className={`transition-colors font-medium ${dark ? 'text-slate-400 group-hover:text-slate-200' : 'text-slate-500 group-hover:text-slate-800'}`}>{t.commandHistory}</span>
-              </div>
-              <div className="flex items-center gap-2 group cursor-help transition-all hover:scale-105">
-                <kbd className={`px-2 py-1 rounded-lg text-[10px] font-bold shadow-sm transition-all ${dark ? 'bg-slate-700 text-slate-300 border border-slate-600 group-hover:border-cyan-500/50 group-hover:bg-slate-600' : 'bg-white text-slate-600 border border-slate-200 group-hover:border-cyan-500/50 shadow-black/5'}`}>?</kbd>
-                <span className={`transition-colors font-medium ${dark ? 'text-slate-400 group-hover:text-slate-200' : 'text-slate-500 group-hover:text-slate-800'}`}>{t.help}</span>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </motion.footer>
   );
