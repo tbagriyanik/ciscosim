@@ -188,14 +188,14 @@ export function getCableTypeName(type: CableType, lang: 'tr' | 'en'): string {
 }
 
 // Port LED renkleri
-export type PortLEDColor = 'green' | 'gray' | 'orange' | 'off';
+export type PortLEDColor = 'green' | 'gray' | 'orange' | 'off' | 'white';
 
 export function getPortLEDColor(port: Port): PortLEDColor {
   if (port.shutdown) return 'gray';
   if (port.status === 'blocked') return 'orange';
   if (port.status === 'connected') return 'green';
-  if (port.status === 'notconnect') return 'off';
-  return 'gray';
+  if (port.status === 'notconnect') return 'white';
+  return 'white';
 }
 
 // Port tipi yardımcı fonksiyonları

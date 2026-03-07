@@ -28,9 +28,10 @@ interface PortPanelProps {
 
 const ledColorClasses: Record<PortLEDColor, string> = {
   green: 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)] animate-pulse',
-  gray: 'bg-gray-500 hover:bg-gray-400 transition-colors',
+  gray: 'bg-gray-500 transition-colors',
   orange: 'bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.6)] led-blink',
-  off: 'bg-gray-700 hover:bg-gray-600 transition-colors'
+  white: 'bg-white shadow-[0_0_6px_rgba(255,255,255,0.4)] border border-slate-300 transition-all',
+  off: 'bg-gray-700 transition-colors'
 };
 
 const statusTextEn: Record<string, string> = {
@@ -83,16 +84,17 @@ export function PortPanel({ ports, t, theme, deviceName, deviceModel, activeDevi
     let statusLabel: string;
     
     if (port.shutdown) {
-      ledColor = 'off';
-      statusLabel = t.language === 'tr' ? t.closed : 'Disabled';
-    } else if (isConnectedInTopology) {
-      // Port has an active connection in topology - show green
-      ledColor = 'green';
-      statusLabel = t.language === 'tr' ? t.connected : 'Connected';
-    } else {
-      // No topology connection - show gray (idle)
       ledColor = 'gray';
-      statusLabel = t.language === 'tr' ? t.idle : 'Not Connected';
+      statusLabel = t.closed;
+    } else if (port.status === 'blocked') {
+      ledColor = 'orange';
+      statusLabel = t.blocked;
+    } else if (isConnectedInTopology || port.status === 'connected') {
+      ledColor = 'green';
+      statusLabel = t.connected;
+    } else {
+      ledColor = 'white';
+      statusLabel = t.idle;
     }
     
     return (
@@ -208,19 +210,19 @@ export function PortPanel({ ports, t, theme, deviceName, deviceModel, activeDevi
           <div className="mt-3 sm:mt-4 flex flex-wrap gap-3 sm:gap-4 justify-center text-[10px] sm:text-xs">
             <div className="flex items-center gap-1">
               <div className="w-2 sm:w-2.5 h-2 sm:h-2.5 rounded-full bg-green-500" />
-              <span className={isDark ? 'text-slate-400' : 'text-slate-600'}>{t.connected}</span>
+              <span className={isDark ? 'text-slate-400' : 'text-slate-600'}>{t.connected} (Green)</span>
             </div>
             <div className="flex items-center gap-1">
               <div className="w-2 sm:w-2.5 h-2 sm:h-2.5 rounded-full bg-gray-500" />
-              <span className={isDark ? 'text-slate-400' : 'text-slate-600'}>{t.closed}</span>
+              <span className={isDark ? 'text-slate-400' : 'text-slate-600'}>{t.closed} (Gray)</span>
             </div>
             <div className="flex items-center gap-1">
               <div className="w-2 sm:w-2.5 h-2 sm:h-2.5 rounded-full bg-orange-500" />
-              <span className={isDark ? 'text-slate-400' : 'text-slate-600'}>{t.blocked}</span>
+              <span className={isDark ? 'text-slate-400' : 'text-slate-600'}>{t.blocked} (Orange)</span>
             </div>
             <div className="flex items-center gap-1">
-              <div className="w-2 sm:w-2.5 h-2 sm:h-2.5 rounded-full bg-gray-700" />
-              <span className={isDark ? 'text-slate-400' : 'text-slate-600'}>{t.idle}</span>
+              <div className="w-2 sm:w-2.5 h-2 sm:h-2.5 rounded-full bg-white border border-slate-300" />
+              <span className={isDark ? 'text-slate-400' : 'text-slate-600'}>{t.idle} (White)</span>
             </div>
           </div>
         </CardContent>

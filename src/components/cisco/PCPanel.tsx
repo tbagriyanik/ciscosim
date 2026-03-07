@@ -151,7 +151,25 @@ export function PCPanel({ deviceId, cableInfo, isVisible, onClose, topologyDevic
     return null;
   }, [deviceId, topologyConnections, topologyDevices]);
 
+  // Find the device that PC is connected to (via Console port)
+  const getConsoleDevice = useCallback((): { id: string; type: string; name: string; ip: string } | null => {
+    const connection = topologyConnections.find(conn => 
+      (conn.sourceDeviceId === deviceId && (conn.sourcePort === 'com1' || conn.sourcePort === 'console')) ||
+      (conn.targetDeviceId === deviceId && (conn.targetPort === 'com1' || conn.targetPort === 'console'))
+    );
+    
+    if (!connection) return null;
+    
+    const otherDeviceId = connection.sourceDeviceId === deviceId 
+      ? connection.targetDeviceId 
+      : connection.sourceDeviceId;
+    
+    const device = topologyDevices.find(d => d.id === otherDeviceId);
+    return (device && (device.type === 'switch' || device.type === 'router')) ? device : null;
+  }, [deviceId, topologyConnections, topologyDevices]);
+
   const connectedDevice = getConnectedDevice();
+  const consoleDevice = getConsoleDevice();
 
   // PC CMD Komutları - organized by category
   const pcCommands = {
@@ -305,6 +323,9 @@ export function PCPanel({ deviceId, cableInfo, isVisible, onClose, topologyDevic
       case 'telnet':
         handleTelnet(args[1]);
         break;
+      case 'terminal':
+        handleTerminal();
+        break;
       case 'ipconfig':
         if (args[1] === '/all') {
           handleIpconfigAll();
@@ -442,9 +463,15 @@ export function PCPanel({ deviceId, cableInfo, isVisible, onClose, topologyDevic
   const handleTelnet = (target: string) => {
     // Check if connected to a device
     if (!connectedDevice) {
-      addOutput('error', language === 'tr' 
-        ? '\nTELNET: Bağlantı kurulamadı.\nHATA: Herhangi bir switch veya router\'a bağlı değilsiniz.\n\n' 
-        : '\nTELNET: Could not open connection.\nERROR: You are not connected to any switch or router.\n\n');
+      if (consoleDevice) {
+        addOutput('error', language === 'tr'
+          ? '\nTELNET: Bağlantı kurulamadı.\nHATA: Konsol kablosuyla bağlısınız. Telnet IP üzerinden çalışır.\nLÜTFEN: "terminal" komutunu kullanarak konsol erişimi sağlayın.\n\n'
+          : '\nTELNET: Could not open connection.\nERROR: Connected via console. Telnet requires an Ethernet/IP link.\nTIP: Use the "terminal" command for console access.\n\n');
+      } else {
+        addOutput('error', language === 'tr' 
+          ? '\nTELNET: Bağlantı kurulamadı.\nHATA: Herhangi bir switch veya router\'a bağlı değilsiniz.\n\n' 
+          : '\nTELNET: Could not open connection.\nERROR: You are not connected to any switch or router.\n\n');
+      }
       return;
     }
     
@@ -498,6 +525,30 @@ export function PCPanel({ deviceId, cableInfo, isVisible, onClose, topologyDevic
       });
       setCurrentPrompt('Username: ');
       addOutput('prompt', '', 'Username: ');
+    }, 800);
+  };
+
+  const handleTerminal = () => {
+    if (!consoleDevice) {
+      addOutput('error', language === 'tr'
+        ? '\nTERMINAL: Bağlantı kurulamadı.\nHATA: Konsol kablosu takılı değil.\n\n'
+        : '\nTERMINAL: Could not open connection.\nERROR: Console cable not connected.\n\n');
+      return;
+    }
+
+    addOutput('output', language === 'tr' ? 'Konsol bağlantısı açılıyor...\n' : 'Opening console connection...\n');
+    
+    setTimeout(() => {
+      addOutput('success', language === 'tr' ? 'Switch konsoluna bağlanıldı.\n' : 'Connected to switch console.\n');
+      setInteractiveState({
+        active: true,
+        type: 'telnet', // Reuse telnet type as it uses the same executor logic
+        step: 'command', // Console usually goes straight to CLI or password prompt
+        targetDevice: consoleDevice.name // Use device name for prompt
+      });
+      setCurrentPrompt(`${consoleDevice.name}>`);
+      addOutput('output', `\nCisco IOS Software, C2960 Software (C2960-LANBASE-M), Version 12.2(25)FX, RELEASE SOFTWARE (fc1)\n\n`);
+      addOutput('prompt', `${consoleDevice.name}>`);
     }, 800);
   };
   
@@ -748,6 +799,7 @@ export function PCPanel({ deviceId, cableInfo, isVisible, onClose, topologyDevic
       addOutput('output', '─'.repeat(40) + '\n');
       addOutput('output', '  ping [ip]        - Send ICMP echo request\n');
       addOutput('output', '  telnet [ip]      - Connect to remote device\n');
+      addOutput('output', '  terminal         - Access connected device via console cable\n');
       addOutput('output', '  ipconfig         - Show IP configuration\n');
       addOutput('output', '  ipconfig /all    - Detailed IP configuration\n');
       addOutput('output', '  arp -a           - Show ARP table\n');
