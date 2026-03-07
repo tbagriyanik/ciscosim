@@ -1071,6 +1071,12 @@ export function NetworkTopology({
     // Check if port is already connected
     if (port.status === 'connected') {
       // Port is already in use - cannot connect
+      if (isDrawingConnection) {
+        setConnectionError(language === 'tr' ? 'Bu port zaten kullanımda!' : 'This port is already in use!');
+        setTimeout(() => setConnectionError(null), 3000);
+        setIsDrawingConnection(false);
+        setConnectionStart(null);
+      }
       return;
     }
 
@@ -1696,27 +1702,57 @@ export function NetworkTopology({
         )}
         {/* Connection label */}
         {totalSameConns > 1 ? (
-          <text
-            x={midX + perpX}
-            y={midY + perpY - 8}
-            fill={color}
-            fontSize="10"
-            textAnchor="middle"
-            className="pointer-events-none select-none"
-          >
-            {conn.sourcePort}→{conn.targetPort}
-          </text>
+          <>
+            <text
+              x={midX + perpX}
+              y={midY + perpY - 8}
+              fill="none"
+              stroke={isDark ? '#0f172a' : '#ffffff'}
+              strokeWidth="4"
+              strokeLinejoin="round"
+              fontSize="10"
+              textAnchor="middle"
+              className="pointer-events-none select-none"
+            >
+              {conn.sourcePort} ↔ {conn.targetPort}
+            </text>
+            <text
+              x={midX + perpX}
+              y={midY + perpY - 8}
+              fill={color}
+              fontSize="10"
+              textAnchor="middle"
+              className="pointer-events-none select-none"
+            >
+              {conn.sourcePort} ↔ {conn.targetPort}
+            </text>
+          </>
         ) : (
-          <text
-            x={midX}
-            y={midY - 10}
-            fill={color}
-            fontSize="10"
-            textAnchor="middle"
-            className="pointer-events-none select-none"
-          >
-            {getCableTypeName(conn.cableType, language)}
-          </text>
+          <>
+            <text
+              x={midX}
+              y={midY - 10}
+              fill="none"
+              stroke={isDark ? '#0f172a' : '#ffffff'}
+              strokeWidth="4"
+              strokeLinejoin="round"
+              fontSize="10"
+              textAnchor="middle"
+              className="pointer-events-none select-none"
+            >
+              {conn.sourcePort} ↔ {conn.targetPort}
+            </text>
+            <text
+              x={midX}
+              y={midY - 10}
+              fill={color}
+              fontSize="10"
+              textAnchor="middle"
+              className="pointer-events-none select-none"
+            >
+              {conn.sourcePort} ↔ {conn.targetPort}
+            </text>
+          </>
         )}
       </g>
     );
@@ -1792,26 +1828,28 @@ export function NetworkTopology({
         />
 
         {/* Delete Handle (Trash Icon) */}
-        <g 
-          transform={`translate(${trashX}, ${trashY})`}
-          className="cursor-pointer group"
-          onClick={(e) => {
-            e.stopPropagation();
-            deleteConnection(conn.id);
-          }}
-        >
-          {/* Subtle background rectangle instead of circle */}
-          <rect x="-8" y="-9" width="16" height="18" rx="3" fill={isDark ? '#0f172a' : '#ffffff'} opacity="0.9" className="drop-shadow-sm" />
-          <g transform="translate(0, 0)">
-            <path 
-              d="M -5 -3 H 5 M -3.5 -3 V 5.5 A 1 1 0 0 0 -2.5 6.5 H 2.5 A 1 1 0 0 0 3.5 5.5 V -3 M -1.5 -3 V -5 H 1.5 V -3" 
-              stroke="#ef4444" 
-              fill="none" 
-              strokeWidth="1.5" 
-              strokeLinecap="round"
-            />
+        {isCompatible && (
+          <g 
+            transform={`translate(${trashX}, ${trashY})`}
+            className="cursor-pointer group"
+            onClick={(e) => {
+              e.stopPropagation();
+              deleteConnection(conn.id);
+            }}
+          >
+            {/* Subtle background rectangle instead of circle */}
+            <rect x="-8" y="-9" width="16" height="18" rx="3" fill={isDark ? '#0f172a' : '#ffffff'} opacity="0.9" className="drop-shadow-sm" />
+            <g transform="translate(0, 0)">
+              <path 
+                d="M -5 -3 H 5 M -3.5 -3 V 5.5 A 1 1 0 0 0 -2.5 6.5 H 2.5 A 1 1 0 0 0 3.5 5.5 V -3 M -1.5 -3 V -5 H 1.5 V -3" 
+                stroke="#ef4444" 
+                fill="none" 
+                strokeWidth="1.5" 
+                strokeLinecap="round"
+              />
+            </g>
           </g>
-        </g>
+        )}
 
         {/* Warning Icon if incompatible */}
         {!isCompatible && (
@@ -1972,8 +2010,8 @@ export function NetworkTopology({
                 <circle
                   r={7}
                   fill={portColor}
-                  stroke={isConnected ? (port.id.toLowerCase().startsWith('com') ? '#0891b2' : '#1d4ed8') : '#4b5563'}
-                  strokeWidth={1}
+                  stroke={isConnected ? '#22c55e' : '#4b5563'}
+                  strokeWidth={isConnected ? 2 : 1}
                 />
                 <text y={1} fill="#fff" fontSize="7" textAnchor="middle" dominantBaseline="middle" className="select-none pointer-events-none">
                   {portLabel}
@@ -2013,16 +2051,16 @@ export function NetworkTopology({
 
             if (isConsole) {
               portFill = isConnected ? '#06b6d4' : '#0891b2'; // Turquoise
-              portStroke = '#0891b2';
+              portStroke = isConnected ? '#22c55e' : '#0891b2';
             } else if (isGigabit) {
               portFill = isConnected ? '#f97316' : '#c2410c'; // Orange
-              portStroke = '#c2410c';
+              portStroke = isConnected ? '#22c55e' : '#c2410c';
             } else if (isFastEthernet) {
               portFill = isConnected ? '#3b82f6' : '#1d4ed8'; // Blue
-              portStroke = '#1d4ed8';
+              portStroke = isConnected ? '#22c55e' : '#1d4ed8';
             } else {
               portFill = isConnected ? '#22c55e' : '#6b7280'; // Default green/gray
-              portStroke = isConnected ? '#16a34a' : '#4b5563';
+              portStroke = isConnected ? '#22c55e' : '#4b5563';
             }
 
             return (
@@ -2036,7 +2074,7 @@ export function NetworkTopology({
                   r={6}
                   fill={portFill}
                   stroke={portStroke}
-                  strokeWidth={1}
+                  strokeWidth={isConnected ? 2 : 1}
                 />
                 <text y={1} fill="#fff" fontSize="6" textAnchor="middle" dominantBaseline="middle" className="select-none pointer-events-none">
                   {displayNum}

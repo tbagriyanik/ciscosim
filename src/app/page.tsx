@@ -978,7 +978,7 @@ export default function Home() {
     },
     {
       id: 'cmd',
-      label: 'CMD Terminal',
+      label: language === 'tr' ? 'CMD Terminali' : 'CMD Terminal',
       icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>,
       tasks: [],
       color: 'from-blue-500 to-indigo-500',
@@ -986,7 +986,7 @@ export default function Home() {
     },
     {
       id: 'terminal',
-      label: 'Terminal',
+      label: language === 'tr' ? 'Terminal' : 'Terminal',
       icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>,
       tasks: [],
       color: 'from-green-500 to-emerald-500',
@@ -1002,7 +1002,7 @@ export default function Home() {
     },
     {
       id: 'vlan',
-      label: 'VLAN',
+      label: language === 'tr' ? 'VLAN' : 'VLAN',
       icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>,
       tasks: vlanTasks,
       color: 'from-purple-500 to-pink-500',
