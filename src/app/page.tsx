@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { SwitchState, CableInfo, CommandResult } from '@/lib/cisco/types';
 import { createInitialState, createInitialRouterState } from '@/lib/cisco/initialState';
 // Duplicate removed
@@ -315,7 +316,7 @@ export default function Home() {
         setIsLoading(false);
         setConfirmDialog({
           show: true,
-          message: result.message || result.confirmationMessage || 'Are you sure?',
+          message: result.confirmationMessage || 'Are you sure?',
           action: result.confirmationAction || command,
           onConfirm: () => {
             setConfirmDialog(null);
@@ -392,8 +393,8 @@ export default function Home() {
               type: 'output',
               content: ` Open\n\n**** Connected to ${targetDevice.name} (${targetIp}) via VTY ****\n`
             };
-            setDeviceOutputs((prev: any) => {
-              const newMap = new Map(prev);
+            setDeviceOutputs((prev) => {
+              const newMap = new Map<string, TerminalOutput[]>(prev);
               const current = newMap.get(deviceId) || [];
               newMap.set(deviceId, [...current, connMsg]);
               return newMap;
@@ -408,8 +409,8 @@ export default function Home() {
               type: 'error',
               content: `\n% Connection timed out; remote host not responding\n`
             };
-            setDeviceOutputs((prev: any) => {
-              const newMap = new Map(prev);
+            setDeviceOutputs((prev) => {
+              const newMap = new Map<string, TerminalOutput[]>(prev);
               const current = newMap.get(deviceId) || [];
               newMap.set(deviceId, [...current, noHostMsg]);
               return newMap;
@@ -432,13 +433,13 @@ export default function Home() {
             { id: (Date.now() + 3).toString(), type: 'output', content: 'C2960 Boot Loader (C2960-HBOOT-M) Version 12.2(25r)FX\nLoading "flash:c2960-lanbase-mz.150-2.SE4.bin"...\n################################################################################\n' },
             { id: (Date.now() + 4).toString(), type: 'output', content: '[OK]\n\nCisco IOS Software, Version 15.0(2)SE4\nPress RETURN to get started!\n\n' },
           ];
-          setDeviceStates((prev: any) => {
-            const newMap = new Map(prev);
+          setDeviceStates((prev) => {
+            const newMap = new Map<string, SwitchState>(prev);
             newMap.set(deviceId, finalState);
             return newMap;
           });
-          setDeviceOutputs((prev: any) => {
-            const newMap = new Map(prev);
+          setDeviceOutputs((prev) => {
+            const newMap = new Map<string, TerminalOutput[]>(prev);
             newMap.set(deviceId, bootMessages);
             return newMap;
           });
@@ -453,8 +454,8 @@ export default function Home() {
             type: 'output',
             content: '\n[OK]\nReload requested...\n'
           };
-          setDeviceOutputs((prev: any) => {
-            const newMap = new Map(prev);
+          setDeviceOutputs((prev) => {
+            const newMap = new Map<string, TerminalOutput[]>(prev);
             const current = newMap.get(deviceId) || [];
             newMap.set(deviceId, [...current, reloadOutput]);
             return newMap;
@@ -726,7 +727,7 @@ export default function Home() {
     }
   }, [showActiveDeviceDropdown]);
 
-    // Handle back button on mobile: popstate shuts down everything
+  // Handle back button on mobile: popstate shuts down everything
   useEffect(() => {
     const handlePopState = () => {
       setShowActiveDeviceDropdown(false);
@@ -742,7 +743,7 @@ export default function Home() {
 
   // History pushState for back button tracking
   useEffect(() => {
-    const anyModalOpen = showActiveDeviceDropdown || showMobileMenu || confirmDialog || saveDialog || showPCPanel;
+    const anyModalOpen = showActiveDeviceDropdown || showMobileMenu || !!confirmDialog || !!saveDialog || showPCPanel;
     if (anyModalOpen) {
       window.history.pushState({ modal: true }, '');
     }
@@ -750,7 +751,7 @@ export default function Home() {
 
   // Handle key events: ESC to close, ENTER to confirm
   useEffect(() => {
-    const handleKeyDown = (e) => {
+    const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setShowActiveDeviceDropdown(false);
         setShowMobileMenu(false);
@@ -772,29 +773,6 @@ export default function Home() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [showActiveDeviceDropdown, showMobileMenu, confirmDialog, saveDialog, showPCPanel]);
-
-  // Close menus on mobile back button (popstate)
-  useEffect(() => {
-    const handlePopState = () => {
-      // Close all open menus and dialogs when user presses back button
-      setShowActiveDeviceDropdown(false);
-      setShowMobileMenu(false);
-      setConfirmDialog(null);
-      setSaveDialog(null);
-      setShowPCPanel(false);
-    };
-
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
-
-  // Use history pushState for better mobile back button experience when modals open
-  useEffect(() => {
-    const anyModalOpen = showActiveDeviceDropdown || showMobileMenu || confirmDialog || saveDialog || showPCPanel;
-    if (anyModalOpen) {
-      window.history.pushState({ modal: true }, '');
-    }
   }, [showActiveDeviceDropdown, showMobileMenu, confirmDialog, saveDialog, showPCPanel]);
 
   // Save project to JSON file
@@ -1012,42 +990,60 @@ export default function Home() {
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between">
             {/* Logo & Title */}
-            <a href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity cursor-pointer">
-              <div className={`p-2 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 shadow-lg shadow-cyan-500/20`}>
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <a href="/" className="flex items-center gap-4 hover:opacity-90 transition-all cursor-pointer group">
+              <div className={`p-2.5 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 shadow-xl shadow-cyan-500/30 group-hover:scale-110 group-active:scale-95 transition-transform duration-300`}>
+                <svg className="w-6 h-6 text-white drop-shadow-md" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" />
                 </svg>
               </div>
-              <div>
-                <h1 className="text-lg font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
+              <div className="flex flex-col">
+                <h1 className="text-xl font-extrabold tracking-tight bg-gradient-to-r from-cyan-400 via-blue-400 to-indigo-500 bg-clip-text text-transparent drop-shadow-sm">
                   {t.title}
                 </h1>
-                <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t.subtitle}</p>
+                <p className={`text-[10px] uppercase tracking-widest font-bold ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{t.subtitle}</p>
               </div>
             </a>
 
             {/* Total Score - Desktop */}
-            <div className="hidden sm:flex items-center gap-3">
-              <div className={`px-4 py-2 rounded-xl ${isDark ? 'bg-slate-800' : 'bg-slate-100'} border ${isDark ? 'border-slate-700' : 'border-slate-200'} relative`}>
-                <div className="text-xs text-slate-400 mb-1">{language === 'tr' ? 'Toplam Puan' : 'Total Score'}</div>
-                <div className="flex items-center gap-2">
-                  <Progress value={(totalScore / maxScore) * 100} className="h-2 w-24" />
-                  <span className={`font-bold ${totalScore >= maxScore * 0.7 ? 'text-green-400' : totalScore >= maxScore * 0.4 ? 'text-yellow-400' : 'text-red-400'}`}>
-                    {totalScore}/{maxScore}
+            <div className="hidden lg:flex items-center gap-4">
+              <div className={`px-5 py-2.5 rounded-2xl ${isDark ? 'bg-slate-800/80' : 'bg-white/80'} backdrop-blur-md border ${isDark ? 'border-slate-700/50' : 'border-slate-200/50'} shadow-lg shadow-black/5 relative group transition-all`}>
+                <div className="flex items-center justify-between mb-1.5 px-0.5">
+                  <span className={`text-[10px] font-bold uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                    {language === 'tr' ? 'LAB İLERLEMESİ' : 'LAB PROGRESS'}
+                  </span>
+                  <span className={`text-xs font-bold ${totalScore >= maxScore * 0.7 ? 'text-emerald-400' : totalScore >= maxScore * 0.4 ? 'text-amber-400' : 'text-rose-400'}`}>
+                    {Math.round((totalScore / maxScore) * 100)}%
+                  </span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className={`h-2.5 w-32 rounded-full overflow-hidden ${isDark ? 'bg-slate-700' : 'bg-slate-200'} shadow-inner`}>
+                    <motion.div 
+                      initial={{ width: 0 }}
+                      animate={{ width: `${(totalScore / maxScore) * 100}%` }}
+                      transition={{ type: 'spring', stiffness: 50, damping: 15 }}
+                      className={`h-full bg-gradient-to-r ${totalScore >= maxScore * 0.7 ? 'from-emerald-500 to-teal-400' : totalScore >= maxScore * 0.4 ? 'from-amber-500 to-orange-400' : 'from-rose-500 to-pink-500'}`} 
+                    />
+                  </div>
+                  <span className={`text-sm font-black tabular-nums ${isDark ? 'text-white' : 'text-slate-800'}`}>
+                    {totalScore}<span className={`font-medium opacity-40 ml-0.5`}>/{maxScore}</span>
                   </span>
                 </div>
                 {/* Score animation overlay */}
                 {scoreAnimation.showAnimation && (
-                  <div className={`absolute inset-0 flex items-center justify-center rounded-xl pointer-events-none ${
-                    scoreAnimation.isIncreasing 
-                      ? 'bg-green-500/20 animate-pulse' 
-                      : 'bg-red-500/20 animate-pulse'
-                  }`}>
-                    <span className={`text-lg font-bold ${scoreAnimation.isIncreasing ? 'text-green-400' : 'text-red-400'}`}>
-                      {scoreAnimation.isIncreasing ? '+' : '-'}
+                  <motion.div 
+                    initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    className={`absolute inset-0 flex items-center justify-center rounded-2xl pointer-events-none z-10 ${
+                      scoreAnimation.isIncreasing 
+                        ? 'bg-emerald-500/10' 
+                        : 'bg-rose-500/10'
+                    }`}
+                  >
+                    <span className={`text-2xl font-black drop-shadow-sm ${scoreAnimation.isIncreasing ? 'text-emerald-400' : 'text-rose-400'}`}>
+                      {scoreAnimation.isIncreasing ? '↑' : '↓'}
                       {scoreAnimation.change}
                     </span>
-                  </div>
+                  </motion.div>
                 )}
               </div>
             </div>
@@ -1267,37 +1263,54 @@ export default function Home() {
                 )}
               </div>
             )})()}
-            {tabs.map((tab) => {
-              const score = calculateTaskScore(tab.tasks, state, taskContext);
-              const tabMaxScore = tab.tasks.reduce((acc, task) => acc + task.weight, 0);
-              const isActive = activeTab === tab.id;
+            <div className={`p-1 flex gap-1 items-center rounded-2xl ${isDark ? 'bg-slate-900/40' : 'bg-slate-200/40'} border ${isDark ? 'border-slate-700/50' : 'border-slate-200/30'} backdrop-blur-md`}>
+              {tabs.map((tab) => {
+                const score = calculateTaskScore(tab.tasks, state, taskContext);
+                const tabMaxScore = tab.tasks.reduce((acc, task) => acc + task.weight, 0);
+                const isActive = activeTab === tab.id;
 
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 whitespace-nowrap ${
-                    isActive
-                      ? `bg-gradient-to-r ${tab.color} text-white shadow-lg scale-105`
-                      : isDark
-                        ? 'bg-slate-800/50 text-slate-400 hover:bg-slate-700/50 hover:text-white hover:scale-102'
-                        : 'bg-white/50 text-slate-600 hover:bg-white hover:text-slate-900 hover:scale-102'
-                  }`}
-                >
-                  <span className={`transition-transform duration-300 ${isActive ? 'scale-110' : ''}`}>
-                    {tab.icon}
-                  </span>
-                  <span>{tab.label}</span>
-                  {tab.tasks.length > 0 && (
-                    <span className={`text-xs px-1.5 py-0.5 rounded-full transition-all duration-300 ${
-                      isActive ? 'bg-white/20 scale-105' : isDark ? 'bg-slate-700' : 'bg-slate-200'
-                    }`}>
-                      {score}/{tabMaxScore}
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`relative flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-500 whitespace-nowrap ${
+                      isActive
+                        ? 'text-white'
+                        : isDark
+                          ? 'text-slate-400 hover:text-white'
+                          : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    {isActive && (
+                      <motion.div
+                        layoutId="activeTab"
+                        className={`absolute inset-0 rounded-xl bg-gradient-to-r ${tab.color} shadow-lg shadow-black/10`}
+                        initial={false}
+                        transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
+                      />
+                    )}
+                    <span className={`relative z-10 transition-transform duration-500 ${isActive ? 'scale-110 drop-shadow-sm' : ''}`}>
+                      {tab.icon}
                     </span>
-                  )}
-                </button>
-              );
-            })}
+                    <span className="relative z-10">{tab.label}</span>
+                    {tab.tasks.length > 0 && (
+                      <span className={`relative z-10 text-[10px] font-bold px-1.5 py-0.5 rounded-full transition-all duration-500 ${
+                        isActive ? 'bg-white/20' : isDark ? 'bg-slate-700/50' : 'bg-slate-300/50'
+                      }`}>
+                        {score}/{tabMaxScore}
+                      </span>
+                    )}
+                    {isActive && (
+                      <motion.div 
+                        layoutId="activeTabIndicator"
+                        className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-4 h-1 bg-white rounded-full opacity-50"
+                        transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
+                      />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
 

@@ -2523,91 +2523,116 @@ export function NetworkTopology({
 
       {/* Device Configuration Modal (Name & IP) */}
       {configuringDevice && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center backdrop-blur-sm" onClick={cancelDeviceConfig}>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" onClick={cancelDeviceConfig}>
+          <div className="absolute inset-0 bg-slate-950/40 backdrop-blur-md" />
           <div
-            className={`${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'} border rounded-2xl p-6 m-4 w-96 shadow-2xl`}
+            className={`relative w-full max-w-sm overflow-hidden rounded-[2rem] border transition-all duration-500 hover:shadow-cyan-500/10 ${
+              isDark ? 'bg-slate-900/80 border-slate-800/50 shadow-2xl' : 'bg-white/90 border-slate-200/50 shadow-2xl'
+            }`}
             onClick={e => e.stopPropagation()}
           >
-            <div className="flex items-center gap-3 mb-4">
-              <div className={`p-2 rounded-lg ${isDark ? 'bg-cyan-500/10 text-cyan-400' : 'bg-cyan-50 text-cyan-600'}`}>
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 0 0 -2.573-1.066-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 0 0 -1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 0 0 1.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 1 1 -6 0 3 3 0 016 0z" />
-                </svg>
+            {/* Modal Header */}
+            <div className={`px-6 pt-6 pb-4 border-b ${isDark ? 'border-slate-800/50 bg-slate-800/30' : 'border-slate-100 bg-slate-50/50'}`}>
+              <div className="flex items-center gap-4">
+                <div className={`p-3 rounded-2xl shadow-inner ${isDark ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20' : 'bg-cyan-50 text-cyan-600 border border-cyan-100'}`}>
+                  <svg className="w-6 h-6 drop-shadow-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 0 0 -2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 0 0 -1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 0 0 1.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 1 1 -6 0 3 3 0 016 0z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className={`text-xl font-black tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                    {language === 'tr' ? 'Yapılandır' : 'Configure'}
+                  </h3>
+                  <div className={`text-[10px] font-bold uppercase tracking-widest opacity-60 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                    {devices.find(d => d.id === configuringDevice)?.name}
+                  </div>
+                </div>
               </div>
-              <h3 className={`text-lg font-bold ${isDark ? 'text-white' : 'text-slate-800'}`}>
-                {language === 'tr' ? 'Cihaz Yapılandırması' : 'Device Configuration'}
-              </h3>
             </div>
 
-            <div className="space-y-4">
+            <div className="p-6 space-y-6">
               {/* Hostname */}
-              <div>
-                <label className={`text-xs font-semibold uppercase tracking-wider mb-1.5 block ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                  {language === 'tr' ? 'Cihaz Adı (Hostname)' : 'Device Name (Hostname)'}
+              <div className="space-y-2">
+                <label className={`text-[10px] font-black uppercase tracking-widest ml-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                  {language === 'tr' ? 'Cihaz Adı' : 'Device Name'}
                 </label>
-                <input
-                  ref={configInputRef}
-                  type="text"
-                  value={tempNameValue}
-                  onChange={(e) => setTempNameValue(e.target.value)}
-                  className={`w-full px-4 py-2.5 rounded-xl border transition-all ${isDark
-                    ? 'bg-slate-900/50 border-slate-700 text-white placeholder-slate-600 focus:border-cyan-500'
-                    : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400 focus:border-cyan-500'
+                <div className="relative group">
+                  <input
+                    ref={configInputRef}
+                    type="text"
+                    value={tempNameValue}
+                    onChange={(e) => setTempNameValue(e.target.value)}
+                    className={`w-full px-4 py-3 rounded-2xl border transition-all duration-300 font-bold ${
+                      isDark 
+                        ? 'bg-slate-950/50 border-slate-800 text-white placeholder-slate-700 focus:border-cyan-500/50 focus:bg-slate-950 focus:ring-4 focus:ring-cyan-500/10' 
+                        : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400 focus:border-cyan-500/50 focus:bg-white focus:ring-4 focus:ring-cyan-500/10'
                     } outline-none`}
-                  placeholder={language === 'tr' ? 'Cihaz adı girin' : 'Enter device name'}
-                />
+                    placeholder={language === 'tr' ? 'Örn: Router-X' : 'e.g. Router-X'}
+                  />
+                </div>
               </div>
 
-              <div className={`h-px ${isDark ? 'bg-slate-700' : 'bg-slate-200'} my-2`} />
+              {/* IP Configuration Section */}
+              <div className={`p-4 rounded-2xl border ${isDark ? 'bg-slate-800/30 border-slate-800/50' : 'bg-slate-50 border-slate-200/50'}`}>
+                <div className={`text-[10px] font-black uppercase tracking-widest mb-4 opacity-70 ${isDark ? 'text-cyan-400' : 'text-cyan-600'}`}>
+                  {language === 'tr' ? 'IP YAPILANDIRMASI' : 'IP CONFIGURATION'}
+                </div>
+                
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className={`text-[10px] font-bold uppercase tracking-widest ml-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                      {language === 'tr' ? 'IP Adresi' : 'IP Address'}
+                    </label>
+                    <input
+                      type="text"
+                      value={ipValue}
+                      onChange={(e) => setIpValue(e.target.value)}
+                      className={`w-full px-4 py-2.5 rounded-xl border font-mono font-bold transition-all duration-300 ${
+                        isDark 
+                          ? 'bg-slate-900/50 border-slate-700 text-white placeholder-slate-700 focus:border-cyan-500/50' 
+                          : 'bg-white border-slate-200 text-slate-900 placeholder-slate-300 focus:border-cyan-500/50'
+                      } outline-none capitalize`}
+                      placeholder="192.168.1.1"
+                    />
+                  </div>
 
-              {/* IP Address */}
-              <div>
-                <label className={`text-xs font-semibold uppercase tracking-wider mb-1.5 block ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                  {language === 'tr' ? 'IP Adresi' : 'IP Address'}
-                </label>
-                <input
-                  type="text"
-                  value={ipValue}
-                  onChange={(e) => setIpValue(e.target.value)}
-                  className={`w-full px-4 py-2.5 rounded-xl border font-mono transition-all ${isDark
-                    ? 'bg-slate-900/50 border-slate-700 text-white placeholder-slate-600 focus:border-cyan-500'
-                    : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400 focus:border-cyan-500'
-                    } outline-none`}
-                  placeholder="192.168.1.x"
-                />
-              </div>
-
-              {/* Subnet Mask */}
-              <div>
-                <label className={`text-xs font-semibold uppercase tracking-wider mb-1.5 block ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                  {language === 'tr' ? 'Alt Ağ Maskesi' : 'Subnet Mask'}
-                </label>
-                <input
-                  type="text"
-                  value={subnetValue}
-                  onChange={(e) => setSubnetValue(e.target.value)}
-                  className={`w-full px-4 py-2.5 rounded-xl border font-mono transition-all ${isDark
-                    ? 'bg-slate-900/50 border-slate-700 text-white placeholder-slate-600 focus:border-cyan-500'
-                    : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400 focus:border-cyan-500'
-                    } outline-none`}
-                />
+                  <div className="space-y-2">
+                    <label className={`text-[10px] font-bold uppercase tracking-widest ml-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                      {language === 'tr' ? 'Alt Ağ Maskesi' : 'Subnet Mask'}
+                    </label>
+                    <input
+                      type="text"
+                      value={subnetValue}
+                      onChange={(e) => setSubnetValue(e.target.value)}
+                      className={`w-full px-4 py-2.5 rounded-xl border font-mono font-bold transition-all duration-300 ${
+                        isDark 
+                          ? 'bg-slate-900/50 border-slate-700 text-white placeholder-slate-700 focus:border-cyan-500/50' 
+                          : 'bg-white border-slate-200 text-slate-900 placeholder-slate-300 focus:border-cyan-500/50'
+                      } outline-none`}
+                    />
+                  </div>
+                </div>
               </div>
             </div>
 
-            <div className="flex gap-3 mt-8">
+            {/* Modal Actions */}
+            <div className="p-6 flex gap-4">
               <button
                 onClick={cancelDeviceConfig}
-                className={`flex-1 py-3 rounded-xl text-sm font-semibold transition-all ${isDark ? 'bg-slate-700 text-slate-300 hover:bg-slate-600' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                  }`}
+                className={`flex-1 py-3.5 rounded-2xl text-xs font-black uppercase tracking-widest transition-all duration-300 border ${
+                  isDark 
+                    ? 'bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-700/50 hover:text-slate-200' 
+                    : 'bg-slate-100 border-slate-200 text-slate-500 hover:bg-slate-200 hover:text-slate-700'
+                }`}
               >
-                {language === 'tr' ? 'İptal' : 'Cancel'}
+                {language === 'tr' ? 'İPTAL' : 'CANCEL'}
               </button>
               <button
                 onClick={confirmDeviceConfig}
-                className="flex-1 py-3 rounded-xl text-sm font-semibold bg-cyan-600 text-white hover:bg-cyan-700 shadow-lg shadow-cyan-900/20 transition-all"
+                className="flex-1 py-3.5 rounded-2xl text-xs font-black uppercase tracking-widest bg-cyan-500 text-white hover:bg-cyan-400 shadow-xl shadow-cyan-500/20 active:scale-95 transition-all duration-300"
               >
-                {language === 'tr' ? 'Kaydet' : 'Save'}
+                {language === 'tr' ? 'KAYDET' : 'SAVE'}
               </button>
             </div>
           </div>
@@ -2819,31 +2844,30 @@ export function NetworkTopology({
 
       {/* Port Selector Modal */}
       {showPortSelector && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className={`w-full max-w-lg mx-4 rounded-2xl ${isDark ? 'bg-slate-800' : 'bg-white'} shadow-2xl overflow-hidden max-h-[80vh] flex flex-col`}>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-950/40 backdrop-blur-md" onClick={() => {
+            setShowPortSelector(false);
+            setPortSelectorStep('source');
+            setSelectedSourcePort(null);
+          }} />
+          <div className={`relative w-full max-w-2xl rounded-[2.5rem] ${isDark ? 'bg-slate-900/90 border-slate-800' : 'bg-white/90 border-slate-200'} border shadow-2xl overflow-hidden flex flex-col transition-all duration-500`}>
             {/* Header */}
-            <div className={`px-4 py-3 border-b ${isDark ? 'border-slate-700' : 'border-slate-200'} flex-shrink-0`}>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  {portSelectorStep === 'target' && (
-                    <button
-                      onClick={() => {
-                        setPortSelectorStep('source');
-                        setSelectedSourcePort(null);
-                      }}
-                      className={`p-1.5 rounded-lg ${isDark ? 'hover:bg-slate-700' : 'hover:bg-slate-100'}`}
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                      </svg>
-                    </button>
-                  )}
-                  <h3 className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-800'}`}>
-                    {portSelectorStep === 'source'
-                      ? (language === 'tr' ? 'Başlangıç Portu Seçin' : 'Select Source Port')
-                      : (language === 'tr' ? 'Hedef Portu Seçin' : 'Select Target Port')
-                    }
-                  </h3>
+            <div className={`px-8 py-6 border-b ${isDark ? 'border-slate-800/50 bg-slate-800/30' : 'border-slate-100 bg-slate-50/50'}`}>
+              <div className="flex items-center justify-between gap-6">
+                <div className="flex items-center gap-4">
+                  <div className={`p-3 rounded-2xl shadow-inner ${isDark ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20' : 'bg-amber-50 text-amber-600 border border-amber-100'}`}>
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className={`text-xl font-black tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                      {portSelectorStep === 'source'
+                        ? (language === 'tr' ? 'Kaynak Portu Seç' : 'Source Port Selection')
+                        : (language === 'tr' ? 'Hedef Portu Seç' : 'Target Port Selection')
+                      }
+                    </h3>
+                  </div>
                 </div>
                 <button
                   onClick={() => {
@@ -2851,41 +2875,55 @@ export function NetworkTopology({
                     setPortSelectorStep('source');
                     setSelectedSourcePort(null);
                   }}
-                  className={`p-1.5 rounded-lg ${isDark ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`}
+                  className={`p-2 rounded-xl transition-all duration-300 ${isDark ? 'hover:bg-slate-700/50 text-slate-500 hover:text-slate-200' : 'hover:bg-slate-100 text-slate-400 hover:text-slate-700'}`}
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
               </div>
 
+              {/* Step Indicator */}
+              <div className="mt-8 flex items-center gap-4">
+                <div className={`flex-1 h-1.5 rounded-full transition-all duration-500 ${portSelectorStep === 'source' ? 'bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.4)]' : 'bg-emerald-500/40'}`} />
+                <div className={`flex-1 h-1.5 rounded-full transition-all duration-500 ${portSelectorStep === 'target' ? 'bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.4)]' : (isDark ? 'bg-slate-800' : 'bg-slate-200')}`} />
+              </div>
+
               {/* Cable Type Selector */}
-              <div className="mt-3">
-                <div className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'} mb-2`}>
-                  {language === 'tr' ? 'Kablo Tipi' : 'Cable Type'}
+              <div className="mt-6 flex flex-wrap items-center gap-6">
+                <div className="flex items-center gap-3">
+                  <span className={`text-[10px] font-black uppercase tracking-widest ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                    {language === 'tr' ? 'KABLO TİPİ:' : 'CABLE TYPE:'}
+                  </span>
+                  <div className="flex bg-slate-100 dark:bg-slate-800/50 p-1 rounded-xl border border-slate-200 dark:border-slate-800">
+                    {(['straight', 'crossover', 'console'] as CableType[]).map((type) => (
+                      <button
+                        key={type}
+                        onClick={() => onCableChange({ ...cableInfo, cableType: type })}
+                        className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${cableInfo.cableType === type
+                          ? `${CABLE_COLORS[type].bg} text-white shadow-lg shadow-black/10`
+                          : isDark ? 'text-slate-500 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600'
+                          }`}
+                      >
+                        {type === 'straight' ? 'Direct' : type === 'crossover' ? 'X-Over' : 'Cons'}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                <div className="flex gap-2">
-                  {(['straight', 'crossover', 'console'] as CableType[]).map((type) => (
-                    <button
-                      key={type}
-                      onClick={() => onCableChange({ ...cableInfo, cableType: type })}
-                      className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${cableInfo.cableType === type
-                        ? `${CABLE_COLORS[type].bg} text-white`
-                        : isDark
-                          ? 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                        }`}
-                    >
-                      <div className={`w-2.5 h-2.5 rounded ${CABLE_COLORS[type].bg}`} />
-                      {getCableTypeName(type, language)}
-                    </button>
-                  ))}
-                </div>
+
+                {portSelectorStep === 'target' && selectedSourcePort && (
+                  <div className="flex items-center gap-3 ml-auto px-4 py-2 rounded-xl bg-cyan-500/5 border border-cyan-500/20 text-cyan-500">
+                    <div className="w-1.5 h-1.5 rounded-full bg-cyan-500 animate-pulse" />
+                    <span className="text-[10px] font-black tracking-widest uppercase">
+                      LINK FROM: {devices.find(d => d.id === selectedSourcePort.deviceId)?.name} ({selectedSourcePort.portId})
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* Device & Port List */}
-            <div className="overflow-y-auto p-4 space-y-3 flex-1">
+            {/* Device & Port Panel */}
+            <div className="flex-1 overflow-y-auto p-8 custom-scrollbar space-y-8 max-h-[50vh]">
               {devices.map((device) => {
                 const availablePorts = device.ports.filter(p => p.status === 'disconnected');
                 if (availablePorts.length === 0) return null;
@@ -2894,116 +2932,151 @@ export function NetworkTopology({
                 if (portSelectorStep === 'target' && selectedSourcePort?.deviceId === device.id) return null;
 
                 return (
-                  <div
-                    key={device.id}
-                    className={`rounded-xl border ${isDark ? 'border-slate-700 bg-slate-700/30' : 'border-slate-200 bg-slate-50'}`}
-                  >
-                    {/* Device Header */}
-                    <div className={`px-3 py-2 flex items-center gap-2 border-b ${isDark ? 'border-slate-600' : 'border-slate-200'}`}>
-                      <div className={
-                        device.type === 'pc' ? 'text-blue-400' : device.type === 'switch' ? 'text-emerald-400' : 'text-purple-400'
-                      }>
-                        {DEVICE_ICONS[device.type]}
+                  <div key={device.id} className="space-y-4">
+                    <div className="flex items-center justify-between group">
+                      <div className="flex items-center gap-3">
+                        <div className={`p-2 rounded-xl border transition-colors ${
+                          device.type === 'pc' ? 'bg-blue-500/10 border-blue-500/20 text-blue-500' : 
+                          device.type === 'switch' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' : 
+                          'bg-purple-500/10 border-purple-500/20 text-purple-500'
+                        }`}>
+                          {DEVICE_ICONS[device.type]}
+                        </div>
+                        <span className={`text-base font-black tracking-tight ${isDark ? 'text-white' : 'text-slate-900'} group-hover:text-cyan-500 transition-colors`}>
+                          {device.name}
+                        </span>
                       </div>
-                      <span className={`text-sm font-medium ${isDark ? 'text-white' : 'text-slate-800'}`}>
-                        {device.name}
-                      </span>
-                      <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                        ({availablePorts.length} {language === 'tr' ? 'müsait' : 'available'})
-                      </span>
+                      <div className={`text-[10px] font-bold uppercase tracking-widest ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                        {availablePorts.length} PORTS FREE
+                      </div>
                     </div>
 
-                    {/* Port Grid */}
-                    <div className="p-3 flex flex-wrap gap-2">
-                      {availablePorts.map((port) => (
-                        <button
-                          key={port.id}
-                          onClick={() => {
-                            if (portSelectorStep === 'source') {
-                              setSelectedSourcePort({ deviceId: device.id, portId: port.id });
-                              setPortSelectorStep('target');
-                            } else {
-                              // Complete connection
-                              const newConnection: CanvasConnection = {
-                                id: `conn-${Date.now()}`,
-                                sourceDeviceId: selectedSourcePort!.deviceId,
-                                sourcePort: selectedSourcePort!.portId,
-                                targetDeviceId: device.id,
-                                targetPort: port.id,
-                                cableType: cableInfo.cableType,
-                                active: true,
-                              };
+                    {/* Pro-Style Port Grid */}
+                    <div className={`grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-3 p-4 rounded-3xl border ${isDark ? 'bg-slate-950/40 border-slate-800/50' : 'bg-slate-50 border-slate-200'}`}>
+                      {device.ports.map((port) => {
+                        const isConnected = port.status === 'connected';
+                        return (
+                          <button
+                            key={port.id}
+                            disabled={isConnected}
+                            onClick={() => {
+                              if (portSelectorStep === 'source') {
+                                setSelectedSourcePort({ deviceId: device.id, portId: port.id });
+                                setPortSelectorStep('target');
+                              } else {
+                                // Complete connection
+                                const newConnection: CanvasConnection = {
+                                  id: `conn-${Date.now()}`,
+                                  sourceDeviceId: selectedSourcePort!.deviceId,
+                                  sourcePort: selectedSourcePort!.portId,
+                                  targetDeviceId: device.id,
+                                  targetPort: port.id,
+                                  cableType: cableInfo.cableType,
+                                  active: true,
+                                };
 
-                              setConnections((prev) => [...prev, newConnection]);
+                                setConnections((prev) => [...prev, newConnection]);
 
-                              // Update port status
-                              setDevices((prev) =>
-                                prev.map((d) => {
-                                  if (d.id === selectedSourcePort!.deviceId) {
-                                    return {
-                                      ...d,
-                                      ports: d.ports.map((p) =>
-                                        p.id === selectedSourcePort!.portId ? { ...p, status: 'connected' as const } : p
-                                      ),
-                                    };
-                                  }
-                                  if (d.id === device.id) {
-                                    return {
-                                      ...d,
-                                      ports: d.ports.map((p) =>
-                                        p.id === port.id ? { ...p, status: 'connected' as const } : p
-                                      ),
-                                    };
-                                  }
-                                  return d;
-                                })
-                              );
+                                // Update port status
+                                setDevices((prev) =>
+                                  prev.map((d) => {
+                                    if (d.id === selectedSourcePort!.deviceId) {
+                                      return {
+                                        ...d,
+                                        ports: d.ports.map((p) =>
+                                          p.id === selectedSourcePort!.portId ? { ...p, status: 'connected' as const } : p
+                                        ),
+                                      };
+                                    }
+                                    if (d.id === device.id) {
+                                      return {
+                                        ...d,
+                                        ports: d.ports.map((p) =>
+                                          p.id === port.id ? { ...p, status: 'connected' as const } : p
+                                        ),
+                                      };
+                                    }
+                                    return d;
+                                  })
+                                );
 
-                              // Update cable info
-                              const sourceDevice = devices.find((d) => d.id === selectedSourcePort!.deviceId);
-                              const targetDevice = devices.find((d) => d.id === device.id);
-                              if (sourceDevice && targetDevice) {
-                                onCableChange({
-                                  ...cableInfo,
-                                  connected: true,
-                                  sourceDevice: sourceDevice.type === 'router' ? 'switch' : sourceDevice.type,
-                                  targetDevice: targetDevice.type === 'router' ? 'switch' : targetDevice.type,
-                                });
+                                // Update cable info
+                                const sourceDevice = devices.find((d) => d.id === selectedSourcePort!.deviceId);
+                                const targetDevice = devices.find((d) => d.id === device.id);
+                                if (sourceDevice && targetDevice) {
+                                  onCableChange({
+                                    ...cableInfo,
+                                    connected: true,
+                                    sourceDevice: sourceDevice.type === 'router' ? 'switch' : sourceDevice.type,
+                                    targetDevice: targetDevice.type === 'router' ? 'switch' : targetDevice.type,
+                                  });
+                                }
+
+                                setShowPortSelector(false);
+                                setPortSelectorStep('source');
+                                setSelectedSourcePort(null);
                               }
-
-                              setShowPortSelector(false);
-                              setPortSelectorStep('source');
-                              setSelectedSourcePort(null);
-                            }
-                          }}
-                          className={`px-3 py-2 rounded-lg text-sm font-mono transition-all ${isDark
-                            ? 'bg-slate-600 hover:bg-cyan-600 text-slate-200 hover:text-white'
-                            : 'bg-white hover:bg-cyan-500 text-slate-700 hover:text-white border border-slate-200'
+                            }}
+                            className={`group relative flex flex-col items-center gap-1.5 p-3 rounded-xl transition-all duration-300 ${
+                              isConnected 
+                                ? (isDark ? 'bg-slate-900/40 border border-slate-800 cursor-not-allowed grayscale' : 'bg-slate-200 cursor-not-allowed grayscale')
+                                : (isDark 
+                                    ? 'bg-slate-800 border border-slate-700 hover:border-cyan-500/50 hover:bg-slate-700 hover:scale-110' 
+                                    : 'bg-white border border-slate-200 hover:border-cyan-500 hover:bg-white hover:scale-110 shadow-sm')
                             }`}
-                        >
-                          {port.label}
-                        </button>
-                      ))}
+                          >
+                            <div className={`w-3.5 h-3.5 rounded-[2px] border-2 transition-colors ${
+                              isConnected 
+                                ? 'bg-slate-700 border-slate-600' 
+                                : isDark ? 'bg-slate-950 border-slate-700 group-hover:border-cyan-500' : 'bg-slate-100 border-slate-300 group-hover:border-cyan-400'
+                            }`} />
+                            <span className={`text-[9px] font-bold font-mono transition-colors ${
+                              isConnected 
+                                ? 'text-slate-600' 
+                                : isDark ? 'text-slate-500 group-hover:text-white' : 'text-slate-500 group-hover:text-cyan-600'
+                            }`}>
+                              {port.label.replace('FastEthernet', 'Fa').replace('GigabitEthernet', 'Gi')}
+                            </span>
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
                 );
               })}
 
               {devices.every(d => d.ports.filter(p => p.status === 'disconnected').length === 0) && (
-                <div className={`text-center py-8 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                  {language === 'tr' ? 'Müsait port bulunamadı' : 'No available ports found'}
+                <div className="flex flex-col items-center py-12 space-y-4">
+                  <div className={`p-6 rounded-full ${isDark ? 'bg-slate-800/50' : 'bg-slate-100'}`}>
+                    <svg className={`w-12 h-12 ${isDark ? 'text-slate-700' : 'text-slate-300'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                  </div>
+                  <div className={`text-center max-w-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                    <h4 className="font-bold text-slate-400">{language === 'tr' ? 'Müsait Port Yok' : 'No Free Ports'}</h4>
+                    <p className="text-xs mt-1">{language === 'tr' ? 'Lütfen önce cihazların bağlantılarını kesin.' : 'Please disconnect some cables first.'}</p>
+                  </div>
                 </div>
               )}
             </div>
 
-            {/* Footer Hint */}
-            <div className={`px-4 py-3 border-t ${isDark ? 'border-slate-700' : 'border-slate-200'} text-center flex-shrink-0`}>
-              <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                {portSelectorStep === 'source'
-                  ? (language === 'tr' ? 'Bağlantıyı başlatacak portu seçin' : 'Select the port to start connection from')
-                  : (language === 'tr' ? 'Bağlantıyı tamamlayacak portu seçin' : 'Select the port to complete connection')
-                }
-              </p>
+            {/* Modal Navigation */}
+            <div className={`px-8 py-6 border-t ${isDark ? 'border-slate-800/50 bg-slate-800/30' : 'border-slate-100 bg-slate-50/50'} flex justify-between items-center`}>
+              <div className={`text-[10px] font-bold uppercase tracking-widest ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
+                {portSelectorStep === 'source' ? 'STEP 1: ROOT' : 'STEP 2: DESTINATION'}
+              </div>
+              <button
+                onClick={() => {
+                  setShowPortSelector(false);
+                  setPortSelectorStep('source');
+                  setSelectedSourcePort(null);
+                }}
+                className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${
+                  isDark ? 'bg-slate-800 text-slate-400 hover:text-slate-200' : 'bg-slate-100 text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                {language === 'tr' ? 'İPTAL' : 'CANCEL'}
+              </button>
             </div>
           </div>
         </div>

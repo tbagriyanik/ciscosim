@@ -826,52 +826,53 @@ export function PCPanel({ deviceId, cableInfo, isVisible, onClose, topologyDevic
   const recentHistory = getRecentHistory();
   
   return (
-    <div className={`rounded-xl border-2 overflow-hidden shadow-2xl transition-all duration-300 flex flex-col ${
-      isDark ? 'bg-gray-900 border-gray-700' : 'bg-gray-900 border-gray-700'
+    <div className={`flex flex-col h-full rounded-[2.5rem] border transition-all duration-500 overflow-hidden shadow-2xl ${
+      isDark ? 'bg-slate-900/80 border-slate-800/50 shadow-blue-500/10' : 'bg-white/90 border-slate-200/50 shadow-blue-500/5'
     }`}>
       {/* Header */}
-      <div className={`flex items-center justify-between px-4 py-3 border-b flex-shrink-0 ${
-        isDark ? 'bg-gray-800 border-gray-700' : 'bg-gray-800 border-gray-700'
+      <div className={`px-8 py-5 border-b flex items-center justify-between flex-shrink-0 ${
+        isDark ? 'bg-slate-800/40 border-slate-800/50' : 'bg-slate-50 border-slate-200/50'
       }`}>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="flex items-center gap-4">
+          <div className={`p-3 rounded-2xl shadow-inner ${isDark ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' : 'bg-blue-50 text-blue-600 border border-blue-100'}`}>
+            <svg className="w-5 h-5 drop-shadow-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
             </svg>
-            <span className="text-sm font-medium text-gray-200">Komut İstemi</span>
           </div>
-          <div className={`text-xs font-mono px-2 py-0.5 rounded ${
-            isDark ? 'bg-gray-700 text-gray-400' : 'bg-gray-700 text-gray-400'
-          }`}>
-            {deviceId.toUpperCase()} - {pcIP}
+          <div>
+            <h3 className={`text-lg font-black tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
+              {language === 'tr' ? 'Komut İstemi' : 'Command Prompt'}
+            </h3>
+            <div className={`text-[10px] font-bold uppercase tracking-widest opacity-60 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+              {deviceId.toUpperCase()} • {pcIP}
+            </div>
           </div>
         </div>
         
         <div className="flex items-center gap-3">
           {/* Cable Status Badge */}
-          <div className={`flex items-center gap-1.5 px-2 py-1 rounded text-xs ${
+          <div className={`hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest border transition-all duration-500 shadow-sm ${
             cableInfo.connected 
               ? (isCompatible 
-                ? 'bg-green-900/30 text-green-400 border border-green-700/50' 
-                : 'bg-red-900/30 text-red-400 border border-red-700/50')
-              : 'bg-gray-700 text-gray-400 border border-gray-600'
+                ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' 
+                : 'bg-rose-500/10 text-rose-500 border-rose-500/20')
+              : 'bg-slate-500/10 text-slate-500 border-slate-500/20'
           }`}>
-            <div className={`w-2 h-2 rounded-full ${
+            <div className={`w-1.5 h-1.5 rounded-full ${
               cableInfo.connected 
-                ? (isCompatible ? 'bg-green-500' : 'bg-red-500')
-                : 'bg-gray-500'
+                ? (isCompatible ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]')
+                : 'bg-slate-500'
             }`} />
             {cableInfo.connected 
               ? (isCompatible 
-                ? (language === 'tr' ? 'Çevrimiçi' : 'Online') 
-                : (language === 'tr' ? 'Hatalı' : 'Error'))
-              : (language === 'tr' ? 'Çevrimdışı' : 'Offline')}
+                ? (language === 'tr' ? 'ONLINE' : 'CONNECTED') 
+                : (language === 'tr' ? 'ERR: CABLE' : 'WRONG CABLE'))
+              : (language === 'tr' ? 'OFFLINE' : 'DISCONNECTED')}
           </div>
           
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-700 rounded-lg text-gray-400 hover:text-white transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
-            title={language === 'tr' ? 'Kapat' : 'Close'}
+            className={`p-2 rounded-xl transition-all duration-300 ${isDark ? 'hover:bg-slate-700/50 text-slate-500 hover:text-slate-200' : 'hover:bg-slate-100 text-slate-400 hover:text-slate-700'}`}
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -880,87 +881,99 @@ export function PCPanel({ deviceId, cableInfo, isVisible, onClose, topologyDevic
         </div>
       </div>
       
-      {/* Terminal Output */}
+      {/* PC Output History */}
       <div 
         ref={outputRef}
-        className="h-48 sm:h-56 overflow-y-auto p-2 font-mono text-xs text-gray-300 bg-black"
+        className={`flex-1 overflow-y-auto p-8 font-mono text-sm scroll-smooth custom-scrollbar ${
+          isDark ? 'bg-slate-950/40' : 'bg-slate-50/50'
+        }`}
         onClick={() => inputRef.current?.focus()}
       >
-        {output.map((line) => (
-          <div 
-            key={line.id} 
-            className={`whitespace-pre-wrap leading-relaxed ${
-              line.type === 'command' ? 'text-gray-100' : 
-              line.type === 'error' ? 'text-red-400' : 
-              line.type === 'success' ? 'text-green-400' :
-              line.type === 'prompt' ? 'text-gray-100' :
-              'text-gray-300'
-            }`}
-          >
-            {/* Show prompt and content on same line for commands and prompts */}
-            {line.type === 'command' && line.prompt && (
-              <span className="text-gray-400">{line.prompt}</span>
-            )}
-            {line.type === 'prompt' && line.prompt && (
-              <span className="text-gray-400">{line.prompt}</span>
-            )}
-            {line.content}
-          </div>
-        ))}
-      </div>
-      
-      {/* Input Line */}
-      <div className={`flex items-center px-3 py-2 border-t flex-shrink-0 ${
-        isDark ? 'border-gray-700 bg-gray-900' : 'border-gray-700 bg-gray-900'
-      }`}>
-        <span className="text-gray-400 font-mono text-xs mr-2 select-none">{currentPrompt}</span>
-        <div className="relative flex-1 h-6">
-          {/* Ghost text layer - shows completion suggestion */}
-          {currentSuggestions.length > 0 && currentCommand && !interactiveState.active && (
-            <div 
-              className="absolute inset-0 flex items-center pointer-events-none font-mono text-xs overflow-hidden py-1"
-              aria-hidden="true"
-            >
-              <span className="text-transparent">{currentCommand}</span>
-              <span className="text-gray-600">
-                {currentSuggestions[0].startsWith(currentCommand.split(' ').pop() || '') 
-                  ? currentSuggestions[0].slice(currentCommand.split(' ').pop()?.length || 0)
-                  : ''}
-              </span>
+        <div className="space-y-1.5">
+          {output.map((line) => (
+            <div key={line.id} className="group transition-all duration-300">
+              {line.type === 'command' && (
+                <div className="flex flex-wrap">
+                  <span className="text-blue-500 font-bold whitespace-nowrap">{line.prompt}</span>
+                  <span className={`${isDark ? 'text-white' : 'text-slate-900'} ml-1`}>{line.content}</span>
+                </div>
+              )}
+              {(line.type === 'output' || line.type === 'prompt') && (
+                <pre className={`${isDark ? 'text-slate-300' : 'text-slate-700'} whitespace-pre-wrap leading-relaxed`}>
+                  {line.prompt && <span className="text-blue-500 font-bold">{line.prompt}</span>}
+                  {line.content}
+                </pre>
+              )}
+              {line.type === 'error' && (
+                <pre className="text-rose-500 whitespace-pre-wrap font-bold bg-rose-500/5 px-2 py-1 rounded-lg border border-rose-500/10 mb-1">{line.content}</pre>
+              )}
+              {line.type === 'success' && (
+                <pre className="text-emerald-500 whitespace-pre-wrap font-medium">{line.content}</pre>
+              )}
             </div>
-          )}
-          <input
-            ref={inputRef}
-            type={interactiveState.step === 'password' ? 'password' : 'text'}
-            value={currentCommand}
-            onChange={(e) => setCurrentCommand(e.target.value)}
-            onKeyDown={handleKeyDown}
-            className="absolute inset-0 w-full bg-transparent text-gray-200 font-mono text-xs outline-none caret-gray-400 min-h-[36px] py-1"
-            autoComplete="off"
-            spellCheck={false}
-          />
-        </div>
-        <div className="text-[10px] text-gray-500 ml-2 hidden sm:flex items-center gap-1">
-          <kbd className="px-1 py-0.5 bg-gray-800 rounded text-gray-400">TAB</kbd>
-          <span>tamamla</span>
+          ))}
+          
+          {/* PC Prompt Line */}
+          <div className="flex items-center min-h-[40px] group mt-2">
+            <span className="text-blue-500 font-bold flex-shrink-0 mr-1.5">{currentPrompt}</span>
+            <div className="relative flex-1">
+              {/* Ghost text for suggestions */}
+              {currentSuggestions.length > 0 && currentCommand && !interactiveState.active && (
+                <div 
+                  className="absolute inset-0 flex items-center pointer-events-none font-mono text-sm overflow-hidden"
+                  aria-hidden="true"
+                >
+                  <span className="text-transparent">{currentCommand}</span>
+                  <span className={`${isDark ? 'text-slate-700' : 'text-slate-300'}`}>
+                    {currentSuggestions[0].startsWith(currentCommand.split(' ').pop() || '') 
+                      ? currentSuggestions[0].slice(currentCommand.split(' ').pop()?.length || 0)
+                      : ''}
+                  </span>
+                </div>
+              )}
+              <input
+                ref={inputRef}
+                type={interactiveState.step === 'password' ? 'password' : 'text'}
+                value={currentCommand}
+                onChange={(e) => setCurrentCommand(e.target.value)}
+                onKeyDown={handleKeyDown}
+                className={`bg-transparent ${isDark ? 'text-white' : 'text-slate-900'} outline-none w-full font-mono py-2 text-sm caret-blue-500 selection:bg-blue-500/30`}
+                autoComplete="off"
+                spellCheck={false}
+              />
+              {/* Blinking cursor */}
+              {!currentCommand && (
+                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-2 h-4 bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)] cursor-blink pointer-events-none opacity-0 group-focus-within:opacity-100 transition-opacity" />
+              )}
+            </div>
+            {/* Keyboard hint */}
+            <div className="hidden sm:flex items-center gap-1.5 ml-4 opacity-40 group-focus-within:opacity-100 transition-opacity duration-500">
+                <kbd className={`px-2 py-0.5 rounded-md text-[10px] font-bold border ${isDark ? 'bg-slate-800 border-slate-700 text-slate-400' : 'bg-white border-slate-200 text-slate-500 shadow-sm'}`}>TAB</kbd>
+                <span className="text-[9px] font-black uppercase tracking-widest">{language === 'tr' ? 'tamamla' : 'complete'}</span>
+            </div>
+          </div>
         </div>
       </div>
       
-      {/* Completion Bar - Mobile Friendly */}
+      {/* PC Completion Bar */}
       {showCompletionBar && (
-        <div className="border-t border-gray-700 bg-gray-900 px-3 py-2">
+        <div className={`border-t px-4 py-3 transition-all duration-500 ${isDark ? 'bg-slate-900/60 border-slate-800/50' : 'bg-slate-50/80 border-slate-200/50'}`}>
           {/* Suggestions Row */}
           {currentSuggestions.length > 0 && (
-            <div className="mb-2">
-              <div className="text-[10px] text-gray-500 mb-1.5 uppercase tracking-wider">
-                {language === 'tr' ? 'Komutlar' : 'Commands'}
+            <div className="mb-3">
+              <div className={`text-[10px] font-black uppercase tracking-widest mb-2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                {language === 'tr' ? 'KOMUT ÖNERİLERİ' : 'COMMAND SUGGESTIONS'}
               </div>
-              <div className="flex flex-wrap gap-1.5">
+              <div className="flex flex-wrap gap-2">
                 {currentSuggestions.map((suggestion, idx) => (
                   <button
                     key={idx}
                     onClick={() => handleSuggestionClick(suggestion)}
-                    className="px-3 py-2 rounded-lg bg-slate-700 text-white text-sm font-mono min-h-[44px] min-w-[60px] hover:bg-slate-600 active:bg-slate-500 transition-colors"
+                    className={`px-3 py-1.5 rounded-xl font-mono text-xs transition-all duration-300 border ${
+                      isDark 
+                        ? 'bg-slate-800/80 border-slate-700/50 text-blue-400 hover:bg-slate-700 hover:border-blue-500/30 hover:scale-105 active:scale-95' 
+                        : 'bg-white border-slate-200 text-blue-600 hover:bg-slate-50 hover:border-blue-500/30 hover:scale-105 active:scale-95 shadow-sm'
+                    }`}
                   >
                     {suggestion}
                   </button>
@@ -972,32 +985,34 @@ export function PCPanel({ deviceId, cableInfo, isVisible, onClose, topologyDevic
           {/* History Row */}
           {recentHistory.length > 0 && (
             <div>
-              <div className="text-[10px] text-gray-500 mb-1.5 uppercase tracking-wider">
-                {language === 'tr' ? 'Geçmiş' : 'History'}
+              <div className={`text-[10px] font-black uppercase tracking-widest mb-2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                {language === 'tr' ? 'GEÇMİŞ' : 'RECENT HISTORY'}
               </div>
-              <div className="flex flex-wrap gap-1.5">
+              <div className="flex flex-wrap gap-2">
                 {recentHistory.map((cmd, idx) => (
                   <button
                     key={idx}
                     onClick={() => handleHistoryClick(cmd)}
-                    className="px-3 py-2 rounded-lg bg-slate-800 text-gray-300 text-sm font-mono min-h-[44px] min-w-[60px] hover:bg-slate-700 active:bg-slate-600 transition-colors border border-slate-600"
+                    className={`px-3 py-1.5 rounded-xl font-mono text-[10px] transition-all duration-300 border ${
+                      isDark 
+                        ? 'bg-slate-900/50 border-slate-800/50 text-slate-400 hover:bg-slate-800 hover:text-slate-200 hover:scale-105 active:scale-95' 
+                        : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-800 hover:scale-105 active:scale-95 shadow-sm'
+                    }`}
                   >
-                    {cmd.length > 18 ? cmd.substring(0, 18) + '...' : cmd}
+                    {cmd.length > 24 ? cmd.substring(0, 24) + '...' : cmd}
                   </button>
                 ))}
               </div>
             </div>
           )}
 
-          {/* Toggle Button */}
           <button
-            onClick={() => setShowCompletionBar(!showCompletionBar)}
-            className="mt-2 text-[10px] text-gray-500 hover:text-gray-400 flex items-center gap-1"
+            onClick={() => setShowCompletionBar(false)}
+            className={`mt-4 w-full py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-colors ${
+              isDark ? 'bg-slate-800/50 text-slate-600 hover:text-slate-400' : 'bg-slate-200/50 text-slate-400 hover:text-slate-600'
+            }`}
           >
-            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-            {language === 'tr' ? 'Gizle' : 'Hide'}
+            {language === 'tr' ? 'PANELİ GİZLE' : 'HIDE PANEL'}
           </button>
         </div>
       )}
@@ -1006,12 +1021,16 @@ export function PCPanel({ deviceId, cableInfo, isVisible, onClose, topologyDevic
       {!showCompletionBar && (
         <button
           onClick={() => setShowCompletionBar(true)}
-          className="w-full border-t border-gray-700 bg-gray-900 px-3 py-2 text-[10px] text-gray-500 hover:text-gray-400 flex items-center justify-center gap-1 min-h-[44px]"
+          className={`w-full border-t px-4 py-2 text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${
+            isDark 
+              ? 'bg-slate-900 border-slate-800 text-slate-600 hover:text-blue-500 hover:bg-slate-800/50' 
+              : 'bg-slate-50 border-slate-200 text-slate-400 hover:text-blue-600 hover:bg-white'
+          }`}
         >
-          <svg className="w-3 h-3 rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          <svg className="w-3.5 h-3.5 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
           </svg>
-          {language === 'tr' ? 'Önerileri Göster' : 'Show Suggestions'}
+          {language === 'tr' ? 'YARDIMCI PANELİ GÖSTER' : 'SHOW HELPER PANEL'}
         </button>
       )}
     </div>

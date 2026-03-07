@@ -1068,34 +1068,43 @@ export function Terminal({ deviceId, deviceName, prompt, state, onCommand, onCle
     inputRef.current?.focus();
   };
 
-  // Get current suggestions for display
+  const isDark = theme === 'dark';
   const currentSuggestions = getSuggestions(input).slice(0, MAX_SUGGESTIONS);
   const recentHistory = getRecentHistory();
 
   return (
-    <Card className="h-full flex flex-col overflow-hidden bg-gray-900 border-gray-700">
-      <CardHeader className="pb-2 pt-3 px-4 flex-shrink-0 bg-gray-800 border-b border-gray-700">
-        <div className="flex items-center justify-between flex-wrap gap-2">
-          <CardTitle className="text-white text-base flex items-center gap-2">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-            {t.cliTerminal}
-            {deviceName && (
-              <span className="text-xs font-mono text-cyan-400 bg-gray-700 px-2 py-0.5 rounded ml-2">
-                {deviceName}
-              </span>
-            )}
-            <span className="text-xs font-mono text-yellow-400 bg-gray-700/50 px-2 py-0.5 rounded">
-              {state.version.modelName}
-            </span>
+    <Card className={`h-full flex flex-col overflow-hidden border-0 shadow-2xl transition-all duration-500 ${isDark ? 'bg-slate-900/50' : 'bg-white/80'} backdrop-blur-xl`}>
+      <CardHeader className={`pb-3 pt-4 px-5 flex-shrink-0 border-b ${isDark ? 'bg-slate-800/40 border-slate-700/50' : 'bg-blue-50/50 border-blue-100'}`}>
+        <div className="flex items-center justify-between flex-wrap gap-4">
+          <CardTitle className={`text-base flex items-center gap-3 font-bold tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
+            <div className={`p-2 rounded-xl ${isDark ? 'bg-cyan-500/10 text-cyan-400' : 'bg-cyan-100 text-cyan-600 shadow-sm'}`}>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <div className="flex flex-col">
+              <span className="leading-tight">{t.cliTerminal}</span>
+              <div className="flex items-center gap-2 mt-0.5">
+                {deviceName && (
+                  <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${isDark ? 'bg-slate-700 text-cyan-400' : 'bg-blue-100 text-blue-600'}`}>
+                    {deviceName}
+                  </span>
+                )}
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${isDark ? 'bg-slate-700/50 text-amber-400' : 'bg-amber-100 text-amber-600'}`}>
+                  {state.version.modelName}
+                </span>
+              </div>
+            </div>
           </CardTitle>
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-xs text-gray-300 bg-gray-700 px-2 py-1 rounded">
-              {t.mode}: {state.currentMode.toUpperCase()}
-            </span>
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border ${isDark ? 'bg-slate-800/60 border-slate-700/50 text-slate-300' : 'bg-white/80 border-slate-200 text-slate-600 shadow-sm'}`}>
+              <div className={`w-2 h-2 rounded-full animate-pulse ${isDark ? 'bg-emerald-500' : 'bg-emerald-600'}`} />
+              <span className="text-[10px] font-black uppercase tracking-widest">
+                {t.mode}: {state.currentMode.toUpperCase()}
+              </span>
+            </div>
             {onClear && (
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-2">
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -1103,7 +1112,11 @@ export function Terminal({ deviceId, deviceName, prompt, state, onCommand, onCle
                     navigator.clipboard.writeText(text);
                   }}
                   title={language === 'tr' ? 'Çıktıyı Kopyala' : 'Copy Output'}
-                  className="text-xs text-white hover:text-cyan-300 p-2 rounded-lg bg-gray-700 hover:bg-gray-600 transition-colors flex items-center justify-center min-h-[36px] min-w-[36px]"
+                  className={`p-2.5 rounded-xl transition-all duration-300 flex items-center justify-center border ${
+                    isDark 
+                      ? 'bg-slate-800/50 border-slate-700/50 text-slate-400 hover:text-cyan-400 hover:bg-slate-700/50 hover:border-cyan-500/30' 
+                      : 'bg-white border-slate-200 text-slate-500 hover:text-cyan-600 hover:bg-slate-50 hover:border-cyan-200 shadow-sm'
+                  }`}
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m-1 4h.01M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -1114,12 +1127,16 @@ export function Terminal({ deviceId, deviceName, prompt, state, onCommand, onCle
                     e.stopPropagation();
                     onClear();
                   }}
-                  className="text-xs text-white hover:text-yellow-300 px-3 py-1.5 rounded-lg bg-gray-700 hover:bg-gray-600 transition-colors min-h-[36px] flex items-center gap-1.5"
+                  className={`px-4 py-2 rounded-xl transition-all duration-300 font-bold text-xs flex items-center gap-2 border ${
+                    isDark 
+                      ? 'bg-slate-800/50 border-slate-700/50 text-slate-400 hover:text-rose-400 hover:bg-slate-700/50 hover:border-rose-500/30' 
+                      : 'bg-white border-slate-200 text-slate-500 hover:text-rose-600 hover:bg-slate-50 hover:border-rose-200 shadow-sm'
+                  }`}
                 >
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                   </svg>
-                  {t.clearTerminalBtn}
+                  <span>{t.clearTerminalBtn}</span>
                 </button>
               </div>
             )}
@@ -1127,110 +1144,126 @@ export function Terminal({ deviceId, deviceName, prompt, state, onCommand, onCle
         </div>
       </CardHeader>
       <CardContent 
-        className="flex-1 overflow-hidden p-0 cursor-text flex flex-col"
+        className="flex-1 overflow-hidden p-0 cursor-text flex flex-col relative"
         onClick={handleTerminalClick}
       >
-        {/* Classic Terminal - Black Background, Green/White Text */}
+        {/* Modern Terminal View */}
         <div
           ref={terminalRef}
-          className="flex-1 overflow-y-auto p-2 font-mono text-xs bg-black"
-          style={{ minHeight: '100px', maxHeight: '250px' }}
+          className={`flex-1 overflow-y-auto p-6 font-mono text-sm scroll-smooth custom-scrollbar ${
+            isDark ? 'bg-slate-950/80' : 'bg-slate-50/50'
+          }`}
+          style={{ minHeight: '300px' }}
         >
           {/* Welcome message */}
-          <div className="text-green-400 mb-2 text-xs">
-            {t.simulatorTitle}
-            <br />
-            <span className="text-white">{`IOS ${state.version.iosVersion}`}</span>
-            <br /><br />
+          <div className={`mb-6 p-4 rounded-2xl border transition-all duration-500 ${
+            isDark 
+              ? 'bg-slate-900/40 border-slate-800/50 text-slate-300' 
+              : 'bg-white/80 border-slate-200/50 text-slate-600 shadow-sm'
+          }`}>
+            <div className="flex items-center gap-3 mb-2">
+              <div className={`w-2 h-2 rounded-full ${isDark ? 'bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.5)]' : 'bg-cyan-600'}`} />
+              <span className="text-[10px] font-black uppercase tracking-widest opacity-60">{t.simulatorTitle}</span>
+            </div>
+            <div className="text-sm font-bold opacity-90 leading-relaxed">
+              Cisco Catalyst Operating System Software<br />
+              <span className={`text-cyan-500`}>{`Release IOS ${state.version.iosVersion}`}</span><br />
+              (c) 1986-2024 Cisco Systems, Inc.
+            </div>
           </div>
           
           {/* Output history */}
-          {limitedOutput.map((item) => (
-            <div key={item.id} className="mb-1 leading-relaxed">
-              {item.type === 'command' && (
-                <div className="flex flex-wrap">
-                  <span className="text-cyan-400">{item.prompt}</span>
-                  <span className="text-white">{item.content}</span>
-                </div>
-              )}
-              {item.type === 'output' && (
-                <pre className="text-gray-200 whitespace-pre-wrap">{item.content}</pre>
-              )}
-              {item.type === 'error' && (
-                <pre className="text-red-400 whitespace-pre-wrap">{item.content}</pre>
-              )}
-              {item.type === 'help' && (
-                <pre className="text-green-400 whitespace-pre-wrap">{item.content}</pre>
-              )}
-              {item.type === 'password-prompt' && (
-                <pre className="text-white whitespace-pre-wrap">{item.content}</pre>
-              )}
-            </div>
-          ))}
-          
-          {isLoading && (
-            <div className="text-cyan-400 animate-pulse">
-              {t.processing}
-            </div>
-          )}
-          
-          {/* Command input line */}
-          <div className="flex items-center min-h-[36px] group">
-            {!isPasswordMode && (
-              <span className="text-cyan-400 flex-shrink-0 animate-fade-in">{prompt}</span>
+          <div className="space-y-1.5">
+            {limitedOutput.map((item) => (
+              <div key={item.id} className="group transition-all duration-300">
+                {item.type === 'command' && (
+                  <div className="flex flex-wrap">
+                    <span className="text-cyan-400 font-bold whitespace-nowrap">{item.prompt}</span>
+                    <span className={`${isDark ? 'text-white' : 'text-slate-900'} ml-1`}>{item.content}</span>
+                  </div>
+                )}
+                {item.type === 'output' && (
+                  <pre className={`${isDark ? 'text-slate-300' : 'text-slate-700'} whitespace-pre-wrap leading-relaxed`}>{item.content}</pre>
+                )}
+                {item.type === 'error' && (
+                  <pre className="text-rose-500 whitespace-pre-wrap font-bold bg-rose-500/5 px-2 py-1 rounded-lg border border-rose-500/10 mb-1">{item.content}</pre>
+                )}
+                {item.type === 'help' && (
+                  <pre className="text-emerald-500 whitespace-pre-wrap font-medium">{item.content}</pre>
+                )}
+                {item.type === 'password-prompt' && (
+                  <pre className={`${isDark ? 'text-white' : 'text-slate-900'} whitespace-pre-wrap font-bold`}>{item.content}</pre>
+                )}
+              </div>
+            ))}
+            
+            {isLoading && (
+              <div className="flex items-center gap-2 text-cyan-500 animate-pulse mt-4">
+                <div className="w-1.5 h-1.5 rounded-full bg-cyan-500" />
+                <span className="text-xs font-black uppercase tracking-widest">{t.processing}</span>
+              </div>
             )}
-            <div className="relative flex-1 ml-1">
-              {/* Ghost text layer - shows completion suggestion */}
-              {!isPasswordMode && currentSuggestions.length > 0 && input.length > 0 && (
-                <div 
-                  className="absolute inset-0 flex items-center pointer-events-none font-mono text-sm overflow-hidden py-1.5"
-                  aria-hidden="true"
-                >
-                  <span className="text-transparent">{input}</span>
-                  <span className="text-gray-600">
-                    {currentSuggestions[0].startsWith(input.split(' ').pop() || '') 
-                      ? currentSuggestions[0].slice(input.split(' ').pop()?.length || 0)
-                      : ''}
-                  </span>
-                </div>
+            
+            {/* Command input line */}
+            <div className="flex items-center min-h-[40px] group mt-2">
+              {!isPasswordMode && (
+                <span className="text-cyan-500 font-bold flex-shrink-0 animate-fade-in mr-1.5">{prompt}</span>
               )}
-              <input
-                ref={inputRef}
-                type={isPasswordMode ? 'password' : 'text'}
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={handleKeyDown}
-                className="bg-transparent text-white outline-none w-full font-mono min-h-[36px] py-1.5 text-sm caret-cyan-400"
-                disabled={isLoading}
-                autoComplete="off"
-                autoCapitalize="none"
-                autoCorrect="off"
-                spellCheck={false}
-                style={{ fontSize: 'inherit' }}
-              />
-              {/* Blinking cursor indicator when focused */}
-              {!input && !isPasswordMode && (
-                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-2 h-4 bg-cyan-400 cursor-blink pointer-events-none opacity-0 group-focus-within:opacity-100" />
-              )}
-            </div>
-            {/* Keyboard shortcuts hint */}
-            <div className="hidden sm:flex items-center gap-1 text-gray-600 text-[10px] ml-2">
-              <kbd className="px-1.5 py-0.5 bg-gray-800 rounded border border-gray-700">TAB</kbd>
-              <span>{language === 'tr' ? 'tamamla' : 'complete'}</span>
+              <div className="relative flex-1">
+                {/* Ghost text layer - shows completion suggestion */}
+                {!isPasswordMode && currentSuggestions.length > 0 && input.length > 0 && (
+                  <div 
+                    className="absolute inset-0 flex items-center pointer-events-none font-mono text-sm overflow-hidden"
+                    aria-hidden="true"
+                  >
+                    <span className="text-transparent">{input}</span>
+                    <span className={`${isDark ? 'text-slate-700' : 'text-slate-300'}`}>
+                      {currentSuggestions[0].startsWith(input.split(' ').pop() || '') 
+                        ? currentSuggestions[0].slice(input.split(' ').pop()?.length || 0)
+                        : ''}
+                    </span>
+                  </div>
+                )}
+                <input
+                  ref={inputRef}
+                  type={isPasswordMode ? 'password' : 'text'}
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  className={`bg-transparent ${isDark ? 'text-white' : 'text-slate-900'} outline-none w-full font-mono py-2 text-sm caret-cyan-500 selection:bg-cyan-500/30`}
+                  disabled={isLoading}
+                  autoComplete="off"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  style={{ fontSize: 'inherit' }}
+                />
+                {/* Blinking cursor indicator when focused */}
+                {!input && !isPasswordMode && (
+                  <span className="absolute left-0 top-1/2 -translate-y-1/2 w-2 h-4 bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.5)] cursor-blink pointer-events-none opacity-0 group-focus-within:opacity-100 transition-opacity" />
+                )}
+              </div>
+              {/* Keyboard shortcuts hint */}
+              <div className="hidden sm:flex items-center gap-1.5 ml-4 opacity-40 group-focus-within:opacity-100 transition-opacity duration-500">
+                <kbd className={`px-2 py-0.5 rounded-md text-[10px] font-bold border ${isDark ? 'bg-slate-800 border-slate-700 text-slate-400' : 'bg-white border-slate-200 text-slate-500 shadow-sm'}`}>TAB</kbd>
+                <span className="text-[9px] font-black uppercase tracking-widest">{language === 'tr' ? 'tamamla' : 'complete'}</span>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Completion Bar - Mobile Friendly */}
         {showCompletionBar && !isPasswordMode && (
-          <div className="border-t border-gray-700 bg-gray-900 px-3 py-2">
+          <div className={`border-t px-4 py-3 transition-all duration-500 ${
+            isDark ? 'bg-slate-900/60 border-slate-800/50' : 'bg-slate-50/80 border-slate-200/50'
+          }`}>
             {/* Suggestions Row */}
             {currentSuggestions.length > 0 && input.length > 0 && (
-              <div className="mb-2">
-                <div className="text-[10px] text-gray-500 mb-1.5 uppercase tracking-wider">
-                  {language === 'tr' ? 'Öneriler' : 'Suggestions'}
+              <div className="mb-3">
+                <div className={`text-[10px] font-black uppercase tracking-widest mb-2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                  {language === 'tr' ? 'Hızlı Komutlar' : 'Quick Commands'}
                 </div>
-                <div className="flex flex-wrap gap-1.5">
+                <div className="flex flex-wrap gap-2">
                   {currentSuggestions.map((suggestion, idx) => (
                     <button
                       key={idx}
@@ -1238,7 +1271,11 @@ export function Terminal({ deviceId, deviceName, prompt, state, onCommand, onCle
                         e.stopPropagation();
                         handleSuggestionClick(suggestion);
                       }}
-                      className="px-3 py-2 rounded-lg bg-slate-700 text-white text-sm font-mono min-h-[44px] min-w-[60px] hover:bg-slate-600 active:bg-slate-500 transition-colors"
+                      className={`px-3 py-1.5 rounded-xl font-mono text-xs transition-all duration-300 border ${
+                        isDark 
+                          ? 'bg-slate-800/80 border-slate-700/50 text-cyan-400 hover:bg-slate-700 hover:border-cyan-500/30 hover:scale-105 active:scale-95' 
+                          : 'bg-white border-slate-200 text-cyan-600 hover:bg-slate-50 hover:border-cyan-500/30 hover:scale-105 active:scale-95 shadow-sm'
+                      }`}
                     >
                       {suggestion}
                     </button>
@@ -1250,10 +1287,10 @@ export function Terminal({ deviceId, deviceName, prompt, state, onCommand, onCle
             {/* History Row */}
             {recentHistory.length > 0 && (
               <div>
-                <div className="text-[10px] text-gray-500 mb-1 uppercase tracking-wider">
+                <div className={`text-[10px] font-black uppercase tracking-widest mb-2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                   {t.commandHistory}
                 </div>
-                <div className="flex flex-wrap gap-1">
+                <div className="flex flex-wrap gap-2">
                   {recentHistory.map((cmd, idx) => (
                     <button
                       key={idx}
@@ -1261,27 +1298,30 @@ export function Terminal({ deviceId, deviceName, prompt, state, onCommand, onCle
                         e.stopPropagation();
                         handleHistoryClick(cmd);
                       }}
-                      className="px-2 py-1 rounded bg-slate-800 text-gray-300 text-xs font-mono min-h-[28px] hover:bg-slate-700 active:bg-slate-600 transition-colors border border-slate-600"
+                      className={`px-3 py-1.5 rounded-xl font-mono text-[10px] transition-all duration-300 border ${
+                        isDark 
+                          ? 'bg-slate-900/50 border-slate-800/50 text-slate-400 hover:bg-slate-800 hover:text-slate-200 hover:scale-105 active:scale-95' 
+                          : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-800 hover:scale-105 active:scale-95 shadow-sm'
+                      }`}
                     >
-                      {cmd.length > 18 ? cmd.substring(0, 18) + '...' : cmd}
+                      {cmd.length > 24 ? cmd.substring(0, 24) + '...' : cmd}
                     </button>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* Toggle Button */}
+            {/* Close completions button */}
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                setShowCompletionBar(!showCompletionBar);
+                setShowCompletionBar(false);
               }}
-              className="mt-2 text-[10px] text-gray-500 hover:text-gray-400 flex items-center gap-1"
+              className={`mt-4 w-full py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-colors ${
+                isDark ? 'bg-slate-800/50 text-slate-600 hover:text-slate-400' : 'bg-slate-200/50 text-slate-400 hover:text-slate-600'
+              }`}
             >
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-              {showCompletionBar ? 'Gizle' : 'Göster'}
+              {language === 'tr' ? 'Paneli Gizle' : 'Hide Panel'}
             </button>
           </div>
         )}
@@ -1293,12 +1333,16 @@ export function Terminal({ deviceId, deviceName, prompt, state, onCommand, onCle
               e.stopPropagation();
               setShowCompletionBar(true);
             }}
-            className="w-full border-t border-gray-700 bg-gray-900 px-3 py-2 text-[10px] text-gray-500 hover:text-gray-400 flex items-center justify-center gap-1"
+            className={`w-full border-t px-4 py-2 text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${
+              isDark 
+                ? 'bg-slate-900 border-slate-800 text-slate-600 hover:text-cyan-500 hover:bg-slate-800/50' 
+                : 'bg-slate-50 border-slate-200 text-slate-400 hover:text-cyan-600 hover:bg-white'
+            }`}
           >
-            <svg className="w-3 h-3 rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            <svg className="w-3.5 h-3.5 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
             </svg>
-            Önerileri Göster
+            {language === 'tr' ? 'Yardımcı Paneli Göster' : 'Show Helper Panel'}
           </button>
         )}
       </CardContent>
