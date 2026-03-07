@@ -33,6 +33,8 @@ export interface Port {
     violation: 'protect' | 'restrict' | 'shutdown';
     stickyMac: boolean;
   };
+  ipv6Address?: string;         // For CCNA 1 v7 support
+  ipv6Prefix?: number;
 }
 
 export interface Vlan {
@@ -95,6 +97,7 @@ export interface SwitchState {
   mlsQosEnabled?: boolean;
   dhcpSnoopingEnabled?: boolean;
   ntpServers?: string[];
+  ipv6Enabled?: boolean;
 }
 
 export interface CommandResult {

@@ -64,7 +64,8 @@ const DEVICE_ICONS = {
   ),
   router: (
     <svg className="w-6 h-6 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8.111 16.404a5.5 5.5 0 0 1 7.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.14 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0" />
+      <circle cx="12" cy="12" r="9" strokeWidth={1.5} />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 5v14M5 12h14M12 5l-2 2m2-2l2 2m-2 12l-2-2m2 2l2-2M5 12l2-2m-2 2l2 2M19 12l-2-2m2 2l-2 2" />
     </svg>
   ),
 };
@@ -150,7 +151,7 @@ export function NetworkTopology({
       id: 'switch-1',
       type: 'switch',
       name: 'Switch-1',
-      ip: '192.168.1.1',
+      ip: '',
       x: 300,
       y: 150,
       status: 'online',
@@ -1143,7 +1144,7 @@ export function NetworkTopology({
       id: `${type}-${deviceCounterRef.current[type]}`,
       type,
       name: `${type.toUpperCase()}-${deviceCounterRef.current[type]}`,
-      ip: generateUniqueIp(),
+      ip: type === 'pc' ? generateUniqueIp() : '',
       // Position near top-left with staggered layout
       x: 100 + offsetX + Math.random() * 30,
       y: 80 + offsetY + Math.random() * 30,
@@ -1271,7 +1272,7 @@ export function NetworkTopology({
       ...clipboard,
       id: newId,
       name: `${type.toUpperCase()}-${deviceCounterRef.current[type]}`,
-      ip: generateUniqueIp(),
+      ip: type === 'pc' ? generateUniqueIp() : '',
       x: clipboard.x + 30,
       y: clipboard.y + 30,
       ports: clipboard.ports.map(p => ({ ...p, status: 'disconnected' as const })),
@@ -1646,15 +1647,10 @@ export function NetworkTopology({
               />
             )}
             {device.type === 'router' && (
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={1.5}
-                stroke="currentColor"
-                fill="none"
-                d="M8.111 16.404a5.5 5.5 0 0 1 7.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.14 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"
-                transform="scale(1.2)"
-              />
+              <g transform="scale(1.2)">
+                <circle cx="12" cy="12" r="9" strokeWidth={1.5} stroke="currentColor" fill="none" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} stroke="currentColor" fill="none" d="M12 5v14M5 12h14M12 5l-2 2m2-2l2 2m-2 12l-2-2m2 2l2-2M5 12l2-2m-2 2l2 2M19 12l-2-2m2 2l-2 2" />
+              </g>
             )}
           </g>
         </g>
@@ -1668,9 +1664,11 @@ export function NetworkTopology({
         </text>
 
         {/* Device IP */}
-        <text x={deviceWidth / 2} y={70} fill={isDark ? '#94a3b8' : '#64748b'} fontSize="10" textAnchor="middle" fontFamily="monospace" className="select-none pointer-events-none">
-          {device.ip}
-        </text>
+        {device.type === 'pc' && (
+          <text x={deviceWidth / 2} y={70} fill={isDark ? '#94a3b8' : '#64748b'} fontSize="10" textAnchor="middle" fontFamily="monospace" className="select-none pointer-events-none">
+            {device.ip}
+          </text>
+        )}
 
         {/* Ports - wrapped 6 per row */}
         {device.type === 'pc' ? (

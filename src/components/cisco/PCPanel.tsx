@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, KeyboardEvent, useCallback } from 'react';
-import { CableInfo, isCableCompatible } from '@/lib/cisco/types';
+import { CableInfo, isCableCompatible, SwitchState } from '@/lib/cisco/types';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
 
@@ -11,7 +11,9 @@ interface PCPanelProps {
   isVisible: boolean;
   onClose: () => void;
   topologyDevices?: { id: string; type: string; name: string; ip: string; subnet?: string; gateway?: string; dns?: string; ports: { id: string; status: string }[] }[];
-  topologyConnections?: { sourceDeviceId: string; sourcePort: string; targetDeviceId: string; targetPort: string }[];
+  topologyConnections?: { sourceDeviceId: string; sourcePort: string; targetDeviceId: string; targetPort: string; active?: boolean }[];
+  deviceStates?: Map<string, SwitchState>;
+  onExecuteDeviceCommand?: (deviceId: string, command: string) => Promise<any>;
 }
 
 interface OutputLine {
@@ -94,7 +96,16 @@ function addToCommandHistory(deviceId: string, command: string) {
   }
 }
 
-export function PCPanel({ deviceId, cableInfo, isVisible, onClose, topologyDevices = [], topologyConnections = [] }: PCPanelProps) {
+export function PCPanel({ 
+  deviceId, 
+  cableInfo, 
+  isVisible, 
+  onClose, 
+  topologyDevices = [], 
+  topologyConnections = [],
+  deviceStates,
+  onExecuteDeviceCommand
+}: PCPanelProps) {
   const { language, t } = useLanguage();
   const { theme } = useTheme();
   const isDark = theme === 'dark';
@@ -410,14 +421,17 @@ export function PCPanel({ deviceId, cableInfo, isVisible, onClose, topologyDevic
       return;
     }
     
-    // Check if target is the connected device
+    // Check if target is a device in topology
     const targetIP = target;
-    const isAllowedTarget = targetIP === connectedDevice.ip || 
-                            targetIP === connectedDevice.name ||
-                            targetIP === 'localhost' ||
-                            targetIP === pcIP;
+    const targetDeviceInTopology = topologyDevices.find(d => d.ip === targetIP || d.name === targetIP);
     
-    if (!isAllowedTarget) {
+    // Virtual targets (localhost, gateway, dns)
+    const isLocal = targetIP === 'localhost' || targetIP === pcIP;
+    const isGateway = targetIP === pcGateway && pcGateway !== '0.0.0.0';
+    
+    const canReach = isLocal || isGateway || !!targetDeviceInTopology;
+    
+    if (!canReach) {
       // Target is not directly connected - show timeout/unreachable
       addOutput('output', language === 'tr'
         ? `\n${targetIP} için 32 bayt veri ile Ping yapılıyor:\n`
@@ -427,14 +441,31 @@ export function PCPanel({ deviceId, cableInfo, isVisible, onClose, topologyDevic
         addOutput('error', language === 'tr'
           ? 'Hedef ana bilgisayara ulaşılamıyor.\n\n'
           : 'Destination host unreachable.\n\n');
-        addOutput('error', language === 'tr'
-          ? `${t.errorPrefix}: ${targetIP} adresine doğrudan erişim yok. Sadece bağlı olduğunuz ${connectedDevice.name} (${connectedDevice.ip}) adresine ping atabilirsiniz.\n\n`
-          : `${t.errorPrefix}: Cannot reach ${targetIP}. You can only ping the connected device ${connectedDevice.name} (${connectedDevice.ip}).\n\n`);
-      }, 400);
+        addOutput('output', language === 'tr'
+          ? 'İstek zaman aşımına uğradı.\n\n'
+          : 'Request timed out.\n\n');
+      }, 800);
       return;
     }
     
-    const actualTarget = targetIP === 'localhost' ? pcIP : (targetIP === connectedDevice.name ? connectedDevice.ip : targetIP);
+    // CCNA 1 Check: Subnet mask and Gateway
+    const pcNet = pcIP.split('.').slice(0, 3).join('.');
+    const isIp = /^\d+\.\d+\.\d+\.\d+$/.test(targetIP);
+    if (isIp && !isLocal) {
+      const targetNet = targetIP.split('.').slice(0, 3).join('.');
+      if (pcNet !== targetNet && (pcGateway === '0.0.0.0' || !pcGateway)) {
+        addOutput('output', language === 'tr'
+          ? `\n${targetIP} için 32 bayt veri ile Ping yapılıyor:\n`
+          : `\nPinging ${targetIP} with 32 bytes of data:\n`);
+        setTimeout(() => {
+          addOutput('error', language === 'tr' ? 'İstek zaman aşımına uğradı. (Varsayılan ağ geçidi tanımlanmamış)\n' : 'Request timed out. (Default gateway not set)\n');
+        }, 1000);
+        return;
+      }
+    }
+    
+    const actualTarget = isLocal ? pcIP : (targetDeviceInTopology ? targetDeviceInTopology.ip : targetIP);
+    const actualName = targetDeviceInTopology ? targetDeviceInTopology.name : targetIP;
     
     addOutput('output', language === 'tr'
       ? `\n${actualTarget} için 32 bayt veri ile Ping yapılıyor:\n`
@@ -490,33 +521,55 @@ export function PCPanel({ deviceId, cableInfo, isVisible, onClose, topologyDevic
       return;
     }
     
-    // Check if target is the connected device
     const targetIP = target;
-    if (targetIP !== connectedDevice.ip && targetIP !== connectedDevice.name) {
-      addOutput('error', `\nTELNET: ${targetIP} ${t.pcAccessDenied}\n`);
+    const targetDeviceInTopology = topologyDevices.find(d => d.ip === targetIP || d.name === targetIP);
+    
+    if (!targetDeviceInTopology || (targetDeviceInTopology.type !== 'switch' && targetDeviceInTopology.type !== 'router')) {
       addOutput('error', language === 'tr'
-        ? `${t.errorPrefix}: Sadece bağlı olduğunuz ${connectedDevice.name} (${connectedDevice.ip}) cihazına telnet yapabilirsiniz.\n\n`
-        : `${t.errorPrefix}: You can only telnet to the connected device ${connectedDevice.name} (${connectedDevice.ip}).\n\n`);
+        ? `\nBağlantı isteği ${targetIP} tarafından reddedildi.\n\n`
+        : `\nConnection refused by ${targetIP}.\n\n`);
       return;
     }
     
-    const actualTarget = connectedDevice.ip;
+    const actualTarget = targetDeviceInTopology.ip;
+    const targetId = targetDeviceInTopology.id;
     
     addOutput('output', `${actualTarget} bağlantı noktası 23...`);
     
     setTimeout(() => {
       addOutput('success', 'Bağlandı.\n');
       addOutput('output', `Kaçış karakteri: '^]'.\n\n`);
-      addOutput('output', 'User Access Verification\n\n');
+      
+      // Get target device state for banner and login requirements
+      const targetState = deviceStates?.get(targetId);
+      if (targetState?.bannerMOTD) {
+        addOutput('output', `${targetState.bannerMOTD}\n\n`);
+      }
+      
+      const requiresLogin = targetState?.security.vtyLines.login;
+      const requiresLocal = targetState?.security.vtyLines.loginLocal;
+      
       // Set interactive mode
       setInteractiveState({
         active: true,
         type: 'telnet',
-        step: 'username',
-        targetDevice: actualTarget
+        step: requiresLogin ? (requiresLocal ? 'username' : 'password') : 'command',
+        targetDevice: targetId
       });
-      setCurrentPrompt('Username: ');
-      addOutput('prompt', '', 'Username: ');
+      
+      if (requiresLogin) {
+        if (requiresLocal) {
+          setCurrentPrompt('Username: ');
+          addOutput('prompt', '', 'Username: ');
+        } else {
+          setCurrentPrompt('Password: ');
+          addOutput('prompt', '', 'Password: ');
+        }
+      } else {
+        const prompt = `${targetState?.hostname || targetDeviceInTopology.name}>`;
+        setCurrentPrompt(prompt);
+        addOutput('prompt', '', prompt);
+      }
     }, 800);
   };
 
@@ -530,15 +583,24 @@ export function PCPanel({ deviceId, cableInfo, isVisible, onClose, topologyDevic
     
     setTimeout(() => {
       addOutput('success', t.pcConnected + '\n');
+      
+      // Get target device state
+      const targetState = deviceStates?.get(consoleDevice.id);
+      if (targetState?.bannerMOTD) {
+        addOutput('output', `\n${targetState.bannerMOTD}\n`);
+      }
+      
       setInteractiveState({
         active: true,
-        type: 'telnet', // Reuse telnet type as it uses the same executor logic
-        step: 'command', // Console usually goes straight to CLI or password prompt
-        targetDevice: consoleDevice.name // Use device name for prompt
+        type: 'telnet', 
+        step: 'command', // Console usually goes straight to CLI
+        targetDevice: consoleDevice.id
       });
-      setCurrentPrompt(`${consoleDevice.name}>`);
-      addOutput('output', `\nCisco IOS Software, C2960 Software (C2960-LANBASE-M), Version 12.2(25)FX, RELEASE SOFTWARE (fc1)\n\n`);
-      addOutput('prompt', `${consoleDevice.name}>`);
+      
+      const prompt = `${targetState?.hostname || consoleDevice.name}>`;
+      setCurrentPrompt(prompt);
+      addOutput('output', `\nCisco IOS Software, ${targetState?.version.modelName || 'WS-C2960'}, Version 15.0(2)SE4, RELEASE SOFTWARE (fc1)\n\n`);
+      addOutput('prompt', prompt);
     }, 800);
   };
   
@@ -569,25 +631,29 @@ export function PCPanel({ deviceId, cableInfo, isVisible, onClose, topologyDevic
       setCurrentPrompt(`${targetDevice}>`);
       addOutput('prompt', '', `${targetDevice}>`);
     } else if (step === 'command') {
-      // Handle telnet session commands
-      const cmd = input.trim().toLowerCase();
-      
-      if (cmd === 'exit' || cmd === 'quit' || cmd === 'logout') {
-        addOutput('output', '\n[Connection closed by foreign host.]\n\n');
-        setInteractiveState({ active: false, type: null, step: null, targetDevice: '' });
-        setCurrentPrompt('C:\\>');
-      } else if (cmd === 'enable' || cmd === 'en') {
-        setCurrentPrompt(`${targetDevice}#`);
-        addOutput('prompt', '', `${targetDevice}#`);
-      } else if (cmd === 'disable') {
-        setCurrentPrompt(`${targetDevice}>`);
-        addOutput('prompt', '', `${targetDevice}>`);
-      } else if (cmd === '' || cmd === '?') {
-        // Available commands in telnet session
-        addOutput('output', 'Available commands: enable, exit, disable, quit, logout\n');
-        addOutput('prompt', '', currentPrompt);
+      // Execute command on target device using the provided handler
+      if (onExecuteDeviceCommand) {
+        onExecuteDeviceCommand(targetDevice, input).then(result => {
+          if (result.output) addOutput('output', result.output + '\n');
+          if (result.error) addOutput('error', result.error + '\n');
+          
+          // Get updated state to refresh prompt
+          const updatedState = deviceStates?.get(targetDevice);
+          const newPrompt = updatedState ? getPrompt(updatedState) : currentPrompt;
+          
+          // Close session if command was 'exit' at top level
+          const cmd = input.trim().toLowerCase();
+          if ((cmd === 'exit' || cmd === 'quit' || cmd === 'logout') && updatedState?.currentMode === 'user') {
+            addOutput('output', '\n[Connection closed by foreign host.]\n\n');
+            setInteractiveState({ active: false, type: null, step: null, targetDevice: '' });
+            setCurrentPrompt('C:\\>');
+          } else {
+            setCurrentPrompt(newPrompt);
+            addOutput('prompt', '', newPrompt);
+          }
+        });
       } else {
-        addOutput('output', `% Unknown command: ${input}\n`);
+        addOutput('error', 'Remote execution not supported.\n');
         addOutput('prompt', '', currentPrompt);
       }
     }
@@ -1094,4 +1160,18 @@ export function PCPanel({ deviceId, cableInfo, isVisible, onClose, topologyDevic
       )}
     </div>
   );
+}
+
+// Helper for prompt (copy from executor)
+function getPrompt(state: SwitchState): string {
+  const { currentMode, hostname } = state;
+  switch (currentMode) {
+    case 'user': return `${hostname}>`;
+    case 'privileged': return `${hostname}#`;
+    case 'config': return `${hostname}(config)#`;
+    case 'interface': return `${hostname}(config-if)#`;
+    case 'line': return `${hostname}(config-line)#`;
+    case 'vlan': return `${hostname}(config-vlan)#`;
+    default: return `${hostname}>`;
+  }
 }

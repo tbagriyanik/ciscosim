@@ -1455,6 +1455,8 @@ export default function Home() {
               onClose={() => setActiveTab('topology')}
               topologyDevices={topologyDevices || undefined}
               topologyConnections={topologyConnections || undefined}
+              deviceStates={deviceStates}
+              onExecuteDeviceCommand={handleCommandForDevice}
             />
           </div>
         )}

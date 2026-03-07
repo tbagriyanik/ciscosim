@@ -866,6 +866,8 @@ function executeSpecificCommand(
       return cmdBannerMotd(state, input);
     case 'no banner motd':
       return cmdNoBannerMotd(state);
+    case 'ipv6 unicast-routing':
+      return { success: true, newState: { ipv6Enabled: true } };
     case 'ip domain-name':
       return cmdIpDomainName(state, input);
     case 'ip default-gateway':
@@ -961,6 +963,10 @@ function executeSpecificCommand(
       return cmdIpDhcpSnoopingTrust(state);
     case 'no ip dhcp snooping trust':
       return cmdNoIpDhcpSnoopingTrust(state);
+    case 'ipv6 address':
+      return cmdIpv6Address(state, input);
+    case 'ip default-gateway':
+      return cmdIpDefaultGateway(state, input);
     case 'ip arp inspection trust':
       return cmdIpArpInspectionTrust(state);
     case 'keepalive':
@@ -1037,6 +1043,10 @@ function executeSpecificCommand(
     case 'show vtp status':
     case 'show vtp':
       return cmdShowVtpStatus(state);
+    case 'show ip route':
+      return cmdShowIpRoute(state);
+    case 'show ipv6 interface brief':
+      return cmdShowIpv6InterfaceBrief(state);
     case 'show errdisable recovery':
       return cmdShowErrdisableRecovery(state);
     case 'show clock':
@@ -2539,6 +2549,18 @@ function cmdIpAddress(state: SwitchState, input: string): CommandResult {
   const ip = match[1];
   const mask = match[2];
   
+  // CCNA 1 Check: If it's a 2960 switch, physical ports are L2 only.
+  const isSwitch = state.version.modelName.includes('2960');
+  const isPhysical = state.currentInterface.toLowerCase().startsWith('fa') || state.currentInterface.toLowerCase().startsWith('gi');
+  
+  if (isSwitch && isPhysical) {
+    return { 
+      success: false, 
+      error: `% Command rejected: ${state.currentInterface} is a Layer 2 port.\n` +
+             `Tip: For a management IP, use 'interface Vlan 1' and set 'ip address' there.`
+    };
+  }
+  
   const newPorts = { ...state.ports };
   if (!newPorts[state.currentInterface]) {
     // Port doesn't exist, create it (happens for Vlan1)
@@ -3243,6 +3265,89 @@ function cmdMonitorSession(state: SwitchState, input: string): CommandResult {
 function cmdNoMonitorSession(state: SwitchState, input: string): CommandResult {
   return { success: true };
 }
+
+// Show IP Route
+function cmdShowIpRoute(state: SwitchState): CommandResult {
+  let output = '\nCodes: L - local, C - connected, S - static, R - RIP, M - mobile, B - BGP\n';
+  output += '       D - EIGRP, EX - EIGRP external, O - OSPF, IA - OSPF inter area\n\n';
+  output += 'Gateway of last resort is ' + (state.defaultGateway || 'not set') + ' to network 0.0.0.0\n\n';
+
+  // Find all interfaces with IP addresses
+  const connectedRoutes = Object.values(state.ports)
+    .filter(p => (p.ipAddress || p.id === 'vlan1') && !p.shutdown)
+    .map(p => {
+      const ip = p.ipAddress || (p.id === 'vlan1' ? state.ports['vlan1']?.ipAddress : null);
+      if (!ip) return null;
+      const network = ip.split('.').slice(0, 3).join('.') + '.0';
+      return { network, ip, port: p.id.toUpperCase() };
+    })
+    .filter(Boolean) as { network: string, ip: string, port: string }[];
+
+  connectedRoutes.forEach(route => {
+    output += `C        ${route.network}/24 is directly connected, ${route.port}\n`;
+    output += `L        ${route.ip}/32 is directly connected, ${route.port}\n`;
+  });
+
+  return { success: true, output };
+}
+
+// Show IPv6 Interface Brief
+function cmdShowIpv6InterfaceBrief(state: SwitchState): CommandResult {
+  let output = '\nInterface              IPv6-Address                                Status                Protocol\n';
+  
+  Object.values(state.ports).sort((a,b) => a.id.localeCompare(b.id)).forEach(port => {
+    const portUpper = port.id.toUpperCase().replace('FA', 'FastEthernet').replace('GI', 'GigabitEthernet');
+    const ip = port.ipv6Address ? `${port.ipv6Address}/${port.ipv6Prefix}` : 'unassigned';
+    const status = port.shutdown ? 'administratively down' : 
+                   port.status === 'connected' ? 'up' : 'down';
+    const protocol = port.status === 'connected' && !port.shutdown ? 'up' : 'down';
+
+    output += `${portUpper.padEnd(22)} ${ip.padEnd(42)} ${status.padEnd(21)} ${protocol}\n`;
+  });
+
+  return { success: true, output };
+}
+
+/**
+ * IPv6 Address Configuration
+ */
+function cmdIpv6Address(state: SwitchState, input: string): CommandResult {
+  if (!state.currentInterface) return { success: false, error: '% No interface selected' };
+  
+  const match = input.match(/^ipv6\s+address\s+([0-9a-f:]+)\/(\d+)/i);
+  if (!match) return { success: false, error: '% Invalid IPv6 address/prefix' };
+  
+  const ip = match[1];
+  const prefix = parseInt(match[2]);
+  
+  const newPorts = { ...state.ports };
+  if (!newPorts[state.currentInterface]) {
+      newPorts[state.currentInterface] = {
+          id: state.currentInterface,
+          name: '',
+          status: 'notconnect',
+          vlan: 1,
+          mode: 'access',
+          duplex: 'auto',
+          speed: 'auto',
+          shutdown: true,
+          type: 'fastethernet'
+      };
+  }
+  
+  newPorts[state.currentInterface] = {
+    ...newPorts[state.currentInterface],
+    ipv6Address: ip,
+    ipv6Prefix: prefix
+  };
+  
+  return {
+    success: true,
+    newState: { ports: newPorts, ipv6Enabled: true }
+  };
+}
+
+// Prompt al
 
 // Prompt al
 export function getPrompt(state: SwitchState): string {

@@ -141,6 +141,12 @@ const commandPatterns: Record<string, CommandPattern> = {
     minArgs: 0,
     maxArgs: 0
   },
+  'ipv6 unicast-routing': {
+    pattern: /^ipv6\s+unicast-routing$/i,
+    modes: ['config'],
+    minArgs: 0,
+    maxArgs: 0
+  },
   'ip name-server': {
     pattern: /^ip\s+name-server\s+(.+)$/i,
     modes: ['config'],
@@ -394,6 +400,12 @@ const commandPatterns: Record<string, CommandPattern> = {
     modes: ['config'],
     minArgs: 1,
     maxArgs: 1
+  },
+  'ipv6 address': {
+    pattern: /^ipv6\s+address\s+([0-9a-f:]+)\/(\d+)$/i,
+    modes: ['interface'],
+    minArgs: 2,
+    maxArgs: 2
   },
   'no shutdown': {
     pattern: /^no\s+shutdown$/i,
@@ -1011,7 +1023,19 @@ const commandPatterns: Record<string, CommandPattern> = {
     pattern: /^show\s+ip\s+interface(\s+(.+))?$/i,
     modes: ['privileged'],
     minArgs: 0,
-    maxArgs: 1
+    maxArgs: 0
+  },
+  'show ip route': {
+    pattern: /^show\s+ip\s+route(\s+(.+))?$/i,
+    modes: ['privileged', 'config', 'interface', 'vlan', 'line'],
+    minArgs: 0,
+    maxArgs: 0
+  },
+  'show ipv6 interface brief': {
+    pattern: /^show\s+ipv6\s+interface\s+brief$/i,
+    modes: ['privileged', 'config', 'interface', 'vlan', 'line'],
+    minArgs: 0,
+    maxArgs: 0
   },
   'show spanning-tree': {
     pattern: /^show\s+spanning-tree(\s+(vlan|interface|detail|summary)\s*(.+)?)?$/i,
@@ -1159,12 +1183,6 @@ const commandPatterns: Record<string, CommandPattern> = {
   },
   'show ip arp': {
     pattern: /^show\s+ip\s+arp(\s+(.+))?$/i,
-    modes: ['privileged'],
-    minArgs: 0,
-    maxArgs: 1
-  },
-  'show ip route': {
-    pattern: /^show\s+ip\s+route(\s+(.+))?$/i,
     modes: ['privileged'],
     minArgs: 0,
     maxArgs: 1
