@@ -15,7 +15,7 @@ import { SecurityPanel } from '@/components/cisco/SecurityPanel';
 import { ConfigPanel } from '@/components/cisco/ConfigPanel';
 import { QuickCommands } from '@/components/cisco/QuickCommands';
 import { TaskCard } from '@/components/cisco/TaskCard';
-import { AppFooter } from '@/components/cisco/AppFooter';
+
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -1621,15 +1621,7 @@ export default function Home() {
         )}
       </main>
 
-      {/* Footer - Always at Bottom */}
-      <AppFooter
-        state={state}
-        selectedDevice={selectedDevice}
-        activeDeviceId={activeDeviceId}
-        activeDeviceName={state.hostname}
-        isDark={isDark}
-        isCLIActive={activeTab === 'terminal'}
-      />
+
 
       {/* Confirmation Dialog */}
       {confirmDialog?.show && (
