@@ -765,6 +765,23 @@ export default function Home() {
         window.dispatchEvent(new CustomEvent('close-menus-broadcast', { detail: { source: 'escape' } }));
       }
       
+      // Ctrl Shortcuts
+      if (e.ctrlKey || e.metaKey) {
+        const key = e.key.toLowerCase();
+        if (key === 's') {
+          e.preventDefault();
+          handleSaveProject();
+        }
+        if (key === 'o') {
+          e.preventDefault();
+          fileInputRef.current?.click();
+        }
+        if (key === 'n') {
+          e.preventDefault();
+          handleNewProject();
+        }
+      }
+
       if (e.key === 'Enter') {
         if (confirmDialog?.show) {
           e.preventDefault();
@@ -1074,7 +1091,7 @@ export default function Home() {
                   size="sm"
                   onClick={handleNewProject}
                   className={`text-xs px-2 h-7 ${isDark ? 'text-slate-300 hover:text-white' : 'text-slate-600 hover:text-slate-900'}`}
-                  title={language === 'tr' ? 'Yeni Proje' : 'New Project'}
+                  title={language === 'tr' ? 'Yeni Proje (Ctrl+N)' : 'New Project (Ctrl+N)'}
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
@@ -1085,7 +1102,7 @@ export default function Home() {
                   size="sm"
                   onClick={handleSaveProject}
                   className={`text-xs px-2 h-7 ${isDark ? 'text-slate-300 hover:text-white' : 'text-slate-600 hover:text-slate-900'}`}
-                  title={language === 'tr' ? 'Projeyi Kaydet' : 'Save Project'}
+                  title={language === 'tr' ? 'Projeyi Kaydet (Ctrl+S)' : 'Save Project (Ctrl+S)'}
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
@@ -1096,7 +1113,7 @@ export default function Home() {
                   size="sm"
                   onClick={() => fileInputRef.current?.click()}
                   className={`text-xs px-2 h-7 ${isDark ? 'text-slate-300 hover:text-white' : 'text-slate-600 hover:text-slate-900'}`}
-                  title={language === 'tr' ? 'Proje Yükle' : 'Load Project'}
+                  title={language === 'tr' ? 'Proje Yükle (Ctrl+O)' : 'Load Project (Ctrl+O)'}
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
@@ -1276,7 +1293,7 @@ export default function Home() {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`relative flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-500 whitespace-nowrap ${
+                    className={`relative flex items-center gap-2.5 px-4 py-2.5 ${isActive ? 'rounded-t-xl rounded-b-none' : 'rounded-xl'} text-sm font-semibold transition-all duration-500 whitespace-nowrap ${
                       isActive
                         ? 'text-white'
                         : isDark
@@ -1287,7 +1304,7 @@ export default function Home() {
                     {isActive && (
                       <motion.div
                         layoutId="activeTab"
-                        className={`absolute inset-0 rounded-xl bg-gradient-to-r ${tab.color} shadow-lg shadow-black/10`}
+                        className={`absolute inset-0 rounded-t-xl rounded-b-none bg-gradient-to-r ${tab.color} shadow-lg shadow-black/10`}
                         initial={false}
                         transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
                       />
@@ -1306,7 +1323,7 @@ export default function Home() {
                     {isActive && (
                       <motion.div 
                         layoutId="activeTabIndicator"
-                        className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-4 h-1 bg-white rounded-full opacity-50"
+                        className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-10 h-1 bg-white rounded-full opacity-50"
                         transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
                       />
                     )}
@@ -1319,8 +1336,20 @@ export default function Home() {
 
         {/* Mobile Menu Dropdown */}
         {showMobileMenu && (
-          <div className={`md:hidden absolute top-full left-0 right-0 ${isDark ? 'bg-slate-900' : 'bg-white'} border-b ${isDark ? 'border-slate-700' : 'border-slate-200'} shadow-lg z-50`}>
+          <div className={`md:hidden absolute top-full left-0 right-0 ${isDark ? 'bg-slate-900' : 'bg-white'} border-b ${isDark ? 'border-slate-700' : 'border-slate-200'} shadow-lg z-50 animate-in slide-in-from-top duration-300`}>
             <div className="p-4 space-y-4">
+              {/* Menu Header with Close Button */}
+              <div className="flex items-center justify-between mb-2">
+                <span className={`text-sm font-bold ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{language === 'tr' ? 'ANA MENÜ' : 'MAIN MENU'}</span>
+                <button 
+                  onClick={() => setShowMobileMenu(false)}
+                  className={`p-1 rounded-lg ${isDark ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-slate-100 text-slate-600'}`}
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
               {/* Project Buttons */}
               <div className="flex gap-2">
                 <button
@@ -1330,7 +1359,8 @@ export default function Home() {
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                   </svg>
-                  <span className="text-sm">{t.newBtn}</span>
+                  <span className="text-xs font-bold">{language === 'tr' ? 'YENİ' : 'NEW'}</span>
+                  <span className="text-[10px] opacity-40 ml-auto">Ctrl+N</span>
                 </button>
                 <button
                   onClick={() => { handleSaveProject(); setShowMobileMenu(false); }}
@@ -1339,7 +1369,8 @@ export default function Home() {
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
                   </svg>
-                  <span className="text-sm">{t.saveLabel}</span>
+                  <span className="text-xs font-bold">{language === 'tr' ? 'KAYDET' : 'SAVE'}</span>
+                  <span className="text-[10px] opacity-40 ml-auto">Ctrl+S</span>
                 </button>
                 <button
                   onClick={() => { fileInputRef.current?.click(); setShowMobileMenu(false); }}
@@ -1401,53 +1432,42 @@ export default function Home() {
         {/* Tab Content */}
         {activeTab === 'topology' && (
           <div className="space-y-4">
-            {/* Network Topology */}
-            <div className="w-full">
-              <NetworkTopology
-                key={topologyKey}
-                cableInfo={cableInfo}
-                onCableChange={setCableInfo}
-                selectedDevice={selectedDevice}
-                onDeviceSelect={handleDeviceSelect}
-                onDeviceDoubleClick={handleDeviceDoubleClick}
-                onTopologyChange={handleTopologyChange}
-                onDeviceDelete={handleDeviceDelete}
-                initialDevices={topologyDevices || undefined}
-                initialConnections={topologyConnections || undefined}
-                isActive={activeTab === 'topology'}
-              />
-            </div>
-            
-            {/* PC Panel - Below Topology if open */}
-            {/* {showPCPanel && (
-              <div className="w-full">
-                <PCPanel
-                  deviceId={showPCDeviceId}
+            <div className="grid lg:grid-cols-3 gap-4">
+              {/* Network Topology */}
+              <div className="lg:col-span-2 w-full flex flex-col min-h-[450px]">
+                <NetworkTopology
+                  key={topologyKey}
                   cableInfo={cableInfo}
-                  isVisible={showPCPanel}
-                  onClose={() => setShowPCPanel(false)}
-                  topologyDevices={topologyDevices || undefined}
-                  topologyConnections={topologyConnections || undefined}
+                  onCableChange={setCableInfo}
+                  selectedDevice={selectedDevice}
+                  onDeviceSelect={handleDeviceSelect}
+                  onDeviceDoubleClick={handleDeviceDoubleClick}
+                  onTopologyChange={handleTopologyChange}
+                  onDeviceDelete={handleDeviceDelete}
+                  initialDevices={topologyDevices || undefined}
+                  initialConnections={topologyConnections || undefined}
+                  isActive={activeTab === 'topology'}
+                  activeDeviceId={activeDeviceId}
                 />
               </div>
-            )} */}
-
-            {/* Task Card */}
-            <div className="w-full">
-              <TaskCard
-                tasks={topologyTasks}
-                state={state}
-                context={taskContext}
-                color="from-cyan-500 to-blue-500"
-                isDark={isDark}
-              />
+              
+              {/* Task Card */}
+              <div className="w-full">
+                <TaskCard
+                  tasks={topologyTasks}
+                  state={state}
+                  context={taskContext}
+                  color="from-cyan-500 to-blue-500"
+                  isDark={isDark}
+                />
+              </div>
             </div>
           </div>
         )}
 
         {/* CMD Terminal Sekmesi */}
         {activeTab === 'cmd' && (
-          <div className="w-full">
+          <div className="w-full h-full overflow-hidden flex flex-col">
             <PCPanel
               deviceId={activeDeviceId}
               cableInfo={cableInfo}
@@ -1463,9 +1483,9 @@ export default function Home() {
 
         {/* Terminal Sekmesi - Fixed Layout with Footer at Bottom */}
         {activeTab === 'terminal' && (
-          <div className="flex flex-col gap-4">
-            <div className="grid lg:grid-cols-4 gap-4 flex-1">
-              <div className="lg:col-span-3 flex flex-col gap-4">
+          <div className="flex-1 flex flex-col gap-4 overflow-hidden">
+            <div className="grid lg:grid-cols-4 gap-4 flex-1 overflow-hidden">
+              <div className="lg:col-span-3 flex flex-col gap-4 overflow-hidden">
                 <Terminal
                   deviceId={activeDeviceId}
                   // use same display name as the dropdown (hostname or topology name)
@@ -1507,7 +1527,7 @@ export default function Home() {
 
         {/* Portlar Sekmesi */}
         {activeTab === 'ports' && (
-          <div className="grid lg:grid-cols-3 gap-4">
+          <div className="grid lg:grid-cols-3 gap-4 flex-1 overflow-y-auto custom-scrollbar">
             <div className="lg:col-span-2">
               <PortPanel 
                 ports={state.ports}
@@ -1533,7 +1553,7 @@ export default function Home() {
 
         {/* VLAN Sekmesi */}
         {activeTab === 'vlan' && (
-          <div className="grid lg:grid-cols-3 gap-4">
+          <div className="grid lg:grid-cols-3 gap-4 flex-1 overflow-y-auto custom-scrollbar">
             <div className="lg:col-span-2">
               <VlanPanel
                 vlans={state.vlans}
@@ -1558,17 +1578,21 @@ export default function Home() {
           </div>
         )}
 
-        {/* Güvenlik Sekmesi - Single Column */}
+        {/* Güvenlik Sekmesi */}
         {activeTab === 'security' && (
-          <div className="space-y-4">
-            <SecurityPanel security={state.security} t={t} theme={theme} />
-            <TaskCard
-              tasks={securityTasks}
-              state={state}
-              context={taskContext}
-              color="from-red-500 to-rose-500"
-              isDark={isDark}
-            />
+          <div className="grid lg:grid-cols-3 gap-4 flex-1 overflow-y-auto custom-scrollbar">
+            <div className="lg:col-span-2">
+              <SecurityPanel security={state.security} t={t} theme={theme} />
+            </div>
+            <div>
+              <TaskCard
+                tasks={securityTasks}
+                state={state}
+                context={taskContext}
+                color="from-red-500 to-rose-500"
+                isDark={isDark}
+              />
+            </div>
           </div>
         )}
       </main>
