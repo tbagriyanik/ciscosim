@@ -3,7 +3,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { SwitchState, CableInfo, CommandResult } from '@/lib/cisco/types';
 import { createInitialState, createInitialRouterState } from '@/lib/cisco/initialState';
-import type { SwitchState } from '@/lib/cisco/types';
+// Duplicate removed
 import { NetworkTopology, CanvasDevice, CanvasConnection } from '@/components/cisco/NetworkTopology';
 import { PCPanel } from '@/components/cisco/PCPanel';
 import { executeCommand, getPrompt } from '@/lib/cisco/executor';
@@ -28,7 +28,7 @@ import {
   TaskContext
 } from '@/lib/cisco/taskDefinitions';
 
-type TabType = 'topology' | 'terminal' | 'ports' | 'vlan' | 'security';
+type TabType = 'topology' | 'cmd' | 'terminal' | 'ports' | 'vlan' | 'security';
 
 // PC Output type for PCPanel
 interface PCOutputLine {
@@ -101,6 +101,19 @@ export default function Home() {
     sourceDevice: 'pc',
     targetDevice: 'switch',
   });
+
+  // Handle automatic tab switching when device type changes
+  useEffect(() => {
+    if (activeDeviceType === 'pc') {
+      if (['terminal', 'ports', 'vlan', 'security'].includes(activeTab)) {
+        setActiveTab('topology');
+      }
+    } else if (activeDeviceType === 'switch' || activeDeviceType === 'router') {
+      if (activeTab === 'cmd') {
+        setActiveTab('topology');
+      }
+    }
+  }, [activeDeviceType, activeTab]);
   
   // Topology state - managed in page.tsx for save/load functionality
   const [topologyDevices, setTopologyDevices] = useState<CanvasDevice[] | null>(null);
@@ -582,7 +595,8 @@ export default function Home() {
     const actualDeviceType = deviceId.includes('router') ? 'router' : deviceId.includes('pc') ? 'pc' : 'switch';
     
     if (actualDeviceType === 'pc') {
-      // PC - open PC Panel
+      // PC - open CMD tab
+      setActiveTab('cmd');
       setShowPCDeviceId(deviceId);
       setShowPCPanel(true);
       setActiveDeviceId(deviceId);
@@ -938,43 +952,58 @@ export default function Home() {
   const isDark = theme === 'dark';
 
   // Tab definitions
-  const tabs: { id: TabType; label: string; icon: React.ReactNode; tasks: typeof topologyTasks; color: string }[] = [
+  const allTabs: { id: TabType; label: string; icon: React.ReactNode; tasks: typeof topologyTasks; color: string; showFor: string[] }[] = [
     {
       id: 'topology',
       label: language === 'tr' ? 'Ağ Topolojisi' : 'Network Topology',
       icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" /></svg>,
       tasks: topologyTasks,
-      color: 'from-cyan-500 to-blue-500'
+      color: 'from-cyan-500 to-blue-500',
+      showFor: ['pc', 'switch', 'router']
+    },
+    {
+      id: 'cmd',
+      label: 'CMD Terminal',
+      icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>,
+      tasks: [],
+      color: 'from-blue-500 to-indigo-500',
+      showFor: ['pc']
     },
     {
       id: 'terminal',
       label: 'Terminal',
       icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>,
       tasks: [],
-      color: 'from-green-500 to-emerald-500'
+      color: 'from-green-500 to-emerald-500',
+      showFor: ['switch', 'router']
     },
     {
       id: 'ports',
       label: language === 'tr' ? 'Portlar' : 'Ports',
       icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2" /></svg>,
       tasks: portTasks,
-      color: 'from-yellow-500 to-orange-500'
+      color: 'from-yellow-500 to-orange-500',
+      showFor: ['switch', 'router']
     },
     {
       id: 'vlan',
       label: 'VLAN',
       icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>,
       tasks: vlanTasks,
-      color: 'from-purple-500 to-pink-500'
+      color: 'from-purple-500 to-pink-500',
+      showFor: ['switch', 'router']
     },
     {
       id: 'security',
       label: language === 'tr' ? 'Güvenlik' : 'Security',
       icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>,
       tasks: securityTasks,
-      color: 'from-red-500 to-rose-500'
+      color: 'from-red-500 to-rose-500',
+      showFor: ['switch', 'router']
     },
   ];
+
+  const tabs = allTabs.filter(tab => tab.showFor.includes(activeDeviceType));
   
   return (
     <div className={`min-h-screen flex flex-col ${isDark ? 'bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900' : 'bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-100'}`}>
@@ -1374,7 +1403,7 @@ export default function Home() {
             </div>
             
             {/* PC Panel - Below Topology if open */}
-            {showPCPanel && (
+            {/* {showPCPanel && (
               <div className="w-full">
                 <PCPanel
                   deviceId={showPCDeviceId}
@@ -1385,7 +1414,7 @@ export default function Home() {
                   topologyConnections={topologyConnections || undefined}
                 />
               </div>
-            )}
+            )} */}
 
             {/* Task Card */}
             <div className="w-full">
@@ -1397,6 +1426,20 @@ export default function Home() {
                 isDark={isDark}
               />
             </div>
+          </div>
+        )}
+
+        {/* CMD Terminal Sekmesi */}
+        {activeTab === 'cmd' && (
+          <div className="w-full">
+            <PCPanel
+              deviceId={activeDeviceId}
+              cableInfo={cableInfo}
+              isVisible={true}
+              onClose={() => setActiveTab('topology')}
+              topologyDevices={topologyDevices || undefined}
+              topologyConnections={topologyConnections || undefined}
+            />
           </div>
         )}
 
