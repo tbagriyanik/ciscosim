@@ -32,6 +32,33 @@ interface PCPanelProps {
 
 type PCActiveTab = 'desktop' | 'terminal';
 
+// Advanced Command Help Tree for Cisco (Reused from Terminal.tsx concept but more compact)
+const ciscoHelp: Record<string, Record<string, string[]>> = {
+  user: {
+    '': ['enable', 'exit', 'show', 'ping', 'telnet', 'ssh'],
+    'sh': ['version', 'ip', 'interfaces', 'vlan'],
+    'show ip': ['interface', 'route', 'arp'],
+    'show ip interface': ['brief'],
+  },
+  privileged: {
+    '': ['configure', 'disable', 'show', 'write', 'ping', 'telnet', 'reload', 'exit', 'copy', 'erase'],
+    'sh': ['running-config', 'startup-config', 'interfaces', 'vlan', 'version', 'mac', 'ip'],
+    'show ip': ['interface', 'route', 'arp', 'dhcp'],
+    'show ip interface': ['brief'],
+    'conf': ['terminal'],
+    'copy': ['running-config', 'startup-config'],
+    'write': ['memory'],
+  },
+  config: {
+    '': ['hostname', 'interface', 'vlan', 'enable', 'line', 'banner', 'ip', 'no', 'exit', 'end', 'do'],
+    'int': ['FastEthernet0/', 'GigabitEthernet0/', 'Vlan'],
+    'line': ['console 0', 'vty 0 4'],
+    'banner': ['motd'],
+    'ip': ['address', 'default-gateway', 'domain-name', 'route'],
+    'no': ['shutdown', 'ip', 'vlan'],
+  }
+};
+
 export function PCPanel({ 
   deviceId, 
   cableInfo, 
@@ -69,9 +96,7 @@ export function PCPanel({
     {
       id: '1',
       type: 'output',
-      content: language === 'tr' 
-        ? '\nEthernet adapter Ethernet bağlantısı:\n' 
-        : '\nEthernet adapter Ethernet connection:\n'
+      content: 'Microsoft Windows [Version 10.0.19045.4412]\n(c) Microsoft Corporation. All rights reserved.\n'
     }
   ]);
   const [consoleOutput, setConsoleOutput] = useState<OutputLine[]>([]);
@@ -80,8 +105,13 @@ export function PCPanel({
   const [pcHistory, setPcHistory] = useState<string[]>([]);
   const [consoleHistory, setConsoleHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
+  const [temporaryInput, setTemporaryInput] = useState('');
   const [showCompletionBar, setShowCompletionBar] = useState(true);
   
+  // Tab cycle state
+  const [tabCycleIndex, setTabCycleIndex] = useState(-1);
+  const [lastTabInput, setLastTabInput] = useState('');
+
   // Console connection state
   const [isConsoleConnected, setIsConsoleConnected] = useState(false);
   const [connectedDeviceId, setConnectedDeviceId] = useState<string | null>(null);
@@ -115,37 +145,26 @@ export function PCPanel({
       if (outputRef.current) outputRef.current.scrollTop = outputRef.current.scrollHeight;
     }, 0);
   }, []);
-const handleConnect = () => {
-  if (!consoleDevice) return;
-  setIsConsoleConnected(true);
-  setConnectedDeviceId(consoleDevice.id);
-  addOutput('terminal', 'output', language === 'tr' ? 'Konsol bağlantısı kuruluyor...\n' : 'Establishing console connection...\n');
 
-  // Ensure state exists for the target device
-  if (onExecuteDeviceCommand) {
-    // Just sending an empty command or a special trigger could work, 
-    // but let's assume getOrCreateDeviceState should have been called.
-    // Since we don't have direct access to getOrCreateDeviceState here, 
-    // we rely on the prompt logic using consoleDevice as fallback.
-  }
+  const handleConnect = () => {
+    if (!consoleDevice) return;
+    setIsConsoleConnected(true);
+    setConnectedDeviceId(consoleDevice.id);
+    
+    setTimeout(() => {
+      const targetState = deviceStates?.get(consoleDevice.id);
+      if (targetState) {
+        if (targetState.bannerMOTD) addOutput('terminal', 'output', targetState.bannerMOTD + '\n');
+        const prompt = getModePrompt(targetState.currentMode || 'user', targetState.hostname || consoleDevice.name, targetState.currentInterface);
+        addOutput('terminal', 'prompt', '', prompt);
+      } else {
+        const fallbackHostname = consoleDevice.name || (consoleDevice.type === 'router' ? 'Router' : 'Switch');
+        addOutput('terminal', 'prompt', '', `${fallbackHostname}>`);
+      }
+    }, 100);
+  };
 
-  setTimeout(() => {
-    addOutput('terminal', 'success', (language === 'tr' ? 'Bağlantı başarılı: ' : 'Connected to: ') + consoleDevice.name + '\n');
-    // Get target device state
-    const targetState = deviceStates?.get(consoleDevice.id);
-    if (targetState) {
-      if (targetState.bannerMOTD) addOutput('terminal', 'output', targetState.bannerMOTD + '\n');
-      const prompt = getModePrompt(targetState.currentMode || 'user', targetState.hostname || consoleDevice.name, targetState.currentInterface);
-      addOutput('terminal', 'prompt', '', prompt);
-    } else {
-      // Fallback if state not yet initialized
-      const fallbackHostname = consoleDevice.name || (consoleDevice.type === 'router' ? 'Router' : 'Switch');
-      addOutput('terminal', 'prompt', '', `${fallbackHostname}>`);
-    }
-  }, 600);
-};
-
-const executePCCommand = (fullCommand: string) => {
+  const executePCCommand = (fullCommand: string) => {
     const trimmed = fullCommand.trim();
     addOutput('desktop', 'command', trimmed, 'C:\\>');
     if (!trimmed) return;
@@ -153,55 +172,79 @@ const executePCCommand = (fullCommand: string) => {
     const [command, ...args] = trimmed.toLowerCase().split(/\s+/);
     switch (command) {
       case 'cls': setPcOutput([]); break;
-      case 'ipconfig': addOutput('desktop', 'output', `\nEthernet adapter Ethernet:\n   IPv4 Address. . . : ${pcIP}\n   Subnet Mask . . . : 255.255.255.0\n   MAC Address . . . : ${pcMAC}\n`); break;
-      case 'getmac': addOutput('desktop', 'output', `\nPhysical Address    Transport Name\n==================  =========================================================\n${pcMAC.toUpperCase().replace(/\./g, '-')}  \\Device\\Tcpip_{${Math.random().toString(16).substr(2, 8).toUpperCase()}}\n`); break;
-      case 'ping': addOutput('desktop', 'output', args.length ? `Pinging ${args[0]} with 32 bytes of data...\nReply from ${args[0]}: bytes=32 time=1ms TTL=128\n` : 'Usage: ping <ip>\n'); break;
-      case 'help': addOutput('desktop', 'output', 'Commands: ipconfig, getmac, ping, cls, exit, help\n'); break;
+      case 'ipconfig': 
+        addOutput('desktop', 'output', `\nWindows IP Configuration\n\nEthernet adapter Ethernet:\n\n   Connection-specific DNS Suffix  . : \n   IPv4 Address. . . . . . . . . . . : ${pcIP}\n   Subnet Mask . . . . . . . . . . . : 255.255.255.0\n   Default Gateway . . . . . . . . . : 192.168.1.1\n`); 
+        break;
+      case 'getmac': 
+        addOutput('desktop', 'output', `\nPhysical Address    Transport Name\n==================  =========================================================\n${pcMAC.toUpperCase().replace(/\./g, '-')}  \\Device\\Tcpip_{${deviceId.toUpperCase()}}\n`); 
+        break;
+      case 'ping': 
+        if (!args.length) {
+          addOutput('desktop', 'output', 'Usage: ping [-t] [-a] [-n count] [-l size] target_name\n');
+        } else {
+          addOutput('desktop', 'output', `\nPinging ${args[0]} with 32 bytes of data:\nReply from ${args[0]}: bytes=32 time<1ms TTL=128\nReply from ${args[0]}: bytes=32 time<1ms TTL=128\nReply from ${args[0]}: bytes=32 time<1ms TTL=128\nReply from ${args[0]}: bytes=32 time<1ms TTL=128\n\nPing statistics for ${args[0]}:\n    Packets: Sent = 4, Received = 4, Lost = 0 (0% loss),\nApproximate round trip times in milli-seconds:\n    Minimum = 0ms, Maximum = 0ms, Average = 0ms\n`);
+        }
+        break;
+      case 'help': 
+        addOutput('desktop', 'output', 'For more information on a specific command, type HELP command-name\nCLS            Clears the screen.\nEXIT           Quits the CMD.EXE program (command interpreter).\nGETMAC         Displays the MAC address of the device.\nIPCONFIG       Displays all current TCP/IP network configuration values.\nPING           Sends ICMP Echo Requests to verify connectivity.\n'); 
+        break;
       case 'exit': onClose(); break;
-      default: addOutput('desktop', 'error', `'${command}' is not recognized.\n`);
+      default: 
+        addOutput('desktop', 'output', `'${command}' is not recognized as an internal or external command,\noperable program or batch file.\n`);
     }
   };
 
   const handleExecute = async (cmd: string) => {
+    setTabCycleIndex(-1);
+    setHistoryIndex(-1);
+    setTemporaryInput('');
+    
     if (activeTab === 'terminal' && isConsoleConnected && connectedDeviceId && onExecuteDeviceCommand) {
       addOutput('terminal', 'command', cmd, getConsolePrompt());
       const result = await onExecuteDeviceCommand(connectedDeviceId, cmd);
       if (result?.output) addOutput('terminal', 'output', result.output);
-      setConsoleHistory(prev => [cmd, ...prev.filter(c => c !== cmd)].slice(0, 20));
+      setConsoleHistory(prev => [cmd, ...prev.filter(c => c !== cmd)].slice(0, 50));
     } else if (activeTab === 'desktop') {
       executePCCommand(cmd);
-      setPcHistory(prev => [cmd, ...prev.filter(c => c !== cmd)].slice(0, 20));
+      setPcHistory(prev => [cmd, ...prev.filter(c => c !== cmd)].slice(0, 50));
     }
     setCurrentCommand('');
-    setHistoryIndex(-1);
   };
 
-  const getConsolePrompt = () => {
+  const getConsolePrompt = useCallback(() => {
     if (connectedDeviceId && deviceStates) {
       const state = deviceStates.get(connectedDeviceId);
       if (state) return getModePrompt(state.currentMode, state.hostname, state.currentInterface);
     }
-    
-    // Fallback to topology device info if simulator state is not yet available
-    if (consoleDevice) {
-      return `${consoleDevice.name}>`;
-    }
-    
+    if (consoleDevice) return `${consoleDevice.name}>`;
     return 'Switch>';
-  };
+  }, [connectedDeviceId, deviceStates, consoleDevice]);
 
   const activePrompt = activeTab === 'desktop' ? 'C:\\>' : getConsolePrompt();
 
   const getSuggestions = useCallback((cmd: string): string[] => {
-    const lastWord = cmd.split(' ').pop()?.toLowerCase() || '';
-    if (!lastWord) return [];
-
-    const pcCommands = ['ipconfig', 'getmac', 'ping', 'cls', 'exit', 'help'];
-    const ciscoCommands = ['show', 'configure', 'interface', 'vlan', 'ip', 'no', 'exit', 'end', 'write', 'copy', 'reload', 'ping'];
+    const parts = cmd.split(/\s+/);
+    const lastPart = parts.pop()?.toLowerCase() || '';
+    const prefix = parts.join(' ');
     
-    const baseList = (activeTab === 'terminal' && isConsoleConnected) ? ciscoCommands : pcCommands;
-    return baseList.filter(c => c.startsWith(lastWord));
-  }, [activeTab, isConsoleConnected]);
+    if (activeTab === 'terminal' && isConsoleConnected && connectedDeviceId) {
+      const state = deviceStates?.get(connectedDeviceId);
+      const mode = state?.currentMode || 'user';
+      const modeHelp = ciscoHelp[mode] || ciscoHelp.user;
+      
+      // If we have a prefix, look for specific sub-commands
+      if (prefix && modeHelp[prefix]) {
+        return modeHelp[prefix].filter(c => c.toLowerCase().startsWith(lastPart));
+      }
+      
+      // Fallback to top-level commands
+      return modeHelp[''].filter(c => c.toLowerCase().startsWith(lastPart));
+    } else {
+      // PC Suggestions
+      const pcCommands = ['ipconfig', 'getmac', 'ping', 'cls', 'exit', 'help'];
+      return pcCommands.filter(c => c.startsWith(lastPart));
+    }
+  }, [activeTab, isConsoleConnected, connectedDeviceId, deviceStates]);
 
   const currentSuggestions = useMemo(() => getSuggestions(currentCommand), [currentCommand, getSuggestions]);
 
@@ -212,32 +255,49 @@ const executePCCommand = (fullCommand: string) => {
       e.preventDefault();
       const history = activeTab === 'desktop' ? pcHistory : consoleHistory;
       if (history.length > 0) {
-        const nextIndex = historyIndex === -1 ? 0 : Math.min(history.length - 1, historyIndex + 1);
+        if (historyIndex === -1) setTemporaryInput(currentCommand);
+        const nextIndex = Math.min(history.length - 1, historyIndex + 1);
         setHistoryIndex(nextIndex);
         setCurrentCommand(history[nextIndex]);
       }
     } else if (e.key === 'ArrowDown') {
       e.preventDefault();
       const history = activeTab === 'desktop' ? pcHistory : consoleHistory;
-      if (historyIndex !== -1) {
-        const nextIndex = historyIndex === 0 ? -1 : historyIndex - 1;
+      if (historyIndex > 0) {
+        const nextIndex = historyIndex - 1;
         setHistoryIndex(nextIndex);
-        setCurrentCommand(nextIndex === -1 ? '' : history[nextIndex]);
+        setCurrentCommand(history[nextIndex]);
+      } else if (historyIndex === 0) {
+        setHistoryIndex(-1);
+        setCurrentCommand(temporaryInput);
       }
     } else if (e.key === 'Tab') {
       e.preventDefault();
       if (currentSuggestions.length > 0) {
-        const words = currentCommand.split(' ');
-        words[words.length - 1] = currentSuggestions[0];
+        // Cycling through suggestions
+        const newIndex = (tabCycleIndex + 1) % currentSuggestions.length;
+        setTabCycleIndex(newIndex);
+        
+        const words = currentCommand.split(/\s+/);
+        words[words.length - 1] = currentSuggestions[newIndex];
         setCurrentCommand(words.join(' '));
+      }
+    } else {
+      // Reset tab cycle on any other key
+      if (e.key !== 'Shift') {
+        setTabCycleIndex(-1);
       }
     }
   };
 
   const handleSuggestionClick = (suggestion: string) => {
-    const words = currentCommand.split(' ');
-    words[words.length - 1] = suggestion;
-    setCurrentCommand(words.join(' '));
+    const words = currentCommand.trim().split(/\s+/);
+    if (currentCommand.endsWith(' ') || words.length === 0) {
+      setCurrentCommand(currentCommand + suggestion);
+    } else {
+      words[words.length - 1] = suggestion;
+      setCurrentCommand(words.join(' '));
+    }
     inputRef.current?.focus();
   };
 
@@ -372,7 +432,11 @@ const executePCCommand = (fullCommand: string) => {
           {currentSuggestions.length > 0 && (
             <div className="flex flex-wrap gap-2">
               {currentSuggestions.map((s, idx) => (
-                <button key={idx} onClick={() => handleSuggestionClick(s)} className={`px-3 py-1 rounded-lg text-xs font-mono transition-all ${isDark ? 'bg-slate-800 text-blue-400 hover:bg-slate-700 border border-slate-700' : 'bg-white text-blue-600 hover:bg-slate-50 border border-slate-200 shadow-sm'}`}>
+                <button key={idx} onClick={() => handleSuggestionClick(s)} className={`px-3 py-1 rounded-lg text-xs font-mono transition-all ${
+                  tabCycleIndex === idx
+                    ? 'bg-blue-600 text-white border-blue-500'
+                    : isDark ? 'bg-slate-800 text-blue-400 hover:bg-slate-700 border border-slate-700' : 'bg-white text-blue-600 hover:bg-slate-50 border border-slate-200 shadow-sm'
+                }`}>
                   {s}
                 </button>
               ))}
@@ -383,13 +447,17 @@ const executePCCommand = (fullCommand: string) => {
           {(activeTab === 'desktop' ? pcHistory : consoleHistory).length > 0 && (
             <div className="flex flex-wrap gap-2">
               {(activeTab === 'desktop' ? pcHistory : consoleHistory).slice(0, 8).map((cmd, idx) => (
-                <button key={idx} onClick={() => handleHistoryClick(cmd)} className={`px-3 py-1 rounded-lg text-[10px] font-mono transition-all ${isDark ? 'bg-slate-900/50 text-slate-500 hover:text-slate-300' : 'bg-slate-100 text-slate-400 hover:text-slate-600'}`}>
+                <button key={idx} onClick={() => handleHistoryClick(cmd)} className={`px-3 py-1 rounded-lg text-[10px] font-mono transition-all ${
+                  historyIndex === (activeTab === 'desktop' ? pcHistory : consoleHistory).indexOf(cmd)
+                    ? 'bg-slate-600 text-white'
+                    : isDark ? 'bg-slate-900/50 text-slate-500 hover:text-slate-300' : 'bg-slate-100 text-slate-400 hover:text-slate-600'
+                }`}>
                   {cmd}
                 </button>
               ))}
             </div>
           )}
-          <button onClick={() => setShowCompletionBar(false)} className="text-[10px] font-bold tracking-widest uppercase opacity-30 hover:opacity-100 transition-opacity">Hide Panel</button>
+          <button onClick={() => setShowCompletionBar(false)} className="text-[10px] font-bold tracking-widest uppercase opacity-30 hover:opacity-100 transition-opacity self-start">Hide Panel</button>
         </div>
       )}
       {!showCompletionBar && (

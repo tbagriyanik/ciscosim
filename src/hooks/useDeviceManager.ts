@@ -60,9 +60,11 @@ export function useDeviceManager(language: 'tr' | 'en') {
   // Get or create state for a device
   const getOrCreateDeviceState = useCallback((deviceId: string, deviceType: 'pc' | 'switch' | 'router', initialHostname?: string): SwitchState => {
     let deviceState = deviceStates.get(deviceId);
+    const defaultName = deviceType === 'router' ? 'Router' : 'Switch';
+    
     if (!deviceState) {
       deviceState = deviceType === 'router' ? createInitialRouterState() : createInitialState();
-      const hostname = initialHostname || (deviceType === 'router' ? 'Router' : 'Switch');
+      const hostname = initialHostname || defaultName;
       
       // Update state with unique hostname
       deviceState = { ...deviceState, hostname };
@@ -77,6 +79,21 @@ export function useDeviceManager(language: 'tr' | 'en') {
       }
       
       setDeviceStates(prev => new Map(prev).set(deviceId, deviceState!));
+    } else if (initialHostname && (deviceState.hostname === 'Switch' || deviceState.hostname === 'Router') && initialHostname !== deviceState.hostname) {
+      // If state exists but has default name, and we have a specific name from topology, update it
+      const updatedState = { ...deviceState, hostname: initialHostname };
+      
+      // Also update running config
+      if (updatedState.runningConfig) {
+        updatedState.runningConfig = updatedState.runningConfig.map(line => 
+          line.startsWith(' hostname ') || line.startsWith('hostname ') 
+            ? `hostname ${initialHostname}` 
+            : line
+        );
+      }
+      
+      setDeviceStates(prev => new Map(prev).set(deviceId, updatedState));
+      return updatedState;
     }
     return deviceState;
   }, [deviceStates]);
@@ -227,7 +244,7 @@ export function useDeviceManager(language: 'tr' | 'en') {
             });
             
             const targetType = targetDevice.type as 'switch' | 'router';
-            getOrCreateDeviceState(targetDevice.id, targetType);
+            getOrCreateDeviceState(targetDevice.id, targetType, targetDevice.name);
             getOrCreateDeviceOutputs(targetDevice.id);
             setActiveDeviceId(targetDevice.id);
             setActiveDeviceType(targetType);

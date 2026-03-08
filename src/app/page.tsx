@@ -63,8 +63,17 @@ export default function Home() {
   const [activeDeviceId, setActiveDeviceId] = useState<string>('switch-1');
   const [activeDeviceType, setActiveDeviceType] = useState<'pc' | 'switch' | 'router'>('switch');
 
+  // Topology state - managed in page.tsx for save/load functionality
+  const [topologyDevices, setTopologyDevices] = useState<CanvasDevice[] | null>(null);
+  const [topologyConnections, setTopologyConnections] = useState<CanvasConnection[] | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   // Legacy state for compatibility with other panels (uses active device's state)
-  const state = getOrCreateDeviceState(activeDeviceId, activeDeviceType);
+  // MOVED AFTER topologyDevices initialization
+  const state = (() => {
+    const activeDevice = topologyDevices?.find(d => d.id === activeDeviceId);
+    return getOrCreateDeviceState(activeDeviceId, activeDeviceType, activeDevice?.name);
+  })();
   const output = getOrCreateDeviceOutputs(activeDeviceId);
 
   const [activeTab, setActiveTab] = useState<TabType>('topology');
@@ -96,11 +105,6 @@ export default function Home() {
     showAnimation: boolean 
   }>({ change: 0, isIncreasing: true, showAnimation: false });
 
-  // Topology state - managed in page.tsx for save/load functionality
-  const [topologyDevices, setTopologyDevices] = useState<CanvasDevice[] | null>(null);
-  const [topologyConnections, setTopologyConnections] = useState<CanvasConnection[] | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  
   const [selectedDevice, setSelectedDevice] = useState<'pc' | 'switch' | 'router' | null>(null);
   const [showPCPanel, setShowPCPanel] = useState(false);
   const [showPCDeviceId, setShowPCDeviceId] = useState<string>('pc-1');
@@ -183,7 +187,8 @@ export default function Home() {
         getOrCreateDeviceOutputs(deviceId);
       }
     }
-  }, [getOrCreateDeviceState, getOrCreateDeviceOutputs]);
+  }, [getOrCreateDeviceState, getOrCreateDeviceOutputs, topologyDevices]);
+
   // Handle command using active device
   const handleCommand = useCallback(async (command: string) => {
     await handleCommandForDevice(
@@ -240,8 +245,6 @@ export default function Home() {
     });
   };
 
-  // ... (rest of the component logic)
-
   // Handle device double click (Open terminal or PC panel)
   const handleDeviceDoubleClick = useCallback((device: 'pc' | 'switch' | 'router', deviceId: string) => {
     // Determine actual device type
@@ -265,7 +268,7 @@ export default function Home() {
       getOrCreateDeviceOutputs(deviceId);
       setActiveTab('terminal');
     }
-  }, [getOrCreateDeviceState, getOrCreateDeviceOutputs]);
+  }, [getOrCreateDeviceState, getOrCreateDeviceOutputs, topologyDevices]);
 
   // Handle topology change from NetworkTopology component
   const handleTopologyChange = useCallback((devices: CanvasDevice[], connections: CanvasConnection[]) => {
@@ -312,7 +315,6 @@ export default function Home() {
     // If the deleted device was the active one, switch to another device
     if (activeDeviceId === deviceId) {
       // Find another device to switch to (from current topologyDevices)
-      // Use a fresh reference by getting devices from the ref
       const currentDevices = topologyDevices?.filter(d => d.id !== deviceId) || [];
       if (currentDevices.length > 0) {
         const nextDevice = currentDevices[0];
@@ -330,28 +332,141 @@ export default function Home() {
       }
     }
     setHasUnsavedChanges(true);
-  }, [activeDeviceId, topologyDevices, showPCDeviceId, selectedDevice]);
+  }, [activeDeviceId, topologyDevices, showPCDeviceId, selectedDevice, setDeviceStates, setDeviceOutputs, setPcOutputs]);
 
-  // Sync hostname changes to topology device names
+  // Save project to JSON file
+  const handleSaveProjectInternal = useCallback(() => {
+    const projectData = {
+      version: '1.0',
+      timestamp: new Date().toISOString(),
+      devices: Array.from(deviceStates.entries()).map(([id, state]) => ({
+        id,
+        state
+      })),
+      deviceOutputs: Array.from(deviceOutputs.entries()).map(([id, outputs]) => ({
+        id,
+        outputs
+      })),
+      pcOutputs: Array.from(pcOutputs.entries()).map(([id, outputs]) => ({
+        id,
+        outputs
+      })),
+      topology: {
+        devices: topologyDevices,
+        connections: topologyConnections
+      },
+      cableInfo,
+      activeDeviceId,
+      activeDeviceType
+    };
+
+    const blob = new Blob([JSON.stringify(projectData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `cisco-project-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    setHasUnsavedChanges(false);
+  }, [deviceStates, deviceOutputs, pcOutputs, topologyDevices, topologyConnections, cableInfo, activeDeviceId, activeDeviceType]);
+
+  // Handle Project Saving (Wrapper)
+  function handleSaveProject() {
+    handleSaveProjectInternal();
+  }
+
+  // New project - reset everything
+  const handleNewProjectInternal = useCallback(() => {
+    const doNewProject = () => {
+      setDeviceStates(new Map([['switch-1', createInitialState()]]));
+      setDeviceOutputs(new Map([['switch-1', []]]));
+      setTopologyDevices(null);
+      setTopologyConnections(null);
+      setActiveDeviceId('switch-1');
+      setActiveDeviceType('switch');
+      setActiveTab('topology');
+      setHasUnsavedChanges(false);
+      // Increment key to force NetworkTopology remount
+      setTopologyKey(prev => prev + 1);
+    };
+
+    if (hasUnsavedChanges) {
+      setSaveDialog({
+        show: true,
+        message: language === 'tr'
+          ? 'Kaydedilmemiş değişiklikler var. Kaydetmek istiyor musunuz?'
+          : 'You have unsaved changes. Do you want to save?',
+        onConfirm: (save: boolean) => {
+          setSaveDialog(null);
+          if (save) {
+            handleSaveProject();
+          }
+          doNewProject();
+        }
+      });
+    } else {
+      setConfirmDialog({
+        show: true,
+        message: language === 'tr' 
+          ? 'Tüm yapılandırma ve topoloji sıfırlanacak. Devam etmek istiyor musunuz?'
+          : 'All configuration and topology will be reset. Do you want to continue?',
+        action: 'new-project',
+        onConfirm: () => {
+          setConfirmDialog(null);
+          doNewProject();
+        }
+      });
+    }
+  }, [language, hasUnsavedChanges, handleSaveProject, setDeviceStates, setDeviceOutputs]);
+
+  function handleNewProject() {
+    handleNewProjectInternal();
+  }
+  
+  // Sync hostname changes between Topology and Simulator
   useEffect(() => {
     if (!topologyDevices) return;
     
-    // Check if any device's hostname has changed
-    let hasChanges = false;
-    const updatedDevices = topologyDevices.map(device => {
+    let topologyChanged = false;
+    let simulatorChanged = false;
+    const newDeviceStates = new Map(deviceStates);
+    
+    const updatedTopologyDevices = topologyDevices.map(device => {
+      if (device.type === 'pc') return device;
+      
       const deviceState = deviceStates.get(device.id);
-      if (deviceState && deviceState.hostname !== device.name && device.type !== 'pc') {
-        hasChanges = true;
-        return { ...device, name: deviceState.hostname };
+      if (!deviceState) return device;
+
+      const isDefaultCLIHostname = deviceState.hostname === 'Switch' || deviceState.hostname === 'Router';
+      
+      if (deviceState.hostname !== device.name) {
+        if (isDefaultCLIHostname) {
+          // Simulator has generic default name, Topology has specific name (like Switch-1)
+          // -> Sync Topology name to Simulator
+          simulatorChanged = true;
+          newDeviceStates.set(device.id, { ...deviceState, hostname: device.name });
+          return device;
+        } else {
+          // Simulator has custom name (manually changed via CLI) 
+          // -> Sync Simulator name to Topology
+          topologyChanged = true;
+          return { ...device, name: deviceState.hostname };
+        }
       }
       return device;
     });
 
-    if (hasChanges) {
-      setTopologyDevices(updatedDevices);
+    if (simulatorChanged) {
+      setDeviceStates(newDeviceStates);
+    }
+    
+    if (topologyChanged) {
+      setTopologyDevices(updatedTopologyDevices);
       setHasUnsavedChanges(true);
     }
-  }, [deviceStates, topologyDevices]);
+  }, [deviceStates, topologyDevices, setDeviceStates]);
 
   // Beforeunload event for unsaved changes warning
   useEffect(() => {
@@ -454,45 +569,7 @@ export default function Home() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [showActiveDeviceDropdown, showMobileMenu, confirmDialog, saveDialog, showPCPanel]);
-
-  // Save project to JSON file
-  const handleSaveProject = useCallback(() => {
-    const projectData = {
-      version: '1.0',
-      timestamp: new Date().toISOString(),
-      devices: Array.from(deviceStates.entries()).map(([id, state]) => ({
-        id,
-        state
-      })),
-      deviceOutputs: Array.from(deviceOutputs.entries()).map(([id, outputs]) => ({
-        id,
-        outputs
-      })),
-      pcOutputs: Array.from(pcOutputs.entries()).map(([id, outputs]) => ({
-        id,
-        outputs
-      })),
-      topology: {
-        devices: topologyDevices,
-        connections: topologyConnections
-      },
-      cableInfo,
-      activeDeviceId,
-      activeDeviceType
-    };
-
-    const blob = new Blob([JSON.stringify(projectData, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `cisco-project-${new Date().toISOString().slice(0, 10)}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    setHasUnsavedChanges(false);
-  }, [deviceStates, deviceOutputs, pcOutputs, topologyDevices, topologyConnections, cableInfo, activeDeviceId, activeDeviceType]);
+  }, [showActiveDeviceDropdown, showMobileMenu, confirmDialog, saveDialog, showPCPanel, handleSaveProject, handleNewProject]);
 
   // Load project from JSON file
   const handleLoadProject = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
@@ -555,58 +632,13 @@ export default function Home() {
         setHasUnsavedChanges(false);
 
       } catch (error) {
-
         alert(language === 'tr' ? 'Proje dosyası yüklenemedi!' : 'Failed to load project file!');
       }
     };
     reader.readAsText(file);
     // Reset input
     event.target.value = '';
-  }, [language]);
-
-  // New project - reset everything
-  const handleNewProject = useCallback(() => {
-    const doNewProject = () => {
-      setDeviceStates(new Map([['switch-1', createInitialState()]]));
-      setDeviceOutputs(new Map([['switch-1', []]]));
-      setTopologyDevices(null);
-      setTopologyConnections(null);
-      setActiveDeviceId('switch-1');
-      setActiveDeviceType('switch');
-      setActiveTab('topology');
-      setHasUnsavedChanges(false);
-      // Increment key to force NetworkTopology remount
-      setTopologyKey(prev => prev + 1);
-    };
-
-    if (hasUnsavedChanges) {
-      setSaveDialog({
-        show: true,
-        message: language === 'tr'
-          ? 'Kaydedilmemiş değişiklikler var. Kaydetmek istiyor musunuz?'
-          : 'You have unsaved changes. Do you want to save?',
-        onConfirm: (save: boolean) => {
-          setSaveDialog(null);
-          if (save) {
-            handleSaveProject();
-          }
-          doNewProject();
-        }
-      });
-    } else {
-      setConfirmDialog({
-        show: true,
-        message: language === 'tr' 
-          ? 'Tüm yapılandırma ve topoloji sıfırlanacak. Devam etmek istiyor musunuz?'
-          : 'All configuration and topology will be reset. Do you want to continue?',
-        action: 'new-project',
-        onConfirm: () => {
-          setConfirmDialog(null);
-          doNewProject();
-        }
-      });
-    }
-  }, [language, hasUnsavedChanges, handleSaveProject]);
+  }, [language, setDeviceStates, setDeviceOutputs, setPcOutputs]);
 
   const isDark = theme === 'dark';
 
@@ -874,254 +906,59 @@ export default function Home() {
               </Button>
             </div>
           </div>
+          <div className="flex-1 min-w-0 mt-4">
+            <div className="flex items-end gap-1 flex-wrap lg:flex-nowrap">
+              {/* Active Device Selector Dropdown as a Tab */}
+              {activeDeviceId && topologyDevices && topologyDevices.length > 0 && (() => {
+                const activeDevice = topologyDevices?.find(d => d.id === activeDeviceId);
+                const hostname = deviceStates.get(activeDeviceId)?.hostname || activeDevice?.name || 'Device';
+                const currentType = activeDevice?.type || activeDeviceType;
+                const typeLabel = currentType === 'pc' ? 'PC' : currentType === 'router' ? 'Router' : 'Switch';
+                
+                return (
+                <div className="relative device-dropdown-container">
+                  <button
+                    onClick={openDeviceDropdown}
+                    className={`flex items-center gap-2 pl-4 pr-3 py-2.5 text-sm font-semibold transition-all rounded-t-lg border-b-0 ${
+                      !topologyDevices || topologyDevices.length === 0
+                        ? isDark 
+                          ? 'bg-slate-800/30 text-slate-500 border-slate-700/50 cursor-not-allowed opacity-50'
+                          : 'bg-slate-200 text-slate-400 border-slate-300 cursor-not-allowed opacity-50'
+                        : isDark 
+                          ? 'bg-slate-800 text-cyan-400 border-slate-700 hover:bg-slate-700/50' 
+                          : 'bg-white text-cyan-700 border-slate-200 hover:bg-slate-50'
+                    } shadow-sm`}
+                  >
+                  </button>
+                </div>
+              )})()}
 
-          {/* Tab Navigation */}
-          <div className="mt-4 flex gap-1 lg:overflow-visible overflow-x-auto pb-1 items-center">
-            {/* Active Device Selector Dropdown */}
-            {activeDeviceId && topologyDevices && topologyDevices.length > 0 && (() => {
-              // Get display name for active device (from topology or state)
-              const activeDevice = topologyDevices?.find(d => d.id === activeDeviceId);
-              const hostname = deviceStates.get(activeDeviceId)?.hostname || activeDevice?.name || 'Device';
-              const currentType = activeDevice?.type || activeDeviceType;
-              const typeLabel = currentType === 'pc' ? 'PC' : currentType === 'router' ? 'Router' : 'Switch';
-              
-              return (
-              <div className="relative device-dropdown-container">
-                <button
-                  onClick={openDeviceDropdown}
-                  className={`flex items-center gap-2 px-3 py-2 text-sm font-semibold transition-all rounded-xl border ${
-                    !topologyDevices || topologyDevices.length === 0
-                      ? isDark 
-                        ? 'text-slate-500 bg-slate-800/30 border-slate-700/50 cursor-not-allowed opacity-50'
-                        : 'text-slate-400 bg-slate-50 border-slate-200 cursor-not-allowed opacity-50'
-                      : isDark 
-                        ? 'text-cyan-400 bg-slate-800/50 border-slate-700 hover:bg-slate-700/50 hover:border-cyan-500/50 cursor-pointer' 
-                        : 'text-cyan-700 bg-white border-slate-200 hover:bg-slate-50 hover:border-cyan-500/50 cursor-pointer'
-                  } shadow-sm`}
-                >
-                  {currentType === 'pc' ? (
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                    </svg>
-                  ) : currentType === 'router' ? (
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.14 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0" />
-                    </svg>
-                  ) : (
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" />
-                    </svg>
-                  )}
-                  <span>{hostname} ({typeLabel})</span>
-                  <svg className={`w-3 h-3 transition-transform ${showActiveDeviceDropdown ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-
-                {showActiveDeviceDropdown && (
-                  <>
-                    {/* Invisible backdrop to close dropdown on click outside */}
-                    <div className="fixed inset-0 z-[10000]" onClick={() => setShowActiveDeviceDropdown(false)} />
-                    {/* Dropdown panel positioned centered at the top */}
-                    <div
-                      className={`fixed z-[10001] min-w-[220px] max-w-[95vw] rounded-xl shadow-2xl border overflow-hidden max-h-[300px] overflow-y-auto ${
-                        isDark ? 'bg-slate-800 border-slate-600' : 'bg-white border-slate-200'
-                      }`}
-                      style={{ 
-                        top: '5rem',
-                        left: '20px'
-                      }}
-                      id="device-dropdown-menu"
-                    >
-                    {/* Sort devices by type: routers first, then switches, then PCs */}
-                    {(() => {
-                      const sortedDevices = [
-                        ...topologyDevices?.filter(d => d.type === 'router') || [],
-                        ...topologyDevices?.filter(d => d.type === 'switch') || [],
-                        ...topologyDevices?.filter(d => d.type === 'pc') || [],
-                      ];
-                      
-                      if (sortedDevices.length === 0) {
-                        return (
-                          <div className={`px-4 py-3 text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                            {language === 'tr' ? 'Cihaz yok' : 'No devices'}
-                          </div>
-                        );
-                      }
-                      
-                      return sortedDevices.map(device => {
-                        const deviceState = deviceStates.get(device.id);
-                        const hostname = deviceState?.hostname || device.name;
-                        const isActive = activeDeviceId === device.id;
-                        
-                        return (
-                          <button
-                            key={device.id}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              // Select the device but don't change tabs
-                              handleDeviceSelect(device.type, device.id);
-                              setShowActiveDeviceDropdown(false);
-                            }}
-                            className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${
-                              isActive
-                                ? isDark ? 'bg-cyan-600/20 text-cyan-400' : 'bg-cyan-50 text-cyan-700'
-                                : isDark ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-slate-50 text-slate-700'
-                            }`}
-                          >
-                            {device.type === 'pc' ? (
-                              <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                              </svg>
-                            ) : device.type === 'router' ? (
-                              <svg className="w-4 h-4 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.14 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0" />
-                              </svg>
-                            ) : (
-                              <svg className="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" />
-                              </svg>
-                            )}
-                            <div className="flex flex-col">
-                              <span className="font-bold text-sm">{hostname}</span>
-                              <span className={`text-[10px] font-black tracking-widest uppercase opacity-40 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                                {device.type === 'pc' ? 'PC' : device.type === 'router' ? 'Router' : 'Switch'}
-                              </span>
-                            </div>
-                            {isActive && (
-                              <svg className="w-4 h-4 text-cyan-500 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                              </svg>
-                            )}
-                          </button>
-                        );
-                      });
-                    })()}
-                  </div>
-                  </>
-                )}
-              </div>
-            )})()}
-            <div className={`p-1 flex gap-1 items-center rounded-2xl ${isDark ? 'bg-slate-900/40' : 'bg-slate-200/40'} border ${isDark ? 'border-slate-700/50' : 'border-slate-200/30'} backdrop-blur-md`}>
+              {/* Standard Tabs */}
               {tabs.map((tab) => {
-                const score = calculateTaskScore(tab.tasks, state, taskContext);
-                const tabMaxScore = tab.tasks.reduce((acc, task) => acc + task.weight, 0);
                 const isActive = activeTab === tab.id;
-
                 return (
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`relative flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 whitespace-nowrap ${
+                    className={`flex items-center gap-2.5 px-5 py-3 rounded-t-xl text-sm font-semibold transition-all border-x border-t ${
                       isActive
-                        ? `text-white bg-gradient-to-r ${tab.color} shadow-lg shadow-black/10 scale-105`
-                        : isDark
-                          ? 'text-slate-400 hover:text-white hover:bg-slate-800/50'
-                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                        ? isDark ? 'bg-slate-950 border-slate-700 text-white' : 'bg-slate-100 border-slate-300 text-slate-900'
+                        : isDark ? 'border-transparent text-slate-400 hover:text-white hover:bg-slate-800/50' : 'border-transparent text-slate-500 hover:text-slate-900 hover:bg-slate-200/50'
                     }`}
                   >
-                    <span className={`relative z-10 transition-transform duration-300 ${isActive ? 'scale-110 drop-shadow-sm' : ''}`}>
-                      {tab.icon}
-                    </span>
-                    <span className="relative z-10">{tab.label}</span>
-                    {tab.tasks.length > 0 && (
-                      <span className={`relative z-10 text-[10px] font-bold px-1.5 py-0.5 rounded-full transition-all duration-300 ${
-                        isActive ? 'bg-white/20' : isDark ? 'bg-slate-700/50' : 'bg-slate-300/50'
-                      }`}>
-                        {score}/{tabMaxScore}
-                      </span>
-                    )}
+                    <span className={`transition-transform duration-300 ${isActive ? 'scale-110' : ''}`}>{tab.icon}</span>
+                    <span>{tab.label}</span>
                   </button>
-                );              })}
+                );
+              })}
             </div>
           </div>
         </div>
-
-        {/* Mobile Menu Dropdown */}
-        {showMobileMenu && (
-          <>
-            {/* Invisible backdrop to close menu on click outside */}
-            <div className="fixed inset-0 z-40 md:hidden" onClick={() => setShowMobileMenu(false)} />
-            <div className={`md:hidden absolute top-full left-0 right-0 ${isDark ? 'bg-slate-900' : 'bg-white'} border-b ${isDark ? 'border-slate-700' : 'border-slate-200'} shadow-lg z-50 animate-in slide-in-from-top duration-300`}>
-            <div className="p-4 space-y-4">
-              {/* Project Buttons */}
-              <div className="flex gap-2">
-                <button
-                  onClick={() => { handleNewProject(); setShowMobileMenu(false); }}
-                  className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg ${isDark ? 'bg-slate-800 hover:bg-slate-700' : 'bg-slate-100 hover:bg-slate-200'}`}
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                  </svg>
-                  <span className="text-xs font-bold">{language === 'tr' ? 'Yeni' : 'New'}</span>
-                </button>
-                <button
-                  onClick={() => { handleSaveProject(); setShowMobileMenu(false); }}
-                  className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg ${isDark ? 'bg-slate-800 hover:bg-slate-700' : 'bg-slate-100 hover:bg-slate-200'}`}
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
-                  </svg>
-                  <span className="text-xs font-bold">{language === 'tr' ? 'Kaydet' : 'Save'}</span>
-                </button>
-                <button
-                  onClick={() => { fileInputRef.current?.click(); setShowMobileMenu(false); }}
-                  className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg ${isDark ? 'bg-slate-800 hover:bg-slate-700' : 'bg-slate-100 hover:bg-slate-200'}`}
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                  </svg>
-                  <span className="text-sm">{t.load}</span>
-                </button>
-              </div>
-              
-              {/* Language Toggle */}
-              <div className="flex items-center justify-between">
-                <span className="text-sm">{t.languageLabel}</span>
-                <div className={`flex items-center gap-1 rounded-lg p-1 ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`}>
-                  <button
-                    onClick={() => { setLanguage('tr'); }}
-                    className={`px-3 py-1 rounded text-sm ${language === 'tr' ? 'bg-cyan-600 text-white' : isDark ? 'text-slate-300' : 'text-slate-600'}`}
-                  >
-                    TR
-                  </button>
-                  <button
-                    onClick={() => { setLanguage('en'); }}
-                    className={`px-3 py-1 rounded text-sm ${language === 'en' ? 'bg-cyan-600 text-white' : isDark ? 'text-slate-300' : 'text-slate-600'}`}
-                  >
-                    EN
-                  </button>
-                </div>
-              </div>
-              
-              {/* Theme Toggle */}
-              <button
-                onClick={toggleTheme}
-                className="w-full flex items-center justify-between px-3 py-2 rounded-lg"
-                style={{ background: isDark ? 'rgba(30, 41, 59, 0.5)' : 'rgba(241, 245, 249, 0.5)' }}
-              >
-                <span className="text-sm">{t.themeLabel}</span>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm">{isDark ? t.dark : t.light}</span>
-                  {isDark ? (
-                    <svg className="w-5 h-5 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-                    </svg>
-                  ) : (
-                    <svg className="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                    </svg>
-                  )}
-                </div>
-              </button>
-            </div>
-          </div>
-          </>
-        )}
       </header>
 
-      {/* Main Content */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 pb-6">
+      {/* Main Content with matching top background */}
+      <main className={`flex-1 ${isDark ? 'bg-slate-950' : 'bg-slate-100'}`}>
+        <div className="max-w-7xl w-full mx-auto p-4 pb-6 h-full">
         {/* Tab Content */}
         {activeTab === 'topology' && (
           <div className="space-y-4">
@@ -1186,7 +1023,8 @@ export default function Home() {
                   deviceName={
                     (() => {
                       const activeDevice = topologyDevices?.find(d => d.id === activeDeviceId);
-                      return deviceStates.get(activeDeviceId)?.hostname || activeDevice?.name || 'Device';
+                      const deviceState = deviceStates.get(activeDeviceId);
+                      return deviceState?.hostname || activeDevice?.name || 'Device';
                     })()
                   }
                   prompt={prompt}
@@ -1289,95 +1127,8 @@ export default function Home() {
             </div>
           </div>
         )}
+      </div>
       </main>
-
-
-
-      {/* Confirmation Dialog */}
-      {confirmDialog?.show && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className={`mx-4 rounded-2xl shadow-2xl overflow-hidden max-w-sm w-full ${
-            isDark ? 'bg-slate-800 border border-slate-700' : 'bg-white border border-slate-200'
-          }`}>
-            <div className="p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 rounded-full bg-yellow-500/20">
-                  <svg className="w-6 h-6 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                  </svg>
-                </div>
-                <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-slate-800'}`}>
-                  {language === 'tr' ? 'Onay Gerekli' : 'Confirmation Required'}
-                </h3>
-              </div>
-              <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-                {confirmDialog.message}
-              </p>
-            </div>
-            <div className={`flex gap-2 p-4 ${isDark ? 'bg-slate-900/50' : 'bg-slate-50'}`}>
-              <button
-                onClick={() => setConfirmDialog(null)}
-                className={`flex-1 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                  isDark 
-                    ? 'bg-slate-700 text-slate-300 hover:bg-slate-600' 
-                    : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
-                }`}
-              >
-                {language === 'tr' ? 'İptal' : 'Cancel'}
-              </button>
-              <button
-                onClick={confirmDialog.onConfirm}
-                className="flex-1 px-4 py-2.5 rounded-xl text-sm font-medium bg-red-500 text-white hover:bg-red-600 transition-all"
-              >
-                {language === 'tr' ? 'Onayla' : 'Confirm'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Save Dialog for Unsaved Changes */}
-      {saveDialog?.show && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className={`mx-4 rounded-2xl shadow-2xl overflow-hidden max-w-sm w-full ${
-            isDark ? 'bg-slate-800 border border-slate-700' : 'bg-white border border-slate-200'
-          }`}>
-            <div className="p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 rounded-full bg-cyan-500/20">
-                  <svg className="w-6 h-6 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
-                  </svg>
-                </div>
-                <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-slate-800'}`}>
-                  {language === 'tr' ? 'Kaydedilmemiş Değişiklikler' : 'Unsaved Changes'}
-                </h3>
-              </div>
-              <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-                {saveDialog.message}
-              </p>
-            </div>
-            <div className={`flex gap-2 p-4 ${isDark ? 'bg-slate-900/50' : 'bg-slate-50'}`}>
-              <button
-                onClick={() => saveDialog.onConfirm(false)}
-                className={`flex-1 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                  isDark 
-                    ? 'bg-slate-700 text-slate-300 hover:bg-slate-600' 
-                    : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
-                }`}
-              >
-                {language === 'tr' ? 'Kaydetme' : 'Don\'t Save'}
-              </button>
-              <button
-                onClick={() => saveDialog.onConfirm(true)}
-                className="flex-1 px-4 py-2.5 rounded-xl text-sm font-medium bg-cyan-500 text-white hover:bg-cyan-600 transition-all"
-              >
-                {language === 'tr' ? 'Kaydet' : 'Save'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
