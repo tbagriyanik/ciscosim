@@ -1173,8 +1173,8 @@ export default function Home() {
       </AlertDialog>
 
       {/* Main Content with matching top background */}
-      <main className={`flex-1 ${isDark ? 'bg-slate-950' : 'bg-slate-100'}`}>
-        <div className="max-w-7xl w-full mx-auto p-4 pb-6 h-full">
+      <main className={`flex-1 overflow-hidden ${isDark ? 'bg-slate-950' : 'bg-slate-100'}`}>
+        <div className="max-w-7xl w-full mx-auto p-4 pb-6 h-full flex flex-col">
         {/* Tab Content */}
         {activeTab === 'topology' && (
           <div className="space-y-4">
