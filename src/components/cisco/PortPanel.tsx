@@ -82,14 +82,14 @@ export function PortPanel({ ports, t, theme, deviceName, deviceModel, activeDevi
     });
 
   const renderPort = (port: Port) => {
-    // Check if port is connected in topology
     const isConnectedInTopology = isPortConnectedInTopology(port.id);
     
     // Determine LED color based on topology connection and port state
     let ledColor: PortLEDColor;
     let statusLabel: string;
     
-    if (isConnectedInTopology || port.status === 'connected') {
+    // Router/Switch ports should only be green if physically connected in topology
+    if (isConnectedInTopology) {
       ledColor = 'green';
       statusLabel = t.connected;
     } else if (port.shutdown) {
@@ -98,6 +98,10 @@ export function PortPanel({ ports, t, theme, deviceName, deviceModel, activeDevi
     } else if (port.status === 'blocked') {
       ledColor = 'orange';
       statusLabel = t.blocked;
+    } else if (port.status === 'connected' && !topologyConnections) {
+      // Fallback for when topology isn't provided (standalone view)
+      ledColor = 'green';
+      statusLabel = t.connected;
     } else {
       ledColor = 'white';
       statusLabel = t.idle;

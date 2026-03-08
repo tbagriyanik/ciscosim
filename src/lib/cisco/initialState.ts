@@ -170,7 +170,7 @@ function createInitialRouterPorts(): Record<string, Port> {
     ports[portId] = {
       id: portId,
       name: i === 0 ? 'WAN' : i === 1 ? 'LAN' : '',
-      status: i <= 1 ? 'connected' : 'notconnect',
+      status: 'notconnect', // HEPSİ BAŞLANGIÇTA BAĞLI DEĞİL
       vlan: 1,
       mode: 'access',
       duplex: 'auto',
