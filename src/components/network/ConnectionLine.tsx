@@ -7,6 +7,7 @@ interface ConnectionLineProps {
   sourceDevice: CanvasDevice;
   targetDevice: CanvasDevice;
   isDark: boolean;
+  isDragging?: boolean;
   totalSameConns: number;
   sameConnIndex: number;
   getPortPosition: (device: CanvasDevice, portId: string) => { x: number; y: number };
@@ -18,6 +19,7 @@ export const ConnectionLine = memo(function ConnectionLine({
   sourceDevice,
   targetDevice,
   isDark,
+  isDragging = false,
   totalSameConns,
   sameConnIndex,
   getPortPosition,
@@ -92,8 +94,8 @@ export const ConnectionLine = memo(function ConnectionLine({
         className="pointer-events-none"
       />
 
-      {/* Animated data flow - only for compatible cables */}
-      {isEffectivelyActive && (
+      {/* Animated data flow - only for compatible cables and NOT during dragging */}
+      {isEffectivelyActive && !isDragging && (
         <>
           <circle r="4" fill={color}>
             <animateMotion
@@ -182,6 +184,7 @@ export const ConnectionLine = memo(function ConnectionLine({
     nextProps.targetDevice.ports.find(p => p.id === nextProps.connection.targetPort)?.shutdown &&
     prevProps.totalSameConns === nextProps.totalSameConns &&
     prevProps.sameConnIndex === nextProps.sameConnIndex &&
-    prevProps.isDark === nextProps.isDark
+    prevProps.isDark === nextProps.isDark &&
+    prevProps.isDragging === nextProps.isDragging
   );
 });

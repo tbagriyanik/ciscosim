@@ -29,6 +29,7 @@ import {
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
@@ -953,8 +954,10 @@ export default function Home() {
                       </div>
                       {t.title}
                     </SheetTitle>
-                  </SheetHeader>
-                  <ScrollArea className="h-[calc(100vh-4rem)]">
+                    <SheetDescription className="sr-only">
+                      Main navigation and project controls
+                    </SheetDescription>
+                  </SheetHeader>                  <ScrollArea className="h-[calc(100vh-4rem)]">
                     <div className="p-3 space-y-4">
                       {/* Navigation Sections */}
                       <div className="space-y-1">

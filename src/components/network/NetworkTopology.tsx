@@ -8,6 +8,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
@@ -405,14 +406,20 @@ export function NetworkTopology({
   // Delete device and its connections
   const deleteDevice = useCallback((deviceId: string) => {
     saveToHistory();
-    setDevices((prev) => prev.filter((d) => d.id !== deviceId));
-    setConnections((prev) =>
-      prev.filter((c) => c.sourceDeviceId !== deviceId && c.targetDeviceId !== deviceId)
-    );
+    const updatedDevices = devices.filter((d) => d.id !== deviceId);
+    const updatedConnections = connections.filter((c) => c.sourceDeviceId !== deviceId && c.targetDeviceId !== deviceId);
+    
+    setDevices(updatedDevices);
+    setConnections(updatedConnections);
+    
+    if (onTopologyChange) {
+      onTopologyChange(updatedDevices, updatedConnections);
+    }
+    
     if (onDeviceDelete) {
       onDeviceDelete(deviceId);
     }
-  }, [saveToHistory, onDeviceDelete]);
+  }, [saveToHistory, onDeviceDelete, devices, connections, onTopologyChange]);
 
   // Select all devices
   const selectAllDevices = useCallback(() => {
@@ -578,6 +585,7 @@ export function NetworkTopology({
           if (distance > DRAG_THRESHOLD) {
             setIsActuallyDragging(true);
             wasDraggingRef.current = true; // Mark as dragging for click handler
+            setPortTooltip(null); // Hide any active tooltip
           }
         }
 
@@ -646,9 +654,12 @@ export function NetworkTopology({
         dragAnimationFrameRef.current = null;
       }
 
-      // Save to history if we were actually dragging a device
+      // Save to history and notify parent if we were actually dragging
       if (isActuallyDragging && draggedDevice) {
         saveToHistory();
+        if (onTopologyChange) {
+          onTopologyChange(devices, connections);
+        }
       }
 
       // Note: We don't reset wasDraggingRef here - let it persist for the click handler
@@ -1263,16 +1274,15 @@ export function NetworkTopology({
             ? generateSwitchPorts()
             : generateRouterPorts(),
     };
-    setDevices((prev) => [...prev, newDevice]);
-    
-  }, [devices.length, saveToHistory, generateUniqueIp]);
-
-  // Notify parent of topology changes
-  useEffect(() => {
+    const updatedDevices = [...devices, newDevice];
+    setDevices(updatedDevices);
     if (onTopologyChange) {
-      onTopologyChange(devices, connections);
+      onTopologyChange(updatedDevices, connections);
     }
-  }, [devices, connections, onTopologyChange]);
+  }, [devices, connections, saveToHistory, generateUniqueIp, onTopologyChange]);
+
+  // No automatic effect - we trigger onTopologyChange manually on key events (add, delete, move end)
+  // to avoid re-rendering the parent Home component on every drag frame.
   // Port Tooltip state
   const [portTooltip, setPortTooltip] = useState<{
     deviceId: string;
@@ -1284,6 +1294,9 @@ export function NetworkTopology({
   const portTooltipTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const showPortTooltip = useCallback((e: ReactMouseEvent | MouseEvent, deviceId: string, portId: string) => {
+    // Don't show tooltip while dragging
+    if (isActuallyDragging || isTouchDragging) return;
+
     const device = devices.find(d => d.id === deviceId);
     const port = device?.ports.find(p => p.id === portId);
     if (!device || !port) return;
@@ -1697,8 +1710,8 @@ export function NetworkTopology({
       success: null
     });
 
-    // Animate ping - each hop takes 800ms
-    const hopDuration = 800;
+    // Animate ping - each hop takes 2000ms
+    const hopDuration = 2000;
     let startTime = Date.now();
     let currentHop = 0;
 
@@ -2207,6 +2220,11 @@ export function NetworkTopology({
             const portY = startY + row * rowSpacing;
             const isConnected = port.status === 'connected';
             const isShutdown = port.shutdown;
+            
+            // Check if port is blocked by STP (spanning tree)
+            const deviceState = deviceStates?.get(device.id);
+            const isBlocked = deviceState?.ports[port.id]?.status === 'blocked';
+            const isDownOrBlocked = isShutdown || isBlocked;
 
             // Determine port type
             const portId = port.id.toLowerCase();
@@ -2220,13 +2238,13 @@ export function NetworkTopology({
 
             // Port colors:
             // Console: Turquoise, Fa: Blue, Gi: Orange
-            // Shutdown: Red
+            // Shutdown/Blocked: Red/Orange background with RED stroke
             let portFill: string;
             let portStroke: string;
 
-            if (isShutdown) {
-              portFill = '#ef4444';
-              portStroke = '#991b1b';
+            if (isDownOrBlocked) {
+              portFill = isShutdown ? '#ef4444' : '#f97316'; // Red for shutdown, Orange for blocked
+              portStroke = '#ff0000'; // Explicit RED border
             } else if (isConsole) {
               portFill = isConnected ? '#06b6d4' : '#0891b2'; // Turquoise
               portStroke = isConnected ? '#22c55e' : '#0891b2';
@@ -2256,10 +2274,11 @@ export function NetworkTopology({
                 <circle
                   r={6}
                   fill={portFill}
-                  stroke={isShutdown || isConnected ? portStroke : '#4b5563'}
-                  strokeWidth={isShutdown || isConnected ? 2 : 1}
+                  stroke={isDownOrBlocked || isConnected ? portStroke : '#4b5563'}
+                  strokeWidth={isDownOrBlocked || isConnected ? 2.5 : 1}
+                  className={isDownOrBlocked ? 'animate-pulse' : ''}
                 />
-                <text y={1} fill="#fff" fontSize="6" textAnchor="middle" dominantBaseline="middle" className="select-none pointer-events-none">
+                <text y={1} fill="#fff" fontSize="6" textAnchor="middle" dominantBaseline="middle" className="select-none pointer-events-none font-bold">
                   {displayNum}
                 </text>
               </g>
@@ -2608,6 +2627,9 @@ export function NetworkTopology({
                   <Plus className="w-5 h-5 text-cyan-500" />
                   {language === 'tr' ? 'Cihaz veya Kablo Ekle' : 'Add Device or Cable'}
                 </SheetTitle>
+                <SheetDescription className="sr-only">
+                  Add new network devices or cables to the topology
+                </SheetDescription>
               </SheetHeader>
               <div className="p-6 space-y-8">
                 {/* Devices Section */}
@@ -2740,7 +2762,6 @@ export function NetworkTopology({
                 style={{
                   transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
                   transformOrigin: '0 0',
-                  transition: isPanning ? 'none' : 'transform 0.05s linear',
                 }}
               >
               {/* Clip path for canvas boundaries */}
@@ -2793,6 +2814,7 @@ export function NetworkTopology({
                       sourceDevice={sourceDevice}
                       targetDevice={targetDevice}
                       isDark={isDark}
+                      isDragging={isActuallyDragging || isTouchDragging}
                       totalSameConns={totalSameConns}
                       sameConnIndex={sameConnIndex}
                       getPortPosition={getPortPosition}
@@ -2830,6 +2852,89 @@ export function NetworkTopology({
 
                 {/* Connection interaction handles (Trash icons) - Rendered LAST to stay on top */}
                 {connections.map((conn) => renderConnectionHandle(conn))}
+
+                {/* Ping Animation Envelope - rendered inside transformed group */}
+                {pingAnimation && (() => {
+                  const { path, currentHopIndex, progress, success } = pingAnimation;
+                  if (!path || path.length < 2 || success !== null) return null;
+
+                  // Get current hop devices
+                  const fromDevice = devices.find(d => d.id === path[currentHopIndex]);
+                  const toDevice = devices.find(d => d.id === path[currentHopIndex + 1]);
+                  if (!fromDevice || !toDevice) return null;
+
+                  // Find connection between these devices to get the bezier curve
+                  const conn = connections.find(
+                    c => (c.sourceDeviceId === fromDevice.id && c.targetDeviceId === toDevice.id) ||
+                      (c.sourceDeviceId === toDevice.id && c.targetDeviceId === fromDevice.id)
+                  );
+
+                  // Get port positions for this connection
+                  let source: { x: number; y: number };
+                  let target: { x: number; y: number };
+
+                  if (conn) {
+                    source = getPortPosition(fromDevice, conn.sourceDeviceId === fromDevice.id ? conn.sourcePort : conn.targetPort);
+                    target = getPortPosition(toDevice, conn.sourceDeviceId === toDevice.id ? conn.sourcePort : conn.targetPort);
+                  } else {
+                    source = getDeviceCenter(fromDevice);
+                    target = getDeviceCenter(toDevice);
+                  }
+
+                  const midX = (source.x + target.x) / 2;
+                  const midY = (source.y + target.y) / 2;
+
+                  const sameDeviceConnections = connections.filter(
+                    c => (c.sourceDeviceId === fromDevice.id && c.targetDeviceId === toDevice.id) ||
+                      (c.sourceDeviceId === toDevice.id && c.targetDeviceId === fromDevice.id)
+                  );
+                  const sameConnIndex = conn ? sameDeviceConnections.findIndex(c => c.id === conn.id) : 0;
+                  const totalSameConns = sameDeviceConnections.length;
+                  const maxOffset = 20;
+                  const offset = totalSameConns > 1
+                    ? (sameConnIndex - (totalSameConns - 1) / 2) * (maxOffset / Math.max(totalSameConns - 1, 1))
+                    : 0;
+
+                  const dx = target.x - source.x;
+                  const dy = target.y - source.y;
+                  const len = Math.sqrt(dx * dx + dy * dy) || 1;
+                  const perpX = -dy / len * offset;
+                  const perpY = dx / len * offset;
+
+                  const controlPoint1 = {
+                    x: midX + perpX,
+                    y: source.y + perpY + Math.abs(offset) * 0.5
+                  };
+                  const controlPoint2 = {
+                    x: midX + perpX,
+                    y: target.y + perpY - Math.abs(offset) * 0.5
+                  };
+
+                  // Cubic bezier path string for animateMotion
+                  const pathString = `M ${source.x} ${source.y} C ${controlPoint1.x} ${controlPoint1.y}, ${controlPoint2.x} ${controlPoint2.y}, ${target.x} ${target.y}`;
+
+                  // Simplified perpendicular offset based on source/target direction
+                  const angle = Math.atan2(target.y - source.y, target.x - source.x);
+                  const envelopeOffsetX = Math.sin(angle) * 20;
+                  const envelopeOffsetY = -Math.cos(angle) * 20;
+
+                  return (
+                    <g key={`ping-${currentHopIndex}`}>
+                      <g transform={`translate(${envelopeOffsetX}, ${envelopeOffsetY})`}>
+                        <circle r="10" fill="#06b6d4" opacity={0.2} className="animate-ping" />
+                        <rect x="-12" y="-8" width="24" height="16" rx="2" fill="#06b6d4" stroke="#0891b2" strokeWidth="1.5" />
+                        <path d="M-9 -5 L0 3 L9 -5" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" />
+                        
+                        <animateMotion
+                          dur="2s"
+                          repeatCount="1"
+                          path={pathString}
+                          fill="freeze"
+                        />
+                      </g>
+                    </g>
+                  );
+                })()}
               </g>
 
               {/* Canvas Boundary Border */}
@@ -3394,150 +3499,35 @@ export function NetworkTopology({
         </div>
       )}
 
-      {/* Ping Animation Overlay */}
-      {pingAnimation && (
-        <div className="fixed inset-0 z-40 pointer-events-none">
-          {/* Envelope animation along bezier curve - rendered inside canvas SVG for correct positioning */}
-          {(() => {
-            const { path, currentHopIndex, progress, success } = pingAnimation;
-            if (!path || path.length < 2 || success !== null) return null;
-
-            // Get current hop devices
-            const fromDevice = devices.find(d => d.id === path[currentHopIndex]);
-            const toDevice = devices.find(d => d.id === path[currentHopIndex + 1]);
-            if (!fromDevice || !toDevice) return null;
-
-            // Find connection between these devices to get the bezier curve
-            const conn = connections.find(
-              c => (c.sourceDeviceId === fromDevice.id && c.targetDeviceId === toDevice.id) ||
-                (c.sourceDeviceId === toDevice.id && c.targetDeviceId === fromDevice.id)
-            );
-
-            // Get port positions for this connection
-            let source: { x: number; y: number };
-            let target: { x: number; y: number };
-
-            if (conn) {
-              source = getPortPosition(fromDevice, conn.sourceDeviceId === fromDevice.id ? conn.sourcePort : conn.targetPort);
-              target = getPortPosition(toDevice, conn.sourceDeviceId === toDevice.id ? conn.sourcePort : conn.targetPort);
-            } else {
-              // Fallback to device centers if no connection found
-              source = getDeviceCenter(fromDevice);
-              target = getDeviceCenter(toDevice);
-            }
-
-            // Calculate control points matching renderConnection logic exactly
-            const midX = (source.x + target.x) / 2;
-            const midY = (source.y + target.y) / 2;
-
-            // Calculate parallel offset if multiple connections (same as renderConnection)
-            const sameDeviceConnections = connections.filter(
-              c => (c.sourceDeviceId === fromDevice.id && c.targetDeviceId === toDevice.id) ||
-                (c.sourceDeviceId === toDevice.id && c.targetDeviceId === fromDevice.id)
-            );
-            const sameConnIndex = conn ? sameDeviceConnections.findIndex(c => c.id === conn.id) : 0;
-            const totalSameConns = sameDeviceConnections.length;
-            const maxOffset = 20;
-            const offset = totalSameConns > 1
-              ? (sameConnIndex - (totalSameConns - 1) / 2) * (maxOffset / Math.max(totalSameConns - 1, 1))
-              : 0;
-
-            // Calculate perpendicular offset for parallel lines
-            const dx = target.x - source.x;
-            const dy = target.y - source.y;
-            const len = Math.sqrt(dx * dx + dy * dy) || 1;
-            const perpX = -dy / len * offset;
-            const perpY = dx / len * offset;
-
-            // Control points matching renderConnection exactly
-            const controlPoint1 = {
-              x: midX + perpX,
-              y: source.y + perpY + Math.abs(offset) * 0.5
-            };
-            const controlPoint2 = {
-              x: midX + perpX,
-              y: target.y + perpY - Math.abs(offset) * 0.5
-            };
-
-            // Calculate position on bezier curve using cubic bezier formula
-            const t = progress;
-            const t2 = t * t;
-            const t3 = t2 * t;
-            const mt = 1 - t;
-            const mt2 = mt * mt;
-            const mt3 = mt2 * mt;
-
-            // Cubic bezier position (on the cable path)
-            const bezierX = mt3 * source.x + 3 * mt2 * t * controlPoint1.x + 3 * mt * t2 * controlPoint2.x + t3 * target.x;
-            const bezierY = mt3 * source.y + 3 * mt2 * t * controlPoint1.y + 3 * mt * t2 * controlPoint2.y + t3 * target.y;
-
-            // Calculate tangent direction for perpendicular offset
-            const tangentDx = -3 * mt2 * source.x + 3 * (mt2 - 2 * mt * t) * controlPoint1.x + 3 * (2 * mt * t - t2) * controlPoint2.x + 3 * t2 * target.x;
-            const tangentDy = -3 * mt2 * source.y + 3 * (mt2 - 2 * mt * t) * controlPoint1.y + 3 * (2 * mt * t - t2) * controlPoint2.y + 3 * t2 * target.y;
-            const tangentLen = Math.sqrt(tangentDx * tangentDx + tangentDy * tangentDy) || 1;
-
-            // Perpendicular direction (20px ABOVE the cable - negative Y in screen coords means up)
-            // In SVG, -Y is up, so we use -tangentDx, +tangentDy for perpendicular pointing up
-            const envelopeOffsetX = tangentDy / tangentLen * 20;
-            const envelopeOffsetY = -tangentDx / tangentLen * 20;
-
-            // Get canvas container position for proper overlay
-            const canvasRect = canvasRef.current?.getBoundingClientRect();
-
-            if (!canvasRect) return null;
-
-            // Transform from canvas coordinates to screen coordinates
-            const screenX = canvasRect.left + (bezierX + envelopeOffsetX) * zoom + pan.x * zoom;
-            const screenY = canvasRect.top + (bezierY + envelopeOffsetY) * zoom + pan.y * zoom;
-
-            return (
-              <svg
-                className="absolute inset-0 w-full h-full"
-                style={{ overflow: 'visible' }}
-              >
-                <g transform={`translate(${screenX}, ${screenY})`}>
-                  {/* Trail effect */}
-                  <circle r="8" fill="#06b6d4" opacity={0.15} className="animate-ping" />
-                  <circle r="5" fill="#06b6d4" opacity={0.3} />
-                  {/* Envelope icon */}
-                  <rect x="-12" y="-8" width="24" height="16" rx="2" fill="#06b6d4" stroke="#0891b2" strokeWidth="1.5" />
-                  <path d="M-9 -5 L0 3 L9 -5" fill="none" stroke="white" strokeWidth="2" />
-                </g>
-              </svg>
-            );
-          })()}
-
-          {/* Success/Error Toast */}
-          {pingAnimation.success !== null && (
-            <div className="fixed bottom-20 left-1/2 transform -translate-x-1/2 z-50">
-              <div className={`px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 ${pingAnimation.success
-                ? 'bg-green-600 text-white'
-                : 'bg-red-600 text-white'
-                }`}>
-                {pingAnimation.success ? (
-                  <>
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    <span className="text-sm font-medium">
-                      {language === 'tr'
-                        ? `${devices.find(d => d.id === pingAnimation.sourceId)?.name} → ${devices.find(d => d.id === pingAnimation.targetId)?.name} Ping Başarılı! (${pingAnimation.path.length - 1} hop)`
-                        : `${devices.find(d => d.id === pingAnimation.sourceId)?.name} → ${devices.find(d => d.id === pingAnimation.targetId)?.name} Ping Successful! (${pingAnimation.path.length - 1} hop${pingAnimation.path.length > 2 ? 's' : ''})`}
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                    <span className="text-sm font-medium">
-                      {language === 'tr' ? 'Ping başarısız - bağlantı yok!' : 'Ping failed - no connection!'}
-                    </span>
-                  </>
-                )}
-              </div>
-            </div>
-          )}
+      {/* Ping Status Toasts */}
+      {pingAnimation && pingAnimation.success !== null && (
+        <div className="fixed inset-0 z-40 pointer-events-none flex items-end justify-center pb-24 px-4">
+          <div className={`px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 animate-in slide-in-from-bottom-4 duration-300 ${pingAnimation.success
+            ? 'bg-green-600 text-white'
+            : 'bg-red-600 text-white'
+            }`}>
+            {pingAnimation.success ? (
+              <>
+                <svg className="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                <span className="text-sm font-bold">
+                  {language === 'tr'
+                    ? `${devices.find(d => d.id === pingAnimation.sourceId)?.name} → ${devices.find(d => d.id === pingAnimation.targetId)?.name} Başarılı!`
+                    : `${devices.find(d => d.id === pingAnimation.sourceId)?.name} → ${devices.find(d => d.id === pingAnimation.targetId)?.name} Successful!`}
+                </span>
+              </>
+            ) : (
+              <>
+                <svg className="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                <span className="text-sm font-bold">
+                  {language === 'tr' ? 'Ping başarısız!' : 'Ping failed!'}
+                </span>
+              </>
+            )}
+          </div>
         </div>
       )}
 
