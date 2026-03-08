@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { CableInfo, isCableCompatible, SwitchState } from '@/lib/cisco/types';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { TerminalOutput } from './Terminal';
 
 interface OutputLine {
   id: string;
@@ -28,6 +29,7 @@ interface PCPanelProps {
     active?: boolean 
   }[];
   deviceStates?: Map<string, SwitchState>;
+  deviceOutputs?: Map<string, TerminalOutput[]>;
   onExecuteDeviceCommand?: (deviceId: string, command: string) => Promise<any>;
 }
 
@@ -68,6 +70,7 @@ export function PCPanel({
   topologyDevices = [], 
   topologyConnections = [],
   deviceStates,
+  deviceOutputs,
   onExecuteDeviceCommand
 }: PCPanelProps) {
   const { language, t } = useLanguage();
@@ -92,7 +95,7 @@ export function PCPanel({
   const pcIP = deviceFromTopology?.ip || defaultConfig.ip;
   const pcMAC = deviceFromTopology?.macAddress || defaultConfig.mac;
 
-  // Separate outputs for Desktop (Local) and Terminal (Console)
+  // Local output for Desktop (Local)
   const [pcOutput, setPcOutput] = useState<OutputLine[]>(() => [
     {
       id: '1',
@@ -100,7 +103,6 @@ export function PCPanel({
       content: 'Microsoft Windows [Version 10.0.19045.4412]\n(c) Microsoft Corporation. All rights reserved.\n'
     }
   ]);
-  const [consoleOutput, setConsoleOutput] = useState<OutputLine[]>([]);
   
   // Tab cycle state
   const [tabCycleIndex, setTabCycleIndex] = useState(-1);
@@ -130,29 +132,33 @@ export function PCPanel({
 
   const consoleDevice = getConsoleDevice();
 
-  const addOutput = useCallback((tab: PCActiveTab, type: OutputLine['type'], content: string, prompt?: string) => {
+  // Synchronized Console Output from Global State
+  const activeConsoleOutput = useMemo(() => {
+    if (!isConsoleConnected || !connectedDeviceId || !deviceOutputs) return [];
+    return deviceOutputs.get(connectedDeviceId) || [];
+  }, [isConsoleConnected, connectedDeviceId, deviceOutputs]);
+
+  const addLocalOutput = useCallback((type: OutputLine['type'], content: string, prompt?: string) => {
     const newLine: OutputLine = { id: Math.random().toString(36).substr(2, 9), type, content, prompt };
-    if (tab === 'desktop') setPcOutput(prev => [...prev, newLine]);
-    else setConsoleOutput(prev => [...prev, newLine]);
+    setPcOutput(prev => [...prev, newLine]);
     
     setTimeout(() => {
       if (outputRef.current) outputRef.current.scrollTop = outputRef.current.scrollHeight;
     }, 0);
-  }, [setPcOutput, setConsoleOutput]);
+  }, [setPcOutput]);
 
   const handleConnect = () => {
     if (!consoleDevice) return;
     
     setIsConsoleConnected(true);
     setConnectedDeviceId(consoleDevice.id);
-    addOutput('terminal', 'success', `Connected to ${consoleDevice.name} via Console port.`);
     
-    // Send initial empty command to get prompt
+    // Initial sync - global terminal already has content, so we just show it.
+    
+    // Send initial empty command to get prompt if needed
     if (onExecuteDeviceCommand) {
       onExecuteDeviceCommand(consoleDevice.id, '').then(res => {
-        if (res && res.prompt) {
-          addOutput('terminal', 'prompt', '', res.prompt);
-        }
+        // Results will be automatically added to global deviceOutputs and synced back to us via memo
       });
     }
   };
@@ -160,7 +166,6 @@ export function PCPanel({
   const handleDisconnect = () => {
     setIsConsoleConnected(false);
     setConnectedDeviceId(null);
-    addOutput('terminal', 'error', 'Console connection closed.');
   };
 
   const executeCommand = async (command: string) => {
@@ -168,41 +173,35 @@ export function PCPanel({
     if (!trimmedCommand) return;
 
     if (activeTab === 'desktop') {
-      addOutput('desktop', 'command', trimmedCommand);
+      addLocalOutput('command', trimmedCommand);
       
       const cmd = trimmedCommand.toLowerCase();
       if (cmd === 'ipconfig') {
-        addOutput('desktop', 'output', `Windows IP Configuration\n\nEthernet adapter Ethernet0:\n   Connection-specific DNS Suffix  . : \n   Link-local IPv6 Address . . . . . : fe80::a1b2:c3d4:e5f6%12\n   IPv4 Address. . . . . . . . . . . : ${pcIP}\n   Subnet Mask . . . . . . . . . . . : 255.255.255.0\n   Default Gateway . . . . . . . . . : 192.168.1.1`);
+        addLocalOutput('output', `Windows IP Configuration\n\nEthernet adapter Ethernet0:\n   Connection-specific DNS Suffix  . : \n   Link-local IPv6 Address . . . . . : fe80::a1b2:c3d4:e5f6%12\n   IPv4 Address. . . . . . . . . . . : ${pcIP}\n   Subnet Mask . . . . . . . . . . . : 255.255.255.0\n   Default Gateway . . . . . . . . . : 192.168.1.1`);
       } else if (cmd.startsWith('ping ')) {
         const target = trimmedCommand.split(' ')[1];
-        addOutput('desktop', 'output', `Pinging ${target} with 32 bytes of data:\nReply from ${target}: bytes=32 time<1ms TTL=128\nReply from ${target}: bytes=32 time<1ms TTL=128\nReply from ${target}: bytes=32 time<1ms TTL=128\nReply from ${target}: bytes=32 time<1ms TTL=128\n\nPing statistics for ${target}:\n    Packets: Sent = 4, Received = 4, Lost = 0 (0% loss),\nApproximate round trip times in milli-seconds:\n    Minimum = 0ms, Maximum = 0ms, Average = 0ms`);
+        addLocalOutput('output', `Pinging ${target} with 32 bytes of data:\nReply from ${target}: bytes=32 time<1ms TTL=128\nReply from ${target}: bytes=32 time<1ms TTL=128\nReply from ${target}: bytes=32 time<1ms TTL=128\nReply from ${target}: bytes=32 time<1ms TTL=128\n\nPing statistics for ${target}:\n    Packets: Sent = 4, Received = 4, Lost = 0 (0% loss),\nApproximate round trip times in milli-seconds:\n    Minimum = 0ms, Maximum = 0ms, Average = 0ms`);
       } else if (cmd === 'help') {
-        addOutput('desktop', 'output', 'Available commands:\n  ipconfig - Display IP configuration\n  ping <ip> - Ping a network host\n  cls - Clear screen\n  help - Display this help message\n  exit - Close terminal');
+        addLocalOutput('output', 'Available commands:\n  ipconfig - Display IP configuration\n  ping <ip> - Ping a network host\n  cls - Clear screen\n  help - Display this help message\n  exit - Close terminal');
       } else if (cmd === 'cls') {
         setPcOutput([]);
       } else if (cmd === 'exit') {
         onClose();
       } else {
-        addOutput('desktop', 'error', `'${trimmedCommand}' is not recognized as an internal or external command, operable program or batch file.`);
+        addLocalOutput('error', `'${trimmedCommand}' is not recognized as an internal or external command, operable program or batch file.`);
       }
     } else {
       // Terminal mode
       if (!isConsoleConnected) {
-        addOutput('terminal', 'error', 'No console connection. Check physical connections.');
         return;
       }
 
-      addOutput('terminal', 'command', trimmedCommand);
-      
       if (onExecuteDeviceCommand && connectedDeviceId) {
         try {
-          const result = await onExecuteDeviceCommand(connectedDeviceId, trimmedCommand);
-          if (result) {
-            if (result.output) addOutput('terminal', 'output', result.output);
-            if (result.prompt) addOutput('terminal', 'prompt', '', result.prompt);
-          }
+          await onExecuteDeviceCommand(connectedDeviceId, trimmedCommand);
+          // Global state handles the output, we sync via activeConsoleOutput
         } catch (err) {
-          addOutput('terminal', 'error', 'Communication error with device.');
+          // Errors could also be added to global state
         }
       }
     }
@@ -226,8 +225,6 @@ export function PCPanel({
     const value = input.value;
     if (!value && tabCycleIndex === -1) return;
 
-    // This is a simplified version of tab completion
-    // For PC, it's very limited
     if (activeTab === 'desktop') {
       const pcCmds = ['ipconfig', 'ping', 'help', 'cls', 'exit'];
       const matches = pcCmds.filter(c => c.startsWith(value.toLowerCase()));
@@ -242,7 +239,6 @@ export function PCPanel({
       const mode = state.currentMode;
       const helpTree = ciscoHelp[mode] || ciscoHelp.user;
       
-      // Determine context (last word or current command)
       const parts = value.split(' ');
       const currentWord = parts[parts.length - 1].toLowerCase();
       const previousContext = parts.slice(0, -1).join(' ');
@@ -274,14 +270,21 @@ export function PCPanel({
     }
   };
 
+  // Scroll to bottom when output changes
+  useEffect(() => {
+    if (outputRef.current) {
+      outputRef.current.scrollTop = outputRef.current.scrollHeight;
+    }
+  }, [pcOutput, activeConsoleOutput]);
+
   if (!isVisible) return null;
 
   return (
-    <div className={`fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/50 backdrop-blur-sm`}>
+    <div className={`w-full h-full flex flex-col flex-1 overflow-hidden`}>
       <motion.div 
-        initial={{ opacity: 0, scale: 0.95, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        className={`w-full max-w-4xl h-[600px] flex flex-col rounded-3xl overflow-hidden shadow-2xl border ${
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className={`w-full h-full flex flex-col rounded-2xl overflow-hidden border ${
           isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'
         }`}
       >
@@ -296,12 +299,6 @@ export function PCPanel({
               <p className="text-[10px] font-medium text-slate-500 mt-1 uppercase tracking-wider">{pcIP} • {pcMAC}</p>
             </div>
           </div>
-          <button 
-            onClick={onClose}
-            className={`p-2 rounded-lg transition-colors ${isDark ? 'hover:bg-slate-800' : 'hover:bg-slate-100'}`}
-          >
-            <X className="w-5 h-5" />
-          </button>
         </div>
 
         {/* Tabs */}
@@ -329,9 +326,9 @@ export function PCPanel({
         </div>
 
         {/* Content */}
-        <div className="flex-1 flex flex-col overflow-hidden bg-black p-4 font-mono">
+        <div className="flex-1 flex flex-col overflow-hidden bg-black p-4 font-mono relative">
           {activeTab === 'terminal' && !isConsoleConnected && (
-            <div className="absolute inset-x-0 top-32 bottom-0 z-10 flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm gap-6 p-8 text-center">
+            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm gap-6 p-8 text-center">
               <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 shadow-xl max-w-md">
                 <div className="w-16 h-16 rounded-2xl bg-slate-800 flex items-center justify-center mx-auto mb-4 border border-slate-700">
                   <Monitor className="w-8 h-8 text-slate-400" />
@@ -365,7 +362,7 @@ export function PCPanel({
             ref={outputRef}
             className="flex-1 overflow-y-auto custom-scrollbar mb-4 space-y-1 pr-2"
           >
-            {(activeTab === 'desktop' ? pcOutput : consoleOutput).map((line) => (
+            {(activeTab === 'desktop' ? pcOutput : activeConsoleOutput).map((line) => (
               <div key={line.id} className="break-all whitespace-pre-wrap leading-relaxed">
                 {line.type === 'command' && (
                   <div className="flex items-start gap-2">
@@ -389,7 +386,7 @@ export function PCPanel({
             <span className="text-emerald-500 font-bold shrink-0">
               {activeTab === 'desktop' 
                 ? 'C:\\>' 
-                : (isConsoleConnected ? (consoleOutput.findLast(l => l.type === 'prompt')?.prompt || '>') : 'OFFLINE>')}
+                : (isConsoleConnected ? (activeConsoleOutput.findLast(l => l.type === 'prompt')?.prompt || '>') : 'OFFLINE>')}
             </span>
             <input
               ref={inputRef}

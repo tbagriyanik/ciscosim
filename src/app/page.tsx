@@ -1220,6 +1220,7 @@ export default function Home() {
               topologyDevices={topologyDevices || undefined}
               topologyConnections={topologyConnections || undefined}
               deviceStates={deviceStates}
+              deviceOutputs={deviceOutputs}
               onExecuteDeviceCommand={handleExecuteCommand}
             />
           </div>
