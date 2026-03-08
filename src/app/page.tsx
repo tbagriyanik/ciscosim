@@ -821,8 +821,8 @@ export default function Home() {
             className="flex flex-col items-center"
           >
             <div className="relative mb-8">
-              <div className="p-4 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 shadow-2xl shadow-cyan-500/40 animate-glitch">
-                <Network className="w-12 h-12 text-white" />
+              <div className="p-2 animate-glitch">
+                <img src="/favicon.png" alt="Logo" className="w-16 h-16 object-contain" />
               </div>
               {/* Glitch overlays */}
               <div className="absolute inset-0 p-4 rounded-2xl bg-red-500/30 animate-glitch-skew mix-blend-screen" />
@@ -862,8 +862,8 @@ export default function Home() {
           <div className="flex items-center justify-between">
             {/* Logo & Title */}
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 shadow-lg shadow-cyan-500/20">
-                <Network className="w-5 h-5 text-white" />
+              <div className="p-1 flex items-center justify-center">
+                <img src="/favicon.png" alt="Logo" className="w-7 h-7 object-contain" />
               </div>
               <div className="hidden sm:flex flex-col">
                 <h1 className="text-lg font-bold tracking-tight bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent leading-none">
@@ -948,8 +948,8 @@ export default function Home() {
                 <SheetContent side="right" className={`${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white'} p-0 w-72`}>
                   <SheetHeader className="p-4 text-left border-b border-slate-800/50">
                     <SheetTitle className="text-lg font-black flex items-center gap-2">
-                      <div className="p-1.5 rounded-lg bg-cyan-500/10 text-cyan-500">
-                        <Monitor className="w-4 h-4" />
+                      <div className="p-1 flex items-center justify-center">
+                        <img src="/favicon.png" alt="Logo" className="w-5 h-5 object-contain" />
                       </div>
                       {t.title}
                     </SheetTitle>
@@ -958,7 +958,7 @@ export default function Home() {
                     <div className="p-3 space-y-4">
                       {/* Navigation Sections */}
                       <div className="space-y-1">
-                        <p className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 px-2 mb-1">{t.navigation}</p>
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 px-2 mb-1">{t.navigation}</p>
                         <div className="grid gap-0.5">
                           {allTabs.map((tab) => {
                             const isTabVisible = tab.id === 'topology' || (topologyDevices && topologyDevices.length > 0 && tab.showFor.includes(activeDeviceType));
@@ -992,7 +992,7 @@ export default function Home() {
 
                       {/* Project Controls */}
                       <div className="space-y-1">
-                        <p className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 px-2 mb-1">{t.project}</p>
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 px-2 mb-1">{t.project}</p>
                         <div className="grid gap-0.5">
                           <Button variant="ghost" className="w-full justify-start gap-3 h-9 px-3 text-xs font-bold text-slate-400" onClick={() => { handleNewProject(); setShowMobileMenu(false); }}>
                             <File className="w-3.5 h-3.5" /> {language === 'tr' ? 'Yeni Proje' : 'New Project'}
@@ -1011,7 +1011,7 @@ export default function Home() {
                       {/* Lab Progress Mobile */}
                       <div className={`p-3 rounded-xl ${isDark ? 'bg-slate-800/30' : 'bg-slate-50'} border ${isDark ? 'border-slate-800/50' : 'border-slate-200'}`}>
                          <div className="flex items-center justify-between mb-1.5">
-                          <span className="text-[9px] font-black uppercase tracking-[0.15em] text-slate-500">{t.labProgress}</span>
+                          <span className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-500">{t.labProgress}</span>
                           <span className="text-xs font-black text-cyan-400">{Math.round((totalScore / maxScore) * 100)}%</span>
                         </div>
                         <div className={`h-1.5 w-full rounded-full ${isDark ? 'bg-slate-800' : 'bg-slate-200'} overflow-hidden mb-1.5`}>

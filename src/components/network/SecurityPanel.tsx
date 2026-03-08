@@ -133,7 +133,7 @@ export function SecurityPanel({ security, t, theme }: SecurityPanelProps) {
               </div>
               <Badge 
                 variant={item.enabled ? 'default' : 'destructive'}
-                className={`text-[9px] sm:text-[10px] flex-shrink-0 ml-1 transition-all duration-300 ${
+                className={`text-[10px] flex-shrink-0 ml-1 transition-all duration-300 ${
                   item.enabled 
                     ? 'bg-green-500/20 text-green-400 border border-green-500/30 hover:bg-green-500/30' 
                     : 'hover:bg-red-500/20'

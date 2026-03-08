@@ -467,7 +467,7 @@ export function PCPanel({
                     <TerminalIcon className="w-5 h-5" />
                     {t.connect}
                   </Button>
-                  <p className={`text-[8px] md:text-[9px] ${isDark ? 'text-slate-700' : 'text-slate-400'} uppercase tracking-[0.2em] font-black mt-1`}>
+                  <p className={`text-[10px] ${isDark ? 'text-slate-700' : 'text-slate-400'} uppercase tracking-[0.2em] font-black mt-1`}>
                     {t.consoleConfiguration}
                   </p>
                 </div>
@@ -548,7 +548,7 @@ export function PCPanel({
                   autoComplete="off"
                   spellCheck={false}
                 />
-                <div className={`hidden md:flex items-center gap-1.5 px-1.5 py-0.5 rounded border ${isDark ? 'border-slate-800 bg-slate-800/50' : 'border-slate-200 bg-slate-100'} text-[9px] text-slate-500 font-black uppercase tracking-widest`}>
+                <div className={`hidden md:flex items-center gap-1.5 px-1.5 py-0.5 rounded border ${isDark ? 'border-slate-800 bg-slate-800/50' : 'border-slate-200 bg-slate-100'} text-[10px] text-slate-500 font-black uppercase tracking-widest`}>
                   <Command className="w-2.5 h-3.5" />
                   Enter
                 </div>

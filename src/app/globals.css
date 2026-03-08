@@ -23,7 +23,7 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-inria-sans);
   --font-mono: var(--font-geist-mono);
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);

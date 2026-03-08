@@ -126,7 +126,7 @@ export function PortPanel({ ports, t, theme, deviceName, deviceModel, activeDevi
             </span>
             <Badge 
               variant={port.mode === 'trunk' ? 'default' : 'secondary'}
-              className={`text-[8px] sm:text-[10px] px-1 py-0 h-3 sm:h-4 mt-0.5 transition-all duration-200 ${port.mode === 'trunk' ? 'bg-purple-500/20 text-purple-400 border-purple-500/30' : ''}`}
+              className={`text-[10px] px-1 py-0 h-3 sm:h-4 mt-0.5 transition-all duration-200 ${port.mode === 'trunk' ? 'bg-purple-500/20 text-purple-400 border-purple-500/30' : ''}`}
             >
               {port.mode === 'trunk' ? 'Trunk' : `V${port.vlan}`}
             </Badge>

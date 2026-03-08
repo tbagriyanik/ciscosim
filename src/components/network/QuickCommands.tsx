@@ -95,16 +95,16 @@ export function QuickCommands({ currentMode, onExecuteCommand, t, theme, languag
         
         <div className={`hidden sm:block mt-2 sm:mt-3 pt-2 border-t ${isDark ? 'border-slate-700' : 'border-slate-200'} text-[10px] sm:text-xs ${textMuted}`}>
           <div className="flex items-center gap-1 mb-1">
-            <kbd className={`px-1 py-0.5 ${kbdBg} rounded text-[9px] sm:text-[10px]`}>TAB</kbd>
+            <kbd className={`px-1 py-0.5 ${kbdBg} rounded text-[10px]`}>TAB</kbd>
             <span>- {t.tabComplete}</span>
           </div>
           <div className="flex items-center gap-1 mb-1">
-            <kbd className={`px-1 py-0.5 ${kbdBg} rounded text-[9px] sm:text-[10px]`}>↑</kbd>
-            <kbd className={`px-1 py-0.5 ${kbdBg} rounded text-[9px] sm:text-[10px]`}>↓</kbd>
+            <kbd className={`px-1 py-0.5 ${kbdBg} rounded text-[10px]`}>↑</kbd>
+            <kbd className={`px-1 py-0.5 ${kbdBg} rounded text-[10px]`}>↓</kbd>
             <span>- {t.commandHistory}</span>
           </div>
           <div className="flex items-center gap-1">
-            <kbd className={`px-1 py-0.5 ${kbdBg} rounded text-[9px] sm:text-[10px]`}>?</kbd>
+            <kbd className={`px-1 py-0.5 ${kbdBg} rounded text-[10px]`}>?</kbd>
             <span>- {t.help}</span>
           </div>
         </div>

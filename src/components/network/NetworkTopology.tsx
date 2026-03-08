@@ -3668,7 +3668,7 @@ export function NetworkTopology({
                     {/* Pro-Style Port Grid - topology-matched colors */}
                     <div className={`grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-3 p-4 rounded-3xl border ${isDark ? 'bg-slate-950/40 border-slate-800/50' : 'bg-slate-50 border-slate-200'}`}>
                       {/* Port type legend */}
-                      <div className="col-span-full flex flex-wrap gap-3 mb-2 pb-2 border-b border-dashed border-slate-700/30 text-[8px] font-bold">
+                      <div className="col-span-full flex flex-wrap gap-3 mb-2 pb-2 border-b border-dashed border-slate-700/30 text-[10px]">
                         {device.type === 'pc' ? (
                           <>
                             <span className="flex items-center gap-1 text-slate-400"><span className="w-2 h-2 rounded-full bg-blue-500 inline-block" /> ETH</span>
@@ -3792,7 +3792,7 @@ export function NetworkTopology({
                             <div className={`w-3.5 h-3.5 rounded-full transition-all duration-300 ${
                               isConnected ? 'bg-slate-600' : `${dotCls} ${dotGlow}`
                             }`} />
-                            <span className={`text-[9px] font-bold font-mono transition-colors ${
+                            <span className={`text-[10px] font-bold font-mono transition-colors ${
                               isConnected ? 'text-slate-600' : textCls
                             }`}>
                               {port.label.replace('FastEthernet', 'Fa').replace('GigabitEthernet', 'Gi')}

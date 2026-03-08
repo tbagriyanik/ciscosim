@@ -1,12 +1,13 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inria_Sans, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { Providers } from "@/components/Providers";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const inriaSans = Inria_Sans({
+  variable: "--font-inria-sans",
   subsets: ["latin"],
+  weight: ["300", "400", "700"],
 });
 
 const geistMono = Geist_Mono({
@@ -56,7 +57,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${inriaSans.variable} ${geistMono.variable} antialiased`}
       >
         <Providers>
           {children}
