@@ -11,7 +11,14 @@ interface PCPanelProps {
   isVisible: boolean;
   onClose: () => void;
   topologyDevices?: { id: string; type: string; name: string; ip: string; subnet?: string; gateway?: string; dns?: string; ports: { id: string; status: string }[] }[];
-  topologyConnections?: { sourceDeviceId: string; sourcePort: string; targetDeviceId: string; targetPort: string; active?: boolean }[];
+  topologyConnections?: { 
+    sourceDeviceId: string; 
+    sourcePort: string; 
+    targetDeviceId: string; 
+    targetPort: string; 
+    cableType?: string;
+    active?: boolean 
+  }[];
   deviceStates?: Map<string, SwitchState>;
   onExecuteDeviceCommand?: (deviceId: string, command: string) => Promise<any>;
 }
@@ -96,6 +103,8 @@ function addToCommandHistory(deviceId: string, command: string) {
   }
 }
 
+type PCActiveTab = 'desktop' | 'config' | 'terminal';
+
 export function PCPanel({ 
   deviceId, 
   cableInfo, 
@@ -110,6 +119,17 @@ export function PCPanel({
   const { theme } = useTheme();
   const isDark = theme === 'dark';
   
+  const [activeTab, setActiveTab] = useState<PCActiveTab>('desktop');
+  
+  // Terminal settings state
+  const [terminalSettings, setTerminalSettings] = useState({
+    bitsPerSecond: '9600',
+    dataBits: '8',
+    parity: 'None',
+    stopBits: '1',
+    flowControl: 'None'
+  });
+
   const [output, setOutput] = useState<OutputLine[]>(() => getPCOutputs(deviceId, language));
   const [commandHistory, setCommandHistory] = useState<string[]>(() => getCommandHistory(deviceId));
   const [historyIndex, setHistoryIndex] = useState(-1);
@@ -164,10 +184,24 @@ export function PCPanel({
 
   // Find the device that PC is connected to (via Console port)
   const getConsoleDevice = useCallback((): { id: string; type: string; name: string; ip: string } | null => {
-    const connection = topologyConnections.find(conn => 
-      (conn.sourceDeviceId === deviceId && (conn.sourcePort === 'com1' || conn.sourcePort === 'console')) ||
-      (conn.targetDeviceId === deviceId && (conn.targetPort === 'com1' || conn.targetPort === 'console'))
-    );
+    if (!topologyConnections || !deviceId) return null;
+
+    const connection = topologyConnections.find(conn => {
+      const isSource = conn.sourceDeviceId === deviceId;
+      const isTarget = conn.targetDeviceId === deviceId;
+      
+      if (isSource) {
+        // PC is source, its port should be a COM port
+        const port = conn.sourcePort.toLowerCase();
+        return port.startsWith('com') || port === 'console';
+      }
+      if (isTarget) {
+        // PC is target, its port should be a COM port
+        const port = conn.targetPort.toLowerCase();
+        return port.startsWith('com') || port === 'console';
+      }
+      return false;
+    });
     
     if (!connection) return null;
     
@@ -176,7 +210,13 @@ export function PCPanel({
       : connection.sourceDeviceId;
     
     const device = topologyDevices.find(d => d.id === otherDeviceId);
-    return (device && (device.type === 'switch' || device.type === 'router')) ? device : null;
+    
+    // Only return if it's a switch or router
+    if (device && (device.type === 'switch' || device.type === 'router')) {
+      return device;
+    }
+    
+    return null;
   }, [deviceId, topologyConnections, topologyDevices]);
 
   const connectedDevice = getConnectedDevice();
@@ -966,35 +1006,53 @@ export function PCPanel({
           </div>
           <div>
             <h3 className={`text-lg font-black tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
-              {language === 'tr' ? 'Komut İstemi' : 'Command Prompt'}
+              {deviceId.toUpperCase()} - {activeTab === 'desktop' ? (language === 'tr' ? 'Masaüstü' : 'Desktop') : 
+                activeTab === 'config' ? (language === 'tr' ? 'Yapılandırma' : 'Configuration') :
+                (language === 'tr' ? 'Terminal' : 'Terminal')}
             </h3>
             <div className={`text-[10px] font-bold tracking-widest opacity-60 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-              {deviceId.toUpperCase()} • {pcIP}
+              {pcIP} • {pcMAC}
             </div>
           </div>
         </div>
         
-        <div className="flex items-center gap-3">
-          {/* Cable Status Badge */}
-          <div className={`hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl text-[9px] font-black tracking-widest border transition-all duration-500 shadow-sm ${
-            cableInfo.connected 
-              ? (isCompatible 
-                ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' 
-                : 'bg-rose-500/10 text-rose-500 border-rose-500/20')
-              : 'bg-slate-500/10 text-slate-500 border-slate-500/20'
-          }`}>
-            <div className={`w-1.5 h-1.5 rounded-full ${
-              cableInfo.connected 
-                ? (isCompatible ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]')
-                : 'bg-slate-500'
-            }`} />
-            {cableInfo.connected 
-              ? (isCompatible 
-                ? (language === 'tr' ? 'Online' : 'Connected') 
-                : (language === 'tr' ? 'Hatalı Kablo' : 'Wrong Cable'))
-              : (language === 'tr' ? 'Offline' : 'Disconnected')}
+        <div className="flex items-center gap-6">
+          {/* Tab Navigation */}
+          <div className={`flex items-center p-1 rounded-xl ${isDark ? 'bg-slate-800/50' : 'bg-slate-100'}`}>
+            <button
+              onClick={() => setActiveTab('desktop')}
+              className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                activeTab === 'desktop' 
+                  ? 'bg-blue-500 text-white shadow-lg' 
+                  : isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              {language === 'tr' ? 'Masaüstü' : 'Desktop'}
+            </button>
+            <button
+              onClick={() => setActiveTab('config')}
+              className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                activeTab === 'config' 
+                  ? 'bg-blue-500 text-white shadow-lg' 
+                  : isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              {language === 'tr' ? 'Yapılandırma' : 'Config'}
+            </button>
+            {consoleDevice && (
+              <button
+                onClick={() => setActiveTab('terminal')}
+                className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  activeTab === 'terminal' 
+                    ? 'bg-blue-500 text-white shadow-lg' 
+                    : isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                Terminal
+              </button>
+            )}
           </div>
-          
+
           <button
             onClick={onClose}
             className={`p-2 rounded-xl transition-all duration-300 ${isDark ? 'hover:bg-slate-700/50 text-slate-500 hover:text-slate-200' : 'hover:bg-slate-100 text-slate-400 hover:text-slate-700'}`}
@@ -1006,96 +1064,349 @@ export function PCPanel({
         </div>
       </div>
       
-      {/* PC Output History */}
-      <div 
-        ref={outputRef}
-        className={`flex-1 overflow-y-auto p-8 font-mono text-sm scroll-smooth custom-scrollbar ${
-          isDark ? 'bg-slate-950/40' : 'bg-slate-50/50'
-        }`}
-        onClick={() => inputRef.current?.focus()}
-      >
-        <div className="space-y-1.5">
-          {output.map((line) => (
-            <div key={line.id} className="group transition-all duration-300">
-              {line.type === 'command' && (
-                <div className="flex flex-wrap">
-                  <span className="text-blue-500 font-bold whitespace-nowrap">{line.prompt}</span>
-                  <span className={`${isDark ? 'text-white' : 'text-slate-900'} ml-1`}>{line.content}</span>
-                </div>
-              )}
-              {(line.type === 'output' || line.type === 'prompt') && (
-                <pre className={`${isDark ? 'text-slate-300' : 'text-slate-700'} whitespace-pre-wrap leading-relaxed`}>
-                  {line.prompt && <span className="text-blue-500 font-bold">{line.prompt}</span>}
-                  {line.content}
-                </pre>
-              )}
-              {line.type === 'error' && (
-                <pre className="text-rose-500 whitespace-pre-wrap font-bold bg-rose-500/5 px-2 py-1 rounded-lg border border-rose-500/10 mb-1">{line.content}</pre>
-              )}
-              {line.type === 'success' && (
-                <pre className="text-emerald-500 whitespace-pre-wrap font-medium">{line.content}</pre>
-              )}
+      {/* Content Area */}
+      <div className="flex-1 overflow-hidden relative">
+        {activeTab === 'desktop' && (
+          <div className="h-full flex flex-col">
+            {/* Desktop Icons - Visual only for now */}
+            <div className="flex-1 p-8 grid grid-cols-4 sm:grid-cols-6 gap-8 content-start">
+               <button 
+                onClick={() => {
+                  // If clicking "Command Prompt", it could stay in desktop or we focus it
+                  // For now, let's assume the terminal view *is* the desktop content
+                }}
+                className="flex flex-col items-center gap-2 group"
+               >
+                 <div className={`p-4 rounded-2xl border transition-all duration-300 group-hover:scale-110 group-active:scale-95 ${
+                   isDark ? 'bg-slate-800/50 border-slate-700 group-hover:border-blue-500/50' : 'bg-slate-50 border-slate-200 group-hover:border-blue-500/50'
+                 }`}>
+                    <svg className="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                 </div>
+                 <span className={`text-[10px] font-bold text-center ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Command Prompt</span>
+               </button>
+
+               <button className="flex flex-col items-center gap-2 group opacity-50 cursor-not-allowed">
+                 <div className={`p-4 rounded-2xl border ${isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
+                    <svg className="w-8 h-8 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                    </svg>
+                 </div>
+                 <span className={`text-[10px] font-bold text-center ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Web Browser</span>
+               </button>
+
+               <button className="flex flex-col items-center gap-2 group opacity-50 cursor-not-allowed">
+                 <div className={`p-4 rounded-2xl border ${isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
+                    <svg className="w-8 h-8 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                 </div>
+                 <span className={`text-[10px] font-bold text-center ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>IP Config</span>
+               </button>
             </div>
-          ))}
-          
-          {/* PC Prompt Line */}
-          <div className="flex items-center min-h-[40px] group mt-2">
-            <span className="text-blue-500 font-bold flex-shrink-0 mr-1.5">{currentPrompt}</span>
-            <div className="relative flex-1">
-              {/* Ghost text for suggestions */}
-              {currentSuggestions.length > 0 && currentCommand && !interactiveState.active && (
-                <div 
-                  className="absolute inset-0 flex items-center pointer-events-none font-mono text-sm overflow-hidden"
-                  aria-hidden="true"
-                >
-                  <span className="text-transparent">{currentCommand}</span>
-                  <span className={`${isDark ? 'text-slate-700' : 'text-slate-300'}`}>
-                    {currentSuggestions[0].startsWith(currentCommand.split(' ').pop() || '') 
-                      ? currentSuggestions[0].slice(currentCommand.split(' ').pop()?.length || 0)
-                      : ''}
-                  </span>
-                </div>
-              )}
-              <input
-                ref={inputRef}
-                type={interactiveState.step === 'password' ? 'password' : 'text'}
-                value={currentCommand}
-                onChange={(e) => setCurrentCommand(e.target.value)}
-                onKeyDown={handleKeyDown}
-                className={`bg-transparent ${isDark ? 'text-white' : 'text-slate-900'} outline-none w-full font-mono py-2 text-sm caret-blue-500 selection:bg-blue-500/30`}
-                autoComplete="off"
-                spellCheck={false}
-              />
-              {/* Blinking cursor */}
-              {!currentCommand && (
-                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-2 h-4 bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)] cursor-blink pointer-events-none opacity-0 group-focus-within:opacity-100 transition-opacity" />
-              )}
-            </div>
-            
-            {/* PC Terminal Controls */}
-            <div className="flex items-center gap-3 ml-4 flex-shrink-0">
-              {/* Enter Button */}
-              <button
-                onClick={() => executeCommand(currentCommand)}
-                disabled={!currentCommand.trim() && !interactiveState.active}
-                className={`px-4 py-1.5 rounded-xl font-bold text-xs transition-all duration-300 flex items-center gap-2 border shadow-sm ${
-                  isDark 
-                    ? 'bg-blue-500/10 border-blue-500/30 text-blue-400 hover:bg-blue-500/20 hover:border-blue-500/50 disabled:opacity-30 disabled:border-slate-800 disabled:text-slate-600' 
-                    : 'bg-blue-50 border-blue-200 text-blue-600 hover:bg-blue-100 hover:border-blue-300 disabled:opacity-50 disabled:bg-slate-50 disabled:border-slate-200 disabled:text-slate-400'
+
+            {/* Terminal Window Overlay (Simulated) */}
+            <div className="absolute inset-x-8 top-8 bottom-8 flex flex-col pointer-events-none">
+              <div className="pointer-events-auto flex-1 flex flex-col">
+                <div className={`flex-1 overflow-y-auto p-8 font-mono text-sm scroll-smooth custom-scrollbar border rounded-3xl shadow-xl ${
+                  isDark ? 'bg-slate-950/90 border-slate-800' : 'bg-slate-50/95 border-slate-200'
                 }`}
-              >
-                <span className="hidden sm:inline">Enter</span>
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
-                </svg>
-              </button>
+                onClick={() => inputRef.current?.focus()}
+                >
+                  <div className="space-y-1.5">
+                    {output.map((line) => (
+                      <div key={line.id} className="group transition-all duration-300">
+                        {line.type === 'command' && (
+                          <div className="flex flex-wrap">
+                            <span className="text-blue-500 font-bold whitespace-nowrap">{line.prompt}</span>
+                            <span className={`${isDark ? 'text-white' : 'text-slate-900'} ml-1`}>{line.content}</span>
+                          </div>
+                        )}
+                        {(line.type === 'output' || line.type === 'prompt') && (
+                          <pre className={`${isDark ? 'text-slate-300' : 'text-slate-700'} whitespace-pre-wrap leading-relaxed`}>
+                            {line.prompt && <span className="text-blue-500 font-bold">{line.prompt}</span>}
+                            {line.content}
+                          </pre>
+                        )}
+                        {line.type === 'error' && (
+                          <pre className="text-rose-500 whitespace-pre-wrap font-bold bg-rose-500/5 px-2 py-1 rounded-lg border border-rose-500/10 mb-1">{line.content}</pre>
+                        )}
+                        {line.type === 'success' && (
+                          <pre className="text-emerald-500 whitespace-pre-wrap font-medium">{line.content}</pre>
+                        )}
+                      </div>
+                    ))}
+                    
+                    {/* PC Prompt Line */}
+                    {!interactiveState.active && (
+                      <div className="flex items-center min-h-[40px] group mt-2">
+                        <span className="text-blue-500 font-bold flex-shrink-0 mr-1.5">{currentPrompt}</span>
+                        <div className="relative flex-1">
+                          {currentSuggestions.length > 0 && currentCommand && (
+                            <div className="absolute inset-0 flex items-center pointer-events-none font-mono text-sm overflow-hidden">
+                              <span className="text-transparent">{currentCommand}</span>
+                              <span className={`${isDark ? 'text-slate-700' : 'text-slate-300'}`}>
+                                {currentSuggestions[0].startsWith(currentCommand.split(' ').pop() || '') 
+                                  ? currentSuggestions[0].slice(currentCommand.split(' ').pop()?.length || 0)
+                                  : ''}
+                              </span>
+                            </div>
+                          )}
+                          <input
+                            ref={inputRef}
+                            type="text"
+                            value={currentCommand}
+                            onChange={(e) => setCurrentCommand(e.target.value)}
+                            onKeyDown={handleKeyDown}
+                            className={`bg-transparent ${isDark ? 'text-white' : 'text-slate-900'} outline-none w-full font-mono py-2 text-sm caret-blue-500`}
+                            autoComplete="off"
+                            spellCheck={false}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {interactiveState.active && (
+                       <div className="flex items-center min-h-[40px] group mt-2">
+                         <span className="text-blue-500 font-bold flex-shrink-0 mr-1.5">{currentPrompt}</span>
+                         <input
+                            ref={inputRef}
+                            type={interactiveState.step === 'password' ? 'password' : 'text'}
+                            value={currentCommand}
+                            onChange={(e) => setCurrentCommand(e.target.value)}
+                            onKeyDown={handleKeyDown}
+                            className={`bg-transparent ${isDark ? 'text-white' : 'text-slate-900'} outline-none w-full font-mono py-2 text-sm caret-blue-500`}
+                            autoComplete="off"
+                            spellCheck={false}
+                          />
+                       </div>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
+        )}
+
+        {activeTab === 'config' && (
+          <div className="h-full p-12 overflow-y-auto custom-scrollbar">
+            <div className="max-w-2xl mx-auto space-y-12">
+              <div className="space-y-6">
+                 <h4 className={`text-xs font-black tracking-widest uppercase opacity-40 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                    {language === 'tr' ? 'IP YAPILANDIRMASI' : 'IP CONFIGURATION'}
+                 </h4>
+                 
+                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                    <div className="space-y-2">
+                      <label className={`text-[10px] font-bold ml-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>IP Address</label>
+                      <input 
+                        readOnly 
+                        value={pcIP} 
+                        className={`w-full px-5 py-3.5 rounded-2xl border font-mono text-sm ${
+                          isDark ? 'bg-slate-800/50 border-slate-700 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-600'
+                        }`} 
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className={`text-[10px] font-bold ml-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Subnet Mask</label>
+                      <input 
+                        readOnly 
+                        value={pcSubnet} 
+                        className={`w-full px-5 py-3.5 rounded-2xl border font-mono text-sm ${
+                          isDark ? 'bg-slate-800/50 border-slate-700 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-600'
+                        }`} 
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className={`text-[10px] font-bold ml-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Default Gateway</label>
+                      <input 
+                        readOnly 
+                        value={pcGateway} 
+                        className={`w-full px-5 py-3.5 rounded-2xl border font-mono text-sm ${
+                          isDark ? 'bg-slate-800/50 border-slate-700 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-600'
+                        }`} 
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className={`text-[10px] font-bold ml-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>DNS Server</label>
+                      <input 
+                        readOnly 
+                        value={pcDNS} 
+                        className={`w-full px-5 py-3.5 rounded-2xl border font-mono text-sm ${
+                          isDark ? 'bg-slate-800/50 border-slate-700 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-600'
+                        }`} 
+                      />
+                    </div>
+                 </div>
+              </div>
+
+              <div className="space-y-6">
+                 <h4 className={`text-xs font-black tracking-widest uppercase opacity-40 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                    {language === 'tr' ? 'FİZİKSEL' : 'PHYSICAL'}
+                 </h4>
+                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                    <div className="space-y-2">
+                      <label className={`text-[10px] font-bold ml-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>MAC Address</label>
+                      <input 
+                        readOnly 
+                        value={pcMAC} 
+                        className={`w-full px-5 py-3.5 rounded-2xl border font-mono text-sm ${
+                          isDark ? 'bg-slate-800/50 border-slate-700 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-600'
+                        }`} 
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className={`text-[10px] font-bold ml-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Port</label>
+                      <div className={`px-5 py-3.5 rounded-2xl border flex items-center gap-3 ${
+                        isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-50 border-slate-200'
+                      }`}>
+                        <div className={`w-2 h-2 rounded-full ${cableInfo.connected ? 'bg-emerald-500' : 'bg-slate-500'}`} />
+                        <span className={`text-sm font-bold ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Ethernet0</span>
+                      </div>
+                    </div>
+                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'terminal' && (
+          <div className="h-full flex items-center justify-center p-8">
+            <div className={`w-full max-w-md p-10 rounded-[2.5rem] border shadow-2xl ${
+              isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-white border-slate-200'
+            }`}>
+              <div className="flex flex-col items-center gap-6 mb-10">
+                <div className="p-5 rounded-[2rem] bg-blue-500/10 border border-blue-500/20">
+                  <svg className="w-10 h-10 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <div className="text-center">
+                  <h3 className={`text-xl font-black ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                    {language === 'tr' ? 'Terminal Ayarları' : 'Terminal Configuration'}
+                  </h3>
+                  <p className={`text-xs mt-2 font-medium opacity-60 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                    {language === 'tr' ? 'Konsol bağlantısı parametrelerini ayarlayın' : 'Set your console connection parameters'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-5">
+                <div className="flex items-center justify-between group">
+                  <label className={`text-xs font-bold ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+                    Bits per second (Baud)
+                  </label>
+                  <select 
+                    value={terminalSettings.bitsPerSecond}
+                    onChange={(e) => setTerminalSettings({...terminalSettings, bitsPerSecond: e.target.value})}
+                    className={`px-4 py-2 rounded-xl border text-xs font-bold ${
+                      isDark ? 'bg-slate-900 border-slate-700 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-700'
+                    }`}
+                  >
+                    <option>9600</option>
+                    <option>19200</option>
+                    <option>38400</option>
+                    <option>57600</option>
+                    <option>115200</option>
+                  </select>
+                </div>
+
+                <div className="flex items-center justify-between group">
+                  <label className={`text-xs font-bold ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+                    Data bits
+                  </label>
+                  <select 
+                    value={terminalSettings.dataBits}
+                    onChange={(e) => setTerminalSettings({...terminalSettings, dataBits: e.target.value})}
+                    className={`px-4 py-2 rounded-xl border text-xs font-bold ${
+                      isDark ? 'bg-slate-900 border-slate-700 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-700'
+                    }`}
+                  >
+                    <option>5</option>
+                    <option>6</option>
+                    <option>7</option>
+                    <option>8</option>
+                  </select>
+                </div>
+
+                <div className="flex items-center justify-between group">
+                  <label className={`text-xs font-bold ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+                    Parity
+                  </label>
+                  <select 
+                    value={terminalSettings.parity}
+                    onChange={(e) => setTerminalSettings({...terminalSettings, parity: e.target.value})}
+                    className={`px-4 py-2 rounded-xl border text-xs font-bold ${
+                      isDark ? 'bg-slate-900 border-slate-700 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-700'
+                    }`}
+                  >
+                    <option>None</option>
+                    <option>Even</option>
+                    <option>Odd</option>
+                    <option>Mark</option>
+                    <option>Space</option>
+                  </select>
+                </div>
+
+                <div className="flex items-center justify-between group">
+                  <label className={`text-xs font-bold ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+                    Stop bits
+                  </label>
+                  <select 
+                    value={terminalSettings.stopBits}
+                    onChange={(e) => setTerminalSettings({...terminalSettings, stopBits: e.target.value})}
+                    className={`px-4 py-2 rounded-xl border text-xs font-bold ${
+                      isDark ? 'bg-slate-900 border-slate-700 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-700'
+                    }`}
+                  >
+                    <option>1</option>
+                    <option>1.5</option>
+                    <option>2</option>
+                  </select>
+                </div>
+
+                <div className="flex items-center justify-between group pb-4">
+                  <label className={`text-xs font-bold ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+                    Flow control
+                  </label>
+                  <select 
+                    value={terminalSettings.flowControl}
+                    onChange={(e) => setTerminalSettings({...terminalSettings, flowControl: e.target.value})}
+                    className={`px-4 py-2 rounded-xl border text-xs font-bold ${
+                      isDark ? 'bg-slate-900 border-slate-700 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-700'
+                    }`}
+                  >
+                    <option>None</option>
+                    <option>Xon/Xoff</option>
+                    <option>Hardware</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="pt-6 border-t border-slate-700/50 mt-8 flex flex-col gap-3">
+                <button
+                  onClick={() => {
+                    handleTerminal();
+                    setActiveTab('desktop');
+                  }}
+                  className="w-full py-4 rounded-2xl bg-blue-600 text-white font-black text-sm hover:bg-blue-500 shadow-xl shadow-blue-600/20 active:scale-[0.98] transition-all"
+                >
+                  {language === 'tr' ? 'Bağlan' : 'Connect'}
+                </button>
+                <div className="flex items-center justify-center gap-2 text-[10px] font-bold tracking-widest opacity-40 uppercase">
+                   <div className={`w-1.5 h-1.5 rounded-full ${consoleDevice ? 'bg-emerald-500' : 'bg-red-500'}`} />
+                   {consoleDevice ? (language === 'tr' ? 'Console Kablosu Hazır' : 'Console Cable Ready') : (language === 'tr' ? 'Kablo Yok' : 'No Cable')}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
       
-      {/* PC Completion Bar */}
-      {showCompletionBar && (
+      {/* PC Completion Bar (Only for Desktop/Terminal mode) */}
+      {activeTab === 'desktop' && showCompletionBar && !interactiveState.active && (
         <div className={`border-t px-4 py-3 transition-all duration-500 ${isDark ? 'bg-slate-900/60 border-slate-800/50' : 'bg-slate-50/80 border-slate-200/50'}`}>
           {/* Suggestions Row */}
           {currentSuggestions.length > 0 && (
@@ -1157,7 +1468,7 @@ export function PCPanel({
       )}
       
       {/* Show button when hidden */}
-      {!showCompletionBar && (
+      {activeTab === 'desktop' && !showCompletionBar && (
         <button
           onClick={() => setShowCompletionBar(true)}
           className={`w-full border-t px-4 py-2 text-[10px] font-bold tracking-widest flex items-center justify-center gap-2 transition-all ${

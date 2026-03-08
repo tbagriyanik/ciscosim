@@ -58,12 +58,24 @@ export function useDeviceManager(language: 'tr' | 'en') {
   } | null>(null);
 
   // Get or create state for a device
-  const getOrCreateDeviceState = useCallback((deviceId: string, deviceType: 'pc' | 'switch' | 'router'): SwitchState => {
+  const getOrCreateDeviceState = useCallback((deviceId: string, deviceType: 'pc' | 'switch' | 'router', initialHostname?: string): SwitchState => {
     let deviceState = deviceStates.get(deviceId);
     if (!deviceState) {
       deviceState = deviceType === 'router' ? createInitialRouterState() : createInitialState();
-      const hostname = deviceType === 'router' ? 'Router' : 'Switch';
+      const hostname = initialHostname || (deviceType === 'router' ? 'Router' : 'Switch');
+      
+      // Update state with unique hostname
       deviceState = { ...deviceState, hostname };
+      
+      // Also update running config hostname line if it exists
+      if (deviceState.runningConfig) {
+        deviceState.runningConfig = deviceState.runningConfig.map(line => 
+          line.startsWith(' hostname ') || line.startsWith('hostname ') 
+            ? `hostname ${hostname}` 
+            : line
+        );
+      }
+      
       setDeviceStates(prev => new Map(prev).set(deviceId, deviceState!));
     }
     return deviceState;

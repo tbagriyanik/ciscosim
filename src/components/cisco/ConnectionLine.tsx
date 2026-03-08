@@ -39,7 +39,16 @@ export const ConnectionLine = memo(function ConnectionLine({
   
   // Cast to specific types to satisfy TS if needed, but the logic is sound
   const isCompatible = isCableCompatible(cableInfoForConnection as any);
-  const color = isCompatible ? CABLE_COLORS[connection.cableType].primary : CABLE_COLORS.error.primary;
+  
+  // Check if either port is shutdown
+  const sourcePort = sourceDevice.ports.find(p => p.id === connection.sourcePort);
+  const targetPort = targetDevice.ports.find(p => p.id === connection.targetPort);
+  const isShutdown = sourcePort?.shutdown || targetPort?.shutdown;
+  
+  const isEffectivelyActive = connection.active && isCompatible && !isShutdown;
+  const color = !isCompatible ? CABLE_COLORS.error.primary : 
+                isShutdown ? (isDark ? '#475569' : '#94a3b8') : // Gray if shutdown
+                CABLE_COLORS[connection.cableType].primary;
 
   // Calculate offset for parallel lines (spread out from center)
   const maxOffset = 20;
@@ -84,7 +93,7 @@ export const ConnectionLine = memo(function ConnectionLine({
       />
 
       {/* Animated data flow - only for compatible cables */}
-      {connection.active && isCompatible && (
+      {isEffectivelyActive && (
         <>
           <circle r="4" fill={color}>
             <animateMotion
@@ -167,6 +176,10 @@ export const ConnectionLine = memo(function ConnectionLine({
     prevProps.sourceDevice.y === nextProps.sourceDevice.y &&
     prevProps.targetDevice.x === nextProps.targetDevice.x &&
     prevProps.targetDevice.y === nextProps.targetDevice.y &&
+    prevProps.sourceDevice.ports.find(p => p.id === prevProps.connection.sourcePort)?.shutdown === 
+    nextProps.sourceDevice.ports.find(p => p.id === nextProps.connection.sourcePort)?.shutdown &&
+    prevProps.targetDevice.ports.find(p => p.id === prevProps.connection.targetPort)?.shutdown === 
+    nextProps.targetDevice.ports.find(p => p.id === nextProps.connection.targetPort)?.shutdown &&
     prevProps.totalSameConns === nextProps.totalSameConns &&
     prevProps.sameConnIndex === nextProps.sameConnIndex &&
     prevProps.isDark === nextProps.isDark

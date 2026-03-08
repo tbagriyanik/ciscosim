@@ -154,24 +154,24 @@ export default function Home() {
   }, [showActiveDeviceDropdown, closeLocalMenus, broadcastCloseMenus, topologyDevices]);
 
   // Handle device selection (single click) - just select the device, don't change tabs
-  const handleDeviceSelect = useCallback((device: 'pc' | 'switch', deviceId?: string) => {
+  const handleDeviceSelect = useCallback((device: 'pc' | 'switch' | 'router', deviceId?: string) => {
     setSelectedDevice(device);
     if (deviceId) {
-      // Determine actual device type
+      // Determine actual device type from deviceId or use the passed type
       const actualDeviceType = deviceId.includes('router') ? 'router' : deviceId.includes('pc') ? 'pc' : 'switch';
-      
+
       // Set the active device but DON'T switch tabs
       setActiveDeviceId(deviceId);
-      setActiveDeviceType(actualDeviceType as 'pc' | 'switch' | 'router');
-      
+      setActiveDeviceType(actualDeviceType);
+
       // Initialize device state if needed (for switches/routers)
       if (actualDeviceType !== 'pc') {
-        getOrCreateDeviceState(deviceId, actualDeviceType as 'pc' | 'switch' | 'router');
+        const deviceObj = topologyDevices?.find(d => d.id === deviceId);
+        getOrCreateDeviceState(deviceId, actualDeviceType, deviceObj?.name);
         getOrCreateDeviceOutputs(deviceId);
       }
     }
   }, [getOrCreateDeviceState, getOrCreateDeviceOutputs]);
-
   // Handle command using active device
   const handleCommand = useCallback(async (command: string) => {
     await handleCommandForDevice(
@@ -245,8 +245,11 @@ export default function Home() {
     } else {
       // Switch or Router - set as CLI device and switch to terminal
       setActiveDeviceId(deviceId);
-      setActiveDeviceType(actualDeviceType as 'switch' | 'router');
-      getOrCreateDeviceState(deviceId, actualDeviceType as 'pc' | 'switch' | 'router');
+      const actualType = actualDeviceType as 'switch' | 'router';
+      setActiveDeviceType(actualType);
+      
+      const deviceObj = topologyDevices?.find(d => d.id === deviceId);
+      getOrCreateDeviceState(deviceId, actualType, deviceObj?.name);
       getOrCreateDeviceOutputs(deviceId);
       setActiveTab('terminal');
     }
@@ -867,7 +870,8 @@ export default function Home() {
               // Get display name for active device (from topology or state)
               const activeDevice = topologyDevices?.find(d => d.id === activeDeviceId);
               const hostname = deviceStates.get(activeDeviceId)?.hostname || activeDevice?.name || 'Device';
-              const typeLabel = activeDeviceType === 'pc' ? 'PC' : activeDeviceType === 'router' ? 'Router' : 'Switch';
+              const currentType = activeDevice?.type || activeDeviceType;
+              const typeLabel = currentType === 'pc' ? 'PC' : currentType === 'router' ? 'Router' : 'Switch';
               
               return (
               <div className="relative device-dropdown-container">
@@ -883,11 +887,11 @@ export default function Home() {
                         : 'text-cyan-700 bg-white border-slate-200 hover:bg-slate-50 hover:border-cyan-500/50 cursor-pointer'
                   } shadow-sm`}
                 >
-                  {activeDeviceType === 'pc' ? (
+                  {currentType === 'pc' ? (
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                     </svg>
-                  ) : activeDeviceType === 'router' ? (
+                  ) : currentType === 'router' ? (
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.14 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0" />
                     </svg>
@@ -944,7 +948,7 @@ export default function Home() {
                             onClick={(e) => {
                               e.stopPropagation();
                               // Select the device but don't change tabs
-                              handleDeviceSelect(device.type === 'router' ? 'switch' : device.type, device.id);
+                              handleDeviceSelect(device.type, device.id);
                               setShowActiveDeviceDropdown(false);
                             }}
                             className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${
@@ -966,12 +970,14 @@ export default function Home() {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" />
                               </svg>
                             )}
-                            <span className="font-medium">{hostname}</span>
-                            <span className={`text-xs ml-auto ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                              {device.type === 'pc' ? 'PC' : device.type === 'router' ? 'Router' : 'Switch'}
-                            </span>
+                            <div className="flex flex-col">
+                              <span className="font-bold text-sm">{hostname}</span>
+                              <span className={`text-[10px] font-black tracking-widest uppercase opacity-40 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                                {device.type === 'pc' ? 'PC' : device.type === 'router' ? 'Router' : 'Switch'}
+                              </span>
+                            </div>
                             {isActive && (
-                              <svg className="w-4 h-4 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg className="w-4 h-4 text-cyan-500 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                               </svg>
                             )}
@@ -1123,6 +1129,7 @@ export default function Home() {
                   initialConnections={topologyConnections || undefined}
                   isActive={activeTab === 'topology'}
                   activeDeviceId={activeDeviceId}
+                  deviceStates={deviceStates}
                 />
               </div>
               

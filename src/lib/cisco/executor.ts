@@ -1478,7 +1478,7 @@ function cmdInterface(state: SwitchState, input: string): CommandResult {
       mode: 'access',
       duplex: 'auto',
       speed: 'auto',
-      shutdown: true,
+      shutdown: false,
       type: isGigabit ? 'gigabitethernet' : 'fastethernet'
     };
   }
@@ -2572,7 +2572,7 @@ function cmdIpAddress(state: SwitchState, input: string): CommandResult {
       mode: 'access',
       duplex: 'auto',
       speed: 'auto',
-      shutdown: true,
+      shutdown: false,
       type: 'fastethernet' // default
     };
   }
@@ -3330,7 +3330,7 @@ function cmdIpv6Address(state: SwitchState, input: string): CommandResult {
           mode: 'access',
           duplex: 'auto',
           speed: 'auto',
-          shutdown: true,
+          shutdown: false,
           type: 'fastethernet'
       };
   }

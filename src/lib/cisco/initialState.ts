@@ -5,7 +5,7 @@ import { SwitchState, Port, Vlan, SecurityConfig, CommandMode } from './types';
 function createInitialPorts(): Record<string, Port> {
   const ports: Record<string, Port> = {};
   
-  // FastEthernet 0/1 - 0/24 - HEPSİ KAPALI (shutdown) BAŞLANGIÇTA
+  // FastEthernet 0/1 - 0/24 - HEPSİ AÇIK (no shutdown) BAŞLANGIÇTA
   for (let i = 1; i <= 24; i++) {
     const portId = `fa0/${i}`;
     ports[portId] = {
@@ -16,13 +16,13 @@ function createInitialPorts(): Record<string, Port> {
       mode: 'access',
       duplex: 'auto',
       speed: 'auto',
-      shutdown: true, // BAŞLANGIÇTA KAPALI - kullanıcı açmalı
+      shutdown: false, // BAŞLANGIÇTA AÇIK
       type: 'fastethernet',
       allowedVlans: 'all'
     };
   }
   
-  // GigabitEthernet 0/1 - 0/2 (Uplink) - BUNLAR DA KAPALI
+  // GigabitEthernet 0/1 - 0/2 (Uplink) - BUNLAR DA AÇIK
   for (let i = 1; i <= 2; i++) {
     const portId = `gi0/${i}`;
     ports[portId] = {
@@ -33,11 +33,24 @@ function createInitialPorts(): Record<string, Port> {
       mode: 'access',
       duplex: 'auto',
       speed: 'auto',
-      shutdown: true, // BAŞLANGIÇTA KAPALI - kullanıcı açmalı
+      shutdown: false, // BAŞLANGIÇTA AÇIK
       type: 'gigabitethernet',
       allowedVlans: 'all'
     };
   }
+
+  // Management VLAN interface
+  ports['vlan1'] = {
+    id: 'vlan1',
+    name: '',
+    status: 'notconnect',
+    vlan: 1,
+    mode: 'access',
+    duplex: 'auto',
+    speed: 'auto',
+    shutdown: false, // BAŞLANGIÇTA AÇIK
+    type: 'fastethernet'
+  };
   
   return ports;
 }
@@ -124,7 +137,7 @@ export function createInitialState(): SwitchState {
       '!',
       'interface Vlan1',
       ' no ip address',
-      ' shutdown',
+      ' no shutdown',
       '!',
       '!',
       'line con 0',

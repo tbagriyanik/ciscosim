@@ -53,6 +53,7 @@ export const DeviceNode = memo(function DeviceNode({
     prevProps.device.name === nextProps.device.name &&
     prevProps.device.status === nextProps.device.status &&
     prevProps.device.ip === nextProps.device.ip &&
+    JSON.stringify(prevProps.device.ports) === JSON.stringify(nextProps.device.ports) &&
     prevProps.isSelected === nextProps.isSelected &&
     prevProps.isActive === nextProps.isActive &&
     prevProps.isDragging === nextProps.isDragging &&

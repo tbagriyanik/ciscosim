@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback, MouseEvent as ReactMouseEvent, TouchEvent as ReactTouchEvent } from 'react';
-import { CableType, CableInfo, getCableTypeName, isCableCompatible } from '@/lib/cisco/types';
+import { SwitchState, CableType, CableInfo, getCableTypeName, isCableCompatible } from '@/lib/cisco/types';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -11,15 +11,16 @@ import { DeviceNode } from './DeviceNode';
 interface NetworkTopologyProps {
   cableInfo: CableInfo;
   onCableChange: (cableInfo: CableInfo) => void;
-  selectedDevice: 'pc' | 'switch' | null;
-  onDeviceSelect: (device: 'pc' | 'switch', deviceId?: string) => void;
-  onDeviceDoubleClick?: (device: 'pc' | 'switch', deviceId: string) => void;
+  selectedDevice: 'pc' | 'switch' | 'router' | null;
+  onDeviceSelect: (device: 'pc' | 'switch' | 'router', deviceId?: string) => void;
+  onDeviceDoubleClick?: (device: 'pc' | 'switch' | 'router', deviceId: string) => void;
   onTopologyChange?: (devices: CanvasDevice[], connections: CanvasConnection[]) => void;
   onDeviceDelete?: (deviceId: string) => void;
   initialDevices?: CanvasDevice[];
   initialConnections?: CanvasConnection[];
   isActive?: boolean;
   activeDeviceId?: string | null;
+  deviceStates?: Map<string, SwitchState>;
 }
 
 // Device types for the canvas
@@ -35,7 +36,7 @@ export interface CanvasDevice {
   x: number;
   y: number;
   status: 'online' | 'offline' | 'error';
-  ports: { id: string; label: string; status: 'connected' | 'disconnected' }[];
+  ports: { id: string; label: string; status: 'connected' | 'disconnected'; shutdown?: boolean }[];
 }
 
 // Connection types
@@ -108,6 +109,7 @@ export function NetworkTopology({
   initialConnections,
   isActive = true,
   activeDeviceId,
+  deviceStates,
 }: NetworkTopologyProps) {
   const { language } = useLanguage();
   const { theme } = useTheme();
@@ -179,8 +181,21 @@ export function NetworkTopology({
 
   // Canvas state
   const [devices, setDevices] = useState<CanvasDevice[]>(initialDevices || defaultDevices);
-
   const [connections, setConnections] = useState<CanvasConnection[]>(initialConnections || []);
+
+  // Sync with props when they change externally (e.g. hostname sync in page.tsx)
+  useEffect(() => {
+    if (initialDevices) {
+      setDevices(initialDevices);
+    }
+  }, [initialDevices]);
+
+  useEffect(() => {
+    if (initialConnections) {
+      setConnections(initialConnections);
+    }
+  }, [initialConnections]);
+
   const [zoom, setZoom] = useState(DEFAULT_ZOOM);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
@@ -490,7 +505,7 @@ export function NetworkTopology({
 
   // Handle mobile back button to close modals/popups
   useEffect(() => {
-    const isAnyModalOpen = isPaletteOpen || !!configuringDevice || !!pingSource || showPortSelector || !!contextMenu;
+    const isAnyModalOpen = isPaletteOpen || !!configuringDevice || !!pingSource || showPortSelector || !!contextMenu || isFullscreen;
     
     if (isAnyModalOpen) {
       window.history.pushState({ modalOpen: true }, '');
@@ -506,11 +521,12 @@ export function NetworkTopology({
         setSelectedSourcePort(null);
       }
       if (contextMenu) setContextMenu(null);
+      if (isFullscreen) setIsFullscreen(false);
     };
 
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, [isPaletteOpen, configuringDevice, pingSource, showPortSelector, contextMenu, cancelDeviceConfig]);
+  }, [isPaletteOpen, configuringDevice, pingSource, showPortSelector, contextMenu, cancelDeviceConfig, isFullscreen]);
 
   // Handle right-click context menu with viewport clamping
   const openContextMenu = useCallback((clientX: number, clientY: number, deviceId: string | null = null) => {
@@ -721,7 +737,7 @@ export function NetworkTopology({
         const device = devices.find(d => d.id === touchDraggedDevice);
         if (device) {
           setSelectedDeviceIds([device.id]);
-          onDeviceSelect(device.type === 'router' ? 'switch' : device.type, device.id);
+          onDeviceSelect(device.type, device.id);
         }
       }
 
@@ -811,7 +827,7 @@ export function NetworkTopology({
     if (!e.shiftKey) {
       setSelectedDeviceIds([device.id]);
       // Notify parent component - select device, don't open terminal
-      onDeviceSelect(device.type === 'router' ? 'switch' : device.type, device.id);
+      onDeviceSelect(device.type, device.id);
     }
   }, [onDeviceSelect]);
 
@@ -819,7 +835,7 @@ export function NetworkTopology({
   const handleDeviceDoubleClick = useCallback((device: CanvasDevice) => {
     // Open terminal for this specific device
     if (onDeviceDoubleClick) {
-      onDeviceDoubleClick(device.type === 'router' ? 'switch' : device.type, device.id);
+      onDeviceDoubleClick(device.type, device.id);
     } else {
       // Fallback to old behavior
       if (device.type === 'pc') {
@@ -939,7 +955,7 @@ export function NetworkTopology({
       const device = devices.find(d => d.id === touchDraggedDevice);
       if (device) {
         setSelectedDeviceIds([device.id]);
-        onDeviceSelect(device.type === 'router' ? 'switch' : device.type, device.id);
+        onDeviceSelect(device.type, device.id);
       }
     }
 
@@ -1260,6 +1276,47 @@ export function NetworkTopology({
       onTopologyChange(devices, connections);
     }
   }, [devices, connections, onTopologyChange]);
+  // Port Tooltip state
+  const [portTooltip, setPortTooltip] = useState<{
+    deviceId: string;
+    portId: string;
+    x: number;
+    y: number;
+    visible: boolean;
+  } | null>(null);
+  const portTooltipTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const showPortTooltip = useCallback((e: ReactMouseEvent | MouseEvent, deviceId: string, portId: string) => {
+    const device = devices.find(d => d.id === deviceId);
+    const port = device?.ports.find(p => p.id === portId);
+    if (!device || !port) return;
+
+    if (portTooltipTimerRef.current) {
+      clearTimeout(portTooltipTimerRef.current);
+    }
+
+    setPortTooltip({
+      deviceId,
+      portId,
+      x: e.clientX,
+      y: e.clientY,
+      visible: true,
+    });
+
+    portTooltipTimerRef.current = setTimeout(() => {
+      setPortTooltip(prev => prev ? { ...prev, visible: false } : null);
+    }, 1500);
+  }, [devices]);
+
+  const handlePortHover = useCallback((e: ReactMouseEvent, deviceId: string, portId: string) => {
+    showPortTooltip(e, deviceId, portId);
+  }, [showPortTooltip]);
+
+  const handlePortMouseLeave = useCallback(() => {
+    // We don't immediately hide on leave if we want it to stay for 3s
+    // but we could if needed. The requirement says 3s after open.
+  }, []);
+
   // Sync device counters with current devices to prevent ID collisions
   useEffect(() => {
     if (devices.length > 0) {
@@ -1277,6 +1334,36 @@ export function NetworkTopology({
       deviceCounterRef.current = counters;
     }
   }, [devices]);
+
+  // Sync port shutdown status from deviceStates
+  useEffect(() => {
+    if (!deviceStates || devices.length === 0) return;
+
+    let hasChanges = false;
+    const updatedDevices = devices.map(device => {
+      const deviceState = deviceStates.get(device.id);
+      if (!deviceState) return device;
+
+      const updatedPorts = device.ports.map(port => {
+        // Find corresponding port in deviceState
+        const simulatorPort = deviceState.ports[port.id];
+        if (simulatorPort && simulatorPort.shutdown !== port.shutdown) {
+          hasChanges = true;
+          return { ...port, shutdown: simulatorPort.shutdown };
+        }
+        return port;
+      });
+
+      if (hasChanges) {
+        return { ...device, ports: updatedPorts };
+      }
+      return device;
+    });
+
+    if (hasChanges) {
+      setDevices(updatedDevices);
+    }
+  }, [deviceStates, devices]);
 
 
   // Delete connection
@@ -1415,6 +1502,10 @@ export function NetworkTopology({
         if (isPaletteOpen) {
           setIsPaletteOpen(false);
         }
+        // Exit fullscreen
+        if (isFullscreen) {
+          setIsFullscreen(false);
+        }
       }
 
       // Close context menu on ESC (Duplicate logic above, but being thorough)
@@ -1505,7 +1596,7 @@ export function NetworkTopology({
        window.removeEventListener('keydown', handleKeyDown);
        window.removeEventListener('close-menus-broadcast', handleCloseBroadcast);
      };
-   }, [selectedDeviceIds, deleteDevice, configuringDevice, cancelDeviceConfig, selectAllDevices, saveToHistory, devices, onDeviceDelete, isDrawingConnection, isPaletteOpen, handleUndo, handleRedo, copyDevice, cutDevice, pasteDevice, pingSource, showPortSelector, toggleFullscreen]);
+   }, [selectedDeviceIds, deleteDevice, configuringDevice, cancelDeviceConfig, selectAllDevices, saveToHistory, devices, onDeviceDelete, isDrawingConnection, isPaletteOpen, handleUndo, handleRedo, copyDevice, cutDevice, pasteDevice, pingSource, showPortSelector, toggleFullscreen, isFullscreen]);
 
   // Find path between devices using BFS
   const findPath = useCallback((sourceId: string, targetId: string): string[] | null => {
@@ -1520,29 +1611,60 @@ export function NetworkTopology({
 
       // Find all connected devices
       for (const conn of connections) {
+        // Skip console cables for data path (Ping)
+        if (conn.cableType === 'console') continue;
+
         let nextDeviceId: string | null = null;
+        let sourcePortId: string | null = null;
+        let targetPortId: string | null = null;
 
         if (conn.sourceDeviceId === current.deviceId && !visited.has(conn.targetDeviceId)) {
           nextDeviceId = conn.targetDeviceId;
+          sourcePortId = conn.sourcePort;
+          targetPortId = conn.targetPort;
         } else if (conn.targetDeviceId === current.deviceId && !visited.has(conn.sourceDeviceId)) {
           nextDeviceId = conn.sourceDeviceId;
+          sourcePortId = conn.targetPort;
+          targetPortId = conn.sourcePort;
         }
 
-        if (nextDeviceId) {
-          const newPath = [...current.path, nextDeviceId!];
+        if (nextDeviceId && sourcePortId && targetPortId) {
+          const sourceDevice = devices.find(d => d.id === current.deviceId);
+          const targetDevice = devices.find(d => d.id === nextDeviceId);
+          
+          if (sourceDevice && targetDevice) {
+            // Check if cable is compatible
+            const isCompatible = isCableCompatible({
+              connected: true,
+              cableType: conn.cableType,
+              sourceDevice: sourceDevice.type === 'router' ? 'switch' : sourceDevice.type,
+              targetDevice: targetDevice.type === 'router' ? 'switch' : targetDevice.type,
+              sourcePort: conn.sourcePort,
+              targetPort: conn.targetPort,
+            });
 
-          if (nextDeviceId === targetId) {
-            return newPath;
+            // Check if both ports are NOT shutdown
+            const sPort = sourceDevice.ports.find(p => p.id === sourcePortId);
+            const tPort = targetDevice.ports.find(p => p.id === targetPortId);
+            const isUp = sPort && !sPort.shutdown && tPort && !tPort.shutdown;
+
+            if (isCompatible && isUp) {
+              const newPath = [...current.path, nextDeviceId!];
+
+              if (nextDeviceId === targetId) {
+                return newPath;
+              }
+
+              visited.add(nextDeviceId!);
+              queue.push({ deviceId: nextDeviceId!, path: newPath });
+            }
           }
-
-          visited.add(nextDeviceId!);
-          queue.push({ deviceId: nextDeviceId!, path: newPath });
         }
       }
     }
 
     return null; // No path found
-  }, [connections]);
+  }, [connections, devices]);
 
   // Ping animation between devices with multi-hop support
   const startPingAnimation = useCallback((sourceId: string, targetId: string) => {
@@ -2036,13 +2158,16 @@ export function NetworkTopology({
             const portX = startX + idx * portSpacing;
             const portY = 80;
             const isConnected = port.status === 'connected';
+            const isShutdown = port.shutdown;
 
             // Determine port label: E for Ethernet, C for COM/Console
             const portLabel = port.id.toLowerCase().startsWith('com') ? 'C' : 'E';
 
             // Port colors:
             // PC Ethernet: Blue, PC COM (Console): Turquoise
-            const portColor = port.id.toLowerCase().startsWith('com')
+            // Shutdown: Red
+            const portColor = isShutdown ? '#ef4444' : 
+              port.id.toLowerCase().startsWith('com')
               ? (isConnected ? '#06b6d4' : '#0891b2')  // Turquoise for console
               : (isConnected ? '#3b82f6' : '#1d4ed8'); // Blue for ethernet
 
@@ -2051,13 +2176,18 @@ export function NetworkTopology({
                 key={port.id}
                 transform={`translate(${portX}, ${portY})`}
                 className="cursor-pointer"
-                onClick={(e) => handlePortClick(e as unknown as ReactMouseEvent, device.id, port.id)}
+                onClick={(e) => {
+                  handlePortClick(e as unknown as ReactMouseEvent, device.id, port.id);
+                  showPortTooltip(e as unknown as ReactMouseEvent, device.id, port.id);
+                }}
+                onMouseEnter={(e) => handlePortHover(e, device.id, port.id)}
+                onMouseLeave={handlePortMouseLeave}
               >
                 <circle
                   r={7}
                   fill={portColor}
-                  stroke={isConnected ? '#22c55e' : '#4b5563'}
-                  strokeWidth={isConnected ? 2 : 1}
+                  stroke={isShutdown ? '#991b1b' : isConnected ? '#22c55e' : '#4b5563'}
+                  strokeWidth={isShutdown || isConnected ? 2 : 1}
                 />
                 <text y={1} fill="#fff" fontSize="7" textAnchor="middle" dominantBaseline="middle" className="select-none pointer-events-none">
                   {portLabel}
@@ -2079,6 +2209,7 @@ export function NetworkTopology({
             const portX = startX + col * portSpacing;
             const portY = startY + row * rowSpacing;
             const isConnected = port.status === 'connected';
+            const isShutdown = port.shutdown;
 
             // Determine port type
             const portId = port.id.toLowerCase();
@@ -2092,10 +2223,14 @@ export function NetworkTopology({
 
             // Port colors:
             // Console: Turquoise, Fa: Blue, Gi: Orange
+            // Shutdown: Red
             let portFill: string;
             let portStroke: string;
 
-            if (isConsole) {
+            if (isShutdown) {
+              portFill = '#ef4444';
+              portStroke = '#991b1b';
+            } else if (isConsole) {
               portFill = isConnected ? '#06b6d4' : '#0891b2'; // Turquoise
               portStroke = isConnected ? '#22c55e' : '#0891b2';
             } else if (isGigabit) {
@@ -2114,13 +2249,18 @@ export function NetworkTopology({
                 key={port.id}
                 transform={`translate(${portX}, ${portY})`}
                 className="cursor-pointer"
-                onClick={(e) => handlePortClick(e as unknown as ReactMouseEvent, device.id, port.id)}
+                onClick={(e) => {
+                  handlePortClick(e as unknown as ReactMouseEvent, device.id, port.id);
+                  showPortTooltip(e as unknown as ReactMouseEvent, device.id, port.id);
+                }}
+                onMouseEnter={(e) => handlePortHover(e, device.id, port.id)}
+                onMouseLeave={handlePortMouseLeave}
               >
                 <circle
                   r={6}
                   fill={portFill}
-                  stroke={portStroke}
-                  strokeWidth={isConnected ? 2 : 1}
+                  stroke={isShutdown || isConnected ? portStroke : '#4b5563'}
+                  strokeWidth={isShutdown || isConnected ? 2 : 1}
                 />
                 <text y={1} fill="#fff" fontSize="6" textAnchor="middle" dominantBaseline="middle" className="select-none pointer-events-none">
                   {displayNum}
@@ -3452,7 +3592,7 @@ export function NetworkTopology({
 
       {/* Port Selector Modal */}
       {showPortSelector && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[10001] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-950/40 backdrop-blur-md" onClick={() => {
             setShowPortSelector(false);
             setPortSelectorStep('source');
@@ -3732,6 +3872,71 @@ export function NetworkTopology({
                 {language === 'tr' ? 'İptal' : 'Cancel'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      {/* Port Tooltip */}
+      {portTooltip && portTooltip.visible && (
+        <div
+          className={`fixed z-[100] pointer-events-none transition-opacity duration-300 ${
+            portTooltip.visible ? 'opacity-100' : 'opacity-0'
+          }`}
+          style={{
+            left: portTooltip.x,
+            top: portTooltip.y - 10,
+            transform: 'translate(-50%, -100%)',
+          }}
+        >
+          <div
+            className={`px-3 py-2 rounded-xl shadow-2xl border backdrop-blur-md ${
+              isDark 
+                ? 'bg-slate-900/90 border-slate-700 text-white shadow-cyan-500/10' 
+                : 'bg-white/90 border-slate-200 text-slate-900 shadow-slate-200/50'
+            }`}
+          >
+            <div className="flex items-center gap-2 mb-1">
+              <div className={`w-2 h-2 rounded-full ${
+                devices.find(d => d.id === portTooltip.deviceId)?.ports.find(p => p.id === portTooltip.portId)?.shutdown
+                  ? 'bg-red-500'
+                  : devices.find(d => d.id === portTooltip.deviceId)?.ports.find(p => p.id === portTooltip.portId)?.status === 'connected'
+                    ? 'bg-green-500'
+                    : 'bg-slate-400'
+              }`} />
+              <span className="text-[10px] font-black tracking-widest uppercase opacity-60">
+                {portTooltip.portId}
+              </span>
+            </div>
+            
+            <div className="space-y-0.5">
+              <div className="text-xs font-bold">
+                {language === 'tr' ? 'Durum:' : 'Status:'}{' '}
+                <span className={
+                  devices.find(d => d.id === portTooltip.deviceId)?.ports.find(p => p.id === portTooltip.portId)?.shutdown
+                    ? 'text-red-500'
+                    : devices.find(d => d.id === portTooltip.deviceId)?.ports.find(p => p.id === portTooltip.portId)?.status === 'connected'
+                      ? 'text-green-500'
+                      : 'text-slate-400'
+                }>
+                  {devices.find(d => d.id === portTooltip.deviceId)?.ports.find(p => p.id === portTooltip.portId)?.shutdown
+                    ? (language === 'tr' ? 'Kapalı (Shutdown)' : 'Shutdown')
+                    : devices.find(d => d.id === portTooltip.deviceId)?.ports.find(p => p.id === portTooltip.portId)?.status === 'connected'
+                      ? (language === 'tr' ? 'Bağlı (Up)' : 'Connected (Up)')
+                      : (language === 'tr' ? 'Bağlı Değil (Down)' : 'Not Connected (Down)')
+                  }
+                </span>
+              </div>
+              
+              {devices.find(d => d.id === portTooltip.deviceId)?.ports.find(p => p.id === portTooltip.portId)?.status === 'connected' && (
+                <div className="text-[10px] opacity-70">
+                  {language === 'tr' ? 'Fiziksel bağlantı aktif' : 'Physical link active'}
+                </div>
+              )}
+            </div>
+            
+            {/* Arrow */}
+            <div className={`absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-full w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] ${
+              isDark ? 'border-t-slate-800' : 'border-t-white'
+            }`} />
           </div>
         </div>
       )}
