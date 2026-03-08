@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, KeyboardEvent, useCallback, useMemo } from 'react';
+import { motion } from 'framer-motion';
 import { CableInfo, isCableCompatible, SwitchState } from '@/lib/cisco/types';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -101,13 +102,6 @@ export function PCPanel({
   ]);
   const [consoleOutput, setConsoleOutput] = useState<OutputLine[]>([]);
   
-  const [currentCommand, setCurrentCommand] = useState('');
-  const [pcHistory, setPcHistory] = useState<string[]>([]);
-  const [consoleHistory, setConsoleHistory] = useState<string[]>([]);
-  const [historyIndex, setHistoryIndex] = useState(-1);
-  const [temporaryInput, setTemporaryInput] = useState('');
-  const [showCompletionBar, setShowCompletionBar] = useState(true);
-  
   // Tab cycle state
   const [tabCycleIndex, setTabCycleIndex] = useState(-1);
   const [lastTabInput, setLastTabInput] = useState('');
@@ -144,347 +138,312 @@ export function PCPanel({
     setTimeout(() => {
       if (outputRef.current) outputRef.current.scrollTop = outputRef.current.scrollHeight;
     }, 0);
-  }, []);
+  }, [setPcOutput, setConsoleOutput]);
 
   const handleConnect = () => {
     if (!consoleDevice) return;
+    
     setIsConsoleConnected(true);
     setConnectedDeviceId(consoleDevice.id);
+    addOutput('terminal', 'success', `Connected to ${consoleDevice.name} via Console port.`);
     
-    setTimeout(() => {
-      const targetState = deviceStates?.get(consoleDevice.id);
-      if (targetState) {
-        if (targetState.bannerMOTD) addOutput('terminal', 'output', targetState.bannerMOTD + '\n');
-        const prompt = getModePrompt(targetState.currentMode || 'user', targetState.hostname || consoleDevice.name, targetState.currentInterface);
-        addOutput('terminal', 'prompt', '', prompt);
-      } else {
-        const fallbackHostname = consoleDevice.name || (consoleDevice.type === 'router' ? 'Router' : 'Switch');
-        addOutput('terminal', 'prompt', '', `${fallbackHostname}>`);
-      }
-    }, 100);
-  };
-
-  const executePCCommand = (fullCommand: string) => {
-    const trimmed = fullCommand.trim();
-    addOutput('desktop', 'command', trimmed, 'C:\\>');
-    if (!trimmed) return;
-
-    const [command, ...args] = trimmed.toLowerCase().split(/\s+/);
-    switch (command) {
-      case 'cls': setPcOutput([]); break;
-      case 'ipconfig': 
-        addOutput('desktop', 'output', `\nWindows IP Configuration\n\nEthernet adapter Ethernet:\n\n   Connection-specific DNS Suffix  . : \n   IPv4 Address. . . . . . . . . . . : ${pcIP}\n   Subnet Mask . . . . . . . . . . . : 255.255.255.0\n   Default Gateway . . . . . . . . . : 192.168.1.1\n`); 
-        break;
-      case 'getmac': 
-        addOutput('desktop', 'output', `\nPhysical Address    Transport Name\n==================  =========================================================\n${pcMAC.toUpperCase().replace(/\./g, '-')}  \\Device\\Tcpip_{${deviceId.toUpperCase()}}\n`); 
-        break;
-      case 'ping': 
-        if (!args.length) {
-          addOutput('desktop', 'output', 'Usage: ping [-t] [-a] [-n count] [-l size] target_name\n');
-        } else {
-          addOutput('desktop', 'output', `\nPinging ${args[0]} with 32 bytes of data:\nReply from ${args[0]}: bytes=32 time<1ms TTL=128\nReply from ${args[0]}: bytes=32 time<1ms TTL=128\nReply from ${args[0]}: bytes=32 time<1ms TTL=128\nReply from ${args[0]}: bytes=32 time<1ms TTL=128\n\nPing statistics for ${args[0]}:\n    Packets: Sent = 4, Received = 4, Lost = 0 (0% loss),\nApproximate round trip times in milli-seconds:\n    Minimum = 0ms, Maximum = 0ms, Average = 0ms\n`);
+    // Send initial empty command to get prompt
+    if (onExecuteDeviceCommand) {
+      onExecuteDeviceCommand(consoleDevice.id, '').then(res => {
+        if (res && res.prompt) {
+          addOutput('terminal', 'prompt', '', res.prompt);
         }
-        break;
-      case 'help': 
-        addOutput('desktop', 'output', 'For more information on a specific command, type HELP command-name\nCLS            Clears the screen.\nEXIT           Quits the CMD.EXE program (command interpreter).\nGETMAC         Displays the MAC address of the device.\nIPCONFIG       Displays all current TCP/IP network configuration values.\nPING           Sends ICMP Echo Requests to verify connectivity.\n'); 
-        break;
-      case 'exit': onClose(); break;
-      default: 
-        addOutput('desktop', 'output', `'${command}' is not recognized as an internal or external command,\noperable program or batch file.\n`);
+      });
     }
   };
 
-  const handleExecute = async (cmd: string) => {
-    setTabCycleIndex(-1);
-    setHistoryIndex(-1);
-    setTemporaryInput('');
-    
-    if (activeTab === 'terminal' && isConsoleConnected && connectedDeviceId && onExecuteDeviceCommand) {
-      addOutput('terminal', 'command', cmd, getConsolePrompt());
-      const result = await onExecuteDeviceCommand(connectedDeviceId, cmd);
-      if (result?.output) addOutput('terminal', 'output', result.output);
-      setConsoleHistory(prev => [cmd, ...prev.filter(c => c !== cmd)].slice(0, 50));
-    } else if (activeTab === 'desktop') {
-      executePCCommand(cmd);
-      setPcHistory(prev => [cmd, ...prev.filter(c => c !== cmd)].slice(0, 50));
-    }
-    setCurrentCommand('');
+  const handleDisconnect = () => {
+    setIsConsoleConnected(false);
+    setConnectedDeviceId(null);
+    addOutput('terminal', 'error', 'Console connection closed.');
   };
 
-  const getConsolePrompt = useCallback(() => {
-    if (connectedDeviceId && deviceStates) {
-      const state = deviceStates.get(connectedDeviceId);
-      if (state) return getModePrompt(state.currentMode, state.hostname, state.currentInterface);
-    }
-    if (consoleDevice) return `${consoleDevice.name}>`;
-    return 'Switch>';
-  }, [connectedDeviceId, deviceStates, consoleDevice]);
+  const executeCommand = async (command: string) => {
+    const trimmedCommand = command.trim();
+    if (!trimmedCommand) return;
 
-  const activePrompt = activeTab === 'desktop' ? 'C:\\>' : getConsolePrompt();
-
-  const getSuggestions = useCallback((cmd: string): string[] => {
-    const parts = cmd.split(/\s+/);
-    const lastPart = parts.pop()?.toLowerCase() || '';
-    const prefix = parts.join(' ');
-    
-    if (activeTab === 'terminal' && isConsoleConnected && connectedDeviceId) {
-      const state = deviceStates?.get(connectedDeviceId);
-      const mode = state?.currentMode || 'user';
-      const modeHelp = ciscoHelp[mode] || ciscoHelp.user;
+    if (activeTab === 'desktop') {
+      addOutput('desktop', 'command', trimmedCommand);
       
-      // If we have a prefix, look for specific sub-commands
-      if (prefix && modeHelp[prefix]) {
-        return modeHelp[prefix].filter(c => c.toLowerCase().startsWith(lastPart));
+      const cmd = trimmedCommand.toLowerCase();
+      if (cmd === 'ipconfig') {
+        addOutput('desktop', 'output', `Windows IP Configuration\n\nEthernet adapter Ethernet0:\n   Connection-specific DNS Suffix  . : \n   Link-local IPv6 Address . . . . . : fe80::a1b2:c3d4:e5f6%12\n   IPv4 Address. . . . . . . . . . . : ${pcIP}\n   Subnet Mask . . . . . . . . . . . : 255.255.255.0\n   Default Gateway . . . . . . . . . : 192.168.1.1`);
+      } else if (cmd.startsWith('ping ')) {
+        const target = trimmedCommand.split(' ')[1];
+        addOutput('desktop', 'output', `Pinging ${target} with 32 bytes of data:\nReply from ${target}: bytes=32 time<1ms TTL=128\nReply from ${target}: bytes=32 time<1ms TTL=128\nReply from ${target}: bytes=32 time<1ms TTL=128\nReply from ${target}: bytes=32 time<1ms TTL=128\n\nPing statistics for ${target}:\n    Packets: Sent = 4, Received = 4, Lost = 0 (0% loss),\nApproximate round trip times in milli-seconds:\n    Minimum = 0ms, Maximum = 0ms, Average = 0ms`);
+      } else if (cmd === 'help') {
+        addOutput('desktop', 'output', 'Available commands:\n  ipconfig - Display IP configuration\n  ping <ip> - Ping a network host\n  cls - Clear screen\n  help - Display this help message\n  exit - Close terminal');
+      } else if (cmd === 'cls') {
+        setPcOutput([]);
+      } else if (cmd === 'exit') {
+        onClose();
+      } else {
+        addOutput('desktop', 'error', `'${trimmedCommand}' is not recognized as an internal or external command, operable program or batch file.`);
       }
-      
-      // Fallback to top-level commands
-      return modeHelp[''].filter(c => c.toLowerCase().startsWith(lastPart));
     } else {
-      // PC Suggestions
-      const pcCommands = ['ipconfig', 'getmac', 'ping', 'cls', 'exit', 'help'];
-      return pcCommands.filter(c => c.startsWith(lastPart));
+      // Terminal mode
+      if (!isConsoleConnected) {
+        addOutput('terminal', 'error', 'No console connection. Check physical connections.');
+        return;
+      }
+
+      addOutput('terminal', 'command', trimmedCommand);
+      
+      if (onExecuteDeviceCommand && connectedDeviceId) {
+        try {
+          const result = await onExecuteDeviceCommand(connectedDeviceId, trimmedCommand);
+          if (result) {
+            if (result.output) addOutput('terminal', 'output', result.output);
+            if (result.prompt) addOutput('terminal', 'prompt', '', result.prompt);
+          }
+        } catch (err) {
+          addOutput('terminal', 'error', 'Communication error with device.');
+        }
+      }
     }
-  }, [activeTab, isConsoleConnected, connectedDeviceId, deviceStates]);
+  };
 
-  const currentSuggestions = useMemo(() => getSuggestions(currentCommand), [currentCommand, getSuggestions]);
-
+  // Keyboard handlers
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
-      handleExecute(currentCommand);
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      const history = activeTab === 'desktop' ? pcHistory : consoleHistory;
-      if (history.length > 0) {
-        if (historyIndex === -1) setTemporaryInput(currentCommand);
-        const nextIndex = Math.min(history.length - 1, historyIndex + 1);
-        setHistoryIndex(nextIndex);
-        setCurrentCommand(history[nextIndex]);
-      }
-    } else if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      const history = activeTab === 'desktop' ? pcHistory : consoleHistory;
-      if (historyIndex > 0) {
-        const nextIndex = historyIndex - 1;
-        setHistoryIndex(nextIndex);
-        setCurrentCommand(history[nextIndex]);
-      } else if (historyIndex === 0) {
-        setHistoryIndex(-1);
-        setCurrentCommand(temporaryInput);
-      }
+      const command = e.currentTarget.value;
+      executeCommand(command);
+      e.currentTarget.value = '';
+      setTabCycleIndex(-1);
+      setLastTabInput('');
     } else if (e.key === 'Tab') {
       e.preventDefault();
-      if (currentSuggestions.length > 0) {
-        // Cycling through suggestions
-        const newIndex = (tabCycleIndex + 1) % currentSuggestions.length;
-        setTabCycleIndex(newIndex);
-        
-        const words = currentCommand.split(/\s+/);
-        words[words.length - 1] = currentSuggestions[newIndex];
-        setCurrentCommand(words.join(' '));
+      handleTabComplete(e.currentTarget);
+    }
+  };
+
+  const handleTabComplete = (input: HTMLInputElement) => {
+    const value = input.value;
+    if (!value && tabCycleIndex === -1) return;
+
+    // This is a simplified version of tab completion
+    // For PC, it's very limited
+    if (activeTab === 'desktop') {
+      const pcCmds = ['ipconfig', 'ping', 'help', 'cls', 'exit'];
+      const matches = pcCmds.filter(c => c.startsWith(value.toLowerCase()));
+      if (matches.length > 0) {
+        input.value = matches[0];
       }
-    } else {
-      // Reset tab cycle on any other key
-      if (e.key !== 'Shift') {
-        setTabCycleIndex(-1);
+    } else if (isConsoleConnected && connectedDeviceId && deviceStates) {
+      // Get device state for context-aware completion
+      const state = deviceStates.get(connectedDeviceId);
+      if (!state) return;
+
+      const mode = state.currentMode;
+      const helpTree = ciscoHelp[mode] || ciscoHelp.user;
+      
+      // Determine context (last word or current command)
+      const parts = value.split(' ');
+      const currentWord = parts[parts.length - 1].toLowerCase();
+      const previousContext = parts.slice(0, -1).join(' ');
+      
+      let options: string[] = [];
+      if (parts.length === 1) {
+        options = helpTree[''];
+      } else {
+        const contextCmd = parts.slice(0, -1).join(' ').toLowerCase();
+        options = helpTree[contextCmd] || [];
+      }
+
+      const matches = options.filter(opt => opt.toLowerCase().startsWith(currentWord));
+      
+      if (matches.length > 0) {
+        if (tabCycleIndex === -1) {
+          setLastTabInput(value);
+          const nextIndex = 0;
+          setTabCycleIndex(nextIndex);
+          input.value = previousContext ? `${previousContext} ${matches[nextIndex]}` : matches[nextIndex];
+        } else {
+          const nextIndex = (tabCycleIndex + 1) % matches.length;
+          setTabCycleIndex(nextIndex);
+          const originalParts = lastTabInput.split(' ');
+          const originalContext = originalParts.slice(0, -1).join(' ');
+          input.value = originalContext ? `${originalContext} ${matches[nextIndex]}` : matches[nextIndex];
+        }
       }
     }
   };
 
-  const handleSuggestionClick = (suggestion: string) => {
-    const words = currentCommand.trim().split(/\s+/);
-    if (currentCommand.endsWith(' ') || words.length === 0) {
-      setCurrentCommand(currentCommand + suggestion);
-    } else {
-      words[words.length - 1] = suggestion;
-      setCurrentCommand(words.join(' '));
-    }
-    inputRef.current?.focus();
-  };
-
-  const handleHistoryClick = (cmd: string) => {
-    setCurrentCommand(cmd);
-    inputRef.current?.focus();
-  };
+  if (!isVisible) return null;
 
   return (
-    <div className={`flex flex-col h-full rounded-[2.5rem] border transition-all shadow-2xl ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-      {/* Header */}
-      <div className={`px-8 py-5 border-b flex items-center justify-between flex-shrink-0 ${isDark ? 'bg-slate-800/40' : 'bg-slate-50'}`}>
-        <div className="flex items-center gap-4">
-          <div className="p-3 rounded-2xl bg-blue-500/10 text-blue-500">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
-          </div>
-          <div>
-            <h3 className="text-lg font-black">{deviceId.toUpperCase()}</h3>
-            <div className="text-[10px] font-bold opacity-60">{pcIP} • {pcMAC}</div>
-          </div>
-        </div>
-        
-        <div className="flex items-center gap-2 p-1 rounded-xl bg-slate-100 dark:bg-slate-800/50">
-          <button onClick={() => setActiveTab('desktop')} className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${activeTab === 'desktop' ? 'bg-blue-500 text-white shadow-lg' : 'text-slate-400 hover:text-slate-200'}`}>
-            {language === 'tr' ? 'Masaüstü' : 'Desktop'}
-          </button>
-          <button onClick={() => setActiveTab('terminal')} className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${activeTab === 'terminal' ? 'bg-blue-500 text-white shadow-lg' : 'text-slate-400 hover:text-slate-200'}`}>
-            Terminal
-          </button>
-          <button onClick={onClose} className="p-2 ml-4 text-slate-400 hover:text-rose-500"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
-        </div>
-      </div>
-      
-      {/* Content */}
-      <div className={`flex-1 flex flex-col min-h-0 overflow-hidden ${isDark ? 'bg-slate-950' : 'bg-slate-100'}`}>
-        {activeTab === 'desktop' ? (
-          <div className="flex-1 flex flex-col p-6 min-h-0">
-            <div className={`flex-1 flex flex-col border rounded-2xl overflow-hidden shadow-2xl ${
-              isDark ? 'border-slate-800 bg-black' : 'border-slate-300 bg-white'
-            }`}>
-              <div className={`px-4 py-2 border-b flex items-center gap-2 ${
-                isDark ? 'bg-slate-900 border-slate-800' : 'bg-slate-200 border-slate-300'
-              }`}>
-                <div className="w-3 h-3 rounded-full bg-blue-500" />
-                <span className={`text-[10px] font-bold uppercase tracking-widest ${
-                  isDark ? 'text-slate-400' : 'text-slate-600'
-                }`}>Command Prompt</span>
-              </div>
-              <div ref={outputRef} onClick={() => inputRef.current?.focus()} className="flex-1 overflow-y-auto p-6 font-mono text-sm custom-scrollbar">
-                {pcOutput.map(line => (
-                  <div key={line.id} className="mb-1">
-                    {line.type === 'command' && <div className="flex"><span className="text-blue-500 font-bold">{line.prompt}</span><span className={`ml-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>{line.content}</span></div>}
-                    {(line.type === 'output' || line.type === 'prompt') && <pre className={`whitespace-pre-wrap ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{line.prompt && <span className="text-blue-500 font-bold">{line.prompt}</span>}{line.content}</pre>}
-                    {line.type === 'error' && <pre className="text-rose-500 font-bold">{line.content}</pre>}
-                    {line.type === 'success' && <pre className="text-emerald-500">{line.content}</pre>}
-                  </div>
-                ))}
-                <div className="flex items-center min-h-[24px]">
-                  <span className="text-blue-500 font-bold mr-2">{activePrompt}</span>
-                  <input ref={inputRef} type="text" value={currentCommand} onChange={e => setCurrentCommand(e.target.value)} onKeyDown={handleKeyDown} className={`flex-1 bg-transparent outline-none font-mono ${isDark ? 'text-white' : 'text-slate-900'}`} autoComplete="off" autoFocus />
-                </div>
-              </div>
+    <div className={`fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/50 backdrop-blur-sm`}>
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        className={`w-full max-w-4xl h-[600px] flex flex-col rounded-3xl overflow-hidden shadow-2xl border ${
+          isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'
+        }`}
+      >
+        {/* Header */}
+        <div className={`px-6 py-4 flex items-center justify-between border-b ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-blue-500/10 text-blue-500">
+              <Laptop className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold leading-none">PC - {deviceFromTopology?.name || deviceId}</h2>
+              <p className="text-[10px] font-medium text-slate-500 mt-1 uppercase tracking-wider">{pcIP} • {pcMAC}</p>
             </div>
           </div>
-        ) : (
-          <div className="flex-1 flex flex-col p-6 min-h-0">
-            {!isConsoleConnected ? (
-              <div className="flex-1 flex items-center justify-center">
-                <div className={`w-full max-w-sm p-8 rounded-3xl border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'} shadow-2xl`}>
-                  <h3 className="text-center text-xl font-black mb-6">{language === 'tr' ? 'Terminal Ayarları' : 'Terminal Config'}</h3>
-                  <div className="space-y-4 mb-8">
-                    {[
-                      ['Baud Rate', terminalSettings.bitsPerSecond],
-                      ['Data Bits', terminalSettings.dataBits],
-                      ['Parity', terminalSettings.parity],
-                      ['Stop Bits', terminalSettings.stopBits],
-                      ['Flow Control', terminalSettings.flowControl]
-                    ].map(([label, val]) => (
-                      <div key={label} className="flex justify-between items-center text-sm font-bold opacity-70">
-                        <span>{label}</span>
-                        <span className={`px-3 py-1 rounded-lg ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`}>{val}</span>
-                      </div>
-                    ))}
-                  </div>
-                  <button onClick={handleConnect} disabled={!consoleDevice} className={`w-full py-4 rounded-2xl font-black transition-all ${consoleDevice ? 'bg-blue-600 text-white hover:bg-blue-500' : 'bg-slate-800 text-slate-600 cursor-not-allowed'}`}>
-                    {language === 'tr' ? 'Bağlan' : 'Connect'}
-                  </button>
-                  <div className="mt-4 text-center text-[10px] font-bold opacity-40 uppercase tracking-widest flex items-center justify-center gap-2">
-                    <div className={`w-1.5 h-1.5 rounded-full ${consoleDevice ? 'bg-emerald-500' : 'bg-red-500'}`} />
-                    {consoleDevice ? 'Console Ready' : 'No Console Cable'}
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className={`flex-1 flex flex-col border rounded-2xl overflow-hidden shadow-2xl ${
-                isDark ? 'border-emerald-900/30 bg-black' : 'border-slate-300 bg-white'
-              }`}>
-                <div className={`px-4 py-2 border-b flex items-center justify-between ${
-                  isDark ? 'bg-slate-900 border-slate-800' : 'bg-slate-200 border-slate-300'
-                }`}>
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                    <span className={`text-[10px] font-bold uppercase tracking-widest ${
-                      isDark ? 'text-emerald-500' : 'text-emerald-700'
-                    }`}>Console: {consoleDevice?.name}</span>
-                  </div>
-                  <button onClick={() => setIsConsoleConnected(false)} className={`${isDark ? 'text-slate-500 hover:text-rose-500' : 'text-slate-400 hover:text-rose-600'}`}><svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg></button>
-                </div>
-                <div ref={outputRef} onClick={() => inputRef.current?.focus()} className="flex-1 overflow-y-auto p-6 font-mono text-sm custom-scrollbar">
-                  {consoleOutput.map(line => (
-                    <div key={line.id} className="mb-1">
-                      {(line.type === 'output' || line.type === 'prompt' || line.type === 'command') && <pre className={`whitespace-pre-wrap ${isDark ? 'text-emerald-500' : 'text-emerald-700'}`}>{line.prompt && <span className="font-bold">{line.prompt}</span>}{line.content}</pre>}
-                      {line.type === 'error' && <pre className="text-rose-400 font-bold">{line.content}</pre>}
-                      {line.type === 'success' && <pre className="text-emerald-400">{line.content}</pre>}
-                    </div>
-                  ))}
-                  <div className="flex items-center min-h-[24px]">
-                    <span className={`font-bold mr-2 ${isDark ? 'text-emerald-500' : 'text-emerald-700'}`}>{activePrompt}</span>
-                    <input ref={inputRef} type="text" value={currentCommand} onChange={e => setCurrentCommand(e.target.value)} onKeyDown={handleKeyDown} className={`flex-1 bg-transparent outline-none font-mono ${isDark ? 'text-emerald-50' : 'text-emerald-900'}`} autoComplete="off" autoFocus />
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+          <button 
+            onClick={onClose}
+            className={`p-2 rounded-lg transition-colors ${isDark ? 'hover:bg-slate-800' : 'hover:bg-slate-100'}`}
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
 
-      {/* Helper Bar */}
-      {showCompletionBar && (
-        <div className={`border-t px-6 py-4 flex flex-col gap-3 transition-all duration-500 ${isDark ? 'bg-slate-900/60 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
-          {/* Suggestions */}
-          {currentSuggestions.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {currentSuggestions.map((s, idx) => (
-                <button key={idx} onClick={() => handleSuggestionClick(s)} className={`px-3 py-1 rounded-lg text-xs font-mono transition-all ${
-                  tabCycleIndex === idx
-                    ? 'bg-blue-600 text-white border-blue-500'
-                    : isDark ? 'bg-slate-800 text-blue-400 hover:bg-slate-700 border border-slate-700' : 'bg-white text-blue-600 hover:bg-slate-50 border border-slate-200 shadow-sm'
-                }`}>
-                  {s}
-                </button>
-              ))}
-            </div>
-          )}
-          
-          {/* History */}
-          {(activeTab === 'desktop' ? pcHistory : consoleHistory).length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {(activeTab === 'desktop' ? pcHistory : consoleHistory).slice(0, 8).map((cmd, idx) => (
-                <button key={idx} onClick={() => handleHistoryClick(cmd)} className={`px-3 py-1 rounded-lg text-[10px] font-mono transition-all ${
-                  historyIndex === (activeTab === 'desktop' ? pcHistory : consoleHistory).indexOf(cmd)
-                    ? 'bg-slate-600 text-white'
-                    : isDark ? 'bg-slate-900/50 text-slate-500 hover:text-slate-300' : 'bg-slate-100 text-slate-400 hover:text-slate-600'
-                }`}>
-                  {cmd}
-                </button>
-              ))}
-            </div>
-          )}
-          <button onClick={() => setShowCompletionBar(false)} className="text-[10px] font-bold tracking-widest uppercase opacity-30 hover:opacity-100 transition-opacity self-start">Hide Panel</button>
+        {/* Tabs */}
+        <div className={`px-6 py-2 flex items-center gap-4 border-b ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
+          <button 
+            onClick={() => setActiveTab('desktop')}
+            className={`px-3 py-2 text-sm font-bold border-b-2 transition-all ${
+              activeTab === 'desktop' 
+                ? 'border-blue-500 text-blue-500' 
+                : 'border-transparent text-slate-500 hover:text-slate-400'
+            }`}
+          >
+            Desktop
+          </button>
+          <button 
+            onClick={() => setActiveTab('terminal')}
+            className={`px-3 py-2 text-sm font-bold border-b-2 transition-all ${
+              activeTab === 'terminal' 
+                ? 'border-blue-500 text-blue-500' 
+                : 'border-transparent text-slate-500 hover:text-slate-400'
+            }`}
+          >
+            Terminal (Console)
+          </button>
         </div>
-      )}
-      {!showCompletionBar && (
-        <button onClick={() => setShowCompletionBar(true)} className={`border-t py-2 text-[10px] font-bold tracking-widest uppercase opacity-30 hover:opacity-100 transition-opacity ${isDark ? 'bg-slate-900' : 'bg-slate-50'}`}>Show Helper</button>
-      )}
+
+        {/* Content */}
+        <div className="flex-1 flex flex-col overflow-hidden bg-black p-4 font-mono">
+          {activeTab === 'terminal' && !isConsoleConnected && (
+            <div className="absolute inset-x-0 top-32 bottom-0 z-10 flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm gap-6 p-8 text-center">
+              <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 shadow-xl max-w-md">
+                <div className="w-16 h-16 rounded-2xl bg-slate-800 flex items-center justify-center mx-auto mb-4 border border-slate-700">
+                  <Monitor className="w-8 h-8 text-slate-400" />
+                </div>
+                <h3 className="text-lg font-bold text-white mb-2">Console Terminal</h3>
+                <p className="text-sm text-slate-400 mb-6">
+                  {consoleDevice 
+                    ? `Physical connection detected to ${consoleDevice.name}. Port: 9600-8-N-1`
+                    : 'No console cable detected. Connect a console cable from the PC to a network device.'}
+                </p>
+                <div className="flex flex-col gap-2">
+                  <button 
+                    disabled={!consoleDevice}
+                    onClick={handleConnect}
+                    className={`px-6 py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2 ${
+                      consoleDevice 
+                        ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/20 active:scale-95' 
+                        : 'bg-slate-800 text-slate-500 cursor-not-allowed opacity-50'
+                    }`}
+                  >
+                    <TerminalIcon className="w-4 h-4" />
+                    Connect to Device
+                  </button>
+                  <p className="text-[10px] text-slate-600 uppercase tracking-widest font-bold mt-2">Configuration: 9600 bits/s, 8 data bits, no parity</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div 
+            ref={outputRef}
+            className="flex-1 overflow-y-auto custom-scrollbar mb-4 space-y-1 pr-2"
+          >
+            {(activeTab === 'desktop' ? pcOutput : consoleOutput).map((line) => (
+              <div key={line.id} className="break-all whitespace-pre-wrap leading-relaxed">
+                {line.type === 'command' && (
+                  <div className="flex items-start gap-2">
+                    <span className="text-emerald-500 shrink-0 font-bold">{activeTab === 'desktop' ? 'C:\\>' : (line.prompt || '>')}</span>
+                    <span className="text-white">{line.content}</span>
+                  </div>
+                )}
+                {line.type === 'prompt' && (
+                  <div className="flex items-start gap-2">
+                    <span className="text-emerald-500 shrink-0 font-bold">{line.prompt}</span>
+                  </div>
+                )}
+                {line.type === 'output' && <span className="text-slate-300">{line.content}</span>}
+                {line.type === 'error' && <span className="text-rose-400 font-medium">{line.content}</span>}
+                {line.type === 'success' && <span className="text-cyan-400 font-medium italic opacity-80">{line.content}</span>}
+              </div>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-2 border-t border-slate-800 pt-4">
+            <span className="text-emerald-500 font-bold shrink-0">
+              {activeTab === 'desktop' 
+                ? 'C:\\>' 
+                : (isConsoleConnected ? (consoleOutput.findLast(l => l.type === 'prompt')?.prompt || '>') : 'OFFLINE>')}
+            </span>
+            <input
+              ref={inputRef}
+              type="text"
+              autoFocus
+              disabled={activeTab === 'terminal' && !isConsoleConnected}
+              className="flex-1 bg-transparent border-none outline-none text-white placeholder-slate-800"
+              placeholder={activeTab === 'terminal' && !isConsoleConnected ? "Waiting for connection..." : "Type command..."}
+              onKeyDown={handleKeyDown}
+            />
+          </div>
+        </div>
+      </motion.div>
     </div>
   );
 }
 
-function getModePrompt(mode: string = 'user', hostname: string = 'Switch', context?: string): string {
-  switch (mode) {
-    case 'privileged': return `${hostname}#`;
-    case 'config': return `${hostname}(config)#`;
-    case 'interface': return `${hostname}(config-if)#`;
-    case 'line': return `${hostname}(config-line)#`;
-    case 'vlan': return `${hostname}(config-vlan)#`;
-    default: return `${hostname}>`;
-  }
+// Internal icons
+function Laptop({ className }: { className?: string }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="m2 16 20 0" /><path d="M20 16V5a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v11" /><path d="M2 16h20v2a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-2Z" />
+    </svg>
+  );
 }
 
-function getPCConfigDefaults(deviceId: string) {
-  const num = deviceId.split('-')[1] || '1';
-  return { 
-    ip: `192.168.1.${10 + parseInt(num)}`, 
-    subnet: '255.255.255.0', 
-    gateway: '192.168.1.1', 
-    dns: '8.8.8.8', 
-    mac: `0001.42${num.padStart(2, '0')}.5566` 
+function Monitor({ className }: { className?: string }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <rect width="20" height="14" x="2" y="3" rx="2" /><line x1="8" x2="16" y1="21" y2="21" /><line x1="12" x2="12" y1="17" y2="21" />
+    </svg>
+  );
+}
+
+function TerminalIcon({ className }: { className?: string }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <polyline points="4 17 10 11 4 5" /><line x1="12" x2="20" y1="19" y2="19" />
+    </svg>
+  );
+}
+
+function X({ className }: { className?: string }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M18 6 6 18" /><path d="m6 6 12 12" />
+    </svg>
+  );
+}
+
+function getPCConfigDefaults(id: string) {
+  const num = id.split('-')[1] || '1';
+  return {
+    ip: `192.168.1.${10 + parseInt(num)}`,
+    mac: `00E0.F7${num.padStart(2, '0')}.A${num}B${num}`
   };
 }

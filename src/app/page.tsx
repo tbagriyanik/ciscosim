@@ -15,7 +15,35 @@ import { VlanPanel } from '@/components/cisco/VlanPanel';
 import { SecurityPanel } from '@/components/cisco/SecurityPanel';
 import { ConfigPanel } from '@/components/cisco/ConfigPanel';
 import { QuickCommands } from '@/components/cisco/QuickCommands';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+} from "@/components/ui/dropdown-menu";
 import { TaskCard } from '@/components/cisco/TaskCard';
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import { ChevronDown, Menu, Plus, Save, FolderOpen, Languages, Sun, Moon, Laptop, Monitor, Network, ShieldCheck, Database, Terminal as TerminalIcon } from "lucide-react";
 
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -30,6 +58,25 @@ import {
 } from '@/lib/cisco/taskDefinitions';
 
 type TabType = 'topology' | 'cmd' | 'terminal' | 'ports' | 'vlan' | 'security';
+
+const DEVICE_ICONS = {
+  pc: (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 0 0 2-2V5a2 2 0 0 0 -2-2H5a2 2 0 0 0 -2 2v10a2 2 0 0 0 2 2z" />
+    </svg>
+  ),
+  switch: (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 12h14M5 12a2 2 0 0 1 -2-2V6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1 -2 2M5 12a2 2 0 0 0 -2 2v4a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4a2 2 0 0 0 -2-2m-2-4h.01M17 16h.01" />
+    </svg>
+  ),
+  router: (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="9" strokeWidth={1.5} />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 5v14M5 12h14M12 5l-2 2m2-2l2 2m-2 12l-2-2m2 2l2-2M5 12l2-2m-2 2l2 2M19 12l-2-2m2 2l-2 2" />
+    </svg>
+  ),
+};
 
 // PC Output type for PCPanel
 interface PCOutputLine {
@@ -66,6 +113,20 @@ export default function Home() {
   // Topology state - managed in page.tsx for save/load functionality
   const [topologyDevices, setTopologyDevices] = useState<CanvasDevice[] | null>(null);
   const [topologyConnections, setTopologyConnections] = useState<CanvasConnection[] | null>(null);
+
+  // Initial App Loading State
+  const [isAppLoading, setIsAppLoading] = useState(true);
+  const [showContent, setShowContent] = useState(false);
+
+  useEffect(() => {
+    // Initial loading sequence: Start Dark -> Glitch -> Show Content (respecting actual theme)
+    const timer = setTimeout(() => {
+      setIsAppLoading(false);
+      // Small delay before showing content for smooth transition
+      setTimeout(() => setShowContent(true), 100);
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, []);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Legacy state for compatibility with other panels (uses active device's state)
@@ -169,16 +230,19 @@ export default function Home() {
     setShowActiveDeviceDropdown(nextState);
   }, [showActiveDeviceDropdown, closeLocalMenus, broadcastCloseMenus, topologyDevices]);
 
-  // Handle device selection (single click) - just select the device, don't change tabs
+  // Handle device selection (single click) - switch to topology tab when device is selected
   const handleDeviceSelect = useCallback((device: 'pc' | 'switch' | 'router', deviceId?: string) => {
     setSelectedDevice(device);
     if (deviceId) {
       // Determine actual device type from deviceId or use the passed type
       const actualDeviceType = deviceId.includes('router') ? 'router' : deviceId.includes('pc') ? 'pc' : 'switch';
 
-      // Set the active device but DON'T switch tabs
+      // Set the active device
       setActiveDeviceId(deviceId);
       setActiveDeviceType(actualDeviceType);
+
+      // Switch to topology tab
+      setActiveTab('topology');
 
       // Initialize device state if needed (for switches/routers)
       if (actualDeviceType !== 'pc') {
@@ -187,7 +251,7 @@ export default function Home() {
         getOrCreateDeviceOutputs(deviceId);
       }
     }
-  }, [getOrCreateDeviceState, getOrCreateDeviceOutputs, topologyDevices]);
+  }, [getOrCreateDeviceState, getOrCreateDeviceOutputs, topologyDevices, setSelectedDevice, setActiveDeviceId, setActiveDeviceType, setActiveTab]);
 
   // Handle command using active device
   const handleCommand = useCallback(async (command: string) => {
@@ -198,7 +262,7 @@ export default function Home() {
       setActiveDeviceId, 
       setActiveDeviceType
     );
-  }, [activeDeviceId, handleCommandForDevice, topologyDevices]);
+  }, [activeDeviceId, handleCommandForDevice, topologyDevices, setActiveDeviceId, setActiveDeviceType]);
 
   const prompt = getPrompt(state);
 
@@ -210,7 +274,7 @@ export default function Home() {
       setActiveDeviceId,
       setActiveDeviceType
     );
-  }, [handleCommandForDevice, topologyDevices]);
+  }, [handleCommandForDevice, topologyDevices, setActiveDeviceId, setActiveDeviceType]);
 
   const handleReset = () => {
     setConfirmDialog({
@@ -268,14 +332,14 @@ export default function Home() {
       getOrCreateDeviceOutputs(deviceId);
       setActiveTab('terminal');
     }
-  }, [getOrCreateDeviceState, getOrCreateDeviceOutputs, topologyDevices]);
+  }, [getOrCreateDeviceState, getOrCreateDeviceOutputs, topologyDevices, setActiveTab, setShowPCDeviceId, setShowPCPanel, setActiveDeviceId, setActiveDeviceType]);
 
   // Handle topology change from NetworkTopology component
   const handleTopologyChange = useCallback((devices: CanvasDevice[], connections: CanvasConnection[]) => {
     setTopologyDevices(devices);
     setTopologyConnections(connections);
     setHasUnsavedChanges(true);
-  }, []);
+  }, [setTopologyDevices, setTopologyConnections, setHasUnsavedChanges]);
 
   // Handle device deletion - update active device if needed
   const handleDeviceDelete = useCallback((deviceId: string) => {
@@ -332,7 +396,7 @@ export default function Home() {
       }
     }
     setHasUnsavedChanges(true);
-  }, [activeDeviceId, topologyDevices, showPCDeviceId, selectedDevice, setDeviceStates, setDeviceOutputs, setPcOutputs]);
+  }, [activeDeviceId, topologyDevices, showPCDeviceId, selectedDevice, setDeviceStates, setDeviceOutputs, setPcOutputs, setShowPCPanel, setShowPCDeviceId, setShowActiveDeviceDropdown, setSelectedDevice, setActiveDeviceId, setActiveDeviceType, setActiveTab, setHasUnsavedChanges]);
 
   // Save project to JSON file
   const handleSaveProjectInternal = useCallback(() => {
@@ -370,7 +434,7 @@ export default function Home() {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     setHasUnsavedChanges(false);
-  }, [deviceStates, deviceOutputs, pcOutputs, topologyDevices, topologyConnections, cableInfo, activeDeviceId, activeDeviceType]);
+  }, [deviceStates, deviceOutputs, pcOutputs, topologyDevices, topologyConnections, cableInfo, activeDeviceId, activeDeviceType, setHasUnsavedChanges]);
 
   // Handle Project Saving (Wrapper)
   function handleSaveProject() {
@@ -419,7 +483,7 @@ export default function Home() {
         }
       });
     }
-  }, [language, hasUnsavedChanges, handleSaveProject, setDeviceStates, setDeviceOutputs]);
+  }, [language, hasUnsavedChanges, handleSaveProject, setDeviceStates, setDeviceOutputs, setTopologyDevices, setTopologyConnections, setActiveDeviceId, setActiveDeviceType, setActiveTab, setHasUnsavedChanges, setTopologyKey, setSaveDialog, setConfirmDialog]);
 
   function handleNewProject() {
     handleNewProjectInternal();
@@ -466,7 +530,7 @@ export default function Home() {
       setTopologyDevices(updatedTopologyDevices);
       setHasUnsavedChanges(true);
     }
-  }, [deviceStates, topologyDevices, setDeviceStates]);
+  }, [deviceStates, topologyDevices, setDeviceStates, setTopologyDevices, setHasUnsavedChanges]);
 
   // Beforeunload event for unsaved changes warning
   useEffect(() => {
@@ -509,7 +573,7 @@ export default function Home() {
     };
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
+  }, [setShowActiveDeviceDropdown, setShowMobileMenu, setConfirmDialog, setSaveDialog, setShowPCPanel]);
 
   // History pushState for back button tracking
   useEffect(() => {
@@ -569,7 +633,7 @@ export default function Home() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [showActiveDeviceDropdown, showMobileMenu, confirmDialog, saveDialog, showPCPanel, handleSaveProject, handleNewProject]);
+  }, [showActiveDeviceDropdown, showMobileMenu, confirmDialog, saveDialog, showPCPanel, handleSaveProject, handleNewProject, setShowActiveDeviceDropdown, setShowMobileMenu, setConfirmDialog, setSaveDialog, setShowPCPanel]);
 
   // Load project from JSON file
   const handleLoadProject = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
@@ -638,7 +702,7 @@ export default function Home() {
     reader.readAsText(file);
     // Reset input
     event.target.value = '';
-  }, [language, setDeviceStates, setDeviceOutputs, setPcOutputs]);
+  }, [language, setDeviceStates, setDeviceOutputs, setPcOutputs, setTopologyDevices, setTopologyConnections, setCableInfo, setActiveDeviceId, setActiveDeviceType, setTopologyKey, setHasUnsavedChanges]);
 
   const isDark = theme === 'dark';
 
@@ -746,31 +810,73 @@ export default function Home() {
   });
   
   return (
-    <div className={`min-h-screen flex flex-col ${isDark ? 'bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900' : 'bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-100'}`}>
-      {/* Header */}
-      <header className={`${isDark ? 'bg-gradient-to-r from-slate-900/95 via-slate-800/95 to-slate-900/95' : 'bg-gradient-to-r from-white/90 via-blue-50/80 to-white/90'} backdrop-blur-xl border-b ${isDark ? 'border-slate-700/50' : 'border-slate-200/50'} px-4 py-3 sticky top-0 z-50`}>
+    <div className={`min-h-screen flex flex-col ${isAppLoading ? 'bg-slate-950 overflow-hidden' : (isDark ? 'bg-slate-950' : 'bg-slate-50')} transition-colors duration-700`}>
+      {/* App Loading Screen */}
+      {isAppLoading && (
+        <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-slate-950">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="flex flex-col items-center"
+          >
+            <div className="relative mb-8">
+              <div className="p-4 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 shadow-2xl shadow-cyan-500/40 animate-glitch">
+                <Network className="w-12 h-12 text-white" />
+              </div>
+              {/* Glitch overlays */}
+              <div className="absolute inset-0 p-4 rounded-2xl bg-red-500/30 animate-glitch-skew mix-blend-screen" />
+              <div className="absolute inset-0 p-4 rounded-2xl bg-blue-500/30 animate-glitch mix-blend-screen" style={{ animationDelay: '0.1s' }} />
+            </div>
+            
+            <h2 
+              className="text-3xl font-black tracking-tighter text-white glitch-text mb-2"
+              data-text="CISCO SIMULATOR"
+            >
+              CISCO SIMULATOR
+            </h2>
+            
+            <div className="flex items-center gap-2 mt-4">
+              <div className="w-1.5 h-1.5 rounded-full bg-cyan-500 animate-pulse" />
+              <span className="text-[10px] font-bold tracking-[0.3em] text-cyan-500 uppercase">
+                Initializing System...
+              </span>
+            </div>
+          </motion.div>
+          
+          {/* Background scanline effect */}
+          <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.1)_50%),linear-gradient(90deg,rgba(255,0,0,0.03),rgba(0,255,0,0.01),rgba(0,0,255,0.03))] bg-[length:100%_4px,3px_100%]" />
+        </div>
+      )}
+
+      {/* Main Content with transition */}
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: showContent ? 1 : 0 }}
+        transition={{ duration: 0.5 }}
+        className="flex flex-col flex-1"
+      >
+        {/* Header */}
+      <header className={`${isDark ? 'bg-slate-900/95 border-slate-800' : 'bg-white/90 border-slate-200'} backdrop-blur-xl border-b px-4 py-3 sticky top-0 z-50`}>
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between">
             {/* Logo & Title */}
-            <a href="/" className="flex items-center gap-4 hover:opacity-90 transition-all cursor-pointer group">
-              <div className={`p-2.5 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 shadow-xl shadow-cyan-500/30 group-hover:scale-110 group-active:scale-95 transition-transform duration-300`}>
-                <svg className="w-6 h-6 text-white drop-shadow-md" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" />
-                </svg>
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 shadow-lg shadow-cyan-500/20">
+                <Network className="w-5 h-5 text-white" />
               </div>
-              <div className="flex flex-col">
-                <h1 className="text-xl font-extrabold tracking-tight bg-gradient-to-r from-cyan-400 via-blue-400 to-indigo-500 bg-clip-text text-transparent drop-shadow-sm">
+              <div className="hidden sm:flex flex-col">
+                <h1 className="text-lg font-bold tracking-tight bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent leading-none">
                   {t.title}
                 </h1>
-                <p className={`text-[10px] tracking-widest font-bold ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{t.subtitle}</p>
+                <p className={`text-[10px] font-medium mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{t.subtitle}</p>
               </div>
-            </a>
+            </div>
 
             {/* Total Score - Desktop */}
-            <div className="hidden lg:flex items-center gap-4">
-              <div className={`px-5 py-2.5 rounded-2xl ${isDark ? 'bg-slate-800/80' : 'bg-white/80'} backdrop-blur-md border ${isDark ? 'border-slate-700/50' : 'border-slate-200/50'} shadow-lg shadow-black/5 relative group transition-all`}>
-                <div className="flex items-center justify-between mb-1.5 px-0.5">
-                  <span className={`text-[10px] font-bold tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+            <div className="hidden lg:flex items-center gap-6">
+              <div className="flex flex-col items-end gap-1">
+                <div className="flex items-center gap-2">
+                   <span className={`text-[10px] font-bold uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                     {language === 'tr' ? 'Lab İlerlemesi' : 'Lab Progress'}
                   </span>
                   <span className={`text-xs font-bold ${totalScore >= maxScore * 0.7 ? 'text-emerald-400' : totalScore >= maxScore * 0.4 ? 'text-amber-400' : 'text-rose-400'}`}>
@@ -778,175 +884,229 @@ export default function Home() {
                   </span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className={`h-2.5 w-32 rounded-full overflow-hidden ${isDark ? 'bg-slate-700' : 'bg-slate-200'} shadow-inner`}>
+                  <div className={`h-1.5 w-32 rounded-full overflow-hidden ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`}>
                     <motion.div 
                       initial={{ width: 0 }}
                       animate={{ width: `${(totalScore / maxScore) * 100}%` }}
-                      transition={{ type: 'spring', stiffness: 50, damping: 15 }}
                       className={`h-full bg-gradient-to-r ${totalScore >= maxScore * 0.7 ? 'from-emerald-500 to-teal-400' : totalScore >= maxScore * 0.4 ? 'from-amber-500 to-orange-400' : 'from-rose-500 to-pink-500'}`} 
                     />
                   </div>
-                  <span className={`text-sm font-black tabular-nums ${isDark ? 'text-white' : 'text-slate-800'}`}>
-                    {totalScore}<span className={`font-medium opacity-40 ml-0.5`}>/{maxScore}</span>
+                  <span className={`text-sm font-bold tabular-nums ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                    {totalScore}<span className="text-[10px] opacity-40 ml-0.5">/{maxScore}</span>
                   </span>
                 </div>
-                {/* Score animation overlay */}
-                {scoreAnimation.showAnimation && (
-                  <motion.div 
-                    initial={{ opacity: 0, scale: 0.9, y: 10 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    className={`absolute inset-0 flex items-center justify-center rounded-2xl pointer-events-none z-10 ${
-                      scoreAnimation.isIncreasing 
-                        ? 'bg-emerald-500/10' 
-                        : 'bg-rose-500/10'
-                    }`}
-                  >
-                    <span className={`text-2xl font-black drop-shadow-sm ${scoreAnimation.isIncreasing ? 'text-emerald-400' : 'text-rose-400'}`}>
-                      {scoreAnimation.isIncreasing ? '↑' : '↓'}
-                      {scoreAnimation.change}
-                    </span>
-                  </motion.div>
-                )}
               </div>
             </div>
 
-            {/* Mobile Menu Button */}
-            <button
-              onClick={openMobileMenu}
-              className={`md:hidden p-2 rounded-lg ${isDark ? 'bg-slate-800 hover:bg-slate-700' : 'bg-slate-200 hover:bg-slate-300'}`}
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                {showMobileMenu ? (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                ) : (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                )}
-              </svg>
-            </button>
-
-            {/* Controls - Desktop */}
-            <div className="hidden md:flex items-center gap-2">
-              <div className={`flex items-center gap-1 rounded-lg p-1 ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`}>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleNewProject}
-                  className={`text-xs px-2 h-7 ${isDark ? 'text-slate-300 hover:text-white' : 'text-slate-600 hover:text-slate-900'}`}
-                  title={language === 'tr' ? 'Yeni Proje (Shift+N)' : 'New Project (Shift+N)'}
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                  </svg>
+            {/* Right Controls */}
+            <div className="flex items-center gap-2">
+              {/* Desktop Controls */}
+              <div className="hidden md:flex items-center gap-1 mr-2">
+                <Button variant="ghost" size="icon" onClick={handleNewProject} title={language === 'tr' ? 'Yeni Proje' : 'New Project'}>
+                  <Plus className="w-4 h-4" />
                 </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleSaveProject}
-                  className={`text-xs px-2 h-7 ${isDark ? 'text-slate-300 hover:text-white' : 'text-slate-600 hover:text-slate-900'}`}
-                  title={language === 'tr' ? 'Projeyi Kaydet (Ctrl+S)' : 'Save Project (Ctrl+S)'}
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
-                  </svg>
+                <Button variant="ghost" size="icon" onClick={handleSaveProject} title={language === 'tr' ? 'Projeyi Kaydet' : 'Save Project'}>
+                  <Save className="w-4 h-4" />
                 </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => fileInputRef.current?.click()}
-                  className={`text-xs px-2 h-7 ${isDark ? 'text-slate-300 hover:text-white' : 'text-slate-600 hover:text-slate-900'}`}
-                  title={language === 'tr' ? 'Proje Yükle (Ctrl+O)' : 'Load Project (Ctrl+O)'}
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                  </svg>
+                <Button variant="ghost" size="icon" onClick={() => fileInputRef.current?.click()} title={language === 'tr' ? 'Proje Yükle' : 'Load Project'}>
+                  <FolderOpen className="w-4 h-4" />
                 </Button>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".json"
-                  onChange={handleLoadProject}
-                  className="hidden"
-                />
+                <input ref={fileInputRef} type="file" accept=".json" onChange={handleLoadProject} className="hidden" />
               </div>
 
-              <div className={`flex items-center gap-1 rounded-lg p-1 ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`}>
-                <Button
-                  variant={language === 'tr' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setLanguage('tr')}
-                  className={`text-xs px-2 h-7 ${language === 'tr' ? 'bg-cyan-600 text-white' : isDark ? 'text-slate-300' : 'text-slate-600'}`}
+              <div className="hidden md:flex items-center gap-1 border-l pl-2 border-slate-700/50">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => setLanguage(language === 'tr' ? 'en' : 'tr')}
+                  className="text-[10px] font-bold h-8 px-2"
                 >
-                  TR
+                  <Languages className="w-3.5 h-3.5 mr-1" />
+                  {language.toUpperCase()}
                 </Button>
-                <Button
-                  variant={language === 'en' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setLanguage('en')}
-                  className={`text-xs px-2 h-7 ${language === 'en' ? 'bg-cyan-600 text-white' : isDark ? 'text-slate-300' : 'text-slate-600'}`}
-                >
-                  EN
+                <Button variant="ghost" size="icon" onClick={toggleTheme} className="h-8 w-8">
+                  {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
                 </Button>
               </div>
 
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={toggleTheme}
-                className="h-8 w-8 p-0"
-              >
-                {isDark ? (
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-                  </svg>
-                ) : (
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                  </svg>
-                )}
-              </Button>
+              {/* Mobile Menu (Standard Sheet) */}
+              <Sheet open={showMobileMenu} onOpenChange={setShowMobileMenu}>
+                <SheetTrigger asChild>
+                  <Button variant="outline" size="icon" className="md:hidden">
+                    <Menu className="w-5 h-5" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="right" className={`${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white'} p-0 w-80`}>
+                  <SheetHeader className="p-6 text-left border-b border-slate-800/50">
+                    <SheetTitle className="text-xl font-bold flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-cyan-500/10 text-cyan-500">
+                        <Monitor className="w-5 h-5" />
+                      </div>
+                      {t.title}
+                    </SheetTitle>
+                  </SheetHeader>
+                  <ScrollArea className="h-[calc(100vh-5rem)]">
+                    <div className="p-4 space-y-6">
+                      {/* Navigation Sections */}
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 px-2">Navigation</p>
+                        <div className="grid gap-1">
+                          {allTabs.map((tab) => {
+                            const isTabVisible = tab.id === 'topology' || (topologyDevices && topologyDevices.length > 0 && tab.showFor.includes(activeDeviceType));
+                            if (!isTabVisible) return null;
+                            
+                            const isActive = activeTab === tab.id;
+                            return (
+                              <Button
+                                key={tab.id}
+                                variant={isActive ? "secondary" : "ghost"}
+                                className={`w-full justify-start gap-3 h-11 px-3 ${isActive ? 'bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20' : ''}`}
+                                onClick={() => {
+                                  setActiveTab(tab.id);
+                                  setShowMobileMenu(false);
+                                }}
+                              >
+                                {tab.id === 'topology' ? <Network className="w-4 h-4" /> : 
+                                 tab.id === 'cmd' ? <TerminalIcon className="w-4 h-4" /> :
+                                 tab.id === 'terminal' ? <Monitor className="w-4 h-4" /> :
+                                 tab.id === 'ports' ? <Database className="w-4 h-4" /> :
+                                 tab.id === 'vlan' ? <ShieldCheck className="w-4 h-4" /> :
+                                 <ShieldCheck className="w-4 h-4" />}
+                                {tab.label}
+                              </Button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      <Separator className="bg-slate-800/50" />
+
+                      {/* Project Controls */}
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 px-2">Project</p>
+                        <div className="grid gap-1">
+                          <Button variant="ghost" className="w-full justify-start gap-3 h-11" onClick={() => { handleNewProject(); setShowMobileMenu(false); }}>
+                            <Plus className="w-4 h-4" /> {language === 'tr' ? 'Yeni Proje' : 'New Project'}
+                          </Button>
+                          <Button variant="ghost" className="w-full justify-start gap-3 h-11" onClick={() => { handleSaveProject(); setShowMobileMenu(false); }}>
+                            <Save className="w-4 h-4" /> {language === 'tr' ? 'Projeyi Kaydet' : 'Save Project'}
+                          </Button>
+                          <Button variant="ghost" className="w-full justify-start gap-3 h-11" onClick={() => { fileInputRef.current?.click(); setShowMobileMenu(false); }}>
+                            <FolderOpen className="w-4 h-4" /> {language === 'tr' ? 'Proje Yükle' : 'Load Project'}
+                          </Button>
+                        </div>
+                      </div>
+
+                      <Separator className="bg-slate-800/50" />
+
+                      {/* Settings */}
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 px-2">Settings</p>
+                        <div className="grid grid-cols-2 gap-2">
+                          <Button variant="outline" className="gap-2" onClick={() => setLanguage(language === 'tr' ? 'en' : 'tr')}>
+                            <Languages className="w-4 h-4" /> {language.toUpperCase()}
+                          </Button>
+                          <Button variant="outline" className="gap-2" onClick={toggleTheme}>
+                            {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                            {isDark ? 'Light' : 'Dark'}
+                          </Button>
+                        </div>
+                      </div>
+
+                      {/* Lab Progress Mobile */}
+                      <div className="p-4 rounded-xl bg-slate-800/50 border border-slate-700/50">
+                         <div className="flex items-center justify-between mb-2">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Progress</span>
+                          <span className="text-xs font-bold text-cyan-400">{Math.round((totalScore / maxScore) * 100)}%</span>
+                        </div>
+                        <div className="h-1.5 w-full rounded-full bg-slate-700 overflow-hidden mb-2">
+                          <div 
+                            className="h-full bg-cyan-500 transition-all duration-500" 
+                            style={{ width: `${(totalScore / maxScore) * 100}%` }}
+                          />
+                        </div>
+                        <p className="text-center text-sm font-bold text-white">{totalScore} / {maxScore} pts</p>
+                      </div>
+                    </div>
+                  </ScrollArea>
+                </SheetContent>
+              </Sheet>
             </div>
           </div>
-          <div className="flex-1 min-w-0 mt-4">
-            <div className="flex items-end gap-1 flex-wrap lg:flex-nowrap">
-              {/* Active Device Selector Dropdown as a Tab */}
-              {activeDeviceId && topologyDevices && topologyDevices.length > 0 && (() => {
-                const activeDevice = topologyDevices?.find(d => d.id === activeDeviceId);
-                const hostname = deviceStates.get(activeDeviceId)?.hostname || activeDevice?.name || 'Device';
-                const currentType = activeDevice?.type || activeDeviceType;
-                const typeLabel = currentType === 'pc' ? 'PC' : currentType === 'router' ? 'Router' : 'Switch';
-                
-                return (
-                <div className="relative device-dropdown-container">
-                  <button
-                    onClick={openDeviceDropdown}
-                    className={`flex items-center gap-2 pl-4 pr-3 py-2.5 text-sm font-semibold transition-all rounded-t-lg border-b-0 ${
-                      !topologyDevices || topologyDevices.length === 0
-                        ? isDark 
-                          ? 'bg-slate-800/30 text-slate-500 border-slate-700/50 cursor-not-allowed opacity-50'
-                          : 'bg-slate-200 text-slate-400 border-slate-300 cursor-not-allowed opacity-50'
-                        : isDark 
-                          ? 'bg-slate-800 text-cyan-400 border-slate-700 hover:bg-slate-700/50' 
-                          : 'bg-white text-cyan-700 border-slate-200 hover:bg-slate-50'
-                    } shadow-sm`}
-                  >
-                  </button>
-                </div>
-              )})()}
 
-              {/* Standard Tabs */}
+          {/* Desktop Tabs & Device Selector */}
+          <div className="flex items-end gap-1 mt-4 overflow-x-auto no-scrollbar">
+            {/* Active Device Dropdown */}
+            {activeDeviceId && topologyDevices && topologyDevices.length > 0 && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    className={`flex items-center gap-2 px-4 py-6 rounded-t-xl rounded-b-none border-x border-t transition-all ${
+                      isDark 
+                        ? 'bg-slate-900 border-slate-800 text-cyan-400 hover:text-cyan-300' 
+                        : 'bg-white border-slate-200 text-cyan-700 hover:text-cyan-800'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      {activeDeviceType === 'pc' ? <Laptop className="w-4 h-4" /> : 
+                       activeDeviceType === 'router' ? <Network className="w-4 h-4" /> : 
+                       <Monitor className="w-4 h-4" />}
+                      <span className="text-sm font-bold">
+                        {deviceStates.get(activeDeviceId)?.hostname || topologyDevices.find(d => d.id === activeDeviceId)?.name || activeDeviceId}
+                      </span>
+                    </div>
+                    <ChevronDown className="w-3.5 h-3.5 opacity-50" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className={`${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white'} w-56`}>
+                  <DropdownMenuLabel className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
+                    {language === 'tr' ? 'Cihaz Seçimi' : 'Select Device'}
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <ScrollArea className="h-64">
+                    {topologyDevices.map((device) => (
+                      <DropdownMenuItem 
+                        key={device.id}
+                        className={`flex items-center gap-3 py-2 cursor-pointer ${activeDeviceId === device.id ? 'bg-cyan-500/10 text-cyan-400' : ''}`}
+                        onClick={() => handleDeviceSelect(device.type, device.id)}
+                      >
+                        {device.type === 'pc' ? <Laptop className="w-4 h-4" /> : 
+                         device.type === 'router' ? <Network className="w-4 h-4" /> : 
+                         <Monitor className="w-4 h-4" />}
+                        <div className="flex flex-col">
+                          <span className="text-sm font-bold leading-none">{deviceStates.get(device.id)?.hostname || device.name}</span>
+                          <span className="text-[10px] opacity-50 capitalize">{device.type}</span>
+                        </div>
+                      </DropdownMenuItem>
+                    ))}
+                  </ScrollArea>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+
+            {/* Main Tabs (Hidden on mobile, shown on desktop) */}
+            <div className="hidden md:flex items-end gap-1">
               {tabs.map((tab) => {
                 const isActive = activeTab === tab.id;
                 return (
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`flex items-center gap-2.5 px-5 py-3 rounded-t-xl text-sm font-semibold transition-all border-x border-t ${
+                    className={`flex items-center gap-2.5 px-5 py-3 rounded-t-xl text-sm font-semibold transition-all border-x border-t min-w-[120px] justify-center ${
                       isActive
-                        ? isDark ? 'bg-slate-950 border-slate-700 text-white' : 'bg-slate-100 border-slate-300 text-slate-900'
-                        : isDark ? 'border-transparent text-slate-400 hover:text-white hover:bg-slate-800/50' : 'border-transparent text-slate-500 hover:text-slate-900 hover:bg-slate-200/50'
+                        ? isDark ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-100 border-slate-300 text-slate-900 shadow-[0_-4px_0_0_#06b6d4]'
+                        : isDark ? 'bg-slate-900/50 border-transparent text-slate-500 hover:text-white hover:bg-slate-800' : 'bg-slate-200/50 border-transparent text-slate-500 hover:text-slate-900 hover:bg-slate-200'
                     }`}
                   >
-                    <span className={`transition-transform duration-300 ${isActive ? 'scale-110' : ''}`}>{tab.icon}</span>
+                    <span className={`transition-transform duration-300 ${isActive ? 'scale-110 text-cyan-500' : ''}`}>
+                      {tab.id === 'topology' ? <Network className="w-4 h-4" /> : 
+                       tab.id === 'cmd' ? <TerminalIcon className="w-4 h-4" /> :
+                       tab.id === 'terminal' ? <Monitor className="w-4 h-4" /> :
+                       tab.id === 'ports' ? <Database className="w-4 h-4" /> :
+                       tab.id === 'vlan' ? <ShieldCheck className="w-4 h-4" /> :
+                       <ShieldCheck className="w-4 h-4" />}
+                    </span>
                     <span>{tab.label}</span>
                   </button>
                 );
@@ -955,6 +1115,59 @@ export default function Home() {
           </div>
         </div>
       </header>
+
+      {/* Global Dialogs (AlertDialog for better z-index and standard behavior) */}
+      <AlertDialog open={!!confirmDialog} onOpenChange={(open) => !open && setConfirmDialog(null)}>
+        <AlertDialogContent className={`${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white'}`}>
+          <AlertDialogHeader>
+            <AlertDialogTitle className={isDark ? 'text-white' : 'text-slate-900'}>
+              {language === 'tr' ? 'Onay Gerekiyor' : 'Confirmation Required'}
+            </AlertDialogTitle>
+            <AlertDialogDescription className={isDark ? 'text-slate-400' : 'text-slate-500'}>
+              {confirmDialog?.message}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className={isDark ? 'bg-slate-800 text-white border-slate-700 hover:bg-slate-700' : ''}>
+              {language === 'tr' ? 'İptal' : 'Cancel'}
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => confirmDialog?.onConfirm()}
+              className="bg-cyan-600 hover:bg-cyan-700 text-white"
+            >
+              {language === 'tr' ? 'Devam Et' : 'Continue'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!saveDialog} onOpenChange={(open) => !open && setSaveDialog(null)}>
+        <AlertDialogContent className={`${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white'}`}>
+          <AlertDialogHeader>
+            <AlertDialogTitle className={isDark ? 'text-white' : 'text-slate-900'}>
+              {language === 'tr' ? 'Projeyi Kaydet' : 'Save Project'}
+            </AlertDialogTitle>
+            <AlertDialogDescription className={isDark ? 'text-slate-400' : 'text-slate-500'}>
+              {saveDialog?.message}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => saveDialog?.onConfirm(false)}
+              className={isDark ? 'bg-slate-800 text-white border-slate-700 hover:bg-slate-700' : ''}
+            >
+              {language === 'tr' ? 'Kaydetme' : 'Don\'t Save'}
+            </Button>
+            <AlertDialogAction 
+              onClick={() => saveDialog?.onConfirm(true)}
+              className="bg-cyan-600 hover:bg-cyan-700 text-white"
+            >
+              {language === 'tr' ? 'Kaydet' : 'Save'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Main Content with matching top background */}
       <main className={`flex-1 ${isDark ? 'bg-slate-950' : 'bg-slate-100'}`}>
@@ -1127,8 +1340,9 @@ export default function Home() {
             </div>
           </div>
         )}
-      </div>
+        </div>
       </main>
+      </motion.div>
     </div>
   );
 }
