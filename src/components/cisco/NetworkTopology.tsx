@@ -183,19 +183,6 @@ export function NetworkTopology({
   const [devices, setDevices] = useState<CanvasDevice[]>(initialDevices || defaultDevices);
   const [connections, setConnections] = useState<CanvasConnection[]>(initialConnections || []);
 
-  // Sync with props when they change externally (e.g. hostname sync in page.tsx)
-  useEffect(() => {
-    if (initialDevices) {
-      setDevices(initialDevices);
-    }
-  }, [initialDevices]);
-
-  useEffect(() => {
-    if (initialConnections) {
-      setConnections(initialConnections);
-    }
-  }, [initialConnections]);
-
   const [zoom, setZoom] = useState(DEFAULT_ZOOM);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);

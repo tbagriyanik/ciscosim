@@ -101,7 +101,7 @@ export default function Home() {
   const [topologyConnections, setTopologyConnections] = useState<CanvasConnection[] | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  const [selectedDevice, setSelectedDevice] = useState<'pc' | 'switch' | null>(null);
+  const [selectedDevice, setSelectedDevice] = useState<'pc' | 'switch' | 'router' | null>(null);
   const [showPCPanel, setShowPCPanel] = useState(false);
   const [showPCDeviceId, setShowPCDeviceId] = useState<string>('pc-1');
 
@@ -119,6 +119,7 @@ export default function Home() {
   // UI state for dropdowns
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showActiveDeviceDropdown, setShowActiveDeviceDropdown] = useState(false);
+  const dropdownTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Broadcast to other components (like NetworkTopology)
   const broadcastCloseMenus = useCallback((source: string) => {
@@ -146,10 +147,21 @@ export default function Home() {
   const openDeviceDropdown = useCallback(() => {
     if (!topologyDevices || topologyDevices.length === 0) return;
     const nextState = !showActiveDeviceDropdown;
+    
+    if (dropdownTimerRef.current) {
+      clearTimeout(dropdownTimerRef.current);
+    }
+
     if (nextState) {
       closeLocalMenus('device');
       broadcastCloseMenus('device');
+      
+      // Auto-close after 3 seconds
+      dropdownTimerRef.current = setTimeout(() => {
+        setShowActiveDeviceDropdown(false);
+      }, 3000);
     }
+    
     setShowActiveDeviceDropdown(nextState);
   }, [showActiveDeviceDropdown, closeLocalMenus, broadcastCloseMenus, topologyDevices]);
 
@@ -231,7 +243,7 @@ export default function Home() {
   // ... (rest of the component logic)
 
   // Handle device double click (Open terminal or PC panel)
-  const handleDeviceDoubleClick = useCallback((device: 'pc' | 'switch', deviceId: string) => {
+  const handleDeviceDoubleClick = useCallback((device: 'pc' | 'switch' | 'router', deviceId: string) => {
     // Determine actual device type
     const actualDeviceType = deviceId.includes('router') ? 'router' : deviceId.includes('pc') ? 'pc' : 'switch';
     
