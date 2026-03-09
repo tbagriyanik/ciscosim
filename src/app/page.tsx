@@ -101,11 +101,7 @@ const ALL_TABS: TabDefinition[] = [
   {
     id: 'topology',
     labelKey: 'networkTopology',
-    icon: (
-      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 0 0 2-2V7a2 2 0 0 0 -2-2H7a2 2 0 0 0 -2 2v10a2 2 0 0 0 2 2zM9 9h6v6H9V9z" />
-      </svg>
-    ),
+    icon: <Network className="w-4 h-4" />,
     tasks: topologyTasks,
     color: 'from-cyan-500 to-blue-500',
     showFor: ['pc', 'switch', 'router']
@@ -113,12 +109,7 @@ const ALL_TABS: TabDefinition[] = [
   {
     id: 'cmd',
     labelKey: 'pcTerminal',
-    icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-        <polyline points="4 17 10 11 4 5" />
-        <line x1="12" y1="19" x2="20" y2="19" />
-      </svg>
-    ),
+    icon: <TerminalIcon className="w-4 h-4" />,
     tasks: [],
     color: 'from-blue-500 to-indigo-500',
     showFor: ['pc']
@@ -126,13 +117,7 @@ const ALL_TABS: TabDefinition[] = [
   {
     id: 'terminal',
     labelKey: 'cliTerminal',
-    icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
-        <line x1="8" y1="21" x2="16" y2="21" />
-        <line x1="12" y1="17" x2="12" y2="21" />
-      </svg>
-    ),
+    icon: <TerminalIcon className="w-4 h-4" />,
     tasks: [],
     color: 'from-green-500 to-emerald-500',
     showFor: ['switch', 'router']
@@ -293,6 +278,107 @@ export default function Home() {
   const [showAboutModal, setShowAboutModal] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showActiveDeviceDropdown, setShowActiveDeviceDropdown] = useState(false);
+
+  // Persistence: Save to localStorage
+  useEffect(() => {
+    if (isAppLoading) return;
+
+    const projectData = {
+      version: '1.0',
+      timestamp: new Date().toISOString(),
+      devices: Array.from(deviceStates.entries()).map(([id, state]) => ({ id, state })),
+      deviceOutputs: Array.from(deviceOutputs.entries()).map(([id, outputs]) => ({ id, outputs })),
+      pcOutputs: Array.from(pcOutputs.entries()).map(([id, outputs]) => ({ id, outputs })),
+      topology: {
+        devices: topologyDevices,
+        connections: topologyConnections
+      },
+      cableInfo,
+      activeDeviceId,
+      activeDeviceType,
+      activeTab
+    };
+
+    localStorage.setItem('ciscosim_autosave', JSON.stringify(projectData));
+  }, [deviceStates, deviceOutputs, pcOutputs, topologyDevices, topologyConnections, cableInfo, activeDeviceId, activeDeviceType, activeTab, isAppLoading]);
+
+  // Load project from JSON data
+  const loadProjectData = useCallback((projectData: any) => {
+    try {
+      // Load device states
+      if (projectData.devices && Array.isArray(projectData.devices)) {
+        const newDeviceStates = new Map<string, SwitchState>();
+        projectData.devices.forEach((item: { id: string; state: SwitchState }) => {
+          newDeviceStates.set(item.id, item.state);
+        });
+        setDeviceStates(newDeviceStates);
+      }
+
+      // Load device outputs
+      if (projectData.deviceOutputs && Array.isArray(projectData.deviceOutputs)) {
+        const newDeviceOutputs = new Map<string, TerminalOutput[]>();
+        projectData.deviceOutputs.forEach((item: { id: string; outputs: TerminalOutput[] }) => {
+          newDeviceOutputs.set(item.id, item.outputs || []);
+        });
+        setDeviceOutputs(newDeviceOutputs);
+      }
+
+      // Load PC outputs
+      if (projectData.pcOutputs && Array.isArray(projectData.pcOutputs)) {
+        const newPcOutputs = new Map<string, PCOutputLine[]>();
+        projectData.pcOutputs.forEach((item: { id: string; outputs: PCOutputLine[] }) => {
+          newPcOutputs.set(item.id, item.outputs || []);
+        });
+        setPcOutputs(newPcOutputs);
+      }
+
+      // Load topology
+      if (projectData.topology) {
+        setTopologyDevices(projectData.topology.devices || []);
+        setTopologyConnections(projectData.topology.connections || []);
+      }
+
+      // Load cable info
+      if (projectData.cableInfo) {
+        setCableInfo(projectData.cableInfo);
+      }
+
+      // Load active device
+      if (projectData.activeDeviceId) {
+        setActiveDeviceId(projectData.activeDeviceId);
+      }
+      if (projectData.activeDeviceType) {
+        setActiveDeviceType(projectData.activeDeviceType);
+      }
+      
+      // Load active tab
+      if (projectData.activeTab) {
+        setActiveTab(projectData.activeTab);
+      }
+
+      // Increment topology key to force remount
+      setTopologyKey(prev => prev + 1);
+      setHasUnsavedChanges(false);
+      return true;
+    } catch (error) {
+      console.error("Error loading project data", error);
+      return false;
+    }
+  }, [setDeviceStates, setDeviceOutputs, setPcOutputs, setTopologyDevices, setTopologyConnections, setCableInfo, setActiveDeviceId, setActiveDeviceType, setActiveTab, setTopologyKey, setHasUnsavedChanges]);
+
+  // Persistence: Load from localStorage on mount
+  useEffect(() => {
+    const savedData = localStorage.getItem('ciscosim_autosave');
+    if (savedData) {
+      try {
+        const projectData = JSON.parse(savedData);
+        loadProjectData(projectData);
+      } catch (e) {
+        console.error("Failed to load autosave", e);
+      }
+    }
+  }, [loadProjectData]);
+
   // Sync active tab when device type changes
   useEffect(() => {
     const currentTabDef = ALL_TABS.find(t => t.id === activeTab);
@@ -802,57 +888,11 @@ export default function Home() {
     reader.onload = (e) => {
       try {
         const projectData = JSON.parse(e.target?.result as string);
-        
-        // Load device states
-        if (projectData.devices && Array.isArray(projectData.devices)) {
-          const newDeviceStates = new Map<string, SwitchState>();
-          projectData.devices.forEach((item: { id: string; state: SwitchState }) => {
-            newDeviceStates.set(item.id, item.state);
-          });
-          setDeviceStates(newDeviceStates);
+        if (loadProjectData(projectData)) {
+          setHasUnsavedChanges(false);
+        } else {
+          alert(language === 'tr' ? 'Proje dosyası geçersiz!' : 'Invalid project file!');
         }
-
-        // Load device outputs
-        if (projectData.deviceOutputs && Array.isArray(projectData.deviceOutputs)) {
-          const newDeviceOutputs = new Map<string, TerminalOutput[]>();
-          projectData.deviceOutputs.forEach((item: { id: string; outputs: TerminalOutput[] }) => {
-            newDeviceOutputs.set(item.id, item.outputs || []);
-          });
-          setDeviceOutputs(newDeviceOutputs);
-        }
-
-        // Load PC outputs
-        if (projectData.pcOutputs && Array.isArray(projectData.pcOutputs)) {
-          const newPcOutputs = new Map<string, PCOutputLine[]>();
-          projectData.pcOutputs.forEach((item: { id: string; outputs: PCOutputLine[] }) => {
-            newPcOutputs.set(item.id, item.outputs || []);
-          });
-          setPcOutputs(newPcOutputs);
-        }
-
-        // Load topology
-        if (projectData.topology) {
-          setTopologyDevices(projectData.topology.devices || null);
-          setTopologyConnections(projectData.topology.connections || null);
-        }
-
-        // Load cable info
-        if (projectData.cableInfo) {
-          setCableInfo(projectData.cableInfo);
-        }
-
-        // Load active device
-        if (projectData.activeDeviceId) {
-          setActiveDeviceId(projectData.activeDeviceId);
-        }
-        if (projectData.activeDeviceType) {
-          setActiveDeviceType(projectData.activeDeviceType);
-        }
-
-        // Increment topology key to force remount with new data
-        setTopologyKey(prev => prev + 1);
-        setHasUnsavedChanges(false);
-
       } catch (error) {
         alert(language === 'tr' ? 'Proje dosyası yüklenemedi!' : 'Failed to load project file!');
       }
@@ -860,7 +900,7 @@ export default function Home() {
     reader.readAsText(file);
     // Reset input
     event.target.value = '';
-  }, [language, setDeviceStates, setDeviceOutputs, setPcOutputs, setTopologyDevices, setTopologyConnections, setCableInfo, setActiveDeviceId, setActiveDeviceType, setTopologyKey, setHasUnsavedChanges]);
+  }, [language, loadProjectData, setHasUnsavedChanges]);
 
   const isDark = theme === 'dark';
 
@@ -870,7 +910,7 @@ export default function Home() {
     if (tab.id === 'topology') return true;
     
     // Show other tabs only if a device is active and compatible
-    return activeDeviceId && tab.showFor.includes(activeDeviceType);
+    return activeDeviceId && (topologyDevices.some(d => d.id === activeDeviceId)) && tab.showFor.includes(activeDeviceType);
   }).map(tab => ({
     ...tab,
     label: t[tab.labelKey] as string
@@ -1166,15 +1206,15 @@ export default function Home() {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {/* Main Tabs (Hidden on mobile, shown on desktop) */}
-            <div className="hidden md:flex items-end gap-1">
+            {/* Main Tabs (Adaptive: Icons on small, Icon+Text on large) */}
+            <div className="hidden sm:flex items-end gap-1">
               {tabs.map((tab) => {
                 const isActive = activeTab === tab.id;
                 return (
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`flex items-center gap-2.5 px-5 py-3 rounded-t-xl text-sm font-semibold transition-all border-x border-t min-w-[120px] justify-center ${
+                    className={`flex items-center gap-2 px-3 lg:px-5 py-3 rounded-t-xl text-sm font-semibold transition-all border-x border-t min-w-[50px] lg:min-w-[120px] justify-center ${
                       isActive
                         ? isDark ? 'bg-slate-950 border-slate-800 text-cyan-400 shadow-[0_-4px_0_0_#22d3ee]' : 'bg-slate-100 border-slate-300 text-slate-900 shadow-[0_-4px_0_0_#06b6d4]'
                         : isDark ? 'bg-slate-900/50 border-transparent text-slate-500 hover:text-white hover:bg-slate-800' : 'bg-slate-200/50 border-transparent text-slate-500 hover:text-slate-900 hover:bg-slate-200'
@@ -1188,7 +1228,7 @@ export default function Home() {
                        tab.id === 'vlan' ? <Layers className="w-4 h-4" /> :
                        <ShieldCheck className="w-4 h-4" />}
                     </span>
-                    <span>{tab.label}</span>
+                    <span className="hidden lg:inline">{tab.label}</span>
                   </button>
                 );
               })}
@@ -1196,6 +1236,40 @@ export default function Home() {
           </div>
         </div>
       </header>
+      
+      {/* Mobile Bottom Tab Bar (Icons Only) */}
+      <div className={`sm:hidden fixed bottom-0 left-0 right-0 z-[100] border-t backdrop-blur-xl flex items-center justify-around px-2 py-2 safe-area-inset-bottom ${
+        isDark ? 'bg-slate-900/90 border-slate-800 text-slate-400' : 'bg-white/90 border-slate-200 text-slate-500'
+      }`}>
+        {tabs.map((tab) => {
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex flex-col items-center justify-center p-2.5 rounded-xl transition-all relative ${
+                isActive ? 'text-cyan-400' : 'active:scale-95'
+              }`}
+            >
+              {isActive && (
+                <motion.div 
+                  layoutId="mobileTabActive"
+                  className="absolute inset-0 bg-cyan-500/10 rounded-xl"
+                  transition={{ type: "spring", duration: 0.5 }}
+                />
+              )}
+              <div className={`relative z-10 transition-transform ${isActive ? 'scale-110' : ''}`}>
+                {tab.id === 'topology' ? <Network className="w-5 h-5" /> : 
+                 tab.id === 'cmd' ? <TerminalIcon className="w-5 h-5" /> :
+                 tab.id === 'terminal' ? <Monitor className="w-5 h-5" /> :
+                 tab.id === 'ports' ? <Database className="w-5 h-5" /> :
+                 tab.id === 'vlan' ? <Layers className="w-5 h-5" /> :
+                 <ShieldCheck className="w-5 h-5" />}
+              </div>
+            </button>
+          );
+        })}
+      </div>
       {/* Global Dialogs (AlertDialog for better z-index and standard behavior) */}
       <AlertDialog open={!!confirmDialog} onOpenChange={(open) => !open && setConfirmDialog(null)}>
         <AlertDialogContent className={`${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white'}`}>
@@ -1251,7 +1325,7 @@ export default function Home() {
 
       {/* Main Content with matching top background */}
       <main className={`flex-1 overflow-hidden ${isDark ? 'bg-slate-950' : 'bg-slate-100'}`}>
-        <div className="max-w-7xl w-full mx-auto p-4 pb-6 h-full flex flex-col">
+        <div className="max-w-7xl w-full mx-auto p-4 pb-20 sm:pb-6 h-full flex flex-col">
         {/* Tab Content */}
         {activeTab === 'topology' && (
           <div className="space-y-4">
