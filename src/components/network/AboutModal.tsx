@@ -44,9 +44,16 @@ export function AboutModal({ isOpen, onClose }: AboutModalProps) {
               http://yunus.sf.net
             </a>
           </div>
-          <p className="mt-4 text-sm font-semibold">
-            {t.licenseInfo}
-          </p>
+          <div className="mt-4">
+            <a 
+              href="https://tuzlamtal.meb.k12.tr" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="text-sm font-semibold text-cyan-600 dark:text-cyan-400 hover:underline"
+            >
+              {t.licenseInfo}
+            </a>
+          </div>
         </ScrollArea>
         <div className="flex justify-end">
           <Button onClick={onClose}>{t.close}</Button>

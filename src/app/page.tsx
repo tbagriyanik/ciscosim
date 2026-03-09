@@ -579,9 +579,14 @@ export default function Home() {
           topoDevice.ports.forEach(topoPort => {
             const statePort = updatedPorts[topoPort.id];
             if (statePort && statePort.status !== topoPort.status) {
+              // Ensure we translate correctly between Canvas status and Simulator status
+              const newStatus = topoPort.status === 'disconnected' || (topoPort.status as any) === 'notconnect' 
+                ? 'notconnect' 
+                : topoPort.status as 'connected' | 'disabled' | 'blocked';
+                
               updatedPorts[topoPort.id] = {
                 ...statePort,
-                status: topoPort.status as 'connected' | 'notconnect' | 'disabled' | 'blocked'
+                status: newStatus
               };
               portChanged = true;
             }

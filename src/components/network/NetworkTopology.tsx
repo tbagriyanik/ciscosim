@@ -1390,7 +1390,7 @@ export function NetworkTopology({
             ...d,
             ports: d.ports.map((p) =>
               p.id === conn.sourcePort || p.id === conn.targetPort
-                ? { ...p, status: 'disconnected' as const }
+                ? { ...p, status: 'notconnect' as const }
                 : p
             ),
           };
@@ -2765,8 +2765,9 @@ export function NetworkTopology({
             >
               <g
                 style={{
-                  transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+                  transform: `translate3d(${pan.x}px, ${pan.y}px, 0) scale(${zoom})`,
                   transformOrigin: '0 0',
+                  willChange: 'transform'
                 }}
               >
               {/* Clip path for canvas boundaries */}

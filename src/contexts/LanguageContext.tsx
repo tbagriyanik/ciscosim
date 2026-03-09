@@ -342,7 +342,7 @@ const translations: Record<Language, Translations> = {
     aboutIntro: 'Bu uygulama, ağ teknolojilerini ve terminal komutlarını öğrenmek isteyenler için tasarlanmış interaktif bir simülasyon aracıdır.',
     termsAndConditions: 'Şartlar ve Koşullar',
     termsText: 'Bu yazılım eğitim amaçlıdır. Ticari olmayan amaçlarla özgürce kullanılabilir ve dağıtılabilir.',
-    licenseInfo: 'Lisans: Copyleft GPL',
+    licenseInfo: 'Tuzla Mesleki ve Teknik Anadolu Lisesi',
     close: 'Kapat',
   },
   en: {
@@ -497,7 +497,7 @@ const translations: Record<Language, Translations> = {
     aboutIntro: 'This application is an interactive simulation tool designed for those who want to learn network technologies and terminal commands.',
     termsAndConditions: 'Terms and Conditions',
     termsText: 'This software is for educational purposes. It can be freely used and distributed for non-commercial purposes.',
-    licenseInfo: 'License: Copyleft GPL',
+    licenseInfo: 'Tuzla Mesleki ve Teknik Anadolu Lisesi',
     close: 'Close',
   }
 };
