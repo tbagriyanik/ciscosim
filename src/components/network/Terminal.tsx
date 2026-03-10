@@ -10,6 +10,13 @@ import { CornerDownLeft, Terminal as TerminalIcon, Trash2, Command, Info, Histor
 import { QuickCommands } from './QuickCommands';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
+export interface TerminalOutput {
+  id: string;
+  type: 'command' | 'output' | 'error' | 'success' | 'password-prompt';
+  content: string;
+  prompt?: string;
+}
+
 interface TerminalProps {
   deviceId: string;
   deviceName: string;
@@ -17,7 +24,7 @@ interface TerminalProps {
   state: SwitchState;
   onCommand: (command: string) => Promise<void>;
   onClear: () => void;
-  output: any[];
+  output: TerminalOutput[];
   isLoading: boolean;
   t: Translations;
   theme: string;

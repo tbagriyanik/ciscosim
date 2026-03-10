@@ -596,7 +596,7 @@ export function PCPanel({
                 <span className="text-emerald-500 font-black text-xs select-none shrink-0 opacity-50 group-focus-within:opacity-100 transition-opacity">
                   {activeTab === 'desktop' 
                     ? 'C:\\>' 
-                    : (isConsoleConnected ? (activeConsoleOutput.findLast(l => l.type === 'prompt')?.prompt || '>') : 'OFFLINE>')}
+                    : (isConsoleConnected ? (activeConsoleOutput.findLast(l => l.prompt !== undefined)?.prompt || '>') : 'OFFLINE>')}
                 </span>
                 <input
                   ref={inputRef}

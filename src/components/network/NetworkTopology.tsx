@@ -53,7 +53,7 @@ export interface CanvasDevice {
   x: number;
   y: number;
   status: 'online' | 'offline' | 'error';
-  ports: { id: string; label: string; status: 'connected' | 'disconnected'; shutdown?: boolean }[];
+  ports: { id: string; label: string; status: 'connected' | 'disconnected' | 'notconnect' | 'blocked' | 'disabled'; shutdown?: boolean }[];
 }
 
 // Connection types

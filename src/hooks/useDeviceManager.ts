@@ -209,7 +209,7 @@ export function useDeviceManager(language: 'tr' | 'en') {
           action: result.confirmationAction || command,
           onConfirm: () => {
             setConfirmDialog(null);
-            handleCommandForDevice(deviceId, command, topologyDevices, setActiveDeviceId, setActiveDeviceType, true);
+            handleCommandForDevice(deviceId, command, topologyDevices, setActiveDeviceId, setActiveDeviceType, topologyConnections, true);
           }
         });
         return;

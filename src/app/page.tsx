@@ -48,7 +48,7 @@ import { Separator } from "@/components/ui/separator";
 import { ChevronDown, Menu, Plus, Save, FolderOpen, Languages, Sun, Moon, Laptop, Monitor, Network, ShieldCheck, Database, Info, File, Layers, Terminal as TerminalIcon, Undo2, Redo2 } from "lucide-react";
 
 import { Button } from '@/components/ui/button';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useLanguage, Translations } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { AboutModal } from '@/components/network/AboutModal';
 import {
@@ -154,6 +154,9 @@ export default function Home() {
   const { t, language, setLanguage } = useLanguage();
   const { theme, toggleTheme } = useTheme();
 
+  const [isAppLoading, setIsAppLoading] = useState(true);
+  const [showContent, setShowContent] = useState(false);
+
   // Currently active device in terminal
   const [activeDeviceId, setActiveDeviceId] = useState<string>('switch-1');
   const [activeDeviceType, setActiveDeviceType] = useState<'pc' | 'switch' | 'router'>('switch');
@@ -170,8 +173,8 @@ export default function Home() {
       macAddress: '00e0.f701.a1b1',
       status: 'offline',
       ports: [
-        { id: 'eth0', label: 'Eth0', status: 'disconnected' },
-        { id: 'com1', label: 'COM1', status: 'disconnected' }
+        { id: 'eth0', label: 'Eth0', status: 'disconnected' as const },
+        { id: 'com1', label: 'COM1', status: 'disconnected' as const }
       ]
     },
     {
@@ -181,12 +184,13 @@ export default function Home() {
       x: 200,
       y: 50,
       macAddress: '0011.2233.4401',
+      ip: '',
       status: 'offline',
       ports: [
-        { id: 'console', label: 'Console', status: 'disconnected' },
-        ...Array.from({ length: 24 }, (_, i) => ({ id: `fa0/${i + 1}`, label: `Fa0/${i + 1}`, status: 'disconnected' })),
-        { id: 'gi0/1', label: 'Gi0/1', status: 'disconnected' },
-        { id: 'gi0/2', label: 'Gi0/2', status: 'disconnected' }
+        { id: 'console', label: 'Console', status: 'disconnected' as const },
+        ...Array.from({ length: 24 }, (_, i) => ({ id: `fa0/${i + 1}`, label: `Fa0/${i + 1}`, status: 'disconnected' as const })),
+        { id: 'gi0/1', label: 'Gi0/1', status: 'disconnected' as const },
+        { id: 'gi0/2', label: 'Gi0/2', status: 'disconnected' as const }
       ]
     }
   ]);
@@ -463,7 +467,9 @@ export default function Home() {
           targetDevice: 'switch',
         },
         activeDeviceId: projectData.activeDeviceId || 'switch-1',
-        activeDeviceType: projectData.activeDeviceType || 'switch'
+        activeDeviceType: projectData.activeDeviceType || 'switch',
+        zoom: projectData.zoom || 1.0,
+        pan: projectData.pan || { x: 0, y: 0 }
       });
 
       return true;
@@ -740,7 +746,7 @@ export default function Home() {
           if (portToReset) {
             updatedPorts[p.portId] = {
               ...portToReset,
-              status: 'disconnected'
+              status: 'notconnect'
             };
             newMap.set(p.deviceId, {
               ...targetState,
@@ -813,7 +819,7 @@ export default function Home() {
               (conn.targetDeviceId === id && conn.targetPort === portId)
             );
             
-            const expectedStatus = isActuallyConnected ? 'connected' : 'disconnected';
+            const expectedStatus = isActuallyConnected ? 'connected' : 'notconnect';
             if (updatedPorts[portId].status !== expectedStatus) {
               updatedPorts[portId] = {
                 ...updatedPorts[portId],
@@ -915,8 +921,8 @@ export default function Home() {
           macAddress: '00e0.f701.a1b1',
           status: 'offline',
           ports: [
-            { id: 'eth0', label: 'Eth0', status: 'disconnected' },
-            { id: 'com1', label: 'COM1', status: 'disconnected' }
+            { id: 'eth0', label: 'Eth0', status: 'disconnected' as const },
+            { id: 'com1', label: 'COM1', status: 'disconnected' as const }
           ]
         },
         {
@@ -926,12 +932,13 @@ export default function Home() {
           x: 200,
           y: 50,
           macAddress: '0011.2233.4401',
+          ip: '',
           status: 'offline',
           ports: [
-            { id: 'console', label: 'Console', status: 'disconnected' },
-            ...Array.from({ length: 24 }, (_, i) => ({ id: `fa0/${i + 1}`, label: `Fa0/${i + 1}`, status: 'disconnected' })),
-            { id: 'gi0/1', label: 'Gi0/1', status: 'disconnected' },
-            { id: 'gi0/2', label: 'Gi0/2', status: 'disconnected' }
+            { id: 'console', label: 'Console', status: 'disconnected' as const },
+            ...Array.from({ length: 24 }, (_, i) => ({ id: `fa0/${i + 1}`, label: `Fa0/${i + 1}`, status: 'disconnected' as const })),
+            { id: 'gi0/1', label: 'Gi0/1', status: 'disconnected' as const },
+            { id: 'gi0/2', label: 'Gi0/2', status: 'disconnected' as const }
           ]
         }
       ]);
@@ -963,8 +970,8 @@ export default function Home() {
             macAddress: '00e0.f701.a1b1',
             status: 'offline',
             ports: [
-              { id: 'eth0', label: 'Eth0', status: 'disconnected' },
-              { id: 'com1', label: 'COM1', status: 'disconnected' }
+              { id: 'eth0', label: 'Eth0', status: 'disconnected' as const },
+              { id: 'com1', label: 'COM1', status: 'disconnected' as const }
             ]
           },
           {
@@ -974,12 +981,13 @@ export default function Home() {
             x: 200,
             y: 50,
             macAddress: '0011.2233.4401',
+            ip: '',
             status: 'offline',
             ports: [
-              { id: 'console', label: 'Console', status: 'disconnected' },
-              ...Array.from({ length: 24 }, (_, i) => ({ id: `fa0/${i + 1}`, label: `Fa0/${i + 1}`, status: 'disconnected' })),
-              { id: 'gi0/1', label: 'Gi0/1', status: 'disconnected' },
-              { id: 'gi0/2', label: 'Gi0/2', status: 'disconnected' }
+              { id: 'console', label: 'Console', status: 'disconnected' as const },
+              ...Array.from({ length: 24 }, (_, i) => ({ id: `fa0/${i + 1}`, label: `Fa0/${i + 1}`, status: 'disconnected' as const })),
+              { id: 'gi0/1', label: 'Gi0/1', status: 'disconnected' as const },
+              { id: 'gi0/2', label: 'Gi0/2', status: 'disconnected' as const }
             ]
           }
         ],
@@ -994,7 +1002,9 @@ export default function Home() {
           targetDevice: 'switch',
         },
         activeDeviceId: 'switch-1',
-        activeDeviceType: 'switch'
+        activeDeviceType: 'switch',
+        zoom: 1.0,
+        pan: { x: 0, y: 0 }
       });
     };
 
@@ -1218,7 +1228,7 @@ export default function Home() {
     return activeDeviceId && (topologyDevices.some(d => d.id === activeDeviceId)) && tab.showFor.includes(activeDeviceType);
   }).map(tab => ({
     ...tab,
-    label: t[tab.labelKey] as string
+    label: t[tab.labelKey as keyof typeof t] as string
   }));
 
   const isDark = theme === 'dark';
@@ -1406,7 +1416,7 @@ export default function Home() {
                             if (!isTabVisible) return null;
                             
                             const isActive = activeTab === tab.id;
-                            const label = t[tab.labelKey] as string;
+                            const label = t[tab.labelKey as keyof typeof t] as string;
                             return (
                               <Button
                                 key={tab.id}
