@@ -236,6 +236,58 @@ export default function Home() {
 
   const { pushState, undo, redo, canUndo, canRedo, resetHistory } = useHistory(getCurrentState());
 
+  // Handle undo/redo execution
+  const applyProjectState = useCallback((state: ProjectState) => {
+    // We use functional updates to ensure we're using latest state and prevent loops if possible
+    // but here we just want to set EVERYTHING at once.
+    setTopologyDevices(state.topologyDevices);
+    setTopologyConnections(state.topologyConnections);
+    setDeviceStates(new Map(state.deviceStates));
+    setDeviceOutputs(new Map(state.deviceOutputs));
+    setPcOutputs(new Map(state.pcOutputs));
+    setCableInfo(state.cableInfo);
+    setActiveDeviceId(state.activeDeviceId);
+    setActiveDeviceType(state.activeDeviceType);
+    setZoom(state.zoom);
+    setPan(state.pan);
+    // setTopologyKey(prev => prev + 1); // Only for resets
+  }, [setTopologyDevices, setTopologyConnections, setDeviceStates, setDeviceOutputs, setPcOutputs, setCableInfo, setActiveDeviceId, setActiveDeviceType, setZoom, setPan]);
+
+  const handleUndo = useCallback(() => {
+    const prevState = undo();
+    if (prevState) applyProjectState(prevState);
+  }, [undo, applyProjectState]);
+
+  const handleRedo = useCallback(() => {
+    const nextState = redo();
+    if (nextState) applyProjectState(nextState);
+  }, [redo, applyProjectState]);
+
+  // Track changes and push to history
+  // We need to debouncing this or use a ref to track if we're in the middle of an undo/redo
+  const lastPushedStateRef = useRef<string>('');
+  
+  useEffect(() => {
+    if (isAppLoading) return;
+    
+    const currentState = getCurrentState();
+    const stateString = JSON.stringify({
+      t: currentState.topologyDevices,
+      c: currentState.topologyConnections,
+      s: Array.from(currentState.deviceStates.keys()), // Just check keys and size for simplicity or deep check
+      id: currentState.activeDeviceId
+    });
+
+    if (stateString !== lastPushedStateRef.current) {
+      // Debounce history pushes
+      const timer = setTimeout(() => {
+        pushState(currentState);
+        lastPushedStateRef.current = stateString;
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [topologyDevices, topologyConnections, deviceStates, activeDeviceId, isAppLoading, pushState, getCurrentState]);
+
   // Initial App Loading State
   const [isAppLoading, setIsAppLoading] = useState(true);
   const [showContent, setShowContent] = useState(false);
