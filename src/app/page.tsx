@@ -194,6 +194,13 @@ export default function Home() {
   const [zoom, setZoom] = useState(1.0);
   const [pan, setPan] = useState({ x: 0, y: 0 });
 
+  const [cableInfo, setCableInfo] = useState<CableInfo>({
+    connected: true,
+    cableType: 'straight',
+    sourceDevice: 'pc',
+    targetDevice: 'switch',
+  });
+
   const {
     deviceStates,
     setDeviceStates,
