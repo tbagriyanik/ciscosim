@@ -154,87 +154,6 @@ export default function Home() {
   const { t, language, setLanguage } = useLanguage();
   const { theme, toggleTheme } = useTheme();
 
-  const {
-    deviceStates,
-    setDeviceStates,
-    deviceOutputs,
-    setDeviceOutputs,
-    pcOutputs,
-    setPcOutputs,
-    isLoading,
-    confirmDialog,
-    setConfirmDialog,
-    getOrCreateDeviceState,
-    getOrCreateDeviceOutputs,
-    getOrCreatePCOutputs,
-    handleCommandForDevice,
-    resetAll
-  } = useDeviceManager(language);
-
-  // Get current state helper
-  const getCurrentState = useCallback((): ProjectState => ({
-    topologyDevices: JSON.parse(JSON.stringify(topologyDevices)),
-    topologyConnections: JSON.parse(JSON.stringify(topologyConnections)),
-    deviceStates: new Map(deviceStates),
-    deviceOutputs: new Map(deviceOutputs),
-    pcOutputs: new Map(pcOutputs),
-    cableInfo: { ...cableInfo },
-    activeDeviceId,
-    activeDeviceType
-  }), [topologyDevices, topologyConnections, deviceStates, deviceOutputs, pcOutputs, cableInfo, activeDeviceId, activeDeviceType]);
-
-  const { pushState, undo, redo, canUndo, canRedo, resetHistory } = useHistory(getCurrentState());
-
-  // Handle undo/redo execution
-  const applyProjectState = useCallback((state: ProjectState) => {
-    // We use functional updates to ensure we're using latest state and prevent loops if possible
-    // but here we just want to set EVERYTHING at once.
-    setTopologyDevices(state.topologyDevices);
-    setTopologyConnections(state.topologyConnections);
-    setDeviceStates(new Map(state.deviceStates));
-    setDeviceOutputs(new Map(state.deviceOutputs));
-    setPcOutputs(new Map(state.pcOutputs));
-    setCableInfo(state.cableInfo);
-    setActiveDeviceId(state.activeDeviceId);
-    setActiveDeviceType(state.activeDeviceType);
-    setTopologyKey(prev => prev + 1); // Force remount
-  }, [setTopologyDevices, setTopologyConnections, setDeviceStates, setDeviceOutputs, setPcOutputs, setCableInfo, setActiveDeviceId, setActiveDeviceType, setTopologyKey]);
-
-  const handleUndo = useCallback(() => {
-    const prevState = undo();
-    if (prevState) applyProjectState(prevState);
-  }, [undo, applyProjectState]);
-
-  const handleRedo = useCallback(() => {
-    const nextState = redo();
-    if (nextState) applyProjectState(nextState);
-  }, [redo, applyProjectState]);
-
-  // Track changes and push to history
-  // We need to debouncing this or use a ref to track if we're in the middle of an undo/redo
-  const lastPushedStateRef = useRef<string>('');
-  
-  useEffect(() => {
-    if (isAppLoading) return;
-    
-    const currentState = getCurrentState();
-    const stateString = JSON.stringify({
-      t: currentState.topologyDevices,
-      c: currentState.topologyConnections,
-      s: Array.from(currentState.deviceStates.keys()), // Just check keys and size for simplicity or deep check
-      id: currentState.activeDeviceId
-    });
-
-    if (stateString !== lastPushedStateRef.current) {
-      // Debounce history pushes
-      const timer = setTimeout(() => {
-        pushState(currentState);
-        lastPushedStateRef.current = stateString;
-      }, 500);
-      return () => clearTimeout(timer);
-    }
-  }, [topologyDevices, topologyConnections, deviceStates, activeDeviceId, isAppLoading, pushState, getCurrentState]);
-
   // Currently active device in terminal
   const [activeDeviceId, setActiveDeviceId] = useState<string>('switch-1');
   const [activeDeviceType, setActiveDeviceType] = useState<'pc' | 'switch' | 'router'>('switch');
@@ -272,6 +191,43 @@ export default function Home() {
     }
   ]);
   const [topologyConnections, setTopologyConnections] = useState<CanvasConnection[]>([]);
+  const [zoom, setZoom] = useState(1.0);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+
+  const {
+    deviceStates,
+    setDeviceStates,
+    deviceOutputs,
+    setDeviceOutputs,
+    pcOutputs,
+    setPcOutputs,
+    isLoading,
+    confirmDialog,
+    setConfirmDialog,
+    getOrCreateDeviceState,
+    getOrCreateDeviceOutputs,
+    getOrCreatePCOutputs,
+    handleCommandForDevice,
+    resetAll
+  } = useDeviceManager(language);
+
+  const [topologyKey, setTopologyKey] = useState(0);
+
+  // Get current state helper
+  const getCurrentState = useCallback((): ProjectState => ({
+    topologyDevices: JSON.parse(JSON.stringify(topologyDevices)),
+    topologyConnections: JSON.parse(JSON.stringify(topologyConnections)),
+    deviceStates: new Map(deviceStates),
+    deviceOutputs: new Map(deviceOutputs),
+    pcOutputs: new Map(pcOutputs),
+    cableInfo: { ...cableInfo },
+    activeDeviceId: activeDeviceId || '',
+    activeDeviceType: activeDeviceType || 'switch',
+    zoom,
+    pan: { ...pan }
+  }), [topologyDevices, topologyConnections, deviceStates, deviceOutputs, pcOutputs, cableInfo, activeDeviceId, activeDeviceType, zoom, pan]);
+
+  const { pushState, undo, redo, canUndo, canRedo, resetHistory } = useHistory(getCurrentState());
 
   // Initial App Loading State
   const [isAppLoading, setIsAppLoading] = useState(true);
@@ -1670,6 +1626,10 @@ export default function Home() {
                 deviceStates={deviceStates}
                 isFullscreen={isTopologyFullscreen}
                 onFullscreenChange={setIsTopologyFullscreen}
+                zoom={zoom}
+                onZoomChange={setZoom}
+                pan={pan}
+                onPanChange={setPan}
               />
             </div>
           </div>

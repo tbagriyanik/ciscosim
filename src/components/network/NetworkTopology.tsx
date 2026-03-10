@@ -34,6 +34,10 @@ interface NetworkTopologyProps {
   deviceStates?: Map<string, SwitchState>;
   isFullscreen?: boolean;
   onFullscreenChange?: (isFullscreen: boolean) => void;
+  zoom?: number;
+  onZoomChange?: (zoom: number) => void;
+  pan?: { x: number; y: number };
+  onPanChange?: (pan: { x: number; y: number }) => void;
 }
 
 // Device types for the canvas
@@ -125,6 +129,10 @@ export function NetworkTopology({
   deviceStates,
   isFullscreen: isFullscreenProp,
   onFullscreenChange,
+  zoom: zoomProp,
+  onZoomChange,
+  pan: panProp,
+  onPanChange,
 }: NetworkTopologyProps) {
   const { language } = useLanguage();
   const { theme } = useTheme();
@@ -198,8 +206,43 @@ export function NetworkTopology({
   const [devices, setDevices] = useState<CanvasDevice[]>(initialDevices || defaultDevices);
   const [connections, setConnections] = useState<CanvasConnection[]>(initialConnections || []);
 
-  const [zoom, setZoom] = useState(DEFAULT_ZOOM);
-  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(zoomProp || DEFAULT_ZOOM);
+  const [pan, setPan] = useState(panProp || { x: 0, y: 0 });
+
+  // Sync internal state with props (e.g. from undo/redo or tab switching)
+  useEffect(() => {
+    if (initialDevices) setDevices(initialDevices);
+  }, [initialDevices]);
+
+  useEffect(() => {
+    if (initialConnections) setConnections(initialConnections);
+  }, [initialConnections]);
+
+  useEffect(() => {
+    if (zoomProp !== undefined) setZoom(zoomProp);
+  }, [zoomProp]);
+
+  useEffect(() => {
+    if (panProp !== undefined) setPan(panProp);
+  }, [panProp]);
+
+  // Wrapper for setZoom to notify parent
+  const updateZoom = useCallback((newZoom: number | ((prev: number) => number)) => {
+    setZoom(prev => {
+      const next = typeof newZoom === 'function' ? newZoom(prev) : newZoom;
+      if (onZoomChange) onZoomChange(next);
+      return next;
+    });
+  }, [onZoomChange]);
+
+  // Wrapper for setPan to notify parent
+  const updatePan = useCallback((newPan: { x: number; y: number } | ((prev: { x: number; y: number }) => { x: number; y: number })) => {
+    setPan(prev => {
+      const next = typeof newPan === 'function' ? newPan(prev) : newPan;
+      if (onPanChange) onPanChange(next);
+      return next;
+    });
+  }, [onPanChange]);
   const [isPanning, setIsPanning] = useState(false);
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
   const [selectedDeviceIds, setSelectedDeviceIds] = useState<string[]>(activeDeviceId ? [activeDeviceId] : []);

@@ -6,6 +6,7 @@ import { CableInfo, isCableCompatible, SwitchState } from '@/lib/network/types';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { TerminalOutput } from './Terminal';
+import { checkConnectivity } from '@/lib/network/connectivity';
 import { Button } from '@/components/ui/button';
 import { Laptop, Monitor, Terminal as TerminalIcon, X, CornerDownLeft, Command, Globe, Network, ShieldCheck, History } from 'lucide-react';
 
@@ -194,7 +195,14 @@ export function PCPanel({
       const args = parts.slice(1);
 
       if (cmd === 'ipconfig') {
-        if (args.includes('/all')) {
+        if (args.includes('/release')) {
+          setPcIP('0.0.0.0');
+          addLocalOutput('success', 'IP address released successfully.');
+        } else if (args.includes('/renew')) {
+          const restoredIP = deviceFromTopology?.ip || defaultConfig.ip;
+          setPcIP(restoredIP);
+          addLocalOutput('success', `IP address renewed successfully. New IP: ${restoredIP}`);
+        } else if (args.includes('/all')) {
           addLocalOutput('output', `OS IP Configuration\n\n   Host Name . . . . . . . . . . . . : ${pcHostname}\n   Primary Dns Suffix  . . . . . . . : \n   Node Type . . . . . . . . . . . . : Hybrid\n   IP Routing Enabled. . . . . . . . : No\n   WINS Proxy Enabled. . . . . . . . : No\n\nEthernet adapter Ethernet0:\n   Connection-specific DNS Suffix  . : \n   Description . . . . . . . . . . . : Generic Gigabit Network Connection\n   Physical Address. . . . . . . . . : ${pcMAC}\n   DHCP Enabled. . . . . . . . . . . : No\n   Autoconfiguration Enabled . . . . : Yes\n   IPv4 Address. . . . . . . . . . . : ${pcIP}(Preferred)\n   Subnet Mask . . . . . . . . . . . : 255.255.255.0\n   Default Gateway . . . . . . . . . : 192.168.1.1\n   DNS Servers . . . . . . . . . . . : 8.8.8.8`);
         } else {
           addLocalOutput('output', `OS IP Configuration\n\nEthernet adapter Ethernet0:\n   Connection-specific DNS Suffix  . : \n   Link-local IPv6 Address . . . . . : fe80::a1b2:c3d4:e5f6%12\n   IPv4 Address. . . . . . . . . . . : ${pcIP}\n   Subnet Mask . . . . . . . . . . . : 255.255.255.0\n   Default Gateway . . . . . . . . . : 192.168.1.1`);
@@ -205,17 +213,36 @@ export function PCPanel({
         const target = args[0];
         if (!target) {
           addLocalOutput('output', 'Usage: ping <target_name_or_address>');
+        } else if (pcIP === '0.0.0.0') {
+          addLocalOutput('error', 'Ping transmit failed. General failure.');
         } else {
-          addLocalOutput('output', `Pinging ${target} with 32 bytes of data:\nReply from ${target}: bytes=32 time<1ms TTL=128\nReply from ${target}: bytes=32 time<1ms TTL=128\nReply from ${target}: bytes=32 time<1ms TTL=128\nReply from ${target}: bytes=32 time<1ms TTL=128\n\nPing statistics for ${target}:\n    Packets: Sent = 4, Received = 4, Lost = 0 (0% loss),\nApproximate round trip times in milli-seconds:\n    Minimum = 0ms, Maximum = 0ms, Average = 0ms`);
+          const result = checkConnectivity(deviceId, target, topologyDevices as any, topologyConnections as any, deviceStates);
+          if (result.success) {
+            addLocalOutput('output', `Pinging ${target} with 32 bytes of data:\nReply from ${target}: bytes=32 time<1ms TTL=128\nReply from ${target}: bytes=32 time<1ms TTL=128\nReply from ${target}: bytes=32 time<1ms TTL=128\nReply from ${target}: bytes=32 time<1ms TTL=128\n\nPing statistics for ${target}:\n    Packets: Sent = 4, Received = 4, Lost = 0 (0% loss),\nApproximate round trip times in milli-seconds:\n    Minimum = 0ms, Maximum = 0ms, Average = 0ms`);
+          } else {
+            addLocalOutput('output', `Pinging ${target} with 32 bytes of data:\nRequest timed out.\nRequest timed out.\nRequest timed out.\nRequest timed out.\n\nPing statistics for ${target}:\n    Packets: Sent = 4, Received = 0, Lost = 4 (100% loss)`);
+          }
         }
       } else if (cmd === 'tracert') {
         const target = args[0];
         if (!target) {
           addLocalOutput('output', 'Usage: tracert <target_name_or_address>');
+        } else if (pcIP === '0.0.0.0') {
+          addLocalOutput('error', 'Unable to resolve target system name.');
         } else {
-          addLocalOutput('output', `Tracing route to ${target} over a maximum of 30 hops:\n\n  1    <1 ms    <1 ms    <1 ms  192.168.1.1\n  2    1 ms     <1 ms     1 ms  ${target}\n\nTrace complete.`);
+          const result = checkConnectivity(deviceId, target, topologyDevices as any, topologyConnections as any, deviceStates);
+          if (result.success) {
+            let output = `Tracing route to ${target} over a maximum of 30 hops:\n\n`;
+            result.hops.forEach((hop, index) => {
+              output += `  ${index + 1}    <1 ms    <1 ms    <1 ms  ${hop}\n`;
+            });
+            output += `\nTrace complete.`;
+            addLocalOutput('output', output);
+          } else {
+            addLocalOutput('output', `Tracing route to ${target} over a maximum of 30 hops:\n\n  1    *        *        *     Request timed out.\n\nTrace complete.`);
+          }
         }
-      } else if (cmd === 'nslookup') {
+ else if (cmd === 'nslookup') {
         const target = args[0] || 'example.com';
         addLocalOutput('output', `Server:  public-dns.example.com\nAddress:  8.8.8.8\n\nNon-authoritative answer:\nName:    ${target}\nAddresses:  93.184.216.34`);
       } else if (cmd === 'arp') {

@@ -1,5 +1,6 @@
 // Network Command Executor
 import { SwitchState, CommandMode, CommandResult, Port, Vlan, PortStatus } from './types';
+import { checkConnectivity } from './connectivity';
 import { parseCommand, validateCommand, getHelpContent, commandPatterns } from './parser';
 import { normalizePortId, getModePrompt, createInitialState } from './initialState';
 
@@ -734,16 +735,37 @@ function getInlineHelp(mode: CommandMode, partialInput: string, prompt: string):
 export function executeCommand(
   state: SwitchState,
   input: string,
-  language: 'tr' | 'en' = 'tr'
+  language: 'tr' | 'en' = 'tr',
+  devices?: any[],
+  connections?: any[],
+  deviceStates?: Map<string, SwitchState>
 ): CommandResult {
   // Eğer şifre bekleniyorsa, şifre doğrulama yap
   if (state.awaitingPassword) {
     return handlePasswordInput(state, input, language);
   }
   
+  // Common Abbreviations for smoother CLI experience
+  let cmdToProcess = input.trim();
+  const lowerInput = cmdToProcess.toLowerCase();
+  
+  if (state.currentMode === 'privileged') {
+    if (lowerInput === 'conf t') cmdToProcess = 'configure terminal';
+    if (lowerInput.startsWith('sh ip int br')) cmdToProcess = 'show ip interface brief';
+    if (lowerInput.startsWith('sh run')) cmdToProcess = 'show running-config';
+    if (lowerInput.startsWith('sh ip ro')) cmdToProcess = 'show ip route';
+    if (lowerInput === 'wr') cmdToProcess = 'write memory';
+  } else if (state.currentMode === 'user') {
+    if (lowerInput === 'en') cmdToProcess = 'enable';
+  } else if (state.currentMode === 'config') {
+    if (lowerInput.startsWith('int fa')) cmdToProcess = cmdToProcess.replace(/int fa/i, 'interface fastethernet');
+    if (lowerInput.startsWith('int gi')) cmdToProcess = cmdToProcess.replace(/int gi/i, 'interface gigabitethernet');
+    if (lowerInput.startsWith('int vlan')) cmdToProcess = cmdToProcess.replace(/int vlan/i, 'interface vlan');
+  }
+
   // ? ile biten komutları help olarak işle
-  if (input.endsWith('?') && input.length > 0) {
-    const partialInput = input.slice(0, -1).trim();
+  if (cmdToProcess.endsWith('?') && cmdToProcess.length > 0) {
+    const partialInput = cmdToProcess.slice(0, -1).trim();
     const prompt = getModePrompt(state.currentMode, state.hostname);
     const helpOutput = getInlineHelp(state.currentMode, partialInput, prompt);
     return {
@@ -752,7 +774,7 @@ export function executeCommand(
     };
   }
   
-  const parsed = parseCommand(input, state.currentMode);
+  const parsed = parseCommand(cmdToProcess, state.currentMode);
   
   if (!parsed) {
     return { success: true, output: '' };
@@ -776,7 +798,15 @@ export function executeCommand(
   }
   
   // Komut işleyicilerini çağır - use resolved input from parsed command
-  return executeSpecificCommand(state, commandName, parsed.resolvedInput || parsed.rawInput, language);
+  return executeSpecificCommand(
+    state, 
+    commandName, 
+    parsed.resolvedInput || parsed.rawInput, 
+    language,
+    devices,
+    connections,
+    deviceStates
+  );
 }
 
 // Şifre girişi işleme
@@ -826,7 +856,10 @@ function executeSpecificCommand(
   state: SwitchState,
   commandName: string,
   input: string,
-  language: 'tr' | 'en' = 'tr'
+  language: 'tr' | 'en' = 'tr',
+  devices?: any[],
+  connections?: any[],
+  deviceStates?: Map<string, SwitchState>
 ): CommandResult {
   
   switch (commandName) {
@@ -1119,9 +1152,9 @@ function executeSpecificCommand(
     
     // Ping & Trace
     case 'ping':
-      return cmdPing(state, input);
+      return cmdPing(state, input, devices, connections, deviceStates);
     case 'traceroute':
-      return cmdTraceroute(state, input);
+      return cmdTraceroute(state, input, devices, connections, deviceStates);
     case 'telnet':
       return cmdTelnet(state, input);
     case 'ssh':
@@ -3163,26 +3196,81 @@ function cmdDo(state: SwitchState, input: string): CommandResult {
 }
 
 // Ping
-function cmdPing(state: SwitchState, input: string): CommandResult {
+function cmdPing(
+  state: SwitchState, 
+  input: string,
+  devices?: any[],
+  connections?: any[],
+  deviceStates?: Map<string, SwitchState>
+): CommandResult {
   const match = input.match(/^ping\s+(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})/i);
   if (!match) return { success: false, error: '% Invalid IP address' };
   
-  const ip = match[1];
+  const targetIp = match[1];
+  
+  if (devices && connections) {
+    // Find our own device ID
+    const myDeviceId = Array.from(deviceStates?.entries() || [])
+      .find(([_, s]) => s === state)?.[0] || 'switch-1';
+      
+    const result = checkConnectivity(myDeviceId, targetIp, devices, connections, deviceStates);
+    
+    if (result.success) {
+      return {
+        success: true,
+        output: `\nType escape sequence to abort.\nSending 5, 100-byte ICMP Echos to ${targetIp}, timeout is 2 seconds:\n!!!!!\nSuccess rate is 100 percent (5/5), round-trip min/avg/max = 1/2/4 ms`
+      };
+    } else {
+      return {
+        success: true,
+        output: `\nType escape sequence to abort.\nSending 5, 100-byte ICMP Echos to ${targetIp}, timeout is 2 seconds:\n.....\nSuccess rate is 0 percent (0/5)`
+      };
+    }
+  }
+
+  // Fallback for isolated mode
   return {
     success: true,
-    output: `\nType escape sequence to abort.\nSending 5, 100-byte ICMP Echos to ${ip}, timeout is 2 seconds:\n!!!!!\nSuccess rate is 100 percent (5/5), round-trip min/avg/max = 1/2/4 ms`
+    output: `\nType escape sequence to abort.\nSending 5, 100-byte ICMP Echos to ${targetIp}, timeout is 2 seconds:\n!!!!!\nSuccess rate is 100 percent (5/5), round-trip min/avg/max = 1/2/4 ms`
   };
 }
 
 // Traceroute
-function cmdTraceroute(state: SwitchState, input: string): CommandResult {
+function cmdTraceroute(
+  state: SwitchState, 
+  input: string,
+  devices?: any[],
+  connections?: any[],
+  deviceStates?: Map<string, SwitchState>
+): CommandResult {
   const match = input.match(/^traceroute\s+(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})/i);
   if (!match) return { success: false, error: '% Invalid IP address' };
   
-  const ip = match[1];
+  const targetIp = match[1];
+
+  if (devices && connections) {
+    const myDeviceId = Array.from(deviceStates?.entries() || [])
+      .find(([_, s]) => s === state)?.[0] || 'switch-1';
+      
+    const result = checkConnectivity(myDeviceId, targetIp, devices, connections, deviceStates);
+    
+    if (result.success) {
+      let output = `\nType escape sequence to abort.\nTracing the route to ${targetIp}\n\n`;
+      result.hops.forEach((hop, index) => {
+        output += `  ${index + 1} ${hop} 1 msec 1 msec 1 msec\n`;
+      });
+      return { success: true, output };
+    } else {
+      return {
+        success: true,
+        output: `\nType escape sequence to abort.\nTracing the route to ${targetIp}\n\n  1 *  *  * \n  2 *  *  * `
+      };
+    }
+  }
+  
   return {
     success: true,
-    output: `\nType escape sequence to abort.\nTracing the route to ${ip}\n\n  1 192.168.1.1 0 msec 0 msec 0 msec\n  2 ${ip} 1 msec *  1 msec`
+    output: `\nType escape sequence to abort.\nTracing the route to ${targetIp}\n\n  1 192.168.1.1 0 msec 0 msec 0 msec\n  2 ${targetIp} 1 msec *  1 msec`
   };
 }
 

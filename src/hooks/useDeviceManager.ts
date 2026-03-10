@@ -3,7 +3,7 @@ import { SwitchState, CommandResult } from '@/lib/network/types';
 import { createInitialState, createInitialRouterState } from '@/lib/network/initialState';
 import { executeCommand, getPrompt } from '@/lib/network/executor';
 import { TerminalOutput } from '@/components/network/Terminal';
-import { CanvasDevice } from '@/components/network/NetworkTopology';
+import { CanvasDevice, CanvasConnection } from '@/components/network/NetworkTopology';
 
 interface PCOutputLine {
   id: string;
@@ -173,12 +173,13 @@ export function useDeviceManager(language: 'tr' | 'en') {
     topologyDevices: CanvasDevice[] | null,
     setActiveDeviceId: (id: string) => void,
     setActiveDeviceType: (type: 'pc' | 'switch' | 'router') => void,
+    topologyConnections: CanvasConnection[] | null = null,
     skipConfirm = false
   ) => {
     if (command.includes('\n')) {
       const lines = command.split('\n').filter(l => l.trim() !== '');
       for (const line of lines) {
-        await handleCommandForDevice(deviceId, line.trim(), topologyDevices, setActiveDeviceId, setActiveDeviceType, skipConfirm);
+        await handleCommandForDevice(deviceId, line.trim(), topologyDevices, setActiveDeviceId, setActiveDeviceType, topologyConnections, skipConfirm);
       }
       return;
     }
@@ -191,7 +192,14 @@ export function useDeviceManager(language: 'tr' | 'en') {
       const devicePrompt = getPrompt(deviceState);
       const isPasswordMode = deviceState.awaitingPassword;
       
-      const result = executeCommand(deviceState, command, language);
+      const result = executeCommand(
+        deviceState, 
+        command, 
+        language, 
+        topologyDevices || undefined, 
+        topologyConnections || undefined,
+        deviceStatesRef.current
+      );
 
       if (result.requiresConfirmation && !skipConfirm) {
         setIsLoading(false);

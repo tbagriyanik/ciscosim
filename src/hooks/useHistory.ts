@@ -12,6 +12,8 @@ export interface ProjectState {
   cableInfo: CableInfo;
   activeDeviceId: string;
   activeDeviceType: 'pc' | 'switch' | 'router';
+  zoom: number;
+  pan: { x: number; y: number };
 }
 
 export function useHistory(initialState: ProjectState) {
