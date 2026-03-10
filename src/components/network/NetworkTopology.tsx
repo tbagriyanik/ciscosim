@@ -32,6 +32,8 @@ interface NetworkTopologyProps {
   isActive?: boolean;
   activeDeviceId?: string | null;
   deviceStates?: Map<string, SwitchState>;
+  isFullscreen?: boolean;
+  onFullscreenChange?: (isFullscreen: boolean) => void;
 }
 
 // Device types for the canvas
@@ -121,6 +123,8 @@ export function NetworkTopology({
   isActive = true,
   activeDeviceId,
   deviceStates,
+  isFullscreen: isFullscreenProp,
+  onFullscreenChange,
 }: NetworkTopologyProps) {
   const { language } = useLanguage();
   const { theme } = useTheme();
@@ -295,7 +299,14 @@ export function NetworkTopology({
 
   // UI state
   const [isPaletteOpen, setIsPaletteOpen] = useState(false);
-  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(isFullscreenProp || false);
+
+  // Sync with prop
+  useEffect(() => {
+    if (isFullscreenProp !== undefined) {
+      setIsFullscreen(isFullscreenProp);
+    }
+  }, [isFullscreenProp]);
 
   // Touch/Mobile state
   const isMobile = useIsMobile();

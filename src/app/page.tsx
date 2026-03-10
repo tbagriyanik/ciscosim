@@ -45,7 +45,7 @@ import {
 import { TaskCard } from '@/components/network/TaskCard';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { ChevronDown, Menu, Plus, Save, FolderOpen, Languages, Sun, Moon, Laptop, Monitor, Network, ShieldCheck, Database, Info, File, Layers, Terminal as TerminalIcon } from "lucide-react";
+import { ChevronDown, Menu, Plus, Save, FolderOpen, Languages, Sun, Moon, Laptop, Monitor, Network, ShieldCheck, Database, Info, File, Layers, Terminal as TerminalIcon, Undo2, Redo2 } from "lucide-react";
 
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -148,6 +148,8 @@ const ALL_TABS: TabDefinition[] = [
   },
 ];
 
+import { useHistory, ProjectState } from '@/hooks/useHistory';
+
 export default function Home() {
   const { t, language, setLanguage } = useLanguage();
   const { theme, toggleTheme } = useTheme();
@@ -168,6 +170,70 @@ export default function Home() {
     handleCommandForDevice,
     resetAll
   } = useDeviceManager(language);
+
+  // Get current state helper
+  const getCurrentState = useCallback((): ProjectState => ({
+    topologyDevices: JSON.parse(JSON.stringify(topologyDevices)),
+    topologyConnections: JSON.parse(JSON.stringify(topologyConnections)),
+    deviceStates: new Map(deviceStates),
+    deviceOutputs: new Map(deviceOutputs),
+    pcOutputs: new Map(pcOutputs),
+    cableInfo: { ...cableInfo },
+    activeDeviceId,
+    activeDeviceType
+  }), [topologyDevices, topologyConnections, deviceStates, deviceOutputs, pcOutputs, cableInfo, activeDeviceId, activeDeviceType]);
+
+  const { pushState, undo, redo, canUndo, canRedo, resetHistory } = useHistory(getCurrentState());
+
+  // Handle undo/redo execution
+  const applyProjectState = useCallback((state: ProjectState) => {
+    // We use functional updates to ensure we're using latest state and prevent loops if possible
+    // but here we just want to set EVERYTHING at once.
+    setTopologyDevices(state.topologyDevices);
+    setTopologyConnections(state.topologyConnections);
+    setDeviceStates(new Map(state.deviceStates));
+    setDeviceOutputs(new Map(state.deviceOutputs));
+    setPcOutputs(new Map(state.pcOutputs));
+    setCableInfo(state.cableInfo);
+    setActiveDeviceId(state.activeDeviceId);
+    setActiveDeviceType(state.activeDeviceType);
+    setTopologyKey(prev => prev + 1); // Force remount
+  }, [setTopologyDevices, setTopologyConnections, setDeviceStates, setDeviceOutputs, setPcOutputs, setCableInfo, setActiveDeviceId, setActiveDeviceType, setTopologyKey]);
+
+  const handleUndo = useCallback(() => {
+    const prevState = undo();
+    if (prevState) applyProjectState(prevState);
+  }, [undo, applyProjectState]);
+
+  const handleRedo = useCallback(() => {
+    const nextState = redo();
+    if (nextState) applyProjectState(nextState);
+  }, [redo, applyProjectState]);
+
+  // Track changes and push to history
+  // We need to debouncing this or use a ref to track if we're in the middle of an undo/redo
+  const lastPushedStateRef = useRef<string>('');
+  
+  useEffect(() => {
+    if (isAppLoading) return;
+    
+    const currentState = getCurrentState();
+    const stateString = JSON.stringify({
+      t: currentState.topologyDevices,
+      c: currentState.topologyConnections,
+      s: Array.from(currentState.deviceStates.keys()), // Just check keys and size for simplicity or deep check
+      id: currentState.activeDeviceId
+    });
+
+    if (stateString !== lastPushedStateRef.current) {
+      // Debounce history pushes
+      const timer = setTimeout(() => {
+        pushState(currentState);
+        lastPushedStateRef.current = stateString;
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [topologyDevices, topologyConnections, deviceStates, activeDeviceId, isAppLoading, pushState, getCurrentState]);
 
   // Currently active device in terminal
   const [activeDeviceId, setActiveDeviceId] = useState<string>('switch-1');
@@ -374,6 +440,24 @@ export default function Home() {
       // Increment topology key to force remount
       setTopologyKey(prev => prev + 1);
       setHasUnsavedChanges(false);
+
+      // Reset history with the loaded state
+      resetHistory({
+        topologyDevices: projectData.topology?.devices || [],
+        topologyConnections: projectData.topology?.connections || [],
+        deviceStates: new Map(projectData.devices?.map((item: any) => [item.id, item.state]) || []),
+        deviceOutputs: new Map(projectData.deviceOutputs?.map((item: any) => [item.id, item.outputs]) || []),
+        pcOutputs: new Map(projectData.pcOutputs?.map((item: any) => [item.id, item.outputs]) || []),
+        cableInfo: projectData.cableInfo || {
+          connected: true,
+          cableType: 'straight',
+          sourceDevice: 'pc',
+          targetDevice: 'switch',
+        },
+        activeDeviceId: projectData.activeDeviceId || 'switch-1',
+        activeDeviceType: projectData.activeDeviceType || 'switch'
+      });
+
       return true;
     } catch (error) {
       console.error("Error loading project data", error);
@@ -857,6 +941,53 @@ export default function Home() {
       
       // Increment key to force NetworkTopology remount
       setTopologyKey(prev => prev + 1);
+      
+      // Reset history with the new initial state
+      resetHistory({
+        topologyDevices: [
+          {
+            id: 'pc-1',
+            type: 'pc',
+            name: 'PC-1',
+            x: 50,
+            y: 50,
+            ip: '192.168.1.10',
+            macAddress: '00e0.f701.a1b1',
+            status: 'offline',
+            ports: [
+              { id: 'eth0', label: 'Eth0', status: 'disconnected' },
+              { id: 'com1', label: 'COM1', status: 'disconnected' }
+            ]
+          },
+          {
+            id: 'switch-1',
+            type: 'switch',
+            name: 'SWITCH-1',
+            x: 200,
+            y: 50,
+            macAddress: '0011.2233.4401',
+            status: 'offline',
+            ports: [
+              { id: 'console', label: 'Console', status: 'disconnected' },
+              ...Array.from({ length: 24 }, (_, i) => ({ id: `fa0/${i + 1}`, label: `Fa0/${i + 1}`, status: 'disconnected' })),
+              { id: 'gi0/1', label: 'Gi0/1', status: 'disconnected' },
+              { id: 'gi0/2', label: 'Gi0/2', status: 'disconnected' }
+            ]
+          }
+        ],
+        topologyConnections: [],
+        deviceStates: new Map(),
+        deviceOutputs: new Map(),
+        pcOutputs: new Map(),
+        cableInfo: {
+          connected: true,
+          cableType: 'straight',
+          sourceDevice: 'pc',
+          targetDevice: 'switch',
+        },
+        activeDeviceId: 'switch-1',
+        activeDeviceType: 'switch'
+      });
     };
 
     if (hasUnsavedChanges) {
@@ -889,6 +1020,7 @@ export default function Home() {
   }, [language, hasUnsavedChanges, handleSaveProject, setDeviceStates, setDeviceOutputs, setTopologyDevices, setTopologyConnections, setActiveDeviceId, setActiveDeviceType, setActiveTab, setHasUnsavedChanges, setTopologyKey, setSaveDialog, setConfirmDialog]);
 
   function handleNewProject() {
+    if (isTopologyFullscreen) return; // Prevent new project in fullscreen
     handleNewProjectInternal();
   }
   
@@ -999,6 +1131,14 @@ export default function Home() {
       // Ctrl Shortcuts
       if (e.ctrlKey || e.metaKey) {
         const key = e.key.toLowerCase();
+        if (key === 'z') {
+          e.preventDefault();
+          handleUndo();
+        }
+        if (key === 'y') {
+          e.preventDefault();
+          handleRedo();
+        }
         if (key === 's') {
           e.preventDefault();
           handleSaveProject();
@@ -1059,7 +1199,7 @@ export default function Home() {
     event.target.value = '';
   }, [language, loadProjectData, setHasUnsavedChanges]);
 
-  const isDark = theme === 'dark';
+  const [isTopologyFullscreen, setIsTopologyFullscreen] = useState(false);
 
   // Derive visible tabs based on current state
   const tabs = ALL_TABS.filter(tab => {
@@ -1072,6 +1212,8 @@ export default function Home() {
     ...tab,
     label: t[tab.labelKey] as string
   }));
+
+  const isDark = theme === 'dark';
 
   return (
     <div className={`min-h-screen flex flex-col ${isAppLoading ? 'bg-slate-950 overflow-hidden' : (isDark ? 'bg-slate-950' : 'bg-slate-50')} transition-colors duration-700`}>
@@ -1185,6 +1327,13 @@ export default function Home() {
             <div className="flex items-center gap-1">
               {/* Project Group */}
               <div className={`hidden md:flex items-center px-1.5 py-1 rounded-xl border ${isDark ? 'bg-slate-800/40 border-slate-800' : 'bg-slate-100 border-slate-200'}`}>
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleUndo} disabled={!canUndo} title={language === 'tr' ? 'Geri Al (Ctrl+Z)' : 'Undo (Ctrl+Z)'}>
+                  <Undo2 className={`w-4 h-4 ${!canUndo ? 'opacity-30' : ''}`} />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleRedo} disabled={!canRedo} title={language === 'tr' ? 'İleri Al (Ctrl+Y)' : 'Redo (Ctrl+Y)'}>
+                  <Redo2 className={`w-4 h-4 ${!canRedo ? 'opacity-30' : ''}`} />
+                </Button>
+                <div className={`w-px h-4 mx-1 ${isDark ? 'bg-slate-700' : 'bg-slate-300'}`} />
                 <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleNewProject} title={language === 'tr' ? 'Yeni Proje' : 'New Project'}>
                   <File className="w-4 h-4" />
                 </Button>
@@ -1519,6 +1668,8 @@ export default function Home() {
                 isActive={activeTab === 'topology'}
                 activeDeviceId={activeDeviceId}
                 deviceStates={deviceStates}
+                isFullscreen={isTopologyFullscreen}
+                onFullscreenChange={setIsTopologyFullscreen}
               />
             </div>
           </div>
