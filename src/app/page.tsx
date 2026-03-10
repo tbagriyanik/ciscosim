@@ -1153,11 +1153,15 @@ export default function Home() {
         const key = e.key.toLowerCase();
         if (key === 'z') {
           e.preventDefault();
-          handleUndo();
+          if (activeTab === 'topology') {
+            handleUndo();
+          }
         }
         if (key === 'y') {
           e.preventDefault();
-          handleRedo();
+          if (activeTab === 'topology') {
+            handleRedo();
+          }
         }
         if (key === 's') {
           e.preventDefault();
@@ -1196,7 +1200,7 @@ export default function Home() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [showActiveDeviceDropdown, showMobileMenu, confirmDialog, saveDialog, showPCPanel, handleSaveProject, handleNewProject, setShowActiveDeviceDropdown, setShowMobileMenu, setConfirmDialog, setSaveDialog, setShowPCPanel, isTopologyFullscreen]);
+  }, [showActiveDeviceDropdown, showMobileMenu, confirmDialog, saveDialog, showPCPanel, handleSaveProject, handleNewProject, setShowActiveDeviceDropdown, setShowMobileMenu, setConfirmDialog, setSaveDialog, setShowPCPanel, isTopologyFullscreen, activeTab]);
 
   // Load project from JSON file
   const handleLoadProject = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
@@ -1347,11 +1351,11 @@ export default function Home() {
             <div className="flex items-center gap-1">
               {/* Project Group */}
               <div className={`hidden md:flex items-center px-1.5 py-1 rounded-xl border ${isDark ? 'bg-slate-800/40 border-slate-800' : 'bg-slate-100 border-slate-200'}`}>
-                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleUndo} disabled={!canUndo} title={language === 'tr' ? 'Geri Al (Ctrl+Z)' : 'Undo (Ctrl+Z)'}>
-                  <Undo2 className={`w-4 h-4 ${!canUndo ? 'opacity-30' : ''}`} />
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleUndo} disabled={activeTab !== 'topology' || !canUndo} title={language === 'tr' ? 'Geri Al (Ctrl+Z)' : 'Undo (Ctrl+Z)'}>
+                  <Undo2 className={`w-4 h-4 ${activeTab !== 'topology' || !canUndo ? 'opacity-30' : ''}`} />
                 </Button>
-                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleRedo} disabled={!canRedo} title={language === 'tr' ? 'İleri Al (Ctrl+Y)' : 'Redo (Ctrl+Y)'}>
-                  <Redo2 className={`w-4 h-4 ${!canRedo ? 'opacity-30' : ''}`} />
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleRedo} disabled={activeTab !== 'topology' || !canRedo} title={language === 'tr' ? 'İleri Al (Ctrl+Y)' : 'Redo (Ctrl+Y)'}>
+                  <Redo2 className={`w-4 h-4 ${activeTab !== 'topology' || !canRedo ? 'opacity-30' : ''}`} />
                 </Button>
                 <div className={`w-px h-4 mx-1 ${isDark ? 'bg-slate-700' : 'bg-slate-300'}`} />
                 <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleNewProject} title={language === 'tr' ? 'Yeni Proje' : 'New Project'}>
