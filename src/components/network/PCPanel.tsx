@@ -242,7 +242,7 @@ export function PCPanel({
             addLocalOutput('output', `Tracing route to ${target} over a maximum of 30 hops:\n\n  1    *        *        *     Request timed out.\n\nTrace complete.`);
           }
         }
- else if (cmd === 'nslookup') {
+      } else if (cmd === 'nslookup') {
         const target = args[0] || 'example.com';
         addLocalOutput('output', `Server:  public-dns.example.com\nAddress:  8.8.8.8\n\nNon-authoritative answer:\nName:    ${target}\nAddresses:  93.184.216.34`);
       } else if (cmd === 'arp') {
