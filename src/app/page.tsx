@@ -260,12 +260,6 @@ export default function Home() {
   const output = getOrCreateDeviceOutputs(activeDeviceId);
 
   const [activeTab, setActiveTab] = useState<TabType>('topology');
-  const [cableInfo, setCableInfo] = useState<CableInfo>({
-    connected: true,
-    cableType: 'straight',
-    sourceDevice: 'pc',
-    targetDevice: 'switch',
-  });
 
   // Task context for task calculations
   const taskContext: TaskContext = {
