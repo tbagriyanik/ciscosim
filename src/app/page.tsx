@@ -293,9 +293,6 @@ export default function Home() {
     onConfirm: (save: boolean) => void;
   } | null>(null);
 
-  // Topology reset key - changes when creating new project to force component remount
-  const [topologyKey, setTopologyKey] = useState(0);
-
   // UI state for dropdowns
   const [showAboutModal, setShowAboutModal] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
