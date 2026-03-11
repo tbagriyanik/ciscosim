@@ -78,6 +78,7 @@ export interface CanvasNote {
   color: string;
   font: string;
   fontSize: 10 | 12 | 16;
+  opacity: 0.5 | 0.75 | 1;
 }
 
 // Drag item from palette
@@ -141,14 +142,22 @@ const NOTE_COLORS = [
   '#F2B4C3',
   '#D7D0D0'
 ];
-const NOTE_FONTS = [
+const NOTE_FONTS_DESKTOP = [
   'Roboto',
   'Impact',
   'Verdana',
   'Trebuchet MS',
   'Courier New'
 ];
+const NOTE_FONTS_MOBILE = [
+  'Roboto',
+  'Verdana',
+  'Trebuchet MS',
+  'Courier New',
+  'Arial'
+];
 const NOTE_FONT_SIZES: Array<CanvasNote['fontSize']> = [10, 12, 16];
+const NOTE_OPACITY: Array<CanvasNote['opacity']> = [0.5, 0.75, 1];
 
 export function NetworkTopology({
   cableInfo,
@@ -263,8 +272,9 @@ export function NetworkTopology({
         width: n.width || NOTE_DEFAULT_WIDTH,
         height: n.height || NOTE_DEFAULT_HEIGHT,
         color: n.color || NOTE_COLORS[0],
-        font: n.font || NOTE_FONTS[0],
-        fontSize: n.fontSize || 12
+        font: n.font || noteFonts[0],
+        fontSize: n.fontSize || 12,
+        opacity: n.opacity || 1
       })));
     }
   }, [initialNotes]);
@@ -417,6 +427,7 @@ export function NetworkTopology({
 
   // Touch/Mobile state
   const isMobile = useIsMobile();
+  const noteFonts = isMobile ? NOTE_FONTS_MOBILE : NOTE_FONTS_DESKTOP;
   const [isTouchDragging, setIsTouchDragging] = useState(false);
   const [touchDraggedDevice, setTouchDraggedDevice] = useState<string | null>(null);
   const [touchDragStartPos, setTouchDragStartPos] = useState<{ x: number; y: number } | null>(null);
@@ -669,7 +680,7 @@ export function NetworkTopology({
   ) => {
     // Estimate menu dimensions (approximate)
     const menuWidth = 220;
-    const menuHeight = deviceId ? 360 : noteId ? 320 : 200; // Device menu is taller
+    const menuHeight = deviceId ? 240 : noteId ? 320 : 180;
 
     // Clamp coordinates to stay within viewport
     let x = clientX;
@@ -710,14 +721,14 @@ export function NetworkTopology({
       // Right click on canvas - show context menu
       e.preventDefault();
       openContextMenu(e.clientX, e.clientY, null, null, 'canvas');
-      } else if (e.button === 0 && !(e.target as HTMLElement).closest('[data-device-id], [data-note-id], [data-note-drag-handle]')) {
-        setIsPanning(true);
-        setPanStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
-        setSelectedDeviceIds([]);
-        setSelectedNoteIds([]);
-        setContextMenu(null);
-        setSelectAllMode(false);
-      }
+    } else if (e.button === 0 && !(e.target as HTMLElement).closest('[data-device-id], [data-note-id], [data-note-drag-handle]')) {
+      setIsPanning(true);
+      setPanStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
+      setSelectedDeviceIds([]);
+      setSelectedNoteIds([]);
+      setContextMenu(null);
+      setSelectAllMode(false);
+    }
   }, [pan]);
 
   // Handle mouse move for panning and dragging
@@ -1125,6 +1136,28 @@ export function NetworkTopology({
     }
   }, [getNoteTextarea]);
 
+  const handleNoteTextCut = useCallback(async (noteId: string) => {
+    const el = getNoteTextarea(noteId);
+    if (!el) return;
+    el.focus();
+    const start = el.selectionStart ?? 0;
+    const end = el.selectionEnd ?? 0;
+    const text = start !== end ? el.value.slice(start, end) : el.value;
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      document.execCommand('copy');
+    }
+    if (start !== end) {
+      const next = el.value.slice(0, start) + el.value.slice(end);
+      el.value = next;
+      el.setSelectionRange(start, start);
+      updateNoteText(noteId, el.value);
+    } else {
+      updateNoteText(noteId, '');
+    }
+  }, [getNoteTextarea, updateNoteText]);
+
   const handleNoteTextPaste = useCallback(async (noteId: string) => {
     const el = getNoteTextarea(noteId);
     if (!el) return;
@@ -1167,7 +1200,7 @@ export function NetworkTopology({
     }
   }, [saveToHistory, onTopologyChange, devices, connections]);
 
-  const updateNoteStyle = useCallback((noteId: string, patch: Partial<Pick<CanvasNote, 'color' | 'font' | 'fontSize'>>) => {
+  const updateNoteStyle = useCallback((noteId: string, patch: Partial<Pick<CanvasNote, 'color' | 'font' | 'fontSize' | 'opacity'>>) => {
     const nextNotes = notes.map(n => (n.id === noteId ? { ...n, ...patch } : n));
     commitNotesChange(nextNotes);
   }, [notes, commitNotesChange]);
@@ -1502,7 +1535,7 @@ export function NetworkTopology({
     if (port.status === 'connected') {
       // Port is already in use - cannot connect
       if (isDrawingConnection) {
-        setConnectionError(language === 'tr' ? 'Bu port zaten kullanımda!' : 'This port is already in use!');
+        setConnectionError(language === 'tr' ? 'Bu port zaten kullanÄ±mda!' : 'This port is already in use!');
         setTimeout(() => setConnectionError(null), 3000);
         setIsDrawingConnection(false);
         setConnectionStart(null);
@@ -1515,7 +1548,7 @@ export function NetworkTopology({
       if (connectionStart.deviceId === deviceId) {
         // Show error message - cannot connect device to itself
         const errorMsg = language === 'tr'
-          ? 'Bir cihaz kendisine bağlanamaz!'
+          ? 'Bir cihaz kendisine baÄŸlanamaz!'
           : 'A device cannot connect to itself!';
         setConnectionError(errorMsg);
         setTimeout(() => setConnectionError(null), 3000);
@@ -1632,8 +1665,9 @@ export function NetworkTopology({
       width: NOTE_DEFAULT_WIDTH,
       height: NOTE_DEFAULT_HEIGHT,
       color: NOTE_COLORS[0],
-      font: NOTE_FONTS[0],
+      font: noteFonts[0],
       fontSize: 12,
+      opacity: 1,
     };
 
     const updatedNotes = [...notes, newNote];
@@ -1641,7 +1675,7 @@ export function NetworkTopology({
     if (onTopologyChange) {
       onTopologyChange(devices, connections, updatedNotes);
     }
-  }, [devices, connections, notes, pan, zoom, language, onTopologyChange, saveToHistory, getCanvasDimensions]);
+  }, [devices, connections, notes, pan, zoom, language, onTopologyChange, saveToHistory, getCanvasDimensions, noteFonts]);
 
   // Add device from palette button
   const addDevice = useCallback((type: 'pc' | 'switch' | 'router') => {
@@ -2308,7 +2342,7 @@ export function NetworkTopology({
               textAnchor="middle"
               className="pointer-events-none select-none"
             >
-              {conn.sourcePort} ↔ {conn.targetPort}
+              {conn.sourcePort} â†” {conn.targetPort}
             </text>
             <text
               x={midX + perpX}
@@ -2318,7 +2352,7 @@ export function NetworkTopology({
               textAnchor="middle"
               className="pointer-events-none select-none"
             >
-              {conn.sourcePort} ↔ {conn.targetPort}
+              {conn.sourcePort} â†” {conn.targetPort}
             </text>
           </>
         ) : (
@@ -2334,7 +2368,7 @@ export function NetworkTopology({
               textAnchor="middle"
               className="pointer-events-none select-none"
             >
-              {conn.sourcePort} ↔ {conn.targetPort}
+              {conn.sourcePort} â†” {conn.targetPort}
             </text>
             <text
               x={midX}
@@ -2344,7 +2378,7 @@ export function NetworkTopology({
               textAnchor="middle"
               className="pointer-events-none select-none"
             >
-              {conn.sourcePort} ↔ {conn.targetPort}
+              {conn.sourcePort} â†” {conn.targetPort}
             </text>
           </>
         )}
@@ -2578,7 +2612,7 @@ export function NetworkTopology({
         {device.type === 'pc' ? (
           // PC has Eth0 and COM1 ports, show side by side
           device.ports.map((port, idx) => {
-            // İki portu yan yana göster
+            // ï¿½ki portu yan yana gï¿½ster
             const portSpacing = 18;
             const startX = deviceWidth / 2 - (device.ports.length > 1 ? portSpacing / 2 : 0);
             const portX = startX + idx * portSpacing;
@@ -2799,9 +2833,9 @@ export function NetworkTopology({
               >
                 <div className={`w-2.5 h-2.5 rounded-full ${CABLE_COLORS[type].bg}`} />
                 {type === 'straight'
-                  ? language === 'tr' ? 'Düz' : 'Str'
+                  ? language === 'tr' ? 'Dï¿½z' : 'Str'
                   : type === 'crossover'
-                    ? language === 'tr' ? 'Çap' : 'Cro'
+                    ? language === 'tr' ? 'ï¿½ap' : 'Cro'
                     : language === 'tr' ? 'Kon' : 'Con'}
               </button>
             ))}
@@ -2837,9 +2871,9 @@ export function NetworkTopology({
           <div className={`w-4 h-4 rounded ${CABLE_COLORS[cableInfo.cableType].bg}`} />
           <span className="text-xs text-slate-300">
             {cableInfo.cableType === 'straight'
-              ? language === 'tr' ? 'Düz' : 'Straight'
+              ? language === 'tr' ? 'Dï¿½z' : 'Straight'
               : cableInfo.cableType === 'crossover'
-                ? language === 'tr' ? 'Çapraz' : 'X-over'
+                ? language === 'tr' ? 'ï¿½apraz' : 'X-over'
                 : language === 'tr' ? 'Konsol' : 'Console'}
           </span>
         </button>
@@ -2861,7 +2895,7 @@ export function NetworkTopology({
             })}
             className="flex items-center justify-center w-10 h-10 rounded hover:bg-slate-700 text-slate-300"
           >
-            −
+            âˆ’
           </button>
           <span className="text-xs font-mono w-10 text-center text-slate-300">
             {Math.round(zoom * 100)}%
@@ -2958,8 +2992,8 @@ export function NetworkTopology({
                     >
                       <div className={`w-2.5 h-2.5 rounded-full ${CABLE_COLORS[type].bg}`} />
                       <span className="text-[10px] font-bold">
-                        {type === 'straight' ? (language === 'tr' ? 'Düz' : 'Str') :
-                          type === 'crossover' ? (language === 'tr' ? 'Çap' : 'Cro') :
+                        {type === 'straight' ? (language === 'tr' ? 'Dï¿½z' : 'Str') :
+                          type === 'crossover' ? (language === 'tr' ? 'ï¿½ap' : 'Cro') :
                             (language === 'tr' ? 'Kon' : 'Con')}
                       </span>
                     </button>
@@ -3022,7 +3056,7 @@ export function NetworkTopology({
                   onClick={() => setZoom(z => Math.max(MIN_ZOOM, z - 0.25))}
                   className={`w-7 h-7 flex items-center justify-center rounded-lg ${isDark ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-slate-100 text-slate-600'}`}
                 >
-                  <span className="text-lg font-bold">−</span>
+                  <span className="text-lg font-bold">âˆ’</span>
                 </button>
                 <button
                   onClick={() => setZoom(z => Math.min(MAX_ZOOM, z + 0.25))}
@@ -3317,70 +3351,70 @@ export function NetworkTopology({
                       data-note-id={note.id}
                       className="pointer-events-none"
                     >
-                    <div
-                      className={`pointer-events-auto relative flex flex-col w-full h-full rounded-lg shadow-lg border ${isDark
-                        ? 'border-amber-300/60 text-slate-900'
-                        : 'border-yellow-200 text-slate-800'
-                        } ${selectedNoteIds.includes(note.id) ? 'ring-2 ring-emerald-400/70' : ''}`}
-                      data-note-id={note.id}
-                      style={{ backgroundColor: note.color, fontFamily: note.font }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (e.shiftKey) {
-                          setSelectedNoteIds(prev => prev.includes(note.id) ? prev.filter(id => id !== note.id) : [...prev, note.id]);
-                        } else {
-                          setSelectedNoteIds([note.id]);
-                          setSelectedDeviceIds([]);
-                        }
-                      }}
-                      onContextMenu={(e) => handleNoteContextMenu(e as unknown as ReactMouseEvent, note.id, 'note-edit')}
-                    >
                       <div
-                        data-note-drag-handle
-                        onMouseDown={(e) => handleNoteMouseDown(e as unknown as ReactMouseEvent, note.id)}
-                        onContextMenu={(e) => handleNoteContextMenu(e as unknown as ReactMouseEvent, note.id, 'note-style')}
-                        className={`flex items-center justify-between px-2 text-[10px] font-semibold uppercase tracking-widest cursor-move select-none ${isDark ? 'bg-black/10' : 'bg-black/5'
-                          }`}
-                        style={{ height: NOTE_HEADER_HEIGHT }}
+                        className={`pointer-events-auto relative flex flex-col w-full h-full rounded-lg shadow-lg border ${isDark
+                          ? 'border-amber-300/60 text-slate-900'
+                          : 'border-yellow-200 text-slate-800'
+                          } ${selectedNoteIds.includes(note.id) ? 'ring-2 ring-emerald-400/70' : ''}`}
+                        data-note-id={note.id}
+                        style={{ backgroundColor: note.color, fontFamily: note.font, opacity: note.opacity }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (e.shiftKey) {
+                            setSelectedNoteIds(prev => prev.includes(note.id) ? prev.filter(id => id !== note.id) : [...prev, note.id]);
+                          } else {
+                            setSelectedNoteIds([note.id]);
+                            setSelectedDeviceIds([]);
+                          }
+                        }}
+                        onContextMenu={(e) => handleNoteContextMenu(e as unknown as ReactMouseEvent, note.id, 'note-edit')}
                       >
-                        <span />
-                        <button
-                          onClick={(e) => {
+                        <div
+                          data-note-drag-handle
+                          onMouseDown={(e) => handleNoteMouseDown(e as unknown as ReactMouseEvent, note.id)}
+                          onContextMenu={(e) => handleNoteContextMenu(e as unknown as ReactMouseEvent, note.id, 'note-style')}
+                          className={`flex items-center justify-between px-2 text-[10px] font-semibold uppercase tracking-widest cursor-move select-none ${isDark ? 'bg-black/10' : 'bg-black/5'
+                            }`}
+                          style={{ height: NOTE_HEADER_HEIGHT }}
+                        >
+                          <span />
+                          <button
+                            onClick={(e) => {
                               e.stopPropagation();
                               deleteNote(note.id);
                             }}
                             className="px-1.5 py-0.5 rounded hover:bg-black/10"
                             title={language === 'tr' ? 'Sil' : 'Delete'}
                           >
-                            ×
+                            Ã—
                           </button>
                         </div>
-                      <textarea
-                        ref={(el) => { noteTextareaRefs.current[note.id] = el; }}
-                        data-note-textarea
-                        value={note.text}
-                        onChange={(e) => updateNoteText(note.id, e.target.value)}
-                        onBlur={() => {
-                          saveToHistory();
-                          if (onTopologyChange) {
-                            onTopologyChange(devices, connections, notes);
-                          }
-                        }}
-                        className="flex-1 px-2 py-1 bg-transparent outline-none resize-none"
-                        style={{ fontSize: note.fontSize, height: note.height - NOTE_HEADER_HEIGHT - 6 }}
-                      />
-                      <div
-                        className="absolute right-1 bottom-1 w-4 h-4 cursor-se-resize"
-                        onMouseDown={(e) => handleNoteResizeStart(e as unknown as ReactMouseEvent, note.id)}
-                        title={language === 'tr' ? 'Boyutu Değiştir' : 'Resize'}
-                      >
-                        <svg viewBox="0 0 12 12" className="w-full h-full text-black/50">
-                          <path d="M4 12 L12 4" stroke="currentColor" strokeWidth="1" />
-                          <path d="M7 12 L12 7" stroke="currentColor" strokeWidth="1" />
-                          <path d="M10 12 L12 10" stroke="currentColor" strokeWidth="1" />
-                        </svg>
+                        <textarea
+                          ref={(el) => { noteTextareaRefs.current[note.id] = el; }}
+                          data-note-textarea
+                          value={note.text}
+                          onChange={(e) => updateNoteText(note.id, e.target.value)}
+                          onBlur={() => {
+                            saveToHistory();
+                            if (onTopologyChange) {
+                              onTopologyChange(devices, connections, notes);
+                            }
+                          }}
+                          className="flex-1 px-2 py-1 bg-transparent outline-none resize-none"
+                          style={{ fontSize: note.fontSize, height: note.height - NOTE_HEADER_HEIGHT - 6 }}
+                        />
+                        <div
+                          className="absolute right-1 bottom-1 w-4 h-4 cursor-se-resize"
+                          onMouseDown={(e) => handleNoteResizeStart(e as unknown as ReactMouseEvent, note.id)}
+                          title={language === 'tr' ? 'Boyutu Değiştir' : 'Resize'}
+                        >
+                          <svg viewBox="0 0 12 12" className="w-full h-full text-black/50">
+                            <path d="M4 12 L12 4" stroke="currentColor" strokeWidth="1" />
+                            <path d="M7 12 L12 7" stroke="currentColor" strokeWidth="1" />
+                            <path d="M10 12 L12 10" stroke="currentColor" strokeWidth="1" />
+                          </svg>
+                        </div>
                       </div>
-                    </div>
                     </foreignObject>
                   ))}
 
@@ -3494,7 +3528,7 @@ export function NetworkTopology({
                   fontSize={12 / zoom}
                   fontFamily="monospace"
                 >
-                  {getCanvasDimensions().width} × {getCanvasDimensions().height}
+                  {getCanvasDimensions().width} Ã— {getCanvasDimensions().height}
                 </text>
               </g>
             </svg>
@@ -3521,7 +3555,7 @@ export function NetworkTopology({
               className={`w-7 h-7 flex items-center justify-center rounded ${isDark ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-slate-100 text-slate-600'
                 }`}
             >
-              −
+              âˆ’
             </button>
             <span className={`text-xs font-mono w-12 text-center ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
               {Math.round(zoom * 100)}%
@@ -3565,7 +3599,7 @@ export function NetworkTopology({
               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
               </svg>
-              {isFullscreen ? (language === 'tr' ? 'Küçült' : 'Exit') : (language === 'tr' ? 'Tam Ekran' : 'Full Screen')}
+              {isFullscreen ? (language === 'tr' ? 'KÃ¼Ã§Ã¼lt' : 'Exit') : (language === 'tr' ? 'Tam Ekran' : 'Full Screen')}
             </button>
           </div>
 
@@ -3617,7 +3651,7 @@ export function NetworkTopology({
                   width={note.width}
                   height={note.height}
                   fill={note.color}
-                  opacity={0.7}
+                  opacity={note.opacity}
                 />
               ))}
               {/* Viewport indicator */}
@@ -3638,7 +3672,7 @@ export function NetworkTopology({
             className={`absolute bottom-2 right-2 text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-400'} max-w-48 text-right hidden sm:block`}
           >
             {language === 'tr'
-              ? 'Tek tık: seç, Çift tık: terminal, Sürükle: taşı'
+              ? 'Tek tık: seç, Çift tık: terminal, Sürükleyin: taşın'
               : 'Click: select, Double-click: terminal, Drag: move'}
           </div>
 
@@ -3647,7 +3681,7 @@ export function NetworkTopology({
             className={`absolute bottom-2 right-2 text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-400'} max-w-48 text-right sm:hidden`}
           >
             {language === 'tr'
-              ? 'Dokun: seç, Çift dokun: terminal, Sürükle: taşı, Basılı tut: sil'
+              ? 'Dokun: seç, Çift dokun: terminal, Sürükleyin: taşın, Basılı tut: sil'
               : 'Tap: select, Double-tap: terminal, Drag: move, Long-press: delete'}
           </div>
         </div>
@@ -3695,7 +3729,7 @@ export function NetworkTopology({
                   {language === 'tr' ? 'Yazı Tipi' : 'Font'}
                 </div>
                 <div className="grid grid-cols-1 gap-1">
-                  {NOTE_FONTS.map((f) => (
+                  {noteFonts.map((f) => (
                     <button
                       key={f}
                       onClick={() => updateNoteStyle(contextMenu.noteId!, { font: f })}
@@ -3724,11 +3758,36 @@ export function NetworkTopology({
                   ))}
                 </div>
               </div>
+
+              <div className="space-y-1">
+                <div className="text-[10px] uppercase tracking-widest text-slate-500">
+                  {language === 'tr' ? 'Saydamlık' : 'Opacity'}
+                </div>
+                <div className="flex gap-1">
+                  {NOTE_OPACITY.map((o) => (
+                    <button
+                      key={o}
+                      onClick={() => updateNoteStyle(contextMenu.noteId!, { opacity: o })}
+                      className={`px-2 py-1 rounded text-[11px] ${isDark ? 'hover:bg-slate-700 text-slate-200' : 'hover:bg-slate-100 text-slate-700'}`}
+                    >
+                      {Math.round(o * 100)}%
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
-
           {contextMenu.noteId && contextMenu.mode === 'note-edit' && (
             <div className="px-2 py-2 space-y-1">
+              <button
+                onClick={() => {
+                  handleNoteTextCut(contextMenu.noteId!);
+                  setContextMenu(null);
+                }}
+                className={`w-full px-2 py-1.5 text-xs text-left ${isDark ? 'hover:bg-slate-700 text-slate-200' : 'hover:bg-slate-100 text-slate-700'}`}
+              >
+                {language === 'tr' ? 'Kes' : 'Cut'}
+              </button>
               <button
                 onClick={() => {
                   handleNoteTextCopy(contextMenu.noteId!);
@@ -3749,15 +3808,6 @@ export function NetworkTopology({
               </button>
               <button
                 onClick={() => {
-                  handleNoteTextSelectAll(contextMenu.noteId!);
-                  setContextMenu(null);
-                }}
-                className={`w-full px-2 py-1.5 text-xs text-left ${isDark ? 'hover:bg-slate-700 text-slate-200' : 'hover:bg-slate-100 text-slate-700'}`}
-              >
-                {language === 'tr' ? 'Tümünü Seç' : 'Select All'}
-              </button>
-              <button
-                onClick={() => {
                   handleNoteTextDelete(contextMenu.noteId!);
                   setContextMenu(null);
                 }}
@@ -3765,188 +3815,73 @@ export function NetworkTopology({
               >
                 {language === 'tr' ? 'Sil' : 'Delete'}
               </button>
+              <button
+                onClick={() => {
+                  handleNoteTextSelectAll(contextMenu.noteId!);
+                  setContextMenu(null);
+                }}
+                className={`w-full px-2 py-1.5 text-xs text-left ${isDark ? 'hover:bg-slate-700 text-slate-200' : 'hover:bg-slate-100 text-slate-700'}`}
+              >
+                {language === 'tr' ? 'Tümünü Seç' : 'Select All'}
+              </button>
             </div>
           )}
+        </div>
+      )}
 
-          {/* Device-specific actions */}
-          {contextMenu.deviceId && contextMenu.mode === 'device' && (
-            <>
-              {/* Open */}
-              <button
-                onClick={() => {
-                  const device = devices.find((d) => d.id === contextMenu.deviceId);
-                  if (device) handleDeviceDoubleClick(device);
-                  setContextMenu(null);
-                }}
-                className={`w-full px-4 py-2 text-sm text-left flex items-center gap-2 ${isDark ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-slate-100 text-slate-600'
-                  }`}
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 0 0 -2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                </svg>
-                {language === 'tr' ? 'Aç' : 'Open'}
-              </button>
-
-              <div className={`h-px ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`} />
-
-              {/* Copy */}
-              <button
-                onClick={() => {
-                  const targets = selectedDeviceIds.includes(contextMenu.deviceId!) ? selectedDeviceIds : [contextMenu.deviceId!];
-                  copyDevice(targets);
-                  setContextMenu(null);
-                }}
-                className={`w-full px-4 py-2 text-sm text-left flex items-center gap-2 ${isDark ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-slate-100 text-slate-600'
-                  }`}
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 0 1 -2-2V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2m-6 12h8a2 2 0 0 0 2-2v-8a2 2 0 0 0 -2-2h-8a2 2 0 0 0 -2 2v8a2 2 0 0 0 2 2z" />
-                </svg>
-                {language === 'tr' ? 'Kopyala' : 'Copy'}
-                {!isMobile && <span className={`ml-auto text-[10px] opacity-40 font-mono ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Ctrl+C</span>}
-              </button>
-
-              {/* Cut */}
-              <button
-                onClick={() => {
-                  const targets = selectedDeviceIds.includes(contextMenu.deviceId!) ? selectedDeviceIds : [contextMenu.deviceId!];
-                  saveToHistory();
-                  cutDevice(targets);
-                  setContextMenu(null);
-                }}
-                className={`w-full px-4 py-2 text-sm text-left flex items-center gap-2 ${isDark ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-slate-100 text-slate-600'
-                  }`}
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.121 14.121L19 19m-7-7l7-7m-7 7l-2.879 2.879M12 12L9.121 9.121m0 5.758a3 3 0 1 0 -4.243 4.243 3 3 0 004.243-4.243zm0-5.758a3 3 0 1 0 -4.243-4.243 3 3 0 004.243 4.243z" />
-                </svg>
-                {language === 'tr' ? 'Kes' : 'Cut'}
-                {!isMobile && <span className={`ml-auto text-[10px] opacity-40 font-mono ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Ctrl+X</span>}
-              </button>
-
-              {/* Configure */}
-              <button
-                onClick={() => { startDeviceConfig(contextMenu.deviceId!); }}
-                className={`w-full px-4 py-2 text-sm text-left flex items-center gap-2 ${isDark ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-slate-100 text-slate-600'
-                  }`}
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 0 0 -2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 0 0 -1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 0 0 1.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 1 1 -6 0 3 3 0 016 0z" />
-                </svg>
-                {language === 'tr' ? 'Yapılandır' : 'Configure'}
-              </button>
-
-              <div className={`h-px ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`} />
-
-              <button
-                onClick={() => {
-                  const targets = selectedDeviceIds.includes(contextMenu.deviceId!) ? selectedDeviceIds : [contextMenu.deviceId!];
-                  saveToHistory();
-                  targets.forEach(id => deleteDevice(id));
-                  setSelectedDeviceIds([]);
-                  setContextMenu(null);
-                }}
-                className={`w-full px-4 py-2 text-sm text-left flex items-center gap-2 ${isDark ? 'hover:bg-slate-700 text-red-400' : 'hover:bg-slate-100 text-red-500'
-                  }`}
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0 1 16.138 21H7.862a2 2 0 0 1 -1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 0 0 -1-1h-4a1 1 0 0 0 -1 1v3M4 7h16" />
-                </svg>
-                {language === 'tr' ? 'Sil' : 'Delete'}
-                {!isMobile && <span className={`ml-auto text-[10px] opacity-40 font-mono ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Del</span>}
-              </button>
-
-              <div className={`h-px ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`} />
-
-              {/* Ping */}
-              <button
-                onClick={() => {
-                  setPingSource(contextMenu.deviceId);
-                  setContextMenu(null);
-                }}
-                className={`w-full px-4 py-2 text-sm text-left flex items-center gap-2 ${isDark ? 'hover:bg-slate-700 text-cyan-400' : 'hover:bg-slate-100 text-cyan-600'
-                  }`}
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 0 0 2.22 0L21 8M5 19h14a2 2 0 0 0 2-2V7a2 2 0 0 0 -2-2H5a2 2 0 0 0 -2 2v10a2 2 0 0 0 2 2z" />
-                </svg>
-                {language === 'tr' ? 'Ping At' : 'Send Ping'}
-              </button>
-
-              <div className={`h-px ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`} />
-            </>
-          )}
-
-          {/* Common actions (available on both device and empty area) */}
-
-          {/* Paste */}
+      {contextMenu && contextMenu.mode === 'canvas' && (
+        <div className="px-2 py-2 space-y-1">
           <button
-            onClick={() => pasteDevice()}
-            disabled={clipboard.length === 0}
-            className={`w-full px-4 py-2 text-sm text-left flex items-center gap-2 ${clipboard.length > 0
-              ? isDark ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-slate-100 text-slate-600'
-              : isDark ? 'text-slate-600 cursor-not-allowed' : 'text-slate-300 cursor-not-allowed'
-              }`}
+            onClick={() => {
+              addNote();
+              setContextMenu(null);
+            }}
+            className={`w-full px-2 py-1.5 text-xs text-left ${isDark ? 'hover:bg-slate-700 text-slate-200' : 'hover:bg-slate-100 text-slate-700'}`}
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0 -2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2" />
-            </svg>
-            {language === 'tr' ? 'Yapıştır' : 'Paste'}
-            {!isMobile && <span className={`ml-auto text-[10px] opacity-40 font-mono ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Ctrl+V</span>}
+            {language === 'tr' ? 'Not Ekle' : 'Add Note'}
           </button>
-
-          <div className={`h-px ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`} />
-
-          {/* Undo */}
           <button
-            onClick={() => { handleUndo(); setContextMenu(null); }}
-            disabled={historyIndex <= 0}
-            className={`w-full px-4 py-2 text-sm text-left flex items-center gap-2 ${historyIndex > 0
-              ? isDark ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-slate-100 text-slate-600'
-              : isDark ? 'text-slate-600 cursor-not-allowed' : 'text-slate-300 cursor-not-allowed'
-              }`}
+            onClick={() => {
+              pasteNotes(contextMenu.x, contextMenu.y);
+              setContextMenu(null);
+            }}
+            className={`w-full px-2 py-1.5 text-xs text-left ${isDark ? 'hover:bg-slate-700 text-slate-200' : 'hover:bg-slate-100 text-slate-700'}`}
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 0 1 8 8v2M3 10l6 6m-6-6l6-6" />
-            </svg>
-            {language === 'tr' ? 'Geri Al' : 'Undo'}
-            {!isMobile && <span className={`ml-auto text-[10px] opacity-40 font-mono ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Ctrl+Z</span>}
-          </button>
-
-          {/* Redo */}
-          <button
-            onClick={() => { handleRedo(); setContextMenu(null); }}
-            disabled={historyIndex >= history.length - 1}
-            className={`w-full px-4 py-2 text-sm text-left flex items-center gap-2 ${historyIndex < history.length - 1
-              ? isDark ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-slate-100 text-slate-600'
-              : isDark ? 'text-slate-600 cursor-not-allowed' : 'text-slate-300 cursor-not-allowed'
-              }`}
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 10h-10a8 8 0 0 0 -8 8v2M21 10l-6 6m6-6l-6-6" />
-            </svg>
-            {language === 'tr' ? 'Yinele' : 'Redo'}
-            {!isMobile && <span className={`ml-auto text-[10px] opacity-40 font-mono ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Ctrl+Y</span>}
-          </button>
-
-          <div className={`h-px ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`} />
-
-          {/* Select All */}
-          <button
-            onClick={() => selectAllDevices()}
-            className={`w-full px-4 py-2 text-sm text-left flex items-center gap-2 ${isDark ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-slate-100 text-slate-600'
-              }`}
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-            {language === 'tr' ? 'Tümünü Seç' : 'Select All'}
-            {!isMobile && <span className={`ml-auto text-[10px] opacity-40 font-mono ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Ctrl+A</span>}
+            {language === 'tr' ? 'Not Yapıştır' : 'Paste Note'}
           </button>
         </div>
       )}
 
+      {contextMenu && contextMenu.deviceId && contextMenu.mode === 'device' && (
+        <div className="px-2 py-2 space-y-1">
+          <button
+            onClick={() => {
+              const device = devices.find((d) => d.id === contextMenu.deviceId);
+              if (device) handleDeviceDoubleClick(device);
+              setContextMenu(null);
+            }}
+            className={`w-full px-2 py-1.5 text-xs text-left ${isDark ? 'hover:bg-slate-700 text-slate-200' : 'hover:bg-slate-100 text-slate-700'}`}
+          >
+            {language === 'tr' ? 'Aç' : 'Open'}
+          </button>
+          <button
+            onClick={() => { startDeviceConfig(contextMenu.deviceId!); setContextMenu(null); }}
+            className={`w-full px-2 py-1.5 text-xs text-left ${isDark ? 'hover:bg-slate-700 text-slate-200' : 'hover:bg-slate-100 text-slate-700'}`}
+          >
+            {language === 'tr' ? 'Yapılandır' : 'Configure'}
+          </button>
+          <button
+            onClick={() => {
+              saveToHistory();
+              deleteDevice(contextMenu.deviceId!);
+              setContextMenu(null);
+            }}
+            className={`w-full px-2 py-1.5 text-xs text-left ${isDark ? 'hover:bg-slate-700 text-red-400' : 'hover:bg-slate-100 text-red-500'}`}
+          >
+            {language === 'tr' ? 'Sil' : 'Delete'}
+          </button>
+        </div>
+      )}
       {/* Device Configuration Modal (Name & IP) */}
       {configuringDevice && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" onClick={cancelDeviceConfig}>
@@ -4000,7 +3935,7 @@ export function NetworkTopology({
               {/* Device Info (MAC Address) */}
               <div className={`p-3 rounded-2xl border ${isDark ? 'bg-slate-800/30 border-slate-800/50' : 'bg-slate-50 border-slate-200/50'}`}>
                 <div className={`text-[10px] font-black tracking-widest mb-2 opacity-70 ${isDark ? 'text-cyan-400' : 'text-cyan-600'}`}>
-                  {language === 'tr' ? 'CİHAZ BİLGİSİ' : 'DEVICE INFO'}
+                  {language === 'tr' ? 'Cihaz Bilgisi' : 'DEVICE INFO'}
                 </div>
                 <div className="flex items-center justify-between">
                   <span className={`text-xs font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>MAC Address</span>
@@ -4160,8 +4095,8 @@ export function NetworkTopology({
                 </svg>
                 <span className="text-sm font-bold">
                   {language === 'tr'
-                    ? `${devices.find(d => d.id === pingAnimation.sourceId)?.name} → ${devices.find(d => d.id === pingAnimation.targetId)?.name} Başarılı!`
-                    : `${devices.find(d => d.id === pingAnimation.sourceId)?.name} → ${devices.find(d => d.id === pingAnimation.targetId)?.name} Successful!`}
+                    ? `${devices.find(d => d.id === pingAnimation.sourceId)?.name} â†’ ${devices.find(d => d.id === pingAnimation.targetId)?.name} Başarılı!`
+                    : `${devices.find(d => d.id === pingAnimation.sourceId)?.name} â†’ ${devices.find(d => d.id === pingAnimation.targetId)?.name} Successful!`}
                 </span>
               </>
             ) : (
@@ -4214,8 +4149,8 @@ export function NetworkTopology({
                   <div>
                     <h3 className={`text-xl font-black tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
                       {portSelectorStep === 'source'
-                        ? (language === 'tr' ? 'Kaynak Portu Seç' : 'Source Port Selection')
-                        : (language === 'tr' ? 'Hedef Portu Seç' : 'Target Port Selection')
+                        ? (language === 'tr' ? 'Kaynak Portu Seï¿½' : 'Source Port Selection')
+                        : (language === 'tr' ? 'Hedef Portu Seï¿½' : 'Target Port Selection')
                       }
                     </h3>
                   </div>
@@ -4325,7 +4260,7 @@ export function NetworkTopology({
                         const isConsolePrt = pid === 'console' || pid.startsWith('com');
                         const isGigabit = pid.startsWith('gi');
                         const isFastEth = pid.startsWith('fa') || pid.startsWith('eth');
-                        // Match topology canvas colors: Console/COM→Cyan, Gi→Orange, Fa/Eth→Blue
+                        // Match topology canvas colors: Console/COMâ†’Cyan, Giâ†’Orange, Fa/Ethâ†’Blue
                         let dotCls = 'bg-slate-600';
                         let dotGlow = '';
                         let cardCls = isDark
