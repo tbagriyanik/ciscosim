@@ -1,11 +1,12 @@
 import { useState, useCallback, useRef } from 'react';
 import { SwitchState, CableInfo } from '@/lib/network/types';
-import { CanvasDevice, CanvasConnection } from '@/components/network/NetworkTopology';
+import { CanvasDevice, CanvasConnection, CanvasNote } from '@/components/network/NetworkTopology';
 import { TerminalOutput } from '@/components/network/Terminal';
 
 export interface ProjectState {
   topologyDevices: CanvasDevice[];
   topologyConnections: CanvasConnection[];
+  topologyNotes: CanvasNote[];
   deviceStates: Map<string, SwitchState>;
   deviceOutputs: Map<string, TerminalOutput[]>;
   pcOutputs: Map<string, any[]>;
@@ -34,6 +35,7 @@ export function useHistory(initialState: ProjectState) {
         pcOutputs: new Map(newState.pcOutputs),
         topologyDevices: JSON.parse(JSON.stringify(newState.topologyDevices)),
         topologyConnections: JSON.parse(JSON.stringify(newState.topologyConnections)),
+        topologyNotes: JSON.parse(JSON.stringify(newState.topologyNotes)),
         cableInfo: { ...newState.cableInfo }
       };
       
@@ -41,6 +43,7 @@ export function useHistory(initialState: ProjectState) {
       const currentState = newHistory[newHistory.length - 1];
       if (JSON.stringify(stateToPush.topologyDevices) === JSON.stringify(currentState?.topologyDevices) &&
           JSON.stringify(stateToPush.topologyConnections) === JSON.stringify(currentState?.topologyConnections) &&
+          JSON.stringify(stateToPush.topologyNotes) === JSON.stringify(currentState?.topologyNotes) &&
           stateToPush.deviceStates.size === currentState?.deviceStates.size &&
           stateToPush.activeDeviceId === currentState?.activeDeviceId) {
           // This is a very shallow check, but it helps prevent some redundant pushes

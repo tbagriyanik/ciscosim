@@ -12,7 +12,7 @@ interface Translations {
   hostname: string;
   clearTerminal: string;
   reset: string;
-  
+
   // Port Panel
   switchTitle: string;
   fastEthernetPorts: string;
@@ -26,7 +26,7 @@ interface Translations {
   speed: string;
   duplex: string;
   description: string;
-  
+
   // VLAN Panel
   vlanStatus: string;
   newVlan: string;
@@ -37,7 +37,7 @@ interface Translations {
   active: string;
   suspended: string;
   ports: string;
-  
+
   // Security Panel
   securityControls: string;
   securityLevel: string;
@@ -53,44 +53,44 @@ interface Translations {
   criticalSecurity: string;
   on: string;
   off: string;
-  
+
   // Config Panel
   runningConfig: string;
   save: string;
   realTimeUpdate: string;
-  
+
   // Terminal
   cliTerminal: string;
   processing: string;
   lines: string;
-  
+
   // Quick Commands
   quickCommands: string;
   noCommandsAvailable: string;
   tabComplete: string;
   commandHistory: string;
   help: string;
-  
+
   // Footer
   nosVersion: string;
   model: string;
   uptime: string;
   activePorts: string;
-  
+
   // Tips
   tips: string;
   portClickTip: string;
-  
+
   // Simulator
   simulatorTitle: string;
   simulatorCopyright: string;
-  
+
   // Theme
   theme: string;
   light: string;
   dark: string;
   language: Language;  // 'tr' | 'en'
-  
+
   // Additional
   clearTerminalBtn: string;
   switchMode: string;
@@ -122,7 +122,7 @@ interface Translations {
   modeInterface: string;
   modeLine: string;
   modeVlanLabel: string;
-  
+
   // Security descriptions
   secEnableSecretOn: string;
   secEnableSecretOff: string;
@@ -135,7 +135,7 @@ interface Translations {
   secSshOnly: string;
   secTelnetWarn: string;
   secNoProtocol: string;
-  
+
   // VLAN Panel
   vlanNotApplicable: string;
   vlanOnlyOnNetworkDevices: string;
@@ -145,7 +145,7 @@ interface Translations {
   vlanGood: string;
   vlanInProgress: string;
   vlanNeeded: string;
-  
+
   // VLAN Tasks
   vTaskCreateName: string;
   vTaskCreateDesc: string;
@@ -192,7 +192,7 @@ interface Translations {
 const translations: Record<Language, Translations> = {
   tr: {
     title: 'Network Simulator 2026',
-    subtitle: 'Networking Becerilerini Geliştir',
+    subtitle: 'Ağ Becerilerini Geliştir',
     mode: 'Mod',
     hostname: 'Hostname',
     clearTerminal: 'Terminali Temizle',
@@ -347,7 +347,7 @@ const translations: Record<Language, Translations> = {
   },
   en: {
     title: 'Network Simulator 2026',
-    subtitle: 'Networking Becerilerini Geliştir',
+    subtitle: 'Develop Your Networking Skills',
     mode: 'Mode',
     hostname: 'Hostname',
     clearTerminal: 'Clear Terminal',
@@ -497,7 +497,7 @@ const translations: Record<Language, Translations> = {
     aboutIntro: 'This application is an interactive simulation tool designed for those who want to learn network technologies and terminal commands.',
     termsAndConditions: 'Terms and Conditions',
     termsText: 'This software is for educational purposes. It can be freely used and distributed for non-commercial purposes.',
-    licenseInfo: 'Tuzla Mesleki ve Teknik Anadolu Lisesi',
+    licenseInfo: 'Tuzla Vocational and Technical Anatolian High School',
     close: 'Close',
   }
 };
@@ -517,7 +517,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   // İlk mount'ta localStorage'dan dil yükle (sadece bir kez)
   useEffect(() => {
     if (initialized) return;
-    
+
     try {
       const saved = localStorage.getItem('network-sim-language');
       if (saved === 'tr' || saved === 'en') {
@@ -532,7 +532,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   // Dil değiştiğinde kaydet
   useEffect(() => {
     if (!initialized) return;
-    
+
     try {
       localStorage.setItem('network-sim-language', language);
     } catch {

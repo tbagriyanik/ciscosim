@@ -7,7 +7,7 @@ import { SwitchState, CableInfo } from '@/lib/network/types';
 import { createInitialState } from '@/lib/network/initialState';
 import { useDeviceManager } from '@/hooks/useDeviceManager';
 // Duplicate removed
-import { NetworkTopology, CanvasDevice, CanvasConnection } from '@/components/network/NetworkTopology';
+import { NetworkTopology, CanvasDevice, CanvasConnection, CanvasNote } from '@/components/network/NetworkTopology';
 import { PCPanel } from '@/components/network/PCPanel';
 import { getPrompt } from '@/lib/network/executor';
 import { Terminal, TerminalOutput } from '@/components/network/Terminal';
@@ -195,6 +195,7 @@ export default function Home() {
     }
   ]);
   const [topologyConnections, setTopologyConnections] = useState<CanvasConnection[]>([]);
+  const [topologyNotes, setTopologyNotes] = useState<CanvasNote[]>([]);
   const [zoom, setZoom] = useState(1.0);
   const [pan, setPan] = useState({ x: 0, y: 0 });
 
@@ -231,6 +232,7 @@ export default function Home() {
   const getCurrentState = useCallback((): ProjectState => ({
     topologyDevices: JSON.parse(JSON.stringify(topologyDevices)),
     topologyConnections: JSON.parse(JSON.stringify(topologyConnections)),
+    topologyNotes: JSON.parse(JSON.stringify(topologyNotes)),
     deviceStates: new Map(deviceStates),
     deviceOutputs: new Map(deviceOutputs),
     pcOutputs: new Map(pcOutputs),
@@ -239,7 +241,7 @@ export default function Home() {
     activeDeviceType: activeDeviceType || 'switch',
     zoom,
     pan: { ...pan }
-  }), [topologyDevices, topologyConnections, deviceStates, deviceOutputs, pcOutputs, cableInfo, activeDeviceId, activeDeviceType, zoom, pan]);
+  }), [topologyDevices, topologyConnections, topologyNotes, deviceStates, deviceOutputs, pcOutputs, cableInfo, activeDeviceId, activeDeviceType, zoom, pan]);
 
   const { pushState, undo, redo, canUndo, canRedo, resetHistory } = useHistory(getCurrentState());
 
@@ -249,6 +251,7 @@ export default function Home() {
     // but here we just want to set EVERYTHING at once.
     setTopologyDevices(state.topologyDevices);
     setTopologyConnections(state.topologyConnections);
+    setTopologyNotes(state.topologyNotes || []);
     setDeviceStates(new Map(state.deviceStates));
     setDeviceOutputs(new Map(state.deviceOutputs));
     setPcOutputs(new Map(state.pcOutputs));
@@ -369,7 +372,8 @@ export default function Home() {
       pcOutputs: Array.from(pcOutputs.entries()).map(([id, outputs]) => ({ id, outputs })),
       topology: {
         devices: topologyDevices,
-        connections: topologyConnections
+        connections: topologyConnections,
+        notes: topologyNotes
       },
       cableInfo,
       activeDeviceId,
@@ -378,7 +382,7 @@ export default function Home() {
     };
 
     localStorage.setItem('netsim_autosave', JSON.stringify(projectData));
-  }, [deviceStates, deviceOutputs, pcOutputs, topologyDevices, topologyConnections, cableInfo, activeDeviceId, activeDeviceType, activeTab, isAppLoading]);
+  }, [deviceStates, deviceOutputs, pcOutputs, topologyDevices, topologyConnections, topologyNotes, cableInfo, activeDeviceId, activeDeviceType, activeTab, isAppLoading]);
 
   // Load project from JSON data
   const loadProjectData = useCallback((projectData: any) => {
@@ -429,6 +433,7 @@ export default function Home() {
       if (projectData.topology) {
         setTopologyDevices(projectData.topology.devices || []);
         setTopologyConnections(projectData.topology.connections || []);
+        setTopologyNotes(projectData.topology.notes || []);
       }
 
       // Load cable info
@@ -457,6 +462,7 @@ export default function Home() {
       resetHistory({
         topologyDevices: projectData.topology?.devices || [],
         topologyConnections: projectData.topology?.connections || [],
+        topologyNotes: projectData.topology?.notes || [],
         deviceStates: new Map(projectData.devices?.map((item: any) => [item.id, item.state]) || []),
         deviceOutputs: new Map(projectData.deviceOutputs?.map((item: any) => [item.id, item.outputs]) || []),
         pcOutputs: new Map(projectData.pcOutputs?.map((item: any) => [item.id, item.outputs]) || []),
@@ -477,7 +483,7 @@ export default function Home() {
       console.error("Error loading project data", error);
       return false;
     }
-  }, [setDeviceStates, setDeviceOutputs, setPcOutputs, setTopologyDevices, setTopologyConnections, setCableInfo, setActiveDeviceId, setActiveDeviceType, setActiveTab, setTopologyKey, setHasUnsavedChanges]);
+  }, [setDeviceStates, setDeviceOutputs, setPcOutputs, setTopologyDevices, setTopologyConnections, setTopologyNotes, setCableInfo, setActiveDeviceId, setActiveDeviceType, setActiveTab, setTopologyKey, setHasUnsavedChanges]);
 
   // Persistence: Load from localStorage on mount
   useEffect(() => {
@@ -658,9 +664,10 @@ export default function Home() {
   }, [getOrCreateDeviceState, getOrCreateDeviceOutputs, topologyDevices, setActiveTab, setShowPCDeviceId, setShowPCPanel, setActiveDeviceId, setActiveDeviceType]);
 
   // Handle topology change from NetworkTopology component
-  const handleTopologyChange = useCallback((devices: CanvasDevice[], connections: CanvasConnection[]) => {
+  const handleTopologyChange = useCallback((devices: CanvasDevice[], connections: CanvasConnection[], notes: CanvasNote[]) => {
     setTopologyDevices(devices);
     setTopologyConnections(connections);
+    setTopologyNotes(notes);
     setHasUnsavedChanges(true);
 
     // Sync port status from topology to deviceStates
@@ -702,7 +709,7 @@ export default function Home() {
 
       return changed ? newMap : prev;
     });
-  }, [setTopologyDevices, setTopologyConnections, setHasUnsavedChanges, setDeviceStates]);
+  }, [setTopologyDevices, setTopologyConnections, setTopologyNotes, setHasUnsavedChanges, setDeviceStates]);
 
   // Handle device deletion - update active device if needed
   const handleDeviceDelete = useCallback((deviceId: string) => {
@@ -879,7 +886,8 @@ export default function Home() {
       })),
       topology: {
         devices: topologyDevices,
-        connections: topologyConnections
+        connections: topologyConnections,
+        notes: topologyNotes
       },
       cableInfo,
       activeDeviceId,
@@ -896,7 +904,7 @@ export default function Home() {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     setHasUnsavedChanges(false);
-  }, [deviceStates, deviceOutputs, pcOutputs, topologyDevices, topologyConnections, cableInfo, activeDeviceId, activeDeviceType, setHasUnsavedChanges]);
+  }, [deviceStates, deviceOutputs, pcOutputs, topologyDevices, topologyConnections, topologyNotes, cableInfo, activeDeviceId, activeDeviceType, setHasUnsavedChanges]);
 
   // Handle Project Saving (Wrapper)
   function handleSaveProject() {
@@ -943,6 +951,7 @@ export default function Home() {
         }
       ]);
       setTopologyConnections([]);
+      setTopologyNotes([]);
       
       // Reset active selections
       setActiveDeviceId('switch-1');
@@ -992,6 +1001,7 @@ export default function Home() {
           }
         ],
         topologyConnections: [],
+        topologyNotes: [],
         deviceStates: new Map(),
         deviceOutputs: new Map(),
         pcOutputs: new Map(),
@@ -1678,23 +1688,24 @@ export default function Home() {
           <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
             {/* Network Topology fills remaining space */}
             <div className="flex-1 w-full flex flex-col min-h-[500px]">
-              <NetworkTopology
-                key={topologyKey}
-                cableInfo={cableInfo}
-                onCableChange={setCableInfo}
-                selectedDevice={selectedDevice}
-                onDeviceSelect={handleDeviceSelect}
-                onDeviceDoubleClick={handleDeviceDoubleClick}
-                onTopologyChange={handleTopologyChange}
-                onDeviceDelete={handleDeviceDelete}
-                initialDevices={topologyDevices || undefined}
-                initialConnections={topologyConnections || undefined}
-                isActive={activeTab === 'topology'}
-                activeDeviceId={activeDeviceId}
-                deviceStates={deviceStates}
-                isFullscreen={isTopologyFullscreen}
-                onFullscreenChange={setIsTopologyFullscreen}
-                zoom={zoom}
+                <NetworkTopology
+                  key={topologyKey}
+                  cableInfo={cableInfo}
+                  onCableChange={setCableInfo}
+                  selectedDevice={selectedDevice}
+                  onDeviceSelect={handleDeviceSelect}
+                  onDeviceDoubleClick={handleDeviceDoubleClick}
+                  onTopologyChange={handleTopologyChange}
+                  onDeviceDelete={handleDeviceDelete}
+                  initialDevices={topologyDevices || undefined}
+                  initialConnections={topologyConnections || undefined}
+                  initialNotes={topologyNotes || undefined}
+                  isActive={activeTab === 'topology'}
+                  activeDeviceId={activeDeviceId}
+                  deviceStates={deviceStates}
+                  isFullscreen={isTopologyFullscreen}
+                  onFullscreenChange={setIsTopologyFullscreen}
+                  zoom={zoom}
                 onZoomChange={setZoom}
                 pan={pan}
                 onPanChange={setPan}
