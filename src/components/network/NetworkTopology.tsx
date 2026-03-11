@@ -130,20 +130,20 @@ const NOTE_DEFAULT_WIDTH = 180;
 const NOTE_DEFAULT_HEIGHT = 120;
 const NOTE_HEADER_HEIGHT = 22;
 const NOTE_COLORS = [
-  '#FDE2E4',
-  '#FFF1E6',
-  '#FDECC8',
-  '#E5F8D3',
-  '#DDF8F0',
-  '#DDEBFF',
-  '#E8DDFF',
-  '#F3DDFE',
-  '#FADDE1',
-  '#EEE9E9'
+  '#FAE3E7',
+  '#F7EAD7',
+  '#F6EDC6',
+  '#E3F2D3',
+  '#D7F1EA',
+  '#D1E2FF',
+  '#CDB8FF',
+  '#E3B3F1',
+  '#F2B4C3',
+  '#D7D0D0'
 ];
 const NOTE_FONTS = [
-  'Georgia',
-  'Times New Roman',
+  'Roboto',
+  'Impact',
   'Verdana',
   'Trebuchet MS',
   'Courier New'
@@ -1028,7 +1028,6 @@ export function NetworkTopology({
     if (wasDraggingRef.current) return;
 
     if (e.shiftKey) {
-      setSelectedDeviceIds(prev => prev.includes(device.id) ? prev.filter(id => id !== device.id) : [...prev, device.id]);
       return;
     }
 
@@ -3344,7 +3343,7 @@ export function NetworkTopology({
                           }`}
                         style={{ height: NOTE_HEADER_HEIGHT }}
                       >
-                        <span>{language === 'tr' ? 'Not' : 'Note'}</span>
+                        <span />
                         <button
                           onClick={(e) => {
                               e.stopPropagation();
