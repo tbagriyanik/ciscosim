@@ -448,6 +448,7 @@ export function NetworkTopology({
   const [selectedSourcePort, setSelectedSourcePort] = useState<{ deviceId: string; portId: string } | null>(null);
   const [connectionError, setConnectionError] = useState<string | null>(null);
   const contextMenuRef = useRef<HTMLDivElement | null>(null);
+  const contextMenuOpenedAtRef = useRef(0);
 
   // Ping animation state
   const [pingAnimation, setPingAnimation] = useState<{
@@ -631,18 +632,18 @@ export function NetworkTopology({
 
   // Close context menu when clicking outside
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (contextMenu) {
-        const target = e.target as HTMLElement;
-        // Don't close if clicking on context menu itself
-        if (!target.closest('.context-menu')) {
-          setContextMenu(null);
-        }
+    const handlePointerUpOutside = (e: MouseEvent) => {
+      if (!contextMenu) return;
+      // Ignore the initial click right after opening
+      if (Date.now() - contextMenuOpenedAtRef.current < 150) return;
+      const target = e.target as HTMLElement;
+      if (!target.closest('.context-menu')) {
+        setContextMenu(null);
       }
     };
 
-    window.addEventListener('click', handleClickOutside);
-    return () => window.removeEventListener('click', handleClickOutside);
+    window.addEventListener('mouseup', handlePointerUpOutside);
+    return () => window.removeEventListener('mouseup', handlePointerUpOutside);
   }, [contextMenu]);
 
   // Handle mobile back button to close modals/popups
@@ -699,6 +700,7 @@ export function NetworkTopology({
     y = Math.max(10, y);
 
     window.dispatchEvent(new CustomEvent('close-menus-broadcast', { detail: { source: 'topology' } }));
+    contextMenuOpenedAtRef.current = Date.now();
     setContextMenu({ x, y, deviceId, noteId, mode });
   }, []);
 
@@ -2612,7 +2614,7 @@ export function NetworkTopology({
         {device.type === 'pc' ? (
           // PC has Eth0 and COM1 ports, show side by side
           device.ports.map((port, idx) => {
-            // ï¿½ki portu yan yana gï¿½ster
+            // \u0130ki portu yan yana g\u00f6ster
             const portSpacing = 18;
             const startX = deviceWidth / 2 - (device.ports.length > 1 ? portSpacing / 2 : 0);
             const portX = startX + idx * portSpacing;
@@ -3705,11 +3707,10 @@ export function NetworkTopology({
           }}
           onClick={(e) => e.stopPropagation()}
         >
-          {/* Note-specific actions */}
           {contextMenu.noteId && contextMenu.mode === 'note-style' && (
             <div className="px-2 py-2 space-y-2">
               <div className="text-[10px] uppercase tracking-widest text-slate-500">
-                {language === 'tr' ? 'Not Biçimi' : 'Note Style'}
+                {language === 'tr' ? 'Not Bi\u00e7imi' : 'Note Style'}
               </div>
 
               <div className="grid grid-cols-5 gap-1">
@@ -3726,7 +3727,7 @@ export function NetworkTopology({
 
               <div className="space-y-1">
                 <div className="text-[10px] uppercase tracking-widest text-slate-500">
-                  {language === 'tr' ? 'Yazı Tipi' : 'Font'}
+                  {language === 'tr' ? 'Yaz\u0131 Tipi' : 'Font'}
                 </div>
                 <div className="grid grid-cols-1 gap-1">
                   {noteFonts.map((f) => (
@@ -3761,7 +3762,7 @@ export function NetworkTopology({
 
               <div className="space-y-1">
                 <div className="text-[10px] uppercase tracking-widest text-slate-500">
-                  {language === 'tr' ? 'Saydamlık' : 'Opacity'}
+                  {language === 'tr' ? 'Saydaml\u0131k' : 'Opacity'}
                 </div>
                 <div className="flex gap-1">
                   {NOTE_OPACITY.map((o) => (
@@ -3777,6 +3778,7 @@ export function NetworkTopology({
               </div>
             </div>
           )}
+
           {contextMenu.noteId && contextMenu.mode === 'note-edit' && (
             <div className="px-2 py-2 space-y-1">
               <button
@@ -3804,7 +3806,7 @@ export function NetworkTopology({
                 }}
                 className={`w-full px-2 py-1.5 text-xs text-left ${isDark ? 'hover:bg-slate-700 text-slate-200' : 'hover:bg-slate-100 text-slate-700'}`}
               >
-                {language === 'tr' ? 'Yapıştır' : 'Paste'}
+                {language === 'tr' ? 'Yap\u0131\u015ft\u0131r' : 'Paste'}
               </button>
               <button
                 onClick={() => {
@@ -3822,64 +3824,132 @@ export function NetworkTopology({
                 }}
                 className={`w-full px-2 py-1.5 text-xs text-left ${isDark ? 'hover:bg-slate-700 text-slate-200' : 'hover:bg-slate-100 text-slate-700'}`}
               >
-                {language === 'tr' ? 'Tümünü Seç' : 'Select All'}
+                {language === 'tr' ? 'T\u00fcm\u00fcn\u00fc Se\u00e7' : 'Select All'}
               </button>
             </div>
           )}
-        </div>
-      )}
 
-      {contextMenu && contextMenu.mode === 'canvas' && (
-        <div className="px-2 py-2 space-y-1">
-          <button
-            onClick={() => {
-              addNote();
-              setContextMenu(null);
-            }}
-            className={`w-full px-2 py-1.5 text-xs text-left ${isDark ? 'hover:bg-slate-700 text-slate-200' : 'hover:bg-slate-100 text-slate-700'}`}
-          >
-            {language === 'tr' ? 'Not Ekle' : 'Add Note'}
-          </button>
-          <button
-            onClick={() => {
-              pasteNotes(contextMenu.x, contextMenu.y);
-              setContextMenu(null);
-            }}
-            className={`w-full px-2 py-1.5 text-xs text-left ${isDark ? 'hover:bg-slate-700 text-slate-200' : 'hover:bg-slate-100 text-slate-700'}`}
-          >
-            {language === 'tr' ? 'Not Yapıştır' : 'Paste Note'}
-          </button>
-        </div>
-      )}
+          {contextMenu.mode === 'canvas' && (
+            <div className="px-2 py-2 space-y-1">
+              <button
+                onClick={() => {
+                  pasteNotes(contextMenu.x, contextMenu.y);
+                  setContextMenu(null);
+                }}
+                className={`w-full px-2 py-1.5 text-xs text-left ${isDark ? 'hover:bg-slate-700 text-slate-200' : 'hover:bg-slate-100 text-slate-700'}`}
+              >
+                {language === 'tr' ? 'Yap\u0131\u015ft\u0131r' : 'Paste'}
+              </button>
+              <button
+                onClick={() => {
+                  handleUndo();
+                  setContextMenu(null);
+                }}
+                className={`w-full px-2 py-1.5 text-xs text-left ${isDark ? 'hover:bg-slate-700 text-slate-200' : 'hover:bg-slate-100 text-slate-700'}`}
+              >
+                {language === 'tr' ? 'Geri Al' : 'Undo'}
+              </button>
+              <button
+                onClick={() => {
+                  handleRedo();
+                  setContextMenu(null);
+                }}
+                className={`w-full px-2 py-1.5 text-xs text-left ${isDark ? 'hover:bg-slate-700 text-slate-200' : 'hover:bg-slate-100 text-slate-700'}`}
+              >
+                {language === 'tr' ? 'Yinele' : 'Redo'}
+              </button>
+              <button
+                onClick={() => {
+                  selectAllDevices();
+                  setContextMenu(null);
+                }}
+                className={`w-full px-2 py-1.5 text-xs text-left ${isDark ? 'hover:bg-slate-700 text-slate-200' : 'hover:bg-slate-100 text-slate-700'}`}
+              >
+                {language === 'tr' ? 'T\u00fcm\u00fcn\u00fc Se\u00e7' : 'Select All'}
+              </button>
+            </div>
+          )}
 
-      {contextMenu && contextMenu.deviceId && contextMenu.mode === 'device' && (
-        <div className="px-2 py-2 space-y-1">
-          <button
-            onClick={() => {
-              const device = devices.find((d) => d.id === contextMenu.deviceId);
-              if (device) handleDeviceDoubleClick(device);
-              setContextMenu(null);
-            }}
-            className={`w-full px-2 py-1.5 text-xs text-left ${isDark ? 'hover:bg-slate-700 text-slate-200' : 'hover:bg-slate-100 text-slate-700'}`}
-          >
-            {language === 'tr' ? 'Aç' : 'Open'}
-          </button>
-          <button
-            onClick={() => { startDeviceConfig(contextMenu.deviceId!); setContextMenu(null); }}
-            className={`w-full px-2 py-1.5 text-xs text-left ${isDark ? 'hover:bg-slate-700 text-slate-200' : 'hover:bg-slate-100 text-slate-700'}`}
-          >
-            {language === 'tr' ? 'Yapılandır' : 'Configure'}
-          </button>
-          <button
-            onClick={() => {
-              saveToHistory();
-              deleteDevice(contextMenu.deviceId!);
-              setContextMenu(null);
-            }}
-            className={`w-full px-2 py-1.5 text-xs text-left ${isDark ? 'hover:bg-slate-700 text-red-400' : 'hover:bg-slate-100 text-red-500'}`}
-          >
-            {language === 'tr' ? 'Sil' : 'Delete'}
-          </button>
+          {contextMenu.deviceId && contextMenu.mode === 'device' && (
+            <div className="px-2 py-2 space-y-1">
+              <button
+                onClick={() => {
+                  const device = devices.find((d) => d.id === contextMenu.deviceId);
+                  if (device) handleDeviceDoubleClick(device);
+                  setContextMenu(null);
+                }}
+                className={`w-full px-2 py-1.5 text-xs text-left ${isDark ? 'hover:bg-slate-700 text-slate-200' : 'hover:bg-slate-100 text-slate-700'}`}
+              >
+                {language === 'tr' ? 'A\u00e7' : 'Open'}
+              </button>
+              <button
+                onClick={() => {
+                  const targets = selectedDeviceIds.includes(contextMenu.deviceId!) ? selectedDeviceIds : [contextMenu.deviceId!];
+                  saveToHistory();
+                  cutDevice(targets);
+                  setContextMenu(null);
+                }}
+                className={`w-full px-2 py-1.5 text-xs text-left ${isDark ? 'hover:bg-slate-700 text-slate-200' : 'hover:bg-slate-100 text-slate-700'}`}
+              >
+                {language === 'tr' ? 'Kes' : 'Cut'}
+              </button>
+              <button
+                onClick={() => {
+                  const targets = selectedDeviceIds.includes(contextMenu.deviceId!) ? selectedDeviceIds : [contextMenu.deviceId!];
+                  copyDevice(targets);
+                  setContextMenu(null);
+                }}
+                className={`w-full px-2 py-1.5 text-xs text-left ${isDark ? 'hover:bg-slate-700 text-slate-200' : 'hover:bg-slate-100 text-slate-700'}`}
+              >
+                {language === 'tr' ? 'Kopyala' : 'Copy'}
+              </button>
+              <button
+                onClick={() => {
+                  if (pasteDevice) pasteDevice();
+                  setContextMenu(null);
+                }}
+                className={`w-full px-2 py-1.5 text-xs text-left ${isDark ? 'hover:bg-slate-700 text-slate-200' : 'hover:bg-slate-100 text-slate-700'}`}
+              >
+                {language === 'tr' ? 'Yap\u0131\u015ft\u0131r' : 'Paste'}
+              </button>
+              <button
+                onClick={() => {
+                  saveToHistory();
+                  const targets = selectedDeviceIds.includes(contextMenu.deviceId!) ? selectedDeviceIds : [contextMenu.deviceId!];
+                  targets.forEach(id => deleteDevice(id));
+                  setSelectedDeviceIds([]);
+                  setContextMenu(null);
+                }}
+                className={`w-full px-2 py-1.5 text-xs text-left ${isDark ? 'hover:bg-slate-700 text-red-400' : 'hover:bg-slate-100 text-red-500'}`}
+              >
+                {language === 'tr' ? 'Sil' : 'Delete'}
+              </button>
+              <button
+                onClick={() => {
+                  selectAllDevices();
+                  setContextMenu(null);
+                }}
+                className={`w-full px-2 py-1.5 text-xs text-left ${isDark ? 'hover:bg-slate-700 text-slate-200' : 'hover:bg-slate-100 text-slate-700'}`}
+              >
+                {language === 'tr' ? 'T\u00fcm\u00fcn\u00fc Se\u00e7' : 'Select All'}
+              </button>
+              <button
+                onClick={() => { startDeviceConfig(contextMenu.deviceId!); setContextMenu(null); }}
+                className={`w-full px-2 py-1.5 text-xs text-left ${isDark ? 'hover:bg-slate-700 text-slate-200' : 'hover:bg-slate-100 text-slate-700'}`}
+              >
+                {language === 'tr' ? 'Yap\u0131land\u0131r' : 'Configure'}
+              </button>
+              <button
+                onClick={() => {
+                  setPingSource(contextMenu.deviceId);
+                  setContextMenu(null);
+                }}
+                className={`w-full px-2 py-1.5 text-xs text-left ${isDark ? 'hover:bg-slate-700 text-slate-200' : 'hover:bg-slate-100 text-slate-700'}`}
+              >
+                {language === 'tr' ? 'Ping' : 'Ping'}
+              </button>
+            </div>
+          )}
         </div>
       )}
       {/* Device Configuration Modal (Name & IP) */}
@@ -4095,8 +4165,8 @@ export function NetworkTopology({
                 </svg>
                 <span className="text-sm font-bold">
                   {language === 'tr'
-                    ? `${devices.find(d => d.id === pingAnimation.sourceId)?.name} â†’ ${devices.find(d => d.id === pingAnimation.targetId)?.name} Başarılı!`
-                    : `${devices.find(d => d.id === pingAnimation.sourceId)?.name} â†’ ${devices.find(d => d.id === pingAnimation.targetId)?.name} Successful!`}
+                    ? `${devices.find(d => d.id === pingAnimation.sourceId)?.name} - ${devices.find(d => d.id === pingAnimation.targetId)?.name} Başarılı!`
+                    : `${devices.find(d => d.id === pingAnimation.sourceId)?.name} - ${devices.find(d => d.id === pingAnimation.targetId)?.name} Successful!`}
                 </span>
               </>
             ) : (
@@ -4476,6 +4546,13 @@ export function NetworkTopology({
     </div>
   );
 }
+
+
+
+
+
+
+
 
 
 
