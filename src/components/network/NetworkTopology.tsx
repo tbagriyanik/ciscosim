@@ -75,6 +75,9 @@ export interface CanvasNote {
   y: number;
   width: number;
   height: number;
+  color: string;
+  font: string;
+  fontSize: 10 | 12 | 16;
 }
 
 // Drag item from palette
@@ -126,6 +129,26 @@ const DEFAULT_ZOOM = 1.0; // 100% default zoom
 const NOTE_DEFAULT_WIDTH = 180;
 const NOTE_DEFAULT_HEIGHT = 120;
 const NOTE_HEADER_HEIGHT = 22;
+const NOTE_COLORS = [
+  '#FDE2E4',
+  '#FFF1E6',
+  '#FDECC8',
+  '#E5F8D3',
+  '#DDF8F0',
+  '#DDEBFF',
+  '#E8DDFF',
+  '#F3DDFE',
+  '#FADDE1',
+  '#EEE9E9'
+];
+const NOTE_FONTS = [
+  'Georgia',
+  'Times New Roman',
+  'Verdana',
+  'Trebuchet MS',
+  'Courier New'
+];
+const NOTE_FONT_SIZES: Array<CanvasNote['fontSize']> = [10, 12, 16];
 
 export function NetworkTopology({
   cableInfo,
@@ -238,7 +261,10 @@ export function NetworkTopology({
       setNotes(initialNotes.map(n => ({
         ...n,
         width: n.width || NOTE_DEFAULT_WIDTH,
-        height: n.height || NOTE_DEFAULT_HEIGHT
+        height: n.height || NOTE_DEFAULT_HEIGHT,
+        color: n.color || NOTE_COLORS[0],
+        font: n.font || NOTE_FONTS[0],
+        fontSize: n.fontSize || 12
       })));
     }
   }, [initialNotes]);
@@ -271,6 +297,7 @@ export function NetworkTopology({
   const [isPanning, setIsPanning] = useState(false);
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
   const [selectedDeviceIds, setSelectedDeviceIds] = useState<string[]>(activeDeviceId ? [activeDeviceId] : []);
+  const [selectedNoteIds, setSelectedNoteIds] = useState<string[]>([]);
 
   // Sync internal selection with prop from parent
   useEffect(() => {
@@ -313,10 +340,14 @@ export function NetworkTopology({
     x: number;
     y: number;
     deviceId: string | null;
+    noteId: string | null;
+    mode: 'device' | 'note-style' | 'note-edit' | 'canvas';
   } | null>(null);
 
   // Clipboard state for copy/cut/paste
   const [clipboard, setClipboard] = useState<CanvasDevice[]>([]);
+  const [noteClipboard, setNoteClipboard] = useState<CanvasNote[]>([]);
+  const noteTextareaRefs = useRef<Record<string, HTMLTextAreaElement | null>>({});
 
   // Undo/Redo history
   const [history, setHistory] = useState<{ devices: CanvasDevice[]; connections: CanvasConnection[]; notes: CanvasNote[] }[]>([]);
@@ -401,6 +432,7 @@ export function NetworkTopology({
   const [portSelectorStep, setPortSelectorStep] = useState<'source' | 'target'>('source');
   const [selectedSourcePort, setSelectedSourcePort] = useState<{ deviceId: string; portId: string } | null>(null);
   const [connectionError, setConnectionError] = useState<string | null>(null);
+  const contextMenuRef = useRef<HTMLDivElement | null>(null);
 
   // Ping animation state
   const [pingAnimation, setPingAnimation] = useState<{
@@ -623,10 +655,16 @@ export function NetworkTopology({
   }, [isPaletteOpen, configuringDevice, pingSource, showPortSelector, contextMenu, cancelDeviceConfig, isFullscreen]);
 
   // Handle right-click context menu with viewport clamping
-  const openContextMenu = useCallback((clientX: number, clientY: number, deviceId: string | null = null) => {
+  const openContextMenu = useCallback((
+    clientX: number,
+    clientY: number,
+    deviceId: string | null = null,
+    noteId: string | null = null,
+    mode: 'device' | 'note-style' | 'note-edit' | 'canvas' = 'canvas'
+  ) => {
     // Estimate menu dimensions (approximate)
-    const menuWidth = 180;
-    const menuHeight = deviceId ? 400 : 200; // Device menu is taller
+    const menuWidth = 220;
+    const menuHeight = deviceId ? 360 : noteId ? 320 : 200; // Device menu is taller
 
     // Clamp coordinates to stay within viewport
     let x = clientX;
@@ -645,22 +683,36 @@ export function NetworkTopology({
     y = Math.max(10, y);
 
     window.dispatchEvent(new CustomEvent('close-menus-broadcast', { detail: { source: 'topology' } }));
-    setContextMenu({ x, y, deviceId });
+    setContextMenu({ x, y, deviceId, noteId, mode });
   }, []);
+
+  // Clamp context menu to viewport after render
+  useEffect(() => {
+    if (!contextMenu || !contextMenuRef.current) return;
+    const rect = contextMenuRef.current.getBoundingClientRect();
+    const maxX = window.innerWidth - rect.width - 10;
+    const maxY = window.innerHeight - rect.height - 10;
+    const nextX = Math.max(10, Math.min(contextMenu.x, maxX));
+    const nextY = Math.max(10, Math.min(contextMenu.y, maxY));
+    if (nextX !== contextMenu.x || nextY !== contextMenu.y) {
+      setContextMenu(prev => prev ? { ...prev, x: nextX, y: nextY } : prev);
+    }
+  }, [contextMenu]);
 
   // Handle canvas pan start
   const handleCanvasMouseDown = useCallback((e: ReactMouseEvent) => {
     if (e.button === 2) {
       // Right click on canvas - show context menu
       e.preventDefault();
-      openContextMenu(e.clientX, e.clientY, null);
-    } else if (e.button === 0 && !(e.target as HTMLElement).closest('[data-device-id], [data-note-id], [data-note-drag-handle]')) {
-      setIsPanning(true);
-      setPanStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
-      setSelectedDeviceIds([]);
-      setContextMenu(null);
-      setSelectAllMode(false);
-    }
+      openContextMenu(e.clientX, e.clientY, null, null, 'canvas');
+      } else if (e.button === 0 && !(e.target as HTMLElement).closest('[data-device-id], [data-note-id], [data-note-drag-handle]')) {
+        setIsPanning(true);
+        setPanStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
+        setSelectedDeviceIds([]);
+        setSelectedNoteIds([]);
+        setContextMenu(null);
+        setSelectAllMode(false);
+      }
   }, [pan]);
 
   // Handle mouse move for panning and dragging
@@ -972,13 +1024,83 @@ export function NetworkTopology({
     setDraggedNoteId(noteId);
     setNoteDragOffset({ x: coords.x - note.x, y: coords.y - note.y });
     setSelectedDeviceIds([]);
+    setSelectedNoteIds([noteId]);
     setContextMenu(null);
     setSelectAllMode(false);
   }, [notes, getCanvasCoords]);
 
+  const handleNoteContextMenu = useCallback((
+    e: ReactMouseEvent,
+    noteId: string,
+    mode: 'note-style' | 'note-edit'
+  ) => {
+    e.preventDefault();
+    e.stopPropagation();
+    openContextMenu(e.clientX, e.clientY, null, noteId, mode);
+  }, [openContextMenu]);
+
   const updateNoteText = useCallback((noteId: string, text: string) => {
     setNotes(prev => prev.map(n => (n.id === noteId ? { ...n, text } : n)));
   }, []);
+
+  const getNoteTextarea = useCallback((noteId: string) => {
+    return noteTextareaRefs.current[noteId] || null;
+  }, []);
+
+  const handleNoteTextSelectAll = useCallback((noteId: string) => {
+    const el = getNoteTextarea(noteId);
+    if (!el) return;
+    el.focus();
+    el.setSelectionRange(0, el.value.length);
+  }, [getNoteTextarea]);
+
+  const handleNoteTextCopy = useCallback(async (noteId: string) => {
+    const el = getNoteTextarea(noteId);
+    if (!el) return;
+    el.focus();
+    const start = el.selectionStart ?? 0;
+    const end = el.selectionEnd ?? 0;
+    const text = start !== end ? el.value.slice(start, end) : el.value;
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      document.execCommand('copy');
+    }
+  }, [getNoteTextarea]);
+
+  const handleNoteTextPaste = useCallback(async (noteId: string) => {
+    const el = getNoteTextarea(noteId);
+    if (!el) return;
+    el.focus();
+    try {
+      const text = await navigator.clipboard.readText();
+      const start = el.selectionStart ?? 0;
+      const end = el.selectionEnd ?? 0;
+      const next = el.value.slice(0, start) + text + el.value.slice(end);
+      el.value = next;
+      el.setSelectionRange(start + text.length, start + text.length);
+      updateNoteText(noteId, el.value);
+    } catch {
+      document.execCommand('paste');
+      updateNoteText(noteId, el.value);
+    }
+  }, [getNoteTextarea, updateNoteText]);
+
+  const handleNoteTextDelete = useCallback((noteId: string) => {
+    const el = getNoteTextarea(noteId);
+    if (!el) return;
+    el.focus();
+    const start = el.selectionStart ?? 0;
+    const end = el.selectionEnd ?? 0;
+    if (start !== end) {
+      const next = el.value.slice(0, start) + el.value.slice(end);
+      el.value = next;
+      el.setSelectionRange(start, start);
+      updateNoteText(noteId, el.value);
+    } else {
+      updateNoteText(noteId, '');
+    }
+  }, [getNoteTextarea, updateNoteText]);
 
   const commitNotesChange = useCallback((nextNotes: CanvasNote[]) => {
     saveToHistory();
@@ -988,10 +1110,51 @@ export function NetworkTopology({
     }
   }, [saveToHistory, onTopologyChange, devices, connections]);
 
+  const updateNoteStyle = useCallback((noteId: string, patch: Partial<Pick<CanvasNote, 'color' | 'font' | 'fontSize'>>) => {
+    const nextNotes = notes.map(n => (n.id === noteId ? { ...n, ...patch } : n));
+    commitNotesChange(nextNotes);
+  }, [notes, commitNotesChange]);
+
   const deleteNote = useCallback((noteId: string) => {
     const nextNotes = notes.filter(n => n.id !== noteId);
     commitNotesChange(nextNotes);
   }, [notes, commitNotesChange]);
+
+  const copyNotes = useCallback((ids: string[]) => {
+    const selected = notes.filter(n => ids.includes(n.id));
+    if (selected.length > 0) {
+      setNoteClipboard(selected.map(n => ({ ...n })));
+    }
+  }, [notes]);
+
+  const pasteNotes = useCallback((clientX?: number, clientY?: number) => {
+    if (noteClipboard.length === 0) return;
+    const canvasDims = getCanvasDimensions();
+    let baseX = 120;
+    let baseY = 120;
+
+    if (clientX !== undefined && clientY !== undefined) {
+      const coords = getCanvasCoords(clientX, clientY);
+      baseX = coords.x;
+      baseY = coords.y;
+    }
+
+    const offsetStep = 20;
+    const now = Date.now();
+    const newNotes = noteClipboard.map((n, idx) => {
+      const x = Math.max(20, Math.min(baseX + idx * offsetStep, canvasDims.width - NOTE_DEFAULT_WIDTH - 20));
+      const y = Math.max(20, Math.min(baseY + idx * offsetStep, canvasDims.height - NOTE_DEFAULT_HEIGHT - 20));
+      return {
+        ...n,
+        id: `note-${now}-${idx}`,
+        x,
+        y
+      };
+    });
+
+    const nextNotes = [...notes, ...newNotes];
+    commitNotesChange(nextNotes);
+  }, [noteClipboard, notes, getCanvasDimensions, getCanvasCoords, commitNotesChange]);
 
   // Handle right-click context menu with viewport clamping
   const handleContextMenu = useCallback((e: ReactMouseEvent, deviceId?: string) => {
@@ -1019,7 +1182,7 @@ export function NetworkTopology({
     y = Math.max(10, y);
 
     window.dispatchEvent(new CustomEvent('close-menus-broadcast', { detail: { source: 'topology' } }));
-    openContextMenu(e.clientX, e.clientY, deviceId || null);
+    openContextMenu(e.clientX, e.clientY, deviceId || null, null, 'device');
   }, [openContextMenu]);
 
   // Handle device touch start - for mobile dragging
@@ -1134,7 +1297,7 @@ export function NetworkTopology({
 
       // Start long-press to open context menu
       const timer = setTimeout(() => {
-        openContextMenu(t.clientX, t.clientY, null);
+        openContextMenu(t.clientX, t.clientY, null, null, 'canvas');
         setLongPressTimer(null);
         setIsPanning(false);
       }, LONG_PRESS_DURATION);
@@ -1411,6 +1574,9 @@ export function NetworkTopology({
       y: clampedY,
       width: NOTE_DEFAULT_WIDTH,
       height: NOTE_DEFAULT_HEIGHT,
+      color: NOTE_COLORS[0],
+      font: NOTE_FONTS[0],
+      fontSize: 12,
     };
 
     const updatedNotes = [...notes, newNote];
@@ -3080,22 +3246,30 @@ export function NetworkTopology({
                       data-note-id={note.id}
                       className="pointer-events-none"
                     >
+                    <div
+                      className={`pointer-events-auto flex flex-col w-full h-full rounded-lg shadow-lg border ${isDark
+                        ? 'border-amber-300/60 text-slate-900'
+                        : 'border-yellow-200 text-slate-800'
+                        } ${selectedNoteIds.includes(note.id) ? 'ring-2 ring-emerald-400/70' : ''}`}
+                      data-note-id={note.id}
+                      style={{ backgroundColor: note.color, fontFamily: note.font }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedNoteIds([note.id]);
+                      }}
+                      onContextMenu={(e) => handleNoteContextMenu(e as unknown as ReactMouseEvent, note.id, 'note-edit')}
+                    >
                       <div
-                        className={`pointer-events-auto flex flex-col w-full h-full rounded-lg shadow-lg border ${isDark
-                          ? 'bg-amber-200/90 border-amber-300/60 text-slate-900'
-                          : 'bg-yellow-100 border-yellow-200 text-slate-800'
+                        data-note-drag-handle
+                        onMouseDown={(e) => handleNoteMouseDown(e as unknown as ReactMouseEvent, note.id)}
+                        onContextMenu={(e) => handleNoteContextMenu(e as unknown as ReactMouseEvent, note.id, 'note-style')}
+                        className={`flex items-center justify-between px-2 text-[10px] font-semibold uppercase tracking-widest cursor-move select-none ${isDark ? 'bg-black/10' : 'bg-black/5'
                           }`}
+                        style={{ height: NOTE_HEADER_HEIGHT }}
                       >
-                        <div
-                          data-note-drag-handle
-                          onMouseDown={(e) => handleNoteMouseDown(e as unknown as ReactMouseEvent, note.id)}
-                          className={`flex items-center justify-between px-2 text-[10px] font-semibold uppercase tracking-widest cursor-move select-none ${isDark ? 'bg-amber-300/70' : 'bg-yellow-200/80'
-                            }`}
-                          style={{ height: NOTE_HEADER_HEIGHT }}
-                        >
-                          <span>{language === 'tr' ? 'Not' : 'Note'}</span>
-                          <button
-                            onClick={(e) => {
+                        <span>{language === 'tr' ? 'Not' : 'Note'}</span>
+                        <button
+                          onClick={(e) => {
                               e.stopPropagation();
                               deleteNote(note.id);
                             }}
@@ -3105,19 +3279,20 @@ export function NetworkTopology({
                             ×
                           </button>
                         </div>
-                        <textarea
-                          value={note.text}
-                          onChange={(e) => updateNoteText(note.id, e.target.value)}
-                          onBlur={() => {
-                            saveToHistory();
-                            if (onTopologyChange) {
-                              onTopologyChange(devices, connections, notes);
-                            }
-                          }}
-                          className="flex-1 px-2 py-1 text-xs bg-transparent outline-none resize-none"
-                          style={{ height: note.height - NOTE_HEADER_HEIGHT - 6 }}
-                        />
-                      </div>
+                      <textarea
+                        ref={(el) => { noteTextareaRefs.current[note.id] = el; }}
+                        value={note.text}
+                        onChange={(e) => updateNoteText(note.id, e.target.value)}
+                        onBlur={() => {
+                          saveToHistory();
+                          if (onTopologyChange) {
+                            onTopologyChange(devices, connections, notes);
+                          }
+                        }}
+                        className="flex-1 px-2 py-1 bg-transparent outline-none resize-none"
+                        style={{ fontSize: note.fontSize, height: note.height - NOTE_HEADER_HEIGHT - 6 }}
+                      />
+                    </div>
                     </foreignObject>
                   ))}
 
@@ -3382,13 +3557,119 @@ export function NetworkTopology({
       {/* Context Menu */}
       {contextMenu && (
         <div
-          className={`context-menu fixed z-50 py-1 rounded-lg shadow-xl min-w-[140px] ${isDark ? 'bg-slate-800 border border-slate-700' : 'bg-white border border-slate-200'
+          ref={contextMenuRef}
+          className={`context-menu fixed z-50 py-1 rounded-lg shadow-xl min-w-[140px] max-w-[240px] ${isDark ? 'bg-slate-800 border border-slate-700' : 'bg-white border border-slate-200'
             }`}
-          style={{ left: contextMenu.x, top: contextMenu.y }}
+          style={{
+            left: contextMenu.x,
+            top: contextMenu.y,
+            maxHeight: '60vh',
+            overflow: 'auto',
+            resize: contextMenu.mode.startsWith('note') ? 'both' : 'none',
+            minWidth: contextMenu.mode.startsWith('note') ? 180 : undefined,
+            minHeight: contextMenu.mode.startsWith('note') ? 120 : undefined
+          }}
           onClick={(e) => e.stopPropagation()}
         >
+          {/* Note-specific actions */}
+          {contextMenu.noteId && contextMenu.mode === 'note-style' && (
+            <div className="px-2 py-2 space-y-2">
+              <div className="text-[10px] uppercase tracking-widest text-slate-500">
+                {language === 'tr' ? 'Not Biçimi' : 'Note Style'}
+              </div>
+
+              <div className="grid grid-cols-5 gap-1">
+                {NOTE_COLORS.map((c) => (
+                  <button
+                    key={c}
+                    onClick={() => updateNoteStyle(contextMenu.noteId!, { color: c })}
+                    className="w-4 h-4 rounded border border-black/10"
+                    style={{ backgroundColor: c }}
+                    title={c}
+                  />
+                ))}
+              </div>
+
+              <div className="space-y-1">
+                <div className="text-[10px] uppercase tracking-widest text-slate-500">
+                  {language === 'tr' ? 'Yazı Tipi' : 'Font'}
+                </div>
+                <div className="grid grid-cols-1 gap-1">
+                  {NOTE_FONTS.map((f) => (
+                    <button
+                      key={f}
+                      onClick={() => updateNoteStyle(contextMenu.noteId!, { font: f })}
+                      className={`px-2 py-1 rounded text-left text-[11px] ${isDark ? 'hover:bg-slate-700 text-slate-200' : 'hover:bg-slate-100 text-slate-700'}`}
+                      style={{ fontFamily: f }}
+                    >
+                      {f}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <div className="text-[10px] uppercase tracking-widest text-slate-500">
+                  {language === 'tr' ? 'Boyut' : 'Size'}
+                </div>
+                <div className="flex gap-1">
+                  {NOTE_FONT_SIZES.map((s) => (
+                    <button
+                      key={s}
+                      onClick={() => updateNoteStyle(contextMenu.noteId!, { fontSize: s })}
+                      className={`px-2 py-1 rounded text-[11px] ${isDark ? 'hover:bg-slate-700 text-slate-200' : 'hover:bg-slate-100 text-slate-700'}`}
+                    >
+                      {s}px
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {contextMenu.noteId && contextMenu.mode === 'note-edit' && (
+            <div className="px-2 py-2 space-y-1">
+              <button
+                onClick={() => {
+                  handleNoteTextCopy(contextMenu.noteId!);
+                  setContextMenu(null);
+                }}
+                className={`w-full px-2 py-1.5 text-xs text-left ${isDark ? 'hover:bg-slate-700 text-slate-200' : 'hover:bg-slate-100 text-slate-700'}`}
+              >
+                {language === 'tr' ? 'Kopyala' : 'Copy'}
+              </button>
+              <button
+                onClick={() => {
+                  handleNoteTextPaste(contextMenu.noteId!);
+                  setContextMenu(null);
+                }}
+                className={`w-full px-2 py-1.5 text-xs text-left ${isDark ? 'hover:bg-slate-700 text-slate-200' : 'hover:bg-slate-100 text-slate-700'}`}
+              >
+                {language === 'tr' ? 'Yapıştır' : 'Paste'}
+              </button>
+              <button
+                onClick={() => {
+                  handleNoteTextSelectAll(contextMenu.noteId!);
+                  setContextMenu(null);
+                }}
+                className={`w-full px-2 py-1.5 text-xs text-left ${isDark ? 'hover:bg-slate-700 text-slate-200' : 'hover:bg-slate-100 text-slate-700'}`}
+              >
+                {language === 'tr' ? 'Tümünü Seç' : 'Select All'}
+              </button>
+              <button
+                onClick={() => {
+                  handleNoteTextDelete(contextMenu.noteId!);
+                  setContextMenu(null);
+                }}
+                className={`w-full px-2 py-1.5 text-xs text-left ${isDark ? 'hover:bg-slate-700 text-red-400' : 'hover:bg-slate-100 text-red-500'}`}
+              >
+                {language === 'tr' ? 'Sil' : 'Delete'}
+              </button>
+            </div>
+          )}
+
           {/* Device-specific actions */}
-          {contextMenu.deviceId && (
+          {contextMenu.deviceId && contextMenu.mode === 'device' && (
             <>
               {/* Open */}
               <button
