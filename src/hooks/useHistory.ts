@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 import { SwitchState, CableInfo } from '@/lib/network/types';
-import { CanvasDevice, CanvasConnection, CanvasNote } from '@/components/network/NetworkTopology';
+import { CanvasDevice, CanvasConnection, CanvasNote } from '@/components/network/networkTopology.types';
 import { TerminalOutput } from '@/components/network/Terminal';
 
 export interface ProjectState {

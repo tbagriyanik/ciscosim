@@ -1,4 +1,4 @@
-import { CanvasDevice, CanvasConnection } from '@/components/network/NetworkTopology';
+import { CanvasDevice, CanvasConnection } from '@/components/network/networkTopology.types';
 import { SwitchState } from './types';
 
 /**

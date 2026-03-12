@@ -10,7 +10,7 @@ import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Translations } from '@/contexts/LanguageContext';
-import { Layers } from 'lucide-react';
+import { Layers, Trash2 } from 'lucide-react';
 
 interface VlanPanelProps {
   vlans: Record<number, Vlan>;
@@ -362,7 +362,7 @@ export function VlanPanel({ vlans, ports, deviceName, deviceModel, onExecuteComm
                         className="h-5 w-5 sm:h-6 sm:w-6 p-0 text-red-400 hover:text-red-300 hover:bg-slate-700"
                         title={`${t.delete} VLAN ${vlan.id}`}
                       >
-                        ×
+                        <Trash2 className="h-3.5 w-3.5" />
                       </Button>
                     )}
                   </div>

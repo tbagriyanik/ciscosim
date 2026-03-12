@@ -1,7 +1,7 @@
 ﻿'use client';
 
 import { useState, useRef, useEffect, useCallback, MouseEvent as ReactMouseEvent, TouchEvent as ReactTouchEvent } from 'react';
-import { SwitchState, CableType, CableInfo, getCableTypeName, isCableCompatible } from '@/lib/network/types';
+import { CableType, CableInfo, getCableTypeName, isCableCompatible } from '@/lib/network/types';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -15,71 +15,34 @@ import {
 } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
-import { Monitor, Laptop, Network, Plus, Database, ChevronRight, Settings2, Trash2, MousePointer2, StickyNote } from "lucide-react";
+import { Monitor, Laptop, Network, Plus, Database, ChevronRight, Trash2, MousePointer2, StickyNote } from "lucide-react";
 import { ConnectionLine } from './ConnectionLine';
 import { DeviceNode } from './DeviceNode';
-
-interface NetworkTopologyProps {
-  cableInfo: CableInfo;
-  onCableChange: (cableInfo: CableInfo) => void;
-  selectedDevice: 'pc' | 'switch' | 'router' | null;
-  onDeviceSelect: (device: 'pc' | 'switch' | 'router', deviceId?: string) => void;
-  onDeviceDoubleClick?: (device: 'pc' | 'switch' | 'router', deviceId: string) => void;
-  onTopologyChange?: (devices: CanvasDevice[], connections: CanvasConnection[], notes: CanvasNote[]) => void;
-  onDeviceDelete?: (deviceId: string) => void;
-  initialDevices?: CanvasDevice[];
-  initialConnections?: CanvasConnection[];
-  initialNotes?: CanvasNote[];
-  isActive?: boolean;
-  activeDeviceId?: string | null;
-  deviceStates?: Map<string, SwitchState>;
-  isFullscreen?: boolean;
-  onFullscreenChange?: (isFullscreen: boolean) => void;
-  zoom?: number;
-  onZoomChange?: (zoom: number) => void;
-  pan?: { x: number; y: number };
-  onPanChange?: (pan: { x: number; y: number }) => void;
-}
-
-// Device types for the canvas
-export interface CanvasDevice {
-  id: string;
-  type: 'pc' | 'switch' | 'router';
-  name: string;
-  macAddress?: string;
-  ip: string;
-  subnet?: string;
-  gateway?: string;
-  dns?: string;
-  x: number;
-  y: number;
-  status: 'online' | 'offline' | 'error';
-  ports: { id: string; label: string; status: 'connected' | 'disconnected' | 'notconnect' | 'blocked' | 'disabled'; shutdown?: boolean }[];
-}
-
-// Connection types
-export interface CanvasConnection {
-  id: string;
-  sourceDeviceId: string;
-  sourcePort: string;
-  targetDeviceId: string;
-  targetPort: string;
-  cableType: CableType;
-  active: boolean;
-}
-
-export interface CanvasNote {
-  id: string;
-  text: string;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  color: string;
-  font: string;
-  fontSize: 10 | 12 | 16;
-  opacity: 0.5 | 0.75 | 1;
-}
+import { NetworkTopologyProps, CanvasDevice, CanvasConnection, CanvasNote, ContextMenuState, SelectedPortRef } from './networkTopology.types';
+import {
+  CABLE_COLORS,
+  DEFAULT_ZOOM,
+  DEVICE_ICONS,
+  DRAG_THRESHOLD,
+  LONG_PRESS_DURATION,
+  MAX_ZOOM,
+  MIN_ZOOM,
+  NOTE_COLORS,
+  NOTE_DEFAULT_HEIGHT,
+  NOTE_DEFAULT_WIDTH,
+  NOTE_FONTS_DESKTOP,
+  NOTE_FONTS_MOBILE,
+  NOTE_FONT_SIZES,
+  NOTE_HEADER_HEIGHT,
+  NOTE_OPACITY,
+  VIRTUAL_CANVAS_HEIGHT_DESKTOP,
+  VIRTUAL_CANVAS_HEIGHT_MOBILE,
+  VIRTUAL_CANVAS_WIDTH_DESKTOP,
+  VIRTUAL_CANVAS_WIDTH_MOBILE,
+} from './networkTopology.constants';
+import { generateMacAddress, generateRouterPorts, generateSwitchPorts } from './networkTopology.helpers';
+import { NetworkTopologyContextMenu } from './NetworkTopologyContextMenu';
+import { NetworkTopologyPortSelectorModal } from './NetworkTopologyPortSelectorModal';
 
 // Drag item from palette
 interface DragItem {
@@ -87,77 +50,6 @@ interface DragItem {
   icon: React.ReactNode;
 }
 
-const DEVICE_ICONS = {
-  pc: (
-    <svg className="w-6 h-6 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 0 0 2-2V5a2 2 0 0 0 -2-2H5a2 2 0 0 0 -2 2v10a2 2 0 0 0 2 2z" />
-    </svg>
-  ),
-  switch: (
-    <svg className="w-6 h-6 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 12h14M5 12a2 2 0 0 1 -2-2V6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1 -2 2M5 12a2 2 0 0 0 -2 2v4a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4a2 2 0 0 0 -2-2m-2-4h.01M17 16h.01" />
-    </svg>
-  ),
-  router: (
-    <svg className="w-6 h-6 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <circle cx="12" cy="12" r="9" strokeWidth={1.5} />
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 5v14M5 12h14M12 5l-2 2m2-2l2 2m-2 12l-2-2m2 2l2-2M5 12l2-2m-2 2l2 2M19 12l-2-2m2 2l-2 2" />
-    </svg>
-  ),
-};
-
-const CABLE_COLORS: Record<CableType | 'error', { primary: string; bg: string; text: string; border: string }> = {
-  straight: { primary: '#3b82f6', bg: 'bg-blue-500', text: 'text-blue-400', border: 'border-blue-500/30' },
-  crossover: { primary: '#f97316', bg: 'bg-orange-500', text: 'text-orange-400', border: 'border-orange-500/30' },
-  console: { primary: '#06b6d4', bg: 'bg-cyan-500', text: 'text-cyan-400', border: 'border-cyan-500/30' },
-  error: { primary: '#ec4899', bg: 'bg-pink-500', text: 'text-pink-400', border: 'border-pink-500/30' }, // For incompatible cables
-};
-
-// Distance threshold for distinguishing drag from click (in pixels)
-const DRAG_THRESHOLD = 5;
-const LONG_PRESS_DURATION = 500; // ms
-
-// Virtual canvas dimensions (strictly enforced) - significantly increased for mobile panning
-const VIRTUAL_CANVAS_WIDTH_MOBILE = 3000;
-const VIRTUAL_CANVAS_HEIGHT_MOBILE = 2000;
-const VIRTUAL_CANVAS_WIDTH_DESKTOP = 3000;
-const VIRTUAL_CANVAS_HEIGHT_DESKTOP = 2000;
-
-// Zoom limits
-const MIN_ZOOM = 0.15;
-const MAX_ZOOM = 4.0;
-const DEFAULT_ZOOM = 1.0; // 100% default zoom
-const NOTE_DEFAULT_WIDTH = 180;
-const NOTE_DEFAULT_HEIGHT = 120;
-const NOTE_HEADER_HEIGHT = 22;
-const NOTE_COLORS = [
-  '#FAE3E7',
-  '#F7EAD7',
-  '#F6EDC6',
-  '#E3F2D3',
-  '#D7F1EA',
-  '#D1E2FF',
-  '#CDB8FF',
-  '#E3B3F1',
-  '#F2B4C3',
-  '#D7D0D0'
-];
-const NOTE_FONTS_DESKTOP = [
-  'Roboto',
-  'Impact',
-  'Verdana',
-  'Trebuchet MS',
-  'Courier New'
-];
-const NOTE_FONTS_MOBILE = [
-  'Roboto',
-  'Verdana',
-  'Trebuchet MS',
-  'Courier New',
-  'Arial'
-];
-const NOTE_FONT_SIZES: Array<CanvasNote['fontSize']> = [10, 12, 16];
-const NOTE_OPACITY: Array<CanvasNote['opacity']> = [0.5, 0.75, 1];
 
 export function NetworkTopology({
   cableInfo,
@@ -183,41 +75,6 @@ export function NetworkTopology({
   const { language } = useLanguage();
   const { theme } = useTheme();
   const isDark = theme === 'dark';
-
-  // Helper function to generate all switch ports
-  const generateSwitchPorts = () => {
-    const ports = [{ id: 'console', label: 'Console', status: 'disconnected' as const }];
-    // 24 FastEthernet ports
-    for (let i = 1; i <= 24; i++) {
-      ports.push({ id: `fa0/${i}`, label: `Fa0/${i}`, status: 'disconnected' as const });
-    }
-    // 2 GigabitEthernet ports
-    ports.push({ id: 'gi0/1', label: 'Gi0/1', status: 'disconnected' as const });
-    ports.push({ id: 'gi0/2', label: 'Gi0/2', status: 'disconnected' as const });
-    return ports;
-  };
-
-  // Helper function to generate all router ports - 4 GIGABIT PORTS
-  const generateRouterPorts = () => {
-    return [
-      { id: 'console', label: 'Console', status: 'disconnected' as const },
-      { id: 'gi0/0', label: 'Gi0/0', status: 'disconnected' as const },
-      { id: 'gi0/1', label: 'Gi0/1', status: 'disconnected' as const },
-      { id: 'gi0/2', label: 'Gi0/2', status: 'disconnected' as const },
-      { id: 'gi0/3', label: 'Gi0/3', status: 'disconnected' as const },
-    ];
-  };
-
-  // Helper to generate a random unique Network-formatted MAC address (xxxx.xxxx.xxxx)
-  const generateMacAddress = (): string => {
-    const chars = '0123456789abcdef';
-    let mac = '';
-    for (let i = 0; i < 12; i++) {
-      mac += chars[Math.floor(Math.random() * 16)];
-      if (i === 3 || i === 7) mac += '.';
-    }
-    return mac;
-  };
 
   // Default devices for initial state
   const defaultDevices: CanvasDevice[] = [
@@ -350,13 +207,7 @@ export function NetworkTopology({
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
   // Context menu state - deviceId can be null for empty area
-  const [contextMenu, setContextMenu] = useState<{
-    x: number;
-    y: number;
-    deviceId: string | null;
-    noteId: string | null;
-    mode: 'device' | 'note-style' | 'note-edit' | 'canvas';
-  } | null>(null);
+  const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
 
   // Clipboard state for copy/cut/paste
   const [clipboard, setClipboard] = useState<CanvasDevice[]>([]);
@@ -428,119 +279,7 @@ export function NetworkTopology({
   // Touch/Mobile state
   const isMobile = useIsMobile();
   const noteFonts = isMobile ? NOTE_FONTS_MOBILE : NOTE_FONTS_DESKTOP;
-  const renderMenuItem = useCallback((opts: {
-    label: string;
-    onClick: () => void;
-    disabled?: boolean;
-    icon: 'open' | 'cut' | 'copy' | 'paste' | 'delete' | 'select' | 'undo' | 'redo' | 'config' | 'ping';
-    shortcut?: string;
-  }) => {
-    const { label, onClick, disabled, icon, shortcut } = opts;
-    const iconNode = (() => {
-      const cls = "w-3.5 h-3.5";
-      switch (icon) {
-        case 'open':
-          return (
-            <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M4 4h16v10H4z" />
-              <path d="M8 20h8" />
-              <path d="M10 16h4" />
-            </svg>
-          );
-        case 'cut':
-          return (
-            <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="6" cy="6" r="3" />
-              <circle cx="6" cy="18" r="3" />
-              <path d="M20 4L8.5 12" />
-              <path d="M20 20L8.5 12" />
-            </svg>
-          );
-        case 'copy':
-          return (
-            <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <rect x="9" y="9" width="10" height="10" rx="2" />
-              <rect x="5" y="5" width="10" height="10" rx="2" />
-            </svg>
-          );
-        case 'paste':
-          return (
-            <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M9 4h6l1 2h3v14H5V6h3z" />
-              <path d="M9 4v2h6V4" />
-            </svg>
-          );
-        case 'delete':
-          return (
-            <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M4 7h16" />
-              <path d="M9 7V5h6v2" />
-              <path d="M6 7l1 12h10l1-12" />
-            </svg>
-          );
-        case 'select':
-          return (
-            <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M4 4h6v6H4z" />
-              <path d="M14 14h6v6h-6z" />
-              <path d="M14 4h6v6h-6z" />
-              <path d="M4 14h6v6H4z" />
-            </svg>
-          );
-        case 'undo':
-          return (
-            <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M9 14l-4-4 4-4" />
-              <path d="M20 20a8 8 0 0 0-11-7.7" />
-            </svg>
-          );
-        case 'redo':
-          return (
-            <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M15 6l4 4-4 4" />
-              <path d="M4 20a8 8 0 0 1 11-7.7" />
-            </svg>
-          );
-        case 'config':
-          return (
-            <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="3" />
-              <path d="M19.4 15a7.96 7.96 0 0 0 .1-6l2.1-1.2-2-3.4-2.3 1a8 8 0 0 0-5.2-3l-.4-2.5h-4l-.4 2.5a8 8 0 0 0-5.2 3l-2.3-1-2 3.4 2.1 1.2a8 8 0 0 0 0 6l-2.1 1.2 2 3.4 2.3-1a8 8 0 0 0 5.2 3l.4 2.5h4l.4-2.5a8 8 0 0 0 5.2-3l2.3 1 2-3.4z" />
-            </svg>
-          );
-        case 'ping':
-          return (
-            <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M12 20v-6" />
-              <path d="M8 10a4 4 0 0 1 8 0" />
-              <path d="M5 7a7 7 0 0 1 14 0" />
-              <circle cx="12" cy="20" r="1.5" />
-            </svg>
-          );
-      }
-    })();
-
-    return (
-      <button
-        onClick={() => !disabled && onClick()}
-        disabled={disabled}
-        aria-disabled={disabled}
-        className={`w-full px-2 py-1.5 text-xs text-left flex items-center gap-2 justify-between ${disabled
-          ? `${isDark ? 'text-slate-500' : 'text-slate-400'} cursor-not-allowed`
-          : `${isDark ? 'hover:bg-slate-700 text-slate-200' : 'hover:bg-slate-100 text-slate-700'}`}`}
-      >
-        <span className="flex items-center gap-2">
-          <span className="shrink-0">{iconNode}</span>
-          <span>{label}</span>
-        </span>
-        {!isMobile && shortcut && (
-          <span className={`${isDark ? 'text-slate-400' : 'text-slate-400'} text-[10px] tracking-wide`}>
-            {shortcut}
-          </span>
-        )}
-      </button>
-    );
-  }, [isDark, isMobile]);
+  // Context menu rendering moved to NetworkTopologyContextMenu
   const [isTouchDragging, setIsTouchDragging] = useState(false);
   const [isTouchDraggingNote, setIsTouchDraggingNote] = useState(false);
   const [touchDraggedDevice, setTouchDraggedDevice] = useState<string | null>(null);
@@ -559,10 +298,77 @@ export function NetworkTopology({
   const [pingSource, setPingSource] = useState<string | null>(null);
   const [showPortSelector, setShowPortSelector] = useState(false);
   const [portSelectorStep, setPortSelectorStep] = useState<'source' | 'target'>('source');
-  const [selectedSourcePort, setSelectedSourcePort] = useState<{ deviceId: string; portId: string } | null>(null);
+  const [selectedSourcePort, setSelectedSourcePort] = useState<SelectedPortRef | null>(null);
   const [connectionError, setConnectionError] = useState<string | null>(null);
   const contextMenuRef = useRef<HTMLDivElement | null>(null);
   const contextMenuOpenedAtRef = useRef(0);
+
+  const closePortSelector = useCallback(() => {
+    setShowPortSelector(false);
+    setPortSelectorStep('source');
+    setSelectedSourcePort(null);
+  }, []);
+
+  const handlePortSelectorSelectPort = useCallback((deviceId: string, portId: string) => {
+    if (portSelectorStep === 'source') {
+      setSelectedSourcePort({ deviceId, portId });
+      setPortSelectorStep('target');
+      return;
+    }
+
+    if (!selectedSourcePort) return;
+
+    const newConnection: CanvasConnection = {
+      id: `conn-${Date.now()}`,
+      sourceDeviceId: selectedSourcePort.deviceId,
+      sourcePort: selectedSourcePort.portId,
+      targetDeviceId: deviceId,
+      targetPort: portId,
+      cableType: cableInfo.cableType,
+      active: true,
+    };
+
+    const updatedConnections = [...connections, newConnection];
+    setConnections(updatedConnections);
+
+    const updatedDevices = devices.map((d) => {
+      if (d.id === selectedSourcePort.deviceId) {
+        return {
+          ...d,
+          ports: d.ports.map((p) =>
+            p.id === selectedSourcePort.portId ? { ...p, status: 'connected' as const } : p
+          ),
+        };
+      }
+      if (d.id === deviceId) {
+        return {
+          ...d,
+          ports: d.ports.map((p) =>
+            p.id === portId ? { ...p, status: 'connected' as const } : p
+          ),
+        };
+      }
+      return d;
+    });
+    setDevices(updatedDevices);
+
+    if (onTopologyChange) {
+      onTopologyChange(updatedDevices, updatedConnections, notes);
+    }
+
+    const sourceDevice = devices.find((d) => d.id === selectedSourcePort.deviceId);
+    const targetDevice = devices.find((d) => d.id === deviceId);
+    if (sourceDevice && targetDevice) {
+      onCableChange({
+        ...cableInfo,
+        connected: true,
+        sourceDevice: sourceDevice.type === 'router' ? 'switch' : sourceDevice.type,
+        targetDevice: targetDevice.type === 'router' ? 'switch' : targetDevice.type,
+      });
+    }
+
+    closePortSelector();
+  }, [portSelectorStep, selectedSourcePort, connections, devices, cableInfo, onTopologyChange, notes, onCableChange, closePortSelector]);
 
   // Ping animation state
   const [pingAnimation, setPingAnimation] = useState<{
@@ -1674,6 +1480,12 @@ export function NetworkTopology({
     if (!canvas) return;
 
     const handleWheel = (e: WheelEvent) => {
+      const target = e.target as HTMLElement | null;
+      const noteTextarea = target?.closest('[data-note-textarea]') as HTMLElement | null;
+      if (noteTextarea && noteTextarea.scrollHeight > noteTextarea.clientHeight) {
+        return; // allow note text scrolling without zoom
+      }
+
       e.preventDefault(); // prevent window scroll
 
       const rect = canvas.getBoundingClientRect();
@@ -2650,15 +2462,24 @@ export function NetworkTopology({
           >
             {/* Subtle background rectangle instead of circle */}
             <rect x="-8" y="-9" width="16" height="18" rx="3" fill={isDark ? '#0f172a' : '#ffffff'} opacity="0.9" className="drop-shadow-sm" />
-            <g transform="translate(0, 0)">
-              <path
-                d="M -5 -3 H 5 M -3.5 -3 V 5.5 A 1 1 0 0 0 -2.5 6.5 H 2.5 A 1 1 0 0 0 3.5 5.5 V -3 M -1.5 -3 V -5 H 1.5 V -3"
-                stroke="#ef4444"
-                fill="none"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-              />
-            </g>
+            <svg
+              x={-7}
+              y={-7}
+              width={14}
+              height={14}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#ef4444"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M3 6h18" />
+              <path d="M8 6V4h8v2" />
+              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+              <path d="M10 11v6" />
+              <path d="M14 11v6" />
+            </svg>
           </g>
         )}
 
@@ -3570,7 +3391,7 @@ export function NetworkTopology({
                             className="px-1.5 py-0.5 rounded hover:bg-black/10"
                             title={language === 'tr' ? 'Sil' : 'Delete'}
                           >
-                            X
+                            <Trash2 className="w-3 h-3" />
                           </button>
                         </div>
                         <textarea
@@ -3872,297 +3693,40 @@ export function NetworkTopology({
           </div>
         </div>
       </div>
-
-
-      {/* Context Menu */}
-      {contextMenu && (
-        <div
-          ref={contextMenuRef}
-          className={`context-menu fixed z-50 py-1 rounded-lg shadow-xl min-w-[140px] max-w-[240px] ${isDark ? 'bg-slate-800 border border-slate-700' : 'bg-white border border-slate-200'
-            }`}
-          style={{
-            left: contextMenu.x,
-            top: contextMenu.y,
-            maxHeight: '60vh',
-            overflow: 'auto',
-            resize: contextMenu.mode.startsWith('note') ? 'both' : 'none',
-            minWidth: contextMenu.mode.startsWith('note') ? 180 : undefined,
-            minHeight: contextMenu.mode.startsWith('note') ? 120 : undefined
-          }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          {contextMenu.noteId && contextMenu.mode === 'note-style' && (
-            <div className="px-2 py-2 space-y-2">
-              <div className="text-[10px] uppercase tracking-widest text-slate-500">
-                {language === 'tr' ? 'Not Bi\u00e7imi' : 'Note Style'}
-              </div>
-
-              <div className="grid grid-cols-5 gap-1">
-                {NOTE_COLORS.map((c) => (
-                  <button
-                    key={c}
-                    onClick={() => updateNoteStyle(contextMenu.noteId!, { color: c })}
-                    className="w-4 h-4 rounded border border-black/10"
-                    style={{ backgroundColor: c }}
-                    title={c}
-                  />
-                ))}
-              </div>
-
-              <div className="space-y-1">
-                <div className="text-[10px] uppercase tracking-widest text-slate-500">
-                  {language === 'tr' ? 'Yaz\u0131 Tipi' : 'Font'}
-                </div>
-                <div className="grid grid-cols-1 gap-1">
-                  {noteFonts.map((f) => (
-                    <button
-                      key={f}
-                      onClick={() => updateNoteStyle(contextMenu.noteId!, { font: f })}
-                      className={`px-2 py-1 rounded text-left text-[11px] ${isDark ? 'hover:bg-slate-700 text-slate-200' : 'hover:bg-slate-100 text-slate-700'}`}
-                      style={{ fontFamily: f }}
-                    >
-                      {f}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <div className="text-[10px] uppercase tracking-widest text-slate-500">
-                  {language === 'tr' ? 'Boyut' : 'Size'}
-                </div>
-                <div className="flex gap-1">
-                  {NOTE_FONT_SIZES.map((s) => (
-                    <button
-                      key={s}
-                      onClick={() => updateNoteStyle(contextMenu.noteId!, { fontSize: s })}
-                      className={`px-2 py-1 rounded text-[11px] ${isDark ? 'hover:bg-slate-700 text-slate-200' : 'hover:bg-slate-100 text-slate-700'}`}
-                    >
-                      {s}px
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <div className="text-[10px] uppercase tracking-widest text-slate-500">
-                  {language === 'tr' ? 'Saydaml\u0131k' : 'Opacity'}
-                </div>
-                <div className="flex gap-1">
-                  {NOTE_OPACITY.map((o) => (
-                    <button
-                      key={o}
-                      onClick={() => updateNoteStyle(contextMenu.noteId!, { opacity: o })}
-                      className={`px-2 py-1 rounded text-[11px] ${isDark ? 'hover:bg-slate-700 text-slate-200' : 'hover:bg-slate-100 text-slate-700'}`}
-                    >
-                      {Math.round(o * 100)}%
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {contextMenu.noteId && contextMenu.mode === 'note-edit' && (
-            <div className="px-2 py-2 space-y-1">
-              {(() => {
-                const note = notes.find(n => n.id === contextMenu.noteId);
-                const noteText = note?.text || '';
-                const hasText = noteText.trim().length > 0;
-                return (
-                  <>
-                    {renderMenuItem({
-                      label: language === 'tr' ? 'Kes' : 'Cut',
-                      icon: 'cut',
-                      shortcut: 'Ctrl+X',
-                      disabled: !hasText,
-                      onClick: () => {
-                        handleNoteTextCut(contextMenu.noteId!);
-                        setContextMenu(null);
-                      }
-                    })}
-                    {renderMenuItem({
-                      label: language === 'tr' ? 'Kopyala' : 'Copy',
-                      icon: 'copy',
-                      shortcut: 'Ctrl+C',
-                      disabled: !hasText,
-                      onClick: () => {
-                        handleNoteTextCopy(contextMenu.noteId!);
-                        setContextMenu(null);
-                      }
-                    })}
-                    {renderMenuItem({
-                      label: language === 'tr' ? 'Yap\u0131\u015ft\u0131r' : 'Paste',
-                      icon: 'paste',
-                      shortcut: 'Ctrl+V',
-                      onClick: () => {
-                        handleNoteTextPaste(contextMenu.noteId!);
-                        setContextMenu(null);
-                      }
-                    })}
-                    {renderMenuItem({
-                      label: language === 'tr' ? 'Sil' : 'Delete',
-                      icon: 'delete',
-                      shortcut: 'Del',
-                      disabled: !hasText,
-                      onClick: () => {
-                        handleNoteTextDelete(contextMenu.noteId!);
-                        setContextMenu(null);
-                      }
-                    })}
-                    {renderMenuItem({
-                      label: language === 'tr' ? 'T\u00fcm\u00fcn\u00fc Se\u00e7' : 'Select All',
-                      icon: 'select',
-                      shortcut: 'Ctrl+A',
-                      onClick: () => {
-                        handleNoteTextSelectAll(contextMenu.noteId!);
-                        setContextMenu(null);
-                      }
-                    })}
-                  </>
-                );
-              })()}
-            </div>
-          )}
-
-          {contextMenu.mode === 'canvas' && (
-            <div className="px-2 py-2 space-y-1">
-              {renderMenuItem({
-                label: language === 'tr' ? 'Yap\u0131\u015ft\u0131r' : 'Paste',
-                icon: 'paste',
-                shortcut: 'Ctrl+V',
-                disabled: noteClipboard.length === 0,
-                onClick: () => {
-                  pasteNotes(contextMenu.x, contextMenu.y);
-                  setContextMenu(null);
-                }
-              })}
-              {renderMenuItem({
-                label: language === 'tr' ? 'Geri Al' : 'Undo',
-                icon: 'undo',
-                shortcut: 'Ctrl+Z',
-                disabled: historyIndex <= 0,
-                onClick: () => {
-                  handleUndo();
-                  setContextMenu(null);
-                }
-              })}
-              {renderMenuItem({
-                label: language === 'tr' ? 'Yinele' : 'Redo',
-                icon: 'redo',
-                shortcut: 'Ctrl+Y',
-                disabled: historyIndex >= history.length - 1,
-                onClick: () => {
-                  handleRedo();
-                  setContextMenu(null);
-                }
-              })}
-              {renderMenuItem({
-                label: language === 'tr' ? 'T\u00fcm\u00fcn\u00fc Se\u00e7' : 'Select All',
-                icon: 'select',
-                shortcut: 'Ctrl+A',
-                disabled: devices.length === 0 && notes.length === 0,
-                onClick: () => {
-                  selectAllDevices();
-                  setContextMenu(null);
-                }
-              })}
-            </div>
-          )}
-
-          {contextMenu.deviceId && contextMenu.mode === 'device' && (
-            <div className="px-2 py-2 space-y-1">
-              {(() => {
-                const device = devices.find((d) => d.id === contextMenu.deviceId);
-                const canPaste = !!pasteDevice && clipboard.length > 0;
-                const hasSelection = selectedDeviceIds.includes(contextMenu.deviceId!);
-                const targets = hasSelection ? selectedDeviceIds : [contextMenu.deviceId!];
-                return (
-                  <>
-                    {renderMenuItem({
-                      label: language === 'tr' ? 'A\u00e7' : 'Open',
-                      icon: 'open',
-                      onClick: () => {
-                        if (device) handleDeviceDoubleClick(device);
-                        setContextMenu(null);
-                      },
-                      disabled: !device
-                    })}
-                    {renderMenuItem({
-                      label: language === 'tr' ? 'Kes' : 'Cut',
-                      icon: 'cut',
-                      shortcut: 'Ctrl+X',
-                      disabled: !device,
-                      onClick: () => {
-                        saveToHistory();
-                        cutDevice(targets);
-                        setContextMenu(null);
-                      }
-                    })}
-                    {renderMenuItem({
-                      label: language === 'tr' ? 'Kopyala' : 'Copy',
-                      icon: 'copy',
-                      shortcut: 'Ctrl+C',
-                      disabled: !device,
-                      onClick: () => {
-                        copyDevice(targets);
-                        setContextMenu(null);
-                      }
-                    })}
-                    {renderMenuItem({
-                      label: language === 'tr' ? 'Yap\u0131\u015ft\u0131r' : 'Paste',
-                      icon: 'paste',
-                      shortcut: 'Ctrl+V',
-                      disabled: !canPaste,
-                      onClick: () => {
-                        if (pasteDevice) pasteDevice();
-                        setContextMenu(null);
-                      }
-                    })}
-                    {renderMenuItem({
-                      label: language === 'tr' ? 'Sil' : 'Delete',
-                      icon: 'delete',
-                      shortcut: 'Del',
-                      disabled: !device,
-                      onClick: () => {
-                        saveToHistory();
-                        targets.forEach(id => deleteDevice(id));
-                        setSelectedDeviceIds([]);
-                        setContextMenu(null);
-                      }
-                    })}
-                    {renderMenuItem({
-                      label: language === 'tr' ? 'T\u00fcm\u00fcn\u00fc Se\u00e7' : 'Select All',
-                      icon: 'select',
-                      shortcut: 'Ctrl+A',
-                      disabled: devices.length === 0,
-                      onClick: () => {
-                        selectAllDevices();
-                        setContextMenu(null);
-                      }
-                    })}
-                    {renderMenuItem({
-                      label: language === 'tr' ? 'Yap\u0131land\u0131r' : 'Configure',
-                      icon: 'config',
-                      onClick: () => { startDeviceConfig(contextMenu.deviceId!); setContextMenu(null); },
-                      disabled: !device
-                    })}
-                    {renderMenuItem({
-                      label: language === 'tr' ? 'Ping' : 'Ping',
-                      icon: 'ping',
-                      onClick: () => {
-                        setPingSource(contextMenu.deviceId);
-                        setContextMenu(null);
-                      },
-                      disabled: !device
-                    })}
-                  </>
-                );
-              })()}
-            </div>
-          )}
-        </div>
-      )}
+      <NetworkTopologyContextMenu
+        contextMenu={contextMenu}
+        contextMenuRef={contextMenuRef}
+        isDark={isDark}
+        language={language}
+        noteFonts={noteFonts}
+        notes={notes}
+        devices={devices}
+        selectedDeviceIds={selectedDeviceIds}
+        clipboardLength={clipboard.length}
+        noteClipboardLength={noteClipboard.length}
+        historyIndex={historyIndex}
+        historyLength={history.length}
+        onClose={() => setContextMenu(null)}
+        onUpdateNoteStyle={updateNoteStyle}
+        onNoteCut={handleNoteTextCut}
+        onNoteCopy={handleNoteTextCopy}
+        onNotePaste={handleNoteTextPaste}
+        onNoteDeleteText={handleNoteTextDelete}
+        onNoteSelectAllText={handleNoteTextSelectAll}
+        onPasteNotes={pasteNotes}
+        onUndo={handleUndo}
+        onRedo={handleRedo}
+        onSelectAll={selectAllDevices}
+        onOpenDevice={(device) => handleDeviceDoubleClick(device)}
+        onCutDevices={cutDevice}
+        onCopyDevices={copyDevice}
+        onPasteDevice={pasteDevice || undefined}
+        onDeleteDevices={(ids) => ids.forEach((id) => deleteDevice(id))}
+        onStartConfig={startDeviceConfig}
+        onStartPing={(id) => setPingSource(id)}
+        onSaveToHistory={saveToHistory}
+        onClearDeviceSelection={() => setSelectedDeviceIds([])}
+      />
       {/* Device Configuration Modal (Name & IP) */}
       {configuringDevice && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" onClick={cancelDeviceConfig}>
@@ -4409,290 +3973,18 @@ export function NetworkTopology({
       {/* Mobile Bottom Sheet */}
       {renderMobilePalette()}
 
-      {/* Port Selector Modal */}
-      {showPortSelector && (
-        <div className="fixed inset-0 z-[10001] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-950/40 backdrop-blur-md" onClick={() => {
-            setShowPortSelector(false);
-            setPortSelectorStep('source');
-            setSelectedSourcePort(null);
-          }} />
-          <div className={`relative w-full max-w-2xl rounded-[2.5rem] ${isDark ? 'bg-slate-900/90 border-slate-800' : 'bg-white/90 border-slate-200'} border shadow-2xl overflow-hidden flex flex-col transition-all duration-500`}>
-            {/* Header */}
-            <div className={`px-8 py-6 border-b ${isDark ? 'border-slate-800/50 bg-slate-800/30' : 'border-slate-100 bg-slate-50/50'}`}>
-              <div className="flex items-center justify-between gap-6">
-                <div className="flex items-center gap-4">
-                  <div className={`p-3 rounded-2xl shadow-inner ${isDark ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20' : 'bg-amber-50 text-amber-600 border border-amber-100'}`}>
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h3 className={`text-xl font-black tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                      {portSelectorStep === 'source'
-                        ? (language === 'tr' ? 'Kaynak Portu Seç' : 'Source Port Selection')
-                        : (language === 'tr' ? 'Hedef Portu Seç' : 'Target Port Selection')
-                      }
-                    </h3>
-                  </div>
-                </div>
-                <button
-                  onClick={() => {
-                    setShowPortSelector(false);
-                    setPortSelectorStep('source');
-                    setSelectedSourcePort(null);
-                  }}
-                  className={`p-2 rounded-xl transition-all duration-300 ${isDark ? 'hover:bg-slate-700/50 text-slate-500 hover:text-slate-200' : 'hover:bg-slate-100 text-slate-400 hover:text-slate-700'}`}
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-
-              {/* Step Indicator */}
-              <div className="mt-8 flex items-center gap-4">
-                <div className={`flex-1 h-1.5 rounded-full transition-all duration-500 ${portSelectorStep === 'source' ? 'bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.4)]' : 'bg-emerald-500/40'}`} />
-                <div className={`flex-1 h-1.5 rounded-full transition-all duration-500 ${portSelectorStep === 'target' ? 'bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.4)]' : (isDark ? 'bg-slate-800' : 'bg-slate-200')}`} />
-              </div>
-
-              {/* Cable Type Selector */}
-              <div className="mt-6 flex flex-wrap items-center gap-6">
-                <div className="flex items-center gap-3">
-                  <span className={`text-[10px] font-black tracking-widest ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                    {language === 'tr' ? 'KABLO TİPİ:' : 'CABLE TYPE:'}
-                  </span>
-                  <div className="flex bg-slate-100 dark:bg-slate-800/50 p-1 rounded-xl border border-slate-200 dark:border-slate-800">
-                    {(['straight', 'crossover', 'console'] as CableType[]).map((type) => (
-                      <button
-                        key={type}
-                        onClick={() => onCableChange({ ...cableInfo, cableType: type })}
-                        className={`px-4 py-2 rounded-lg text-[10px] font-black tracking-widest transition-all duration-300 ${cableInfo.cableType === type
-                          ? `${CABLE_COLORS[type].bg} text-white shadow-lg shadow-black/10`
-                          : isDark ? 'text-slate-500 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600'
-                          }`}
-                      >
-                        {type === 'straight' ? 'Direct' : type === 'crossover' ? 'X-Over' : 'Cons'}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {portSelectorStep === 'target' && selectedSourcePort && (
-                  <div className="flex items-center gap-3 ml-auto px-4 py-2 rounded-xl bg-cyan-500/5 border border-cyan-500/20 text-cyan-500">
-                    <div className="w-1.5 h-1.5 rounded-full bg-cyan-500 animate-pulse" />
-                    <span className="text-[10px] font-black tracking-widest">
-                      Link from: {devices.find(d => d.id === selectedSourcePort.deviceId)?.name} ({selectedSourcePort.portId})
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Device & Port Panel */}
-            <div className="flex-1 overflow-y-auto p-8 custom-scrollbar space-y-8 max-h-[50vh]">
-              {devices.map((device) => {
-                const availablePorts = device.ports.filter(p => p.status === 'disconnected');
-                if (availablePorts.length === 0) return null;
-
-                // For target step, exclude the source device
-                if (portSelectorStep === 'target' && selectedSourcePort?.deviceId === device.id) return null;
-
-                return (
-                  <div key={device.id} className="space-y-4">
-                    <div className="flex items-center justify-between group">
-                      <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded-xl border transition-colors ${device.type === 'pc' ? 'bg-blue-500/10 border-blue-500/20 text-blue-500' :
-                          device.type === 'switch' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' :
-                            'bg-purple-500/10 border-purple-500/20 text-purple-500'
-                          }`}>
-                          {DEVICE_ICONS[device.type]}
-                        </div>
-                        <span className={`text-base font-black tracking-tight ${isDark ? 'text-white' : 'text-slate-900'} group-hover:text-cyan-500 transition-colors`}>
-                          {device.name}
-                        </span>
-                      </div>
-                      <div className={`text-[10px] font-bold tracking-widest ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                        {availablePorts.length} ports free
-                      </div>
-                    </div>
-
-                    {/* Pro-Style Port Grid - topology-matched colors */}
-                    <div className={`grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-3 p-4 rounded-3xl border ${isDark ? 'bg-slate-950/40 border-slate-800/50' : 'bg-slate-50 border-slate-200'}`}>
-                      {/* Port type legend */}
-                      <div className="col-span-full flex flex-wrap gap-3 mb-2 pb-2 border-b border-dashed border-slate-700/30 text-[10px]">
-                        {device.type === 'pc' ? (
-                          <>
-                            <span className="flex items-center gap-1 text-slate-400"><span className="w-2 h-2 rounded-full bg-blue-500 inline-block" /> ETH</span>
-                            <span className="flex items-center gap-1 text-slate-400"><span className="w-2 h-2 rounded-full bg-cyan-500 inline-block" /> COM</span>
-                          </>
-                        ) : (
-                          <>
-                            <span className="flex items-center gap-1 text-slate-400"><span className="w-2 h-2 rounded-full bg-blue-500 inline-block" /> Fa</span>
-                            <span className="flex items-center gap-1 text-slate-400"><span className="w-2 h-2 rounded-full bg-orange-500 inline-block" /> Gi</span>
-                            <span className="flex items-center gap-1 text-slate-400"><span className="w-2 h-2 rounded-full bg-cyan-500 inline-block" /> Con</span>
-                          </>
-                        )}
-                        <span className="flex items-center gap-1 text-slate-500 ml-auto"><span className="w-2 h-2 rounded-full bg-slate-600 inline-block" /> {language === 'tr' ? 'Bağlı' : 'Used'}</span>
-                      </div>
-                      {device.ports.map((port) => {
-                        const isConnected = port.status === 'connected';
-                        const pid = port.id.toLowerCase();
-                        const isConsolePrt = pid === 'console' || pid.startsWith('com');
-                        const isGigabit = pid.startsWith('gi');
-                        const isFastEth = pid.startsWith('fa') || pid.startsWith('eth');
-                        // Match topology canvas colors: Console/COM -> Cyan, Gi -> Orange, Fa/Eth -> Blue
-                        let dotCls = 'bg-slate-600';
-                        let dotGlow = '';
-                        let cardCls = isDark
-                          ? 'bg-slate-800 border-slate-700 hover:border-cyan-500/50 hover:bg-slate-700'
-                          : 'bg-white border-slate-200 hover:border-cyan-500 shadow-sm';
-                        let textCls = isDark ? 'text-slate-500 group-hover:text-white' : 'text-slate-500 group-hover:text-cyan-600';
-                        if (!isConnected) {
-                          if (isConsolePrt) {
-                            dotCls = 'bg-cyan-500';
-                            dotGlow = 'shadow-[0_0_7px_rgba(6,182,212,0.8)]';
-                            cardCls = isDark
-                              ? 'bg-cyan-950/20 border-cyan-800/50 hover:border-cyan-400 hover:bg-cyan-900/30'
-                              : 'bg-cyan-50 border-cyan-200 hover:border-cyan-400 shadow-sm';
-                            textCls = 'text-cyan-400 group-hover:text-cyan-300';
-                          } else if (isGigabit) {
-                            dotCls = 'bg-orange-500';
-                            dotGlow = 'shadow-[0_0_7px_rgba(249,115,22,0.8)]';
-                            cardCls = isDark
-                              ? 'bg-orange-950/20 border-orange-800/50 hover:border-orange-400 hover:bg-orange-900/30'
-                              : 'bg-orange-50 border-orange-200 hover:border-orange-400 shadow-sm';
-                            textCls = 'text-orange-400 group-hover:text-orange-300';
-                          } else if (isFastEth) {
-                            dotCls = 'bg-blue-500';
-                            dotGlow = 'shadow-[0_0_7px_rgba(59,130,246,0.8)]';
-                            cardCls = isDark
-                              ? 'bg-blue-950/20 border-blue-800/50 hover:border-blue-400 hover:bg-blue-900/30'
-                              : 'bg-blue-50 border-blue-200 hover:border-blue-400 shadow-sm';
-                            textCls = 'text-blue-400 group-hover:text-blue-300';
-                          }
-                        }
-                        return (
-                          <button
-                            key={port.id}
-                            disabled={isConnected}
-                            onClick={() => {
-                              if (portSelectorStep === 'source') {
-                                setSelectedSourcePort({ deviceId: device.id, portId: port.id });
-                                setPortSelectorStep('target');
-                              } else {
-                                // Complete connection
-                                const newConnection: CanvasConnection = {
-                                  id: `conn-${Date.now()}`,
-                                  sourceDeviceId: selectedSourcePort!.deviceId,
-                                  sourcePort: selectedSourcePort!.portId,
-                                  targetDeviceId: device.id,
-                                  targetPort: port.id,
-                                  cableType: cableInfo.cableType,
-                                  active: true,
-                                };
-
-                                const updatedConnections = [...connections, newConnection];
-                                setConnections(updatedConnections);
-
-                                // Update port status
-                                const updatedDevices = devices.map((d) => {
-                                  if (d.id === selectedSourcePort!.deviceId) {
-                                    return {
-                                      ...d,
-                                      ports: d.ports.map((p) =>
-                                        p.id === selectedSourcePort!.portId ? { ...p, status: 'connected' as const } : p
-                                      ),
-                                    };
-                                  }
-                                  if (d.id === device.id) {
-                                    return {
-                                      ...d,
-                                      ports: d.ports.map((p) =>
-                                        p.id === port.id ? { ...p, status: 'connected' as const } : p
-                                      ),
-                                    };
-                                  }
-                                  return d;
-                                });
-                                setDevices(updatedDevices);
-
-                                if (onTopologyChange) {
-                                  onTopologyChange(updatedDevices, updatedConnections, notes);
-                                }
-
-                                // Update cable info
-                                const sourceDevice = devices.find((d) => d.id === selectedSourcePort!.deviceId);
-                                const targetDevice = devices.find((d) => d.id === device.id);
-                                if (sourceDevice && targetDevice) {
-                                  onCableChange({
-                                    ...cableInfo,
-                                    connected: true,
-                                    sourceDevice: sourceDevice.type === 'router' ? 'switch' : sourceDevice.type,
-                                    targetDevice: targetDevice.type === 'router' ? 'switch' : targetDevice.type,
-                                  });
-                                }
-
-                                setShowPortSelector(false);
-                                setPortSelectorStep('source');
-                                setSelectedSourcePort(null);
-                              }
-                            }}
-                            className={`group relative flex flex-col items-center gap-1.5 p-3 rounded-xl transition-all duration-300 border ${isConnected
-                              ? (isDark ? 'bg-slate-900/40 border-slate-800 cursor-not-allowed opacity-40' : 'bg-slate-200 border-slate-300 cursor-not-allowed opacity-40')
-                              : `${cardCls} hover:scale-110`
-                              }`}
-                          >
-                            {/* Port dot - topology canvas color */}
-                            <div className={`w-3.5 h-3.5 rounded-full transition-all duration-300 ${isConnected ? 'bg-slate-600' : `${dotCls} ${dotGlow}`
-                              }`} />
-                            <span className={`text-[10px] font-bold font-mono transition-colors ${isConnected ? 'text-slate-600' : textCls
-                              }`}>
-                              {port.label.replace('FastEthernet', 'Fa').replace('GigabitEthernet', 'Gi')}
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })}
-
-              {devices.every(d => d.ports.filter(p => p.status === 'disconnected').length === 0) && (
-                <div className="flex flex-col items-center py-12 space-y-4">
-                  <div className={`p-6 rounded-full ${isDark ? 'bg-slate-800/50' : 'bg-slate-100'}`}>
-                    <svg className={`w-12 h-12 ${isDark ? 'text-slate-700' : 'text-slate-300'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                    </svg>
-                  </div>
-                  <div className={`text-center max-w-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                    <h4 className="font-bold text-slate-400">{language === 'tr' ? 'Müsait Port Yok' : 'No Free Ports'}</h4>
-                    <p className="text-xs mt-1">{language === 'tr' ? 'Lütfen önce cihazların bağlantılarını kesin.' : 'Please disconnect some cables first.'}</p>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Modal Navigation */}
-            <div className={`px-8 py-6 border-t ${isDark ? 'border-slate-800/50 bg-slate-800/30' : 'border-slate-100 bg-slate-50/50'} flex justify-between items-center`}>
-              <div className={`text-[10px] font-bold tracking-widest ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
-                {portSelectorStep === 'source' ? 'Step 1: Root' : 'Step 2: Destination'}
-              </div>
-              <button
-                onClick={() => {
-                  setShowPortSelector(false);
-                  setPortSelectorStep('source');
-                  setSelectedSourcePort(null);
-                }}
-                className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-xs font-black tracking-widest transition-all ${isDark ? 'bg-slate-800 text-slate-400 hover:text-slate-200' : 'bg-slate-100 text-slate-500 hover:text-slate-700'
-                  }`}
-              >
-                {language === 'tr' ? 'İptal' : 'Cancel'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <NetworkTopologyPortSelectorModal
+        isOpen={showPortSelector}
+        isDark={isDark}
+        language={language}
+        devices={devices}
+        cableType={cableInfo.cableType}
+        portSelectorStep={portSelectorStep}
+        selectedSourcePort={selectedSourcePort}
+        onClose={closePortSelector}
+        onCableTypeChange={(type) => onCableChange({ ...cableInfo, cableType: type })}
+        onSelectPort={handlePortSelectorSelectPort}
+      />
       {/* Port Tooltip */}
       {portTooltip && portTooltip.visible && (
         <div
@@ -4757,14 +4049,3 @@ export function NetworkTopology({
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
-
-

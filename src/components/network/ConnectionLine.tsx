@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import { CanvasConnection, CanvasDevice } from './NetworkTopology';
+import { CanvasConnection, CanvasDevice } from './networkTopology.types';
 import { CableType, isCableCompatible, CableInfo } from '@/lib/network/types';
 
 interface ConnectionLineProps {

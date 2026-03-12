@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import { CanvasDevice } from './NetworkTopology';
+import { CanvasDevice } from './networkTopology.types';
 
 interface DeviceNodeProps {
   device: CanvasDevice;

@@ -7,7 +7,8 @@ import { SwitchState, CableInfo } from '@/lib/network/types';
 import { createInitialState } from '@/lib/network/initialState';
 import { useDeviceManager } from '@/hooks/useDeviceManager';
 // Duplicate removed
-import { NetworkTopology, CanvasDevice, CanvasConnection, CanvasNote } from '@/components/network/NetworkTopology';
+import { NetworkTopology } from '@/components/network/NetworkTopology';
+import { CanvasDevice, CanvasConnection, CanvasNote } from '@/components/network/networkTopology.types';
 import { PCPanel } from '@/components/network/PCPanel';
 import { getPrompt } from '@/lib/network/executor';
 import { Terminal, TerminalOutput } from '@/components/network/Terminal';
