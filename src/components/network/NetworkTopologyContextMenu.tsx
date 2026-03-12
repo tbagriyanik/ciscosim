@@ -319,8 +319,15 @@ export function NetworkTopologyContextMenu({
             label: language === 'tr' ? 'Yapıştır' : 'Paste',
             icon: 'paste',
             shortcut: 'Ctrl+V',
-            disabled: noteClipboardLength === 0,
-            onClick: () => { onPasteNotes(contextMenu.x, contextMenu.y); onClose(); }
+            disabled: (noteClipboardLength === 0) && (!onPasteDevice || clipboardLength === 0),
+            onClick: () => {
+              if (onPasteDevice && clipboardLength > 0) {
+                onPasteDevice();
+              } else {
+                onPasteNotes(contextMenu.x, contextMenu.y);
+              }
+              onClose();
+            }
           })}
           {renderMenuItem({
             label: language === 'tr' ? 'Geri Al' : 'Undo',

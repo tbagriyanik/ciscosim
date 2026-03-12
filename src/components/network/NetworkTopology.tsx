@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
-import { Monitor, Laptop, Network, Plus, Database, ChevronRight, Trash2, MousePointer2, StickyNote } from "lucide-react";
+import { Monitor, Laptop, Network, Plus, Database, ChevronRight, Trash2, MousePointer2, Pencil } from "lucide-react";
 import { ConnectionLine } from './ConnectionLine';
 import { DeviceNode } from './DeviceNode';
 import { NetworkTopologyProps, CanvasDevice, CanvasConnection, CanvasNote, ContextMenuState, SelectedPortRef } from './networkTopology.types';
@@ -3014,7 +3014,7 @@ export function NetworkTopology({
                     title={language === 'tr' ? 'Not Ekle' : 'Add Note'}
                     className={`p-1.5 rounded-lg transition-all ${isDark ? 'hover:bg-slate-700 text-amber-300' : 'hover:bg-slate-100 text-amber-500'}`}
                   >
-                    <StickyNote className="w-5 h-5" />
+                    <Pencil className="w-4 h-5" />
                   </button>
                 </div>
               </div>
@@ -3051,7 +3051,7 @@ export function NetworkTopology({
                 className={`p-1.5 rounded-lg ${isDark ? 'hover:bg-slate-700 text-amber-300' : 'hover:bg-slate-100 text-amber-500'}`}
                 title={language === 'tr' ? 'Not Ekle' : 'Add Note'}
               >
-                <StickyNote className="w-4 h-4" />
+                <Pencil className="w-3.5 h-4" />
               </button>
 
               {/* Zoom Controls */}
@@ -3159,7 +3159,7 @@ export function NetworkTopology({
                       className={`flex flex-col items-center gap-2 p-4 rounded-2xl border transition-all ${isDark ? 'bg-slate-800 border-slate-700 active:bg-slate-700' : 'bg-slate-50 border-slate-200 active:bg-slate-100'
                         }`}
                     >
-                      <StickyNote className="w-6 h-6 text-amber-400" />
+                      <Pencil className="w-6 h-6 text-amber-400" />
                       <span className="text-xs font-bold">{language === 'tr' ? 'Not' : 'Note'}</span>
                     </button>
                   </div>
@@ -3302,18 +3302,20 @@ export function NetworkTopology({
                     const totalSameConns = sameDeviceConnections.length;
 
                     return (
-                      <ConnectionLine
-                        key={`line-${conn.id}`}
-                        connection={conn}
-                        sourceDevice={sourceDevice}
-                        targetDevice={targetDevice}
-                        isDark={isDark}
-                        isDragging={isActuallyDragging || isTouchDragging}
-                        totalSameConns={totalSameConns}
-                        sameConnIndex={sameConnIndex}
-                        getPortPosition={getPortPosition}
-                        CABLE_COLORS={CABLE_COLORS as any}
-                      />
+                      <g key={`line-${conn.id}`}>
+                        <ConnectionLine
+                          connection={conn}
+                          sourceDevice={sourceDevice}
+                          targetDevice={targetDevice}
+                          isDark={isDark}
+                          isDragging={isActuallyDragging || isTouchDragging}
+                          totalSameConns={totalSameConns}
+                          sameConnIndex={sameConnIndex}
+                          getPortPosition={getPortPosition}
+                          CABLE_COLORS={CABLE_COLORS as any}
+                        />
+                        {renderConnectionHandle(conn)}
+                      </g>
                     );
                   })}
 
@@ -3425,8 +3427,7 @@ export function NetworkTopology({
                     </foreignObject>
                   ))}
 
-                  {/* Connection interaction handles (Trash icons) - Rendered LAST to stay on top */}
-                  {connections.map((conn) => renderConnectionHandle(conn))}
+                  {/* Connection interaction handles are now rendered with their cables */}
 
                   {/* Ping Animation Envelope - rendered inside transformed group */}
                   {pingAnimation && (() => {

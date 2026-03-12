@@ -67,5 +67,5 @@ export const NOTE_FONTS_MOBILE = [
   'Courier New',
   'Arial'
 ];
-export const NOTE_FONT_SIZES: Array<CanvasNote['fontSize']> = [10, 12, 16];
-export const NOTE_OPACITY: Array<CanvasNote['opacity']> = [0.5, 0.75, 1];
+export const NOTE_FONT_SIZES: Array<CanvasNote['fontSize']> = [10, 12, 16, 20];
+export const NOTE_OPACITY: Array<CanvasNote['opacity']> = [0.25, 0.5, 0.75, 1];
