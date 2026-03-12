@@ -1529,6 +1529,25 @@ export function NetworkTopology({
     return () => canvas.removeEventListener('wheel', handleWheel);
   }, []);
 
+  const duplicateNote = useCallback((noteId: string) => {
+    const note = notes.find(n => n.id === noteId);
+    if (!note) return;
+
+    saveToHistory();
+    const newNote: CanvasNote = {
+      ...note,
+      id: `note-${Date.now()}`,
+      x: note.x + 20,
+      y: note.y + 20,
+    };
+
+    const updatedNotes = [...notes, newNote];
+    setNotes(updatedNotes);
+    if (onTopologyChange) {
+      onTopologyChange(devices, connections, updatedNotes);
+    }
+  }, [notes, devices, connections, onTopologyChange, saveToHistory]);
+
   // Handle port click for connection
   const handlePortClick = useCallback((e: ReactMouseEvent, deviceId: string, portId: string) => {
     e.stopPropagation();
@@ -3802,6 +3821,7 @@ export function NetworkTopology({
         onNotePaste={handleNoteTextPaste}
         onNoteDeleteText={handleNoteTextDelete}
         onNoteSelectAllText={handleNoteTextSelectAll}
+        onDuplicateNote={duplicateNote}
         onPasteNotes={pasteNotes}
         onUndo={handleUndo}
         onRedo={handleRedo}
@@ -4093,117 +4113,6 @@ export function NetworkTopology({
         onCableTypeChange={(type) => onCableChange({ ...cableInfo, cableType: type })}
         onSelectPort={handlePortSelectorSelectPort}
       />
-      {/* Port Tooltip */}
-      {portTooltip && portTooltip.visible && (
-        <div
-          className={`fixed z-[100] pointer-events-none transition-opacity duration-300 ${portTooltip.visible ? 'opacity-100' : 'opacity-0'
-            }`}
-          style={{
-            left: portTooltip.x,
-            top: portTooltip.y - 10,
-            transform: 'translate(-50%, -100%)',
-          }}
-        >
-          <div
-            className={`px-3 py-2 rounded-xl shadow-2xl border backdrop-blur-md ${isDark
-              ? 'bg-slate-900/90 border-slate-700 text-white shadow-cyan-500/10'
-              : 'bg-white/90 border-slate-200 text-slate-900 shadow-slate-200/50'
-              }`}
-          >
-            <div className="flex items-center gap-2 mb-1">
-              <div className={`w-2 h-2 rounded-full ${devices.find(d => d.id === portTooltip.deviceId)?.ports.find(p => p.id === portTooltip.portId)?.shutdown
-                ? 'bg-red-500'
-                : devices.find(d => d.id === portTooltip.deviceId)?.ports.find(p => p.id === portTooltip.portId)?.status === 'connected'
-                  ? 'bg-green-500'
-                  : 'bg-slate-400'
-                }`} />
-              <span className="text-[10px] font-black tracking-widest uppercase opacity-60">
-                {portTooltip.portId}
-              </span>
-            </div>
-
-            <div className="space-y-0.5">
-              <div className="text-xs font-bold">
-                {language === 'tr' ? 'Durum:' : 'Status:'}{' '}
-                <span className={
-                  devices.find(d => d.id === portTooltip.deviceId)?.ports.find(p => p.id === portTooltip.portId)?.shutdown
-                    ? 'text-red-500'
-                    : devices.find(d => d.id === portTooltip.deviceId)?.ports.find(p => p.id === portTooltip.portId)?.status === 'connected'
-                      ? 'text-green-500'
-                      : 'text-slate-400'
-                }>
-                  {devices.find(d => d.id === portTooltip.deviceId)?.ports.find(p => p.id === portTooltip.portId)?.shutdown
-                    ? (language === 'tr' ? 'Kapalı (Shutdown)' : 'Shutdown')
-                    : devices.find(d => d.id === portTooltip.deviceId)?.ports.find(p => p.id === portTooltip.portId)?.status === 'connected'
-                      ? (language === 'tr' ? 'Bağlı (Up)' : 'Connected (Up)')
-                      : (language === 'tr' ? 'Bağlı Değil (Down)' : 'Not Connected (Down)')
-                  }
-                </span>
-              </div>
-
-              {devices.find(d => d.id === portTooltip.deviceId)?.ports.find(p => p.id === portTooltip.portId)?.status === 'connected' && (
-                <div className="text-[10px] opacity-70">
-                  {language === 'tr' ? 'Fiziksel bağlantı aktif' : 'Physical link active'}
-                </div>
-              )}
-            </div>
-
-            {/* Arrow */}
-            <div className={`absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-full w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] ${isDark ? 'border-t-slate-800' : 'border-t-white'
-              }`} />
-          </div>
-        </div>
-      )}
-
-      {/* Device Tooltip */}
-      {deviceTooltip && deviceTooltip.visible && (
-        <div
-          className={`fixed z-[100] pointer-events-none transition-opacity duration-300 ${deviceTooltip.visible ? 'opacity-100' : 'opacity-0'
-            }`}
-          style={{
-            left: deviceTooltip.x,
-            top: deviceTooltip.y - 12,
-            transform: 'translate(-50%, -100%)',
-          }}
-        >
-          <div
-            className={`px-3 py-2 rounded-xl shadow-2xl border backdrop-blur-md ${isDark
-              ? 'bg-slate-900/90 border-slate-700 text-white shadow-cyan-500/10'
-              : 'bg-white/90 border-slate-200 text-slate-900 shadow-slate-200/50'
-              }`}
-          >
-            {(() => {
-              const device = devices.find(d => d.id === deviceTooltip.deviceId);
-              if (!device) return null;
-              const model = device.type === 'switch' ? 'WS-C2960-24TT-L' : device.type === 'router' ? 'ISR-4321' : 'PC';
-              const openPorts = device.ports.filter(p => !p.shutdown).length;
-              const closedPorts = device.ports.length - openPorts;
-              return (
-                <div className="space-y-0.5 text-[10px]">
-                  <div className="flex items-center gap-2">
-                    <span className={`w-2 h-2 rounded-full ${device.status === 'offline' ? 'bg-black' : 'bg-emerald-500'}`} />
-                    <span className="font-black tracking-widest uppercase opacity-70">
-                      {device.type === 'pc' ? 'PC' : device.type === 'switch' ? 'SWITCH' : 'ROUTER'}
-                    </span>
-                  </div>
-                  <div className="text-xs font-bold">{device.name}</div>
-                  <div className="opacity-70">{model}</div>
-                  <div>
-                    {language === 'tr'
-                      ? `Güç: ${device.status === 'offline' ? 'Kapalı' : 'Açık'}`
-                      : `Power: ${device.status === 'offline' ? 'Off' : 'On'}`}
-                  </div>
-                  <div>
-                    {language === 'tr'
-                      ? `Portlar: ${openPorts} açık / ${closedPorts} kapalı`
-                      : `Ports: ${openPorts} open / ${closedPorts} closed`}
-                  </div>
-                </div>
-              );
-            })()}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

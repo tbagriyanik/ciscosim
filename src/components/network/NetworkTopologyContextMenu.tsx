@@ -23,6 +23,7 @@ interface NetworkTopologyContextMenuProps {
   onNotePaste: (noteId: string) => void;
   onNoteDeleteText: (noteId: string) => void;
   onNoteSelectAllText: (noteId: string) => void;
+  onDuplicateNote: (noteId: string) => void;
   onPasteNotes: (x: number, y: number) => void;
   onUndo: () => void;
   onRedo: () => void;
@@ -58,6 +59,7 @@ export function NetworkTopologyContextMenu({
   onNotePaste,
   onNoteDeleteText,
   onNoteSelectAllText,
+  onDuplicateNote,
   onPasteNotes,
   onUndo,
   onRedo,
@@ -262,6 +264,14 @@ export function NetworkTopologyContextMenu({
                 </button>
               ))}
             </div>
+          </div>
+
+          <div className="pt-1 border-t border-slate-700/30">
+            {renderMenuItem({
+              label: language === 'tr' ? 'Çoğalt' : 'Duplicate',
+              icon: 'copy',
+              onClick: () => { onDuplicateNote(contextMenu.noteId!); onClose(); }
+            })}
           </div>
         </div>
       )}

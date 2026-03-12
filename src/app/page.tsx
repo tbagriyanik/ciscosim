@@ -172,7 +172,7 @@ export default function Home() {
       y: 50,
       ip: '192.168.1.10',
       macAddress: '00e0.f701.a1b1',
-      status: 'offline',
+      status: 'online',
       ports: [
         { id: 'eth0', label: 'Eth0', status: 'disconnected' as const },
         { id: 'com1', label: 'COM1', status: 'disconnected' as const }
@@ -186,7 +186,7 @@ export default function Home() {
       y: 50,
       macAddress: '0011.2233.4401',
       ip: '',
-      status: 'offline',
+      status: 'online',
       ports: [
         { id: 'console', label: 'Console', status: 'disconnected' as const },
         ...Array.from({ length: 24 }, (_, i) => ({ id: `fa0/${i + 1}`, label: `Fa0/${i + 1}`, status: 'disconnected' as const })),
@@ -928,7 +928,7 @@ export default function Home() {
           y: 50,
           ip: '192.168.1.10',
           macAddress: '00e0.f701.a1b1',
-          status: 'offline',
+          status: 'online',
           ports: [
             { id: 'eth0', label: 'Eth0', status: 'disconnected' as const },
             { id: 'com1', label: 'COM1', status: 'disconnected' as const }
@@ -942,7 +942,7 @@ export default function Home() {
           y: 50,
           macAddress: '0011.2233.4401',
           ip: '',
-          status: 'offline',
+          status: 'online',
           ports: [
             { id: 'console', label: 'Console', status: 'disconnected' as const },
             ...Array.from({ length: 24 }, (_, i) => ({ id: `fa0/${i + 1}`, label: `Fa0/${i + 1}`, status: 'disconnected' as const })),
@@ -978,7 +978,7 @@ export default function Home() {
             y: 50,
             ip: '192.168.1.10',
             macAddress: '00e0.f701.a1b1',
-            status: 'offline',
+            status: 'online',
             ports: [
               { id: 'eth0', label: 'Eth0', status: 'disconnected' as const },
               { id: 'com1', label: 'COM1', status: 'disconnected' as const }
@@ -992,7 +992,7 @@ export default function Home() {
             y: 50,
             macAddress: '0011.2233.4401',
             ip: '',
-            status: 'offline',
+            status: 'online',
             ports: [
               { id: 'console', label: 'Console', status: 'disconnected' as const },
               ...Array.from({ length: 24 }, (_, i) => ({ id: `fa0/${i + 1}`, label: `Fa0/${i + 1}`, status: 'disconnected' as const })),
