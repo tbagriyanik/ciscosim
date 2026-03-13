@@ -11,6 +11,8 @@ interface DeviceNodeProps {
   onClick: (e: React.MouseEvent<SVGGElement>, device: CanvasDevice) => void;
   onDoubleClick: (device: CanvasDevice) => void;
   onContextMenu: (e: React.MouseEvent<SVGGElement>, deviceId: string) => void;
+  onMouseEnter?: (e: React.MouseEvent<SVGGElement>, deviceId: string) => void;
+  onMouseLeave?: (e: React.MouseEvent<SVGGElement>, deviceId: string) => void;
   onTouchStart: (e: React.TouchEvent<SVGGElement>, deviceId: string) => void;
   onTouchMove: (e: React.TouchEvent<SVGGElement>) => void;
   onTouchEnd: (e: React.TouchEvent<SVGGElement>) => void;
@@ -27,6 +29,8 @@ export const DeviceNode = memo(function DeviceNode({
   onClick,
   onDoubleClick,
   onContextMenu,
+  onMouseEnter,
+  onMouseLeave,
   onTouchStart,
   onTouchMove,
   onTouchEnd,
@@ -38,6 +42,8 @@ export const DeviceNode = memo(function DeviceNode({
       onClick={(e) => onClick(e, device)}
       onDoubleClick={() => onDoubleClick(device)}
       onContextMenu={(e) => onContextMenu(e, device.id)}
+      onMouseEnter={(e) => onMouseEnter?.(e, device.id)}
+      onMouseLeave={(e) => onMouseLeave?.(e, device.id)}
       onTouchStart={(e) => onTouchStart(e, device.id)}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}

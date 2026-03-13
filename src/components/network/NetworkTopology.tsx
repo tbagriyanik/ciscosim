@@ -116,6 +116,24 @@ export function NetworkTopology({
   const [zoom, setZoom] = useState(zoomProp || DEFAULT_ZOOM);
   const [pan, setPan] = useState(panProp || { x: 0, y: 0 });
 
+  // Tooltip states
+  const [portTooltip, setPortTooltip] = useState<{
+    deviceId: string;
+    portId: string;
+    x: number;
+    y: number;
+    visible: boolean;
+  } | null>(null);
+  const portTooltipTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const [deviceTooltip, setDeviceTooltip] = useState<{
+    deviceId: string;
+    x: number;
+    y: number;
+    visible: boolean;
+  } | null>(null);
+  const deviceTooltipTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // Sync internal state with props (e.g. from undo/redo or tab switching)
   useEffect(() => {
     if (initialDevices) setDevices(initialDevices);
@@ -782,6 +800,14 @@ export function NetworkTopology({
         const coords = getCanvasCoords(e.clientX, e.clientY);
         setMousePos(coords);
       }
+
+      // Update tooltip position if visible
+      if (deviceTooltip && deviceTooltip.visible) {
+        setDeviceTooltip(prev => prev ? { ...prev, x: e.clientX, y: e.clientY } : null);
+      }
+      if (portTooltip && portTooltip.visible) {
+        setPortTooltip(prev => prev ? { ...prev, x: e.clientX, y: e.clientY } : null);
+      }
     };
 
     const handleMouseUp = (e: globalThis.MouseEvent) => {
@@ -847,7 +873,7 @@ export function NetworkTopology({
         cancelAnimationFrame(dragAnimationFrameRef.current);
       }
     };
-  }, [isPanning, panStart, draggedDevice, draggedNoteId, resizingNoteId, noteDragStartPos, noteResizeStartPos, noteResizeStartSizes, zoom, pan, isDrawingConnection, getCanvasCoords, getCanvasDimensions, dragStartPos, isActuallyDragging, getDistance, onDeviceSelect, saveToHistory, selectedDeviceIds, selectedNoteIds, dragStartDevicePositions, noteDragStartPositions, notes, connections, devices, onTopologyChange]);
+  }, [isPanning, panStart, draggedDevice, draggedNoteId, resizingNoteId, noteDragStartPos, noteResizeStartPos, noteResizeStartSizes, zoom, pan, isDrawingConnection, getCanvasCoords, getCanvasDimensions, dragStartPos, isActuallyDragging, getDistance, onDeviceSelect, saveToHistory, selectedDeviceIds, selectedNoteIds, dragStartDevicePositions, noteDragStartPositions, notes, connections, devices, onTopologyChange, deviceTooltip, portTooltip]);
 
   // Global touch event handlers for device/note dragging on mobile
   useEffect(() => {
@@ -1789,24 +1815,7 @@ export function NetworkTopology({
 
   // No automatic effect - we trigger onTopologyChange manually on key events (add, delete, move end)
   // to avoid re-rendering the parent Home component on every drag frame.
-  // Port Tooltip state
-  const [portTooltip, setPortTooltip] = useState<{
-    deviceId: string;
-    portId: string;
-    x: number;
-    y: number;
-    visible: boolean;
-  } | null>(null);
-  const portTooltipTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const [deviceTooltip, setDeviceTooltip] = useState<{
-    deviceId: string;
-    x: number;
-    y: number;
-    visible: boolean;
-  } | null>(null);
-  const deviceTooltipTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
+  
   const showPortTooltip = useCallback((e: ReactMouseEvent | MouseEvent, deviceId: string, portId: string) => {
     // Don't show tooltip while dragging
     if (isActuallyDragging || isTouchDragging) return;
@@ -2768,8 +2777,8 @@ export function NetworkTopology({
           cy={10}
           r={5}
           fill={statusFill}
-          stroke={statusStroke}
-          strokeWidth={statusStroke === 'none' ? 0 : 1}
+          stroke="#000000"
+          strokeWidth={1}
           className="transition-colors duration-300"
         />
 
@@ -3534,6 +3543,8 @@ export function NetworkTopology({
                         onClick={(e, dev) => handleDeviceClick(e as unknown as ReactMouseEvent, dev)}
                         onDoubleClick={() => handleDeviceDoubleClick(device)}
                         onContextMenu={(e, id) => handleContextMenu(e as unknown as ReactMouseEvent, id)}
+                        onMouseEnter={(e, id) => handleDeviceHover(e as unknown as ReactMouseEvent, id)}
+                        onMouseLeave={() => setDeviceTooltip(null)}
                         onTouchStart={(e, id) => handleDeviceTouchStart(e as unknown as ReactTouchEvent, id)}
                         onTouchMove={handleDeviceTouchMove}
                         onTouchEnd={handleDeviceTouchEnd}
@@ -3554,7 +3565,7 @@ export function NetworkTopology({
                       className="pointer-events-none"
                     >
                       <div
-                        className={`pointer-events-auto relative flex flex-col w-full h-full rounded-lg shadow-xl border border-white/40 text-white ${selectedNoteIds.includes(note.id) ? 'ring-2 ring-emerald-400/70' : ''}`}
+                        className={`pointer-events-auto relative flex flex-col w-full h-full rounded-lg shadow-xl border border-black text-white ${selectedNoteIds.includes(note.id) ? 'ring-2 ring-emerald-400/70' : ''}`}
                         data-note-id={note.id}
                         style={{ 
                           backgroundColor: note.color, 
@@ -3607,7 +3618,11 @@ export function NetworkTopology({
                             }
                           }}
                           className="flex-1 px-2 py-1 bg-transparent outline-none resize-none text-white placeholder:text-white/50"
-                          style={{ fontSize: note.fontSize, height: note.height - NOTE_HEADER_HEIGHT - 6 }}
+                          style={{ 
+                            fontSize: note.fontSize, 
+                            height: note.height - NOTE_HEADER_HEIGHT - 6,
+                            textShadow: '1px 1px 2px rgba(0,0,0,1)'
+                          }}
                         />
                         {!isMobile && (
                           <div
@@ -4189,6 +4204,84 @@ export function NetworkTopology({
           </div>
         </div>
       )}
+
+      {/* Device Info Tooltip */}
+      {deviceTooltip && deviceTooltip.visible && (() => {
+        const device = devices.find(d => d.id === deviceTooltip.deviceId);
+        if (!device) return null;
+        return (
+          <div
+            className="fixed z-[9999] pointer-events-none px-3 py-2 rounded-lg shadow-xl border text-[11px] backdrop-blur-md transition-all duration-300"
+            style={{
+              left: `${deviceTooltip.x + 15}px`,
+              top: `${deviceTooltip.y + 15}px`,
+              backgroundColor: isDark ? 'rgba(15, 23, 42, 0.95)' : 'rgba(255, 255, 255, 0.95)',
+              borderColor: isDark ? 'rgba(51, 65, 85, 0.5)' : 'rgba(226, 232, 240, 0.8)',
+              color: isDark ? '#f1f5f9' : '#1e293b'
+            }}
+          >
+            <div className="flex flex-col gap-1.5 min-w-[140px]">
+              <div className="flex items-center justify-between border-b border-slate-700/20 pb-1 mb-1">
+                <span className="font-black uppercase tracking-widest text-cyan-500">
+                  {device.type.toUpperCase()}
+                </span>
+                <span className={`w-2 h-2 rounded-full ${device.status === 'online' ? 'bg-emerald-500' : 'bg-slate-500'}`} />
+              </div>
+              <div className="flex justify-between gap-4">
+                <span className="opacity-60 font-medium">Hostname:</span>
+                <span className="font-bold">{device.name}</span>
+              </div>
+              <div className="flex justify-between gap-4">
+                <span className="opacity-60 font-medium">IP:</span>
+                <span className="font-mono font-bold text-blue-400">{device.ip || 'Unset'}</span>
+              </div>
+              <div className="flex justify-between gap-4">
+                <span className="opacity-60 font-medium">MAC:</span>
+                <span className="font-mono opacity-80">{device.macAddress}</span>
+              </div>
+              <div className="flex justify-between gap-4 border-t border-slate-700/10 pt-1 mt-0.5">
+                <span className="opacity-60 font-medium italic">VLAN:</span>
+                <span className="font-black text-amber-500">{device.vlan || 1}</span>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Port Info Tooltip */}
+      {portTooltip && portTooltip.visible && (() => {
+        const device = devices.find(d => d.id === portTooltip.deviceId);
+        const port = device?.ports.find(p => p.id === portTooltip.portId);
+        if (!device || !port) return null;
+        return (
+          <div
+            className="fixed z-[9999] pointer-events-none px-3 py-2 rounded-lg shadow-xl border text-[11px] backdrop-blur-md"
+            style={{
+              left: `${portTooltip.x + 15}px`,
+              top: `${portTooltip.y + 15}px`,
+              backgroundColor: isDark ? 'rgba(15, 23, 42, 0.9)' : 'rgba(255, 255, 255, 0.9)',
+              borderColor: isDark ? 'rgba(51, 65, 85, 0.5)' : 'rgba(226, 232, 240, 0.8)',
+              color: isDark ? '#f1f5f9' : '#1e293b'
+            }}
+          >
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center justify-between gap-4">
+                <span className="font-bold">{port.label}</span>
+                <span className={`px-1.5 py-0.5 rounded text-[9px] font-black uppercase ${port.status === 'connected' ? 'bg-emerald-500/20 text-emerald-500' :
+                    port.status === 'blocked' ? 'bg-amber-500/20 text-amber-500' :
+                      port.status === 'disabled' ? 'bg-red-500/20 text-red-500' :
+                        'bg-slate-500/20 text-slate-500'
+                  }`}>
+                  {port.status}
+                </span>
+              </div>
+              <div className="text-[10px] opacity-60">
+                {port.id}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Mobile Bottom Sheet */}
       {renderMobilePalette()}
