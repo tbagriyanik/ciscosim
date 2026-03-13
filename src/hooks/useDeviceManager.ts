@@ -18,11 +18,6 @@ export function useDeviceManager(language: 'tr' | 'en') {
     initialMap.set('switch-1', createInitialState());
     return initialMap;
   });
-  
-  const deviceStatesRef = useRef(deviceStates);
-  useEffect(() => {
-    deviceStatesRef.current = deviceStates;
-  }, [deviceStates]);
 
   // Per-device terminal outputs
   const [deviceOutputs, setDeviceOutputs] = useState<Map<string, TerminalOutput[]>>(() => {
@@ -36,12 +31,12 @@ export function useDeviceManager(language: 'tr' | 'en') {
       {
         id: '0',
         type: 'output',
-        content: 'OS Windows [Version 10.0.19045.3803]\n(c) OS Corporation. Tüm hakları saklıdır.\n'
+        content: 'OS Windows [Version 10.0.19045.3803]\\\n(c) OS Corporation. Tüm hakları saklıdır.\\\n'
       },
       {
         id: '1',
         type: 'output',
-        content: '\nEthernet adapter Ethernet bağlantısı:\n'
+        content: '\\\nEthernet adapter Ethernet bağlantısı:\\\n'
       }
     ]);
     return initialMap;
@@ -109,20 +104,20 @@ export function useDeviceManager(language: 'tr' | 'en') {
           id: 'boot-1-' + Date.now(), 
           type: 'output', 
           content: isRouter 
-            ? '\n\nSystem Bootstrap, Version 15.1(4)M4, RELEASE SOFTWARE (fc1)\nTechnical Support: http://yunus.sf.net\nCopyright (c) 1986-2026 by Systems, Inc.\n' 
-            : '\n\nSystem Bootstrap, Version 12.1(11r)EA1, RELEASE SOFTWARE (fc1)\nTechnical Support: http://yunus.sf.net\nCopyright (c) 1986-2026 by Systems, Inc.\n'
+            ? '\\\n\\\nSystem Bootstrap, Version 15.1(4)M4, RELEASE SOFTWARE (fc1)\\\nTechnical Support: http://yunus.sf.net\\\nCopyright (c) 1986-2026 by Systems, Inc.\\\n' 
+            : '\\\n\\\nSystem Bootstrap, Version 12.1(11r)EA1, RELEASE SOFTWARE (fc1)\\\nTechnical Support: http://yunus.sf.net\\\nCopyright (c) 1986-2026 by Systems, Inc.\\\n'
         },
         { 
           id: 'boot-2-' + Date.now(), 
           type: 'output', 
           content: isRouter
-            ? 'C1900 platform with 524288K bytes of main memory\nMain memory configured to 64 bit mode with ECC disabled\n'
-            : 'C2960 platform with 262144K bytes of main memory\nMain memory configured to 32 bit mode with ECC enabled\n'
+            ? 'C1900 platform with 524288K bytes of main memory\\\nMain memory configured to 64 bit mode with ECC disabled\\\n'
+            : 'C2960 platform with 262144K bytes of main memory\\\nMain memory configured to 32 bit mode with ECC enabled\\\n'
         },
         { 
           id: 'boot-3-' + Date.now(), 
           type: 'output', 
-          content: '\nLoading the runtime image: ######################################################################################################################## [OK]\n' 
+          content: '\\\nLoading the runtime image: ######################################################################################################################## [OK]\\\n' 
         }
       ];
 
@@ -130,14 +125,14 @@ export function useDeviceManager(language: 'tr' | 'en') {
         outputs.push({
           id: 'banner-' + Date.now(),
           type: 'output',
-          content: '\n' + state.bannerMOTD + '\n'
+          content: '\\\n' + state.bannerMOTD + '\\\n'
         });
       }
       
       outputs.push({
         id: 'boot-ready-' + Date.now(),
         type: 'output',
-        content: '\nPress RETURN to get started!\n'
+        content: '\\\nPress RETURN to get started!\\\n'
       });
 
       setDeviceOutputs(prev => new Map(prev).set(deviceId, outputs!));
@@ -153,12 +148,12 @@ export function useDeviceManager(language: 'tr' | 'en') {
         {
           id: '0',
           type: 'output',
-          content: 'OS Windows [Version 10.0.19045.3803]\n(c) OS Corporation. Tüm hakları saklıdır.\n'
+          content: 'OS Windows [Version 10.0.19045.3803]\\\n(c) OS Corporation. Tüm hakları saklıdır.\\\n'
         },
         {
           id: '1',
           type: 'output',
-          content: '\nEthernet adapter Ethernet bağlantısı:\n'
+          content: '\\\nEthernet adapter Ethernet bağlantısı:\\\n'
         }
       ];
       setPcOutputs(prev => new Map(prev).set(deviceId, outputs!));
@@ -176,8 +171,8 @@ export function useDeviceManager(language: 'tr' | 'en') {
     topologyConnections: CanvasConnection[] | null = null,
     skipConfirm = false
   ) => {
-    if (command.includes('\n')) {
-      const lines = command.split('\n').filter(l => l.trim() !== '');
+    if (command.includes('\\\n')) {
+      const lines = command.split('\\\n').filter(l => l.trim() !== '');
       for (const line of lines) {
         await handleCommandForDevice(deviceId, line.trim(), topologyDevices, setActiveDeviceId, setActiveDeviceType, topologyConnections, skipConfirm);
       }
@@ -188,7 +183,7 @@ export function useDeviceManager(language: 'tr' | 'en') {
 
     try {
       const deviceType = deviceId.includes('router') ? 'router' : deviceId.includes('pc') ? 'pc' : 'switch';
-      const deviceState = deviceStatesRef.current.get(deviceId) || (deviceType === 'router' ? createInitialRouterState() : createInitialState());
+      const deviceState = deviceStates.get(deviceId) || (deviceType === 'router' ? createInitialRouterState() : createInitialState());
       const devicePrompt = getPrompt(deviceState);
       const isPasswordMode = deviceState.awaitingPassword;
       
@@ -198,7 +193,7 @@ export function useDeviceManager(language: 'tr' | 'en') {
         language, 
         topologyDevices || undefined, 
         topologyConnections || undefined,
-        deviceStatesRef.current
+        deviceStates
       );
 
       if (result.requiresConfirmation && !skipConfirm) {
@@ -279,7 +274,7 @@ export function useDeviceManager(language: 'tr' | 'en') {
             const connMsg: TerminalOutput = {
               id: (Date.now() + 2).toString(),
               type: 'output',
-              content: ` Open\n\n**** Connected to ${targetDevice.name} (${targetIp}) via VTY ****\n`
+              content: ` Open\\\n\\\n**** Connected to ${targetDevice.name} (${targetIp}) via VTY ****\\\n`
             };
             setDeviceOutputs((prev) => {
               const newMap = new Map(prev);
@@ -297,7 +292,7 @@ export function useDeviceManager(language: 'tr' | 'en') {
             const noHostMsg: TerminalOutput = {
               id: (Date.now() + 2).toString(),
               type: 'error',
-              content: `\n% Connection timed out; remote host not responding\n`
+              content: `\\\n% Connection timed out; remote host not responding\\\n`
             };
             setDeviceOutputs((prev) => {
               const newMap = new Map(prev);
@@ -319,9 +314,9 @@ export function useDeviceManager(language: 'tr' | 'en') {
             commandHistory: oldState?.commandHistory || []
           };
           const bootMessages: TerminalOutput[] = [
-            { id: (Date.now() + 2).toString(), type: 'output', content: '\n\nSystem Bootstrap, Version 12.1(11r)EA1\nCopyright (c) 2004 by Network Systems, Inc.\n' },
-            { id: (Date.now() + 3).toString(), type: 'output', content: 'N2960 Boot Loader (N2960-HBOOT-M) Version 12.2(25r)FX\nLoading "flash:n2960-lanbase-mz.150-2.SE4.bin"...\n################################################################################\n' },
-            { id: (Date.now() + 4).toString(), type: 'output', content: '[OK]\n\nNetwork NOS Software, Version 15.0(2)SE4\nPress RETURN to get started!\n\n' },
+            { id: (Date.now() + 2).toString(), type: 'output', content: '\\\n\\\nSystem Bootstrap, Version 12.1(11r)EA1\\\nCopyright (c) 2004 by Network Systems, Inc.\\\n' },
+            { id: (Date.now() + 3).toString(), type: 'output', content: 'N2960 Boot Loader (N2960-HBOOT-M) Version 12.2(25r)FX\\\nLoading \"flash:n2960-lanbase-mz.150-2.SE4.bin\"...\\\n################################################################################\\\n' },
+            { id: (Date.now() + 4).toString(), type: 'output', content: '[OK]\\\n\\\nNetwork NOS Software, Version 15.0(2)SE4\\\nPress RETURN to get started!\\\n\\\n' },
           ];
           
           setDeviceStates(prev => new Map(prev).set(deviceId, finalState));
@@ -335,7 +330,7 @@ export function useDeviceManager(language: 'tr' | 'en') {
           const reloadOutput: TerminalOutput = {
             id: (Date.now() + 2).toString(),
             type: 'output',
-            content: '\n[OK]\nReload requested...\n'
+            content: '\\\n[OK]\\\nReload requested...\\\n'
           };
           setDeviceOutputs(prev => {
             const newMap = new Map(prev);
@@ -349,7 +344,7 @@ export function useDeviceManager(language: 'tr' | 'en') {
           const eraseOutput: TerminalOutput = {
             id: (Date.now() + 2).toString(),
             type: 'output',
-            content: '\n[OK]\nErase of nvram: complete\n'
+            content: '\\\n[OK]\\\nErase of nvram: complete\\\n'
           };
           setDeviceOutputs(prev => {
             const newMap = new Map(prev);
@@ -361,12 +356,13 @@ export function useDeviceManager(language: 'tr' | 'en') {
 
         // Update State
         if (result.newState) {
-          const nextState = {
-            ...(deviceStatesRef.current.get(deviceId) || deviceState),
-            ...result.newState
-          };
-          deviceStatesRef.current.set(deviceId, nextState);
-          setDeviceStates(new Map(deviceStatesRef.current));
+           setDeviceStates(prevStates => {
+            const newMap = new Map(prevStates);
+            const currentState = newMap.get(deviceId) || deviceState;
+            const nextState = { ...currentState, ...result.newState };
+            newMap.set(deviceId, nextState);
+            return newMap;
+          });
         }
       } else {
         // Error handling
@@ -383,12 +379,13 @@ export function useDeviceManager(language: 'tr' | 'en') {
         });
 
         if (result.newState) {
-          const nextState = {
-            ...(deviceStatesRef.current.get(deviceId) || deviceState),
-            ...result.newState
-          };
-          deviceStatesRef.current.set(deviceId, nextState);
-          setDeviceStates(new Map(deviceStatesRef.current));
+          setDeviceStates(prevStates => {
+            const newMap = new Map(prevStates);
+            const currentState = newMap.get(deviceId) || deviceState;
+            const nextState = { ...currentState, ...result.newState };
+            newMap.set(deviceId, nextState);
+            return newMap;
+          });
         }
       }
     } catch (error) {
@@ -412,8 +409,8 @@ export function useDeviceManager(language: 'tr' | 'en') {
     setDeviceStates(new Map([['switch-1', createInitialState()]]));
     setDeviceOutputs(new Map([['switch-1', []]]));
     setPcOutputs(new Map([['pc-1', [
-      { id: '0', type: 'output', content: 'OS Windows [Version 10.0.19045.3803]\n(c) OS Corporation. Tüm hakları saklıdır.\n' },
-      { id: '1', type: 'output', content: '\nEthernet adapter Ethernet bağlantısı:\n' }
+      { id: '0', type: 'output', content: 'OS Windows [Version 10.0.19045.3803]\\\n(c) OS Corporation. Tüm hakları saklıdır.\\\n' },
+      { id: '1', type: 'output', content: '\\\nEthernet adapter Ethernet bağlantısı:\\\n' }
     ]]]));
   };
 
