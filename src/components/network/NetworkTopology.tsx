@@ -2739,8 +2739,14 @@ export function NetworkTopology({
               deleteConnection(conn.id);
             }}
           >
-            {/* Subtle background rectangle instead of circle */}
-            <rect x="-8" y="-9" width="16" height="18" rx="3" fill={isDark ? '#0f172a' : '#ffffff'} opacity="0.9" className="drop-shadow-sm" />
+            {/* Subtle background rectangle with hover pulse */}
+            <rect 
+              x="-10" y="-10" 
+              width="20" height="20" 
+              rx="6" 
+              fill={isDark ? '#1e293b' : '#ffffff'} 
+              className={`drop-shadow-sm transition-all duration-200 group-hover:scale-110 ${isDark ? 'group-hover:fill-slate-700' : 'group-hover:fill-slate-100'}`} 
+            />
             <svg
               x={-7}
               y={-7}
@@ -2749,12 +2755,12 @@ export function NetworkTopology({
               viewBox="0 0 24 24"
               fill="none"
               stroke="#ef4444"
-              strokeWidth="2"
+              strokeWidth="2.5"
               strokeLinecap="round"
               strokeLinejoin="round"
+              className="transition-all duration-200 group-hover:stroke-red-600"
             >
               <path d="M3 6h18" />
-              <path d="M8 6V4h8v2" />
               <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
               <path d="M10 11v6" />
               <path d="M14 11v6" />
@@ -2827,14 +2833,14 @@ export function NetworkTopology({
         {/* Selection Glow */}
         {isSelected && (
           <rect
-            width={deviceWidth + 8}
-            height={deviceHeight + 8}
-            x={-4}
-            y={-4}
-            rx={12}
-            fill={isDark ? 'rgba(6, 182, 212, 0.25)' : 'rgba(6, 182, 212, 0.2)'}
+            width={deviceWidth + 10}
+            height={deviceHeight + 10}
+            x={-5}
+            y={-5}
+            rx={14}
+            fill={isDark ? 'rgba(6, 182, 212, 0.3)' : 'rgba(6, 182, 212, 0.25)'}
             className="animate-pulse"
-            style={{ filter: 'blur(4px)' }}
+            style={{ filter: 'blur(6px)' }}
           />
         )}
 
@@ -3702,10 +3708,10 @@ export function NetworkTopology({
                       className="pointer-events-none"
                     >
                       <div
-                        className={`pointer-events-auto relative flex flex-col w-full h-full rounded-br-3xl shadow-xl text-white transition-all duration-200 ${
+                        className={`pointer-events-auto relative flex flex-col w-full h-full rounded-br-3xl shadow-xl text-white transition-all duration-300 ${
                           selectedNoteIds.includes(note.id) 
-                            ? 'ring-2 ring-emerald-400 shadow-[0_0_15px_rgba(52,211,153,0.4)] animate-pulse' 
-                            : ''
+                            ? 'ring-2 ring-emerald-400 shadow-[0_0_20px_rgba(52,211,153,0.5)] animate-pulse scale-[1.01]' 
+                            : 'hover:shadow-2xl hover:scale-[1.005]'
                         }`}
                         data-note-id={note.id}
                         style={{ 
