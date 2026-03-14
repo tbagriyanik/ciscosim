@@ -114,6 +114,14 @@ export function PCPanel({
   const [tabCycleIndex, setTabCycleIndex] = useState(-1);
   const [lastTabInput, setLastTabInput] = useState('');
 
+  // Game state
+  const [gameActive, setGameActive] = useState(false);
+  const [snake, setSnake] = useState<{x: number, y: number}[]>([{x: 10, y: 10}]);
+  const [food, setFood] = useState({x: 15, y: 15});
+  const [direction, setDirection] = useState({x: 1, y: 0});
+  const [gameScore, setGameScore] = useState(0);
+  const [gameOver, setGameOver] = useState(false);
+
   // Console connection state
   const [isConsoleConnected, setIsConsoleConnected] = useState(false);
   const [connectedDeviceId, setConnectedDeviceId] = useState<string | null>(null);
@@ -148,6 +156,90 @@ export function PCPanel({
   }, [deviceId, topologyConnections, topologyDevices]);
 
   const consoleDevice = getConsoleDevice();
+
+  // Game loop
+  useEffect(() => {
+    if (!gameActive || gameOver) return;
+
+    const gameInterval = setInterval(() => {
+      setSnake(currentSnake => {
+        const newSnake = [...currentSnake];
+        const head = { ...newSnake[0] };
+        
+        head.x += direction.x;
+        head.y += direction.y;
+        
+        // Check walls
+        if (head.x < 0 || head.x >= 30 || head.y < 0 || head.y >= 20) {
+          setGameOver(true);
+          return currentSnake;
+        }
+        
+        // Check self collision
+        if (newSnake.some(segment => segment.x === head.x && segment.y === head.y)) {
+          setGameOver(true);
+          return currentSnake;
+        }
+        
+        newSnake.unshift(head);
+        
+        // Check food
+        if (head.x === food.x && head.y === food.y) {
+          setGameScore(prev => prev + 10);
+          setFood({
+            x: Math.floor(Math.random() * 30),
+            y: Math.floor(Math.random() * 20)
+          });
+        } else {
+          newSnake.pop();
+        }
+        
+        return newSnake;
+      });
+    }, 150);
+
+    return () => clearInterval(gameInterval);
+  }, [gameActive, direction, food, gameOver]);
+
+  // Game controls
+  useEffect(() => {
+    if (!gameActive) return;
+
+    const handleGameKey = (e: globalThis.KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setGameActive(false);
+        return;
+      }
+      
+      if (gameOver && e.key === ' ') {
+        setSnake([{x: 10, y: 10}]);
+        setFood({x: 15, y: 15});
+        setDirection({x: 1, y: 0});
+        setGameScore(0);
+        setGameOver(false);
+        return;
+      }
+      
+      // Prevent reverse direction
+      switch(e.key) {
+        case 'ArrowUp':
+          if (direction.y === 0) setDirection({x: 0, y: -1});
+          break;
+        case 'ArrowDown':
+          if (direction.y === 0) setDirection({x: 0, y: 1});
+          break;
+        case 'ArrowLeft':
+          if (direction.x === 0) setDirection({x: -1, y: 0});
+          break;
+        case 'ArrowRight':
+          if (direction.x === 0) setDirection({x: 1, y: 0});
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleGameKey);
+    return () => window.removeEventListener('keydown', handleGameKey);
+  }, [gameActive, direction, gameOver]);
 
   // Synchronized Console Output from Global State
   const activeConsoleOutput = useMemo(() => {
@@ -193,6 +285,17 @@ export function PCPanel({
       const parts = command.split(' ');
       const cmd = parts[0].toLowerCase();
       const args = parts.slice(1);
+
+      // Check for secret game command
+      if (cmd === 'snake' || cmd === 'yilan') {
+        setGameActive(true);
+        setSnake([{x: 10, y: 10}]);
+        setFood({x: 15, y: 15});
+        setDirection({x: 1, y: 0});
+        setGameScore(0);
+        setGameOver(false);
+        return;
+      }
 
       if (cmd === 'ipconfig') {
         if (args.includes('/release')) {
@@ -319,6 +422,8 @@ export function PCPanel({
   python       Python Interactive Interpreter
   quit         Exit Telnet/SSH
   rmdir        Removes a directory.
+  snake        Play Snake game
+  yilan        Play Snake game (Turkish)
   snmpget      SNMP GET
   snmpgetbulk  SNMP GET BULK
   snmpset      SNMP SET
@@ -369,6 +474,7 @@ export function PCPanel({
       e.preventDefault();
       handleTabComplete(e.currentTarget);
     } else {
+      // Reset tab cycle on any other key press
       setTabCycleIndex(-1);
     }
   };
@@ -378,8 +484,9 @@ export function PCPanel({
     if (!value && tabCycleIndex === -1) return;
 
     if (activeTab === 'desktop') {
-      const pcCmds = ['ipconfig', 'ipv6config', 'ping', 'tracert', 'nslookup', 'arp', 'netstat', 'hostname', 'dir', 'ver', 'help', 'cls', 'exit', 'quit', 'mkdir', 'rmdir', 'delete', 'ftp', 'ssh', 'telnet', 'python', 'js', 'ide', 'ioxclient'];
-      const matches = pcCmds.filter(c => c.startsWith(value.toLowerCase()));
+      const pcCmds = ['ipconfig', 'ipv6config', 'ping', 'tracert', 'nslookup', 'arp', 'netstat', 'hostname', 'dir', 'ver', 'help', 'cls', 'exit', 'quit', 'mkdir', 'rmdir', 'delete', 'ftp', 'ssh', 'telnet', 'python', 'js', 'ide', 'ioxclient', 'snake', 'yilan'];
+      const matches = pcCmds.filter(c => c.toLowerCase().startsWith(value.toLowerCase()));
+      
       if (matches.length > 0) {
         if (tabCycleIndex === -1) {
           setLastTabInput(value);
@@ -632,6 +739,101 @@ export function PCPanel({
           </div>
         </div>
       </motion.div>
+
+      {/* Snake Game Overlay */}
+      <AnimatePresence>
+        {gameActive && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            onClick={() => setGameActive(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className={`${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'} rounded-2xl p-6 max-w-2xl w-full shadow-2xl border border-cyan-500/20`}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h2 className={`text-xl font-black ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                  🐍 Snake Game
+                </h2>
+                <div className="flex items-center gap-4">
+                  <span className={`text-sm font-bold ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                    Score: <span className="text-cyan-500">{gameScore}</span>
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setGameActive(false)}
+                    className="text-slate-500 hover:text-rose-400"
+                  >
+                    ✕
+                  </Button>
+                </div>
+              </div>
+              
+              <div className="relative bg-black rounded-lg p-4 mb-4 overflow-hidden">
+                <div className="grid grid-cols-30 gap-0" style={{ gridTemplateColumns: 'repeat(30, 1fr)' }}>
+                  {Array.from({ length: 600 }).map((_, index) => {
+                    const x = index % 30;
+                    const y = Math.floor(index / 30);
+                    const isSnake = snake.some(s => s.x === x && s.y === y);
+                    const isFood = food.x === x && food.y === y;
+                    const isHead = snake[0]?.x === x && snake[0]?.y === y;
+                    
+                    return (
+                      <div
+                        key={index}
+                        className={`aspect-square ${
+                          isHead ? 'bg-cyan-400' :
+                          isSnake ? 'bg-cyan-600' :
+                          isFood ? 'bg-red-500' :
+                          'border border-slate-800/30'
+                        }`}
+                      />
+                    );
+                  })}
+                </div>
+                
+                {gameOver && (
+                  <div className="absolute inset-0 bg-black/80 flex items-center justify-center">
+                    <div className="text-center">
+                      <h3 className="text-2xl font-bold text-red-500 mb-2">Game Over!</h3>
+                      <p className="text-slate-300 mb-4">Final Score: {gameScore}</p>
+                      <button
+                        onClick={() => {
+                          setSnake([{x: 10, y: 10}]);
+                          setFood({x: 15, y: 15});
+                          setDirection({x: 1, y: 0});
+                          setGameScore(0);
+                          setGameOver(false);
+                        }}
+                        className="px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-500 transition-colors"
+                      >
+                        Play Again (Space)
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              <div className="flex flex-col gap-2 text-sm text-slate-500">
+                <p className="font-semibold">Controls:</p>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div>↑↓←→ Arrow Keys - Move snake</div>
+                  <div>Space - Restart game</div>
+                  <div>Escape - Exit game</div>
+                  <div>Eat red food to grow!</div>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
