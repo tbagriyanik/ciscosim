@@ -515,35 +515,48 @@ export function NetworkTopology({
   }, [devices, notes]);
 
   const handleAlign = useCallback((type: 'top' | 'bottom' | 'left' | 'right' | 'h-center' | 'v-center') => {
-    if (selectedDeviceIds.length < 2) return;
+    if (selectedDeviceIds.length + selectedNoteIds.length < 2) return;
 
-    setDevices(prev => {
-      const selectedDevices = prev.filter(d => selectedDeviceIds.includes(d.id));
-      if (selectedDevices.length < 2) return prev;
-
-      let targetValue = 0;
-      switch (type) {
-        case 'top':
-          targetValue = Math.min(...selectedDevices.map(sd => sd.y));
-          break;
-        case 'bottom':
-          targetValue = Math.max(...selectedDevices.map(sd => sd.y));
-          break;
-        case 'left':
-          targetValue = Math.min(...selectedDevices.map(sd => sd.x));
-          break;
-        case 'right':
-          targetValue = Math.max(...selectedDevices.map(sd => sd.x));
-          break;
-        case 'h-center':
-          targetValue = selectedDevices.reduce((sum, sd) => sum + sd.y, 0) / selectedDevices.length;
-          break;
-        case 'v-center':
-          targetValue = selectedDevices.reduce((sum, sd) => sum + sd.x, 0) / selectedDevices.length;
-          break;
+    const allSelectedItems: { id: string; x: number; y: number; isDevice: boolean }[] = [];
+    
+    devices.forEach(d => {
+      if (selectedDeviceIds.includes(d.id)) {
+        allSelectedItems.push({ id: d.id, x: d.x, y: d.y, isDevice: true });
       }
+    });
+    
+    notes.forEach(n => {
+      if (selectedNoteIds.includes(n.id)) {
+        allSelectedItems.push({ id: n.id, x: n.x, y: n.y, isDevice: false });
+      }
+    });
 
-      return prev.map(d => {
+    if (allSelectedItems.length < 2) return;
+
+    let targetValue = 0;
+    switch (type) {
+      case 'top':
+        targetValue = Math.min(...allSelectedItems.map(sd => sd.y));
+        break;
+      case 'bottom':
+        targetValue = Math.max(...allSelectedItems.map(sd => sd.y));
+        break;
+      case 'left':
+        targetValue = Math.min(...allSelectedItems.map(sd => sd.x));
+        break;
+      case 'right':
+        targetValue = Math.max(...allSelectedItems.map(sd => sd.x));
+        break;
+      case 'h-center':
+        targetValue = allSelectedItems.reduce((sum, sd) => sum + sd.y, 0) / allSelectedItems.length;
+        break;
+      case 'v-center':
+        targetValue = allSelectedItems.reduce((sum, sd) => sum + sd.x, 0) / allSelectedItems.length;
+        break;
+    }
+
+    if (selectedDeviceIds.length > 0) {
+      setDevices(prev => prev.map(d => {
         if (!selectedDeviceIds.includes(d.id)) return d;
         if (type === 'top' || type === 'bottom' || type === 'h-center') {
           return { ...d, y: targetValue };
@@ -552,9 +565,22 @@ export function NetworkTopology({
           return { ...d, x: targetValue };
         }
         return d;
-      });
-    });
-  }, [selectedDeviceIds]);
+      }));
+    }
+
+    if (selectedNoteIds.length > 0) {
+      setNotes(prev => prev.map(n => {
+        if (!selectedNoteIds.includes(n.id)) return n;
+        if (type === 'top' || type === 'bottom' || type === 'h-center') {
+          return { ...n, y: targetValue };
+        }
+        if (type === 'left' || type === 'right' || type === 'v-center') {
+          return { ...n, x: targetValue };
+        }
+        return n;
+      }));
+    }
+  }, [selectedDeviceIds, selectedNoteIds, devices, notes]);
 
   // Calculate distance between two points
   const getDistance = useCallback((x1: number, y1: number, x2: number, y2: number): number => {
@@ -752,6 +778,20 @@ export function NetworkTopology({
               });
             });
 
+            // Also move selected notes when dragging devices
+            if (selectedNoteIds.length > 0 && Object.keys(noteDragStartPositions).length > 0) {
+              setNotes(prev =>
+                prev.map(n => {
+                  if (!selectedNoteIds.includes(n.id)) return n;
+                  const start = noteDragStartPositions[n.id];
+                  if (!start) return n;
+                  const newX = Math.max(20, Math.min(start.x + dx, canvasDims.width - NOTE_DEFAULT_WIDTH - 20));
+                  const newY = Math.max(20, Math.min(start.y + dy, canvasDims.height - NOTE_DEFAULT_HEIGHT - 20));
+                  return { ...n, x: newX, y: newY };
+                })
+              );
+            }
+
             dragAnimationFrameRef.current = null;
           });
         }
@@ -767,13 +807,18 @@ export function NetworkTopology({
         }
       } else if (draggedNoteId && noteDragStartPos) {
         const coords = getCanvasCoords(e.clientX, e.clientY);
-        const canvasDims = getCanvasDimensions();
-        const dx = coords.x - noteDragStartPos.x;
-        const dy = coords.y - noteDragStartPos.y;
-        const targets = selectedNoteIds.includes(draggedNoteId) ? selectedNoteIds : [draggedNoteId];
+        const distance = Math.sqrt(Math.pow(noteDragStartPos.x - coords.x, 2) + Math.pow(noteDragStartPos.y - coords.y, 2));
+        
+        if (distance > DRAG_THRESHOLD) {
+          wasDraggingRef.current = true;
+          
+          const canvasDims = getCanvasDimensions();
+          const dx = coords.x - noteDragStartPos.x;
+          const dy = coords.y - noteDragStartPos.y;
+          const targets = selectedNoteIds.includes(draggedNoteId) ? selectedNoteIds : [draggedNoteId];
 
-        setNotes(prev =>
-          prev.map(n => {
+          setNotes(prev =>
+            prev.map(n => {
             if (!targets.includes(n.id)) return n;
             const start = noteDragStartPositions[n.id] || { x: n.x, y: n.y };
             const newX = start.x + dx;
@@ -783,6 +828,21 @@ export function NetworkTopology({
             return { ...n, x: clampedX, y: clampedY };
           })
         );
+
+        // Also move selected devices when dragging notes
+        if (selectedDeviceIds.length > 0 && Object.keys(dragStartDevicePositions).length > 0) {
+          setDevices(prev =>
+            prev.map(d => {
+              if (!selectedDeviceIds.includes(d.id)) return d;
+              const start = dragStartDevicePositions[d.id];
+              if (!start) return d;
+              const newX = Math.max(20, Math.min(start.x + dx, canvasDims.width - 100));
+              const newY = Math.max(20, Math.min(start.y + dy, canvasDims.height - 100));
+              return { ...d, x: newX, y: newY };
+            })
+          );
+        }
+        }
       } else if (isDrawingConnection) {
         const coords = getCanvasCoords(e.clientX, e.clientY);
         setMousePos(coords);
@@ -1015,17 +1075,18 @@ export function NetworkTopology({
       setSelectedDeviceIds(prev =>
         prev.includes(deviceId) ? prev.filter(id => id !== deviceId) : [...prev, deviceId]
       );
+      // Don't clear note selection when shift-clicking
     } else {
       // If clicking a device that's not selected, make it the only selection
       // If it IS already selected, keep selection for group dragging
       if (!selectedDeviceIds.includes(deviceId)) {
         setSelectedDeviceIds([deviceId]);
+        setSelectedNoteIds([]);
         onDeviceSelect(device.type === 'router' ? 'switch' : device.type, deviceId);
       }
     }
 
     // Store starting positions of all selected devices for group dragging
-    // Use the latest selected set
     const currentSelectedIds = e.shiftKey
       ? (selectedDeviceIds.includes(deviceId) ? selectedDeviceIds.filter(id => id !== deviceId) : [...selectedDeviceIds, deviceId])
       : (selectedDeviceIds.includes(deviceId) ? selectedDeviceIds : [deviceId]);
@@ -1038,6 +1099,17 @@ export function NetworkTopology({
     });
     setDragStartDevicePositions(initialPositions);
 
+    // Also store note positions for combined dragging
+    const noteStartPositions: { [key: string]: { x: number; y: number } } = {};
+    if (selectedNoteIds.length > 0) {
+      notes.forEach(n => {
+        if (selectedNoteIds.includes(n.id)) {
+          noteStartPositions[n.id] = { x: n.x, y: n.y };
+        }
+      });
+    }
+    setNoteDragStartPositions(noteStartPositions);
+
     // Store the starting position for distance calculation
     setDragStartPos({ x: e.clientX, y: e.clientY });
     setIsActuallyDragging(false);
@@ -1046,7 +1118,7 @@ export function NetworkTopology({
       x: (e.clientX - rect.left - pan.x) - device.x * zoom,
       y: (e.clientY - rect.top - pan.y) - device.y * zoom,
     });
-  }, [devices, pan, zoom, selectedDeviceIds, onDeviceSelect]);
+  }, [devices, notes, pan, zoom, selectedDeviceIds, selectedNoteIds, onDeviceSelect]);
 
   // Handle device click (single click - select only)
   const handleDeviceClick = useCallback((e: ReactMouseEvent, device: CanvasDevice) => {
@@ -1081,6 +1153,7 @@ export function NetworkTopology({
 
   const handleNoteMouseDown = useCallback((e: ReactMouseEvent, noteId: string) => {
     e.stopPropagation();
+    wasDraggingRef.current = false; // Reset drag tracking for note
     const coords = getCanvasCoords(e.clientX, e.clientY);
     const note = notes.find(n => n.id === noteId);
     if (!note) return;
@@ -1088,8 +1161,10 @@ export function NetworkTopology({
     setNoteDragStartPos(coords);
     const nextSelected = e.shiftKey
       ? (selectedNoteIds.includes(noteId) ? selectedNoteIds.filter(id => id !== noteId) : [...selectedNoteIds, noteId])
-      : [noteId];
-    setSelectedDeviceIds([]);
+      : (selectedNoteIds.includes(noteId) ? selectedNoteIds : [noteId]);
+    if (!e.shiftKey && !selectedNoteIds.includes(noteId)) {
+      setSelectedDeviceIds([]);
+    }
     setSelectedNoteIds(nextSelected);
     const targets = nextSelected.includes(noteId) ? nextSelected : [noteId];
     const startPositions: { [key: string]: { x: number; y: number } } = {};
@@ -1098,9 +1173,21 @@ export function NetworkTopology({
       if (n) startPositions[id] = { x: n.x, y: n.y };
     });
     setNoteDragStartPositions(startPositions);
+
+    // Also store device positions for combined dragging
+    const deviceStartPositions: { [key: string]: { x: number; y: number } } = {};
+    if (selectedDeviceIds.length > 0) {
+      devices.forEach(d => {
+        if (selectedDeviceIds.includes(d.id)) {
+          deviceStartPositions[d.id] = { x: d.x, y: d.y };
+        }
+      });
+    }
+    setDragStartDevicePositions(deviceStartPositions);
+
     setContextMenu(null);
     setSelectAllMode(false);
-  }, [notes, getCanvasCoords, selectedNoteIds]);
+  }, [notes, devices, getCanvasCoords, selectedNoteIds, selectedDeviceIds]);
 
   const handleNoteTouchStart = useCallback((e: ReactTouchEvent, noteId: string) => {
     if (e.touches.length !== 1) return;
@@ -3379,43 +3466,48 @@ export function NetworkTopology({
             </SheetContent>
           </Sheet>
           {/* Multiple Selection Indicator & Tools */}
-          {selectedDeviceIds.length > 1 && (
+          {(selectedDeviceIds.length + selectedNoteIds.length) > 1 && (
             <div className={`absolute top-2 left-1/2 -translate-x-1/2 z-30 px-4 py-2 rounded-xl shadow-2xl flex items-center gap-4 ${isDark ? 'bg-slate-800/95 text-white border border-slate-700' : 'bg-white text-slate-900 border border-slate-200'
               } backdrop-blur-md`}>
-              <div className="flex items-center gap-2 border-r pr-4 border-slate-700/30">
-                <span className="text-xs font-bold tracking-wider opacity-60">
-                  {t.align}
-                </span>
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => handleAlign('left')}
-                    className={`p-1.5 rounded-lg transition-colors ${isDark ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-slate-100 text-slate-600'}`}
-                    title={language === 'tr' ? 'Sola Hizala' : 'Align Left'}
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 2v20M8 5h10M8 11h7M8 17h12" />
-                    </svg>
-                  </button>
-                  <div className="w-px h-4 bg-slate-700/30 mx-1" />
-                  <button
-                    onClick={() => handleAlign('top')}
-                    className={`p-1.5 rounded-lg transition-colors ${isDark ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-slate-100 text-slate-600'}`}
-                    title={language === 'tr' ? 'Üste Hizala' : 'Align Top'}
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2 4h20M5 8v10M11 8v7M17 8v12" />
-                    </svg>
-                  </button>
+              {(selectedDeviceIds.length + selectedNoteIds.length) > 1 && (
+                <div className="flex items-center gap-2 border-r pr-4 border-slate-700/30">
+                  <span className="text-xs font-bold tracking-wider opacity-60">
+                    {t.align}
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => handleAlign('left')}
+                      className={`p-1.5 rounded-lg transition-colors ${isDark ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-slate-100 text-slate-600'}`}
+                      title={language === 'tr' ? 'Sola Hizala' : 'Align Left'}
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 2v20M8 5h10M8 11h7M8 17h12" />
+                      </svg>
+                    </button>
+                    <div className="w-px h-4 bg-slate-700/30 mx-1" />
+                    <button
+                      onClick={() => handleAlign('top')}
+                      className={`p-1.5 rounded-lg transition-colors ${isDark ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-slate-100 text-slate-600'}`}
+                      title={language === 'tr' ? 'Üste Hizala' : 'Align Top'}
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2 4h20M5 8v10M11 8v7M17 8v12" />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
-              </div>
+              )}
 
               <div className="flex items-center gap-3">
                 <span className="text-sm font-semibold whitespace-nowrap">
-                  {language === 'tr' ? `${selectedDeviceIds.length} Cihaz` : `${selectedDeviceIds.length} Devices`}
+                  {language === 'tr'
+                    ? `${selectedDeviceIds.length > 0 ? `${selectedDeviceIds.length} Cihaz` : ''}${selectedDeviceIds.length > 0 && selectedNoteIds.length > 0 ? ' + ' : ''}${selectedNoteIds.length > 0 ? `${selectedNoteIds.length} Not` : ''}`
+                    : `${selectedDeviceIds.length > 0 ? `${selectedDeviceIds.length} Device${selectedDeviceIds.length > 1 ? 's' : ''}` : ''}${selectedDeviceIds.length > 0 && selectedNoteIds.length > 0 ? ' + ' : ''}${selectedNoteIds.length > 0 ? `${selectedNoteIds.length} Note${selectedNoteIds.length > 1 ? 's' : ''}` : ''}`
+                  }
                 </span>
                 <div className="flex gap-1">
                   <button
-                    onClick={() => setSelectedDeviceIds([])}
+                    onClick={() => { setSelectedDeviceIds([]); setSelectedNoteIds([]); }}
                     className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${isDark ? 'bg-slate-700 hover:bg-slate-600 text-slate-200' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'}`}
                   >
                     {language === 'tr' ? 'İptal' : 'Cancel'}
@@ -3423,7 +3515,11 @@ export function NetworkTopology({
                   <button
                     onClick={() => {
                       selectedDeviceIds.forEach(id => deleteDevice(id));
+                      if (selectedNoteIds.length > 0) {
+                        commitNotesChange(notes.filter(n => !selectedNoteIds.includes(n.id)));
+                      }
                       setSelectedDeviceIds([]);
+                      setSelectedNoteIds([]);
                     }}
                     className="px-3 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white text-xs font-bold transition-all border border-red-500/20"
                   >
@@ -3601,7 +3697,11 @@ export function NetworkTopology({
                       className="pointer-events-none"
                     >
                       <div
-                        className={`pointer-events-auto relative flex flex-col w-full h-full rounded-br-3xl shadow-xl text-white ${selectedNoteIds.includes(note.id) ? 'ring-2 ring-emerald-400/70' : ''}`}
+                        className={`pointer-events-auto relative flex flex-col w-full h-full rounded-br-3xl shadow-xl text-white transition-all duration-200 ${
+                          selectedNoteIds.includes(note.id) 
+                            ? 'ring-2 ring-emerald-400 shadow-[0_0_15px_rgba(52,211,153,0.4)] animate-pulse' 
+                            : ''
+                        }`}
                         data-note-id={note.id}
                         style={{ 
                           backgroundColor: note.color, 
@@ -3616,11 +3716,18 @@ export function NetworkTopology({
                         }}
                         onClick={(e) => {
                           e.stopPropagation();
+                          if (wasDraggingRef.current) return;
+                          
+                          const isHeaderClick = (e.target as HTMLElement).closest('[data-note-drag-handle]');
+                          
                           if (e.shiftKey) {
+                            if (isHeaderClick) return; // Prevent double toggle since handleNoteMouseDown already handled it
                             setSelectedNoteIds(prev => prev.includes(note.id) ? prev.filter(id => id !== note.id) : [...prev, note.id]);
                           } else {
-                            setSelectedNoteIds([note.id]);
-                            setSelectedDeviceIds([]);
+                            if (!isHeaderClick && !selectedNoteIds.includes(note.id)) {
+                              setSelectedNoteIds([note.id]);
+                              setSelectedDeviceIds([]);
+                            }
                           }
                         }}
                         onTouchStart={(e) => handleNoteTouchStart(e as unknown as ReactTouchEvent, note.id)}
