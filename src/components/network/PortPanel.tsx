@@ -201,19 +201,23 @@ export function PortPanel({ ports, t, theme, deviceName, deviceModel, activeDevi
               </div>
             </div>
             
-            <div className="mb-3 sm:mb-4">
-              <div className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-500'} mb-2`}>{t.fastEthernetPorts}</div>
-              <div className="grid grid-cols-6 sm:grid-cols-8 gap-0.5 sm:gap-1">
-                {faPorts.map(renderPort)}
+            {faPorts.length > 0 && (
+              <div className="mb-3 sm:mb-4">
+                <div className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-500'} mb-2`}>{t.fastEthernetPorts}</div>
+                <div className="grid grid-cols-6 sm:grid-cols-8 gap-0.5 sm:gap-1">
+                  {faPorts.map(renderPort)}
+                </div>
               </div>
-            </div>
+            )}
             
-            <div className={`pt-2 border-t ${isDark ? 'border-slate-700' : 'border-slate-300'}`}>
-              <div className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-500'} mb-2`}>{t.gigabitPorts}</div>
-              <div className="flex gap-2 justify-center">
-                {giPorts.map(renderPort)}
+            {giPorts.length > 0 && (
+              <div className={`pt-2 ${faPorts.length > 0 ? 'border-t' : ''} ${isDark ? 'border-slate-700' : 'border-slate-300'}`}>
+                <div className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-500'} mb-2`}>{t.gigabitPorts}</div>
+                <div className="flex gap-2 justify-center flex-wrap">
+                  {giPorts.map(renderPort)}
+                </div>
               </div>
-            </div>
+            )}
           </div>
           
           <div className="mt-3 sm:mt-4 flex flex-wrap gap-3 sm:gap-4 justify-center text-xs">

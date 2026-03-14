@@ -193,7 +193,7 @@ const commandHelp: Record<string, Record<string, string[]>> = {
     'interface GigabitEtherne': ['GigabitEthernet'],
     'interface GigabitEthernet': ['0/'],
     'interface GigabitEthernet0': ['0/'],
-    'interface GigabitEthernet0/': ['1', '2'],
+    'interface GigabitEthernet0/': ['0', '1', '2', '3'],
     'interface r': ['range'],
     'interface ra': ['range'],
     'interface ran': ['range'],
@@ -229,7 +229,7 @@ const commandHelp: Record<string, Record<string, string[]>> = {
     'interface range GigabitEtherne': ['GigabitEthernet'],
     'interface range GigabitEthernet': ['0/'],
     'interface range GigabitEthernet0': ['0/'],
-    'interface range GigabitEthernet0/': ['1-2'],
+    'interface range GigabitEthernet0/': ['0-3', '1-2'],
     
     'v': ['vlan'],
     'vl': ['vlan'],
