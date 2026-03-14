@@ -938,7 +938,7 @@ function executeSpecificCommand(
     case 'interface':
       return cmdInterface(state, input);
     case 'interface range':
-      return cmdInterfaceRange(state, input);
+      return cmdInterfaceRange(state, input, language);
     case 'no shutdown':
       return cmdNoShutdown(state);
     case 'shutdown':
@@ -2378,7 +2378,7 @@ function cmdNtpServer(state: SwitchState, input: string): CommandResult {
 }
 
 // Interface Range
-function cmdInterfaceRange(state: SwitchState, input: string): CommandResult {
+function cmdInterfaceRange(state: SwitchState, input: string, language: 'tr' | 'en' = 'tr'): CommandResult {
   // "interface range fa0/1-24" veya "int r fa0/1-24" gibi formatları kabul et
   const match = input.match(/^interface\s+r(?:ange)?\s+(.+)$/i);
   if (!match) return { success: false, error: '% Invalid interface range' };
@@ -2411,32 +2411,17 @@ function cmdInterfaceRange(state: SwitchState, input: string): CommandResult {
       }
       
       for (let i = startPort; i <= endPort; i++) {
-        selectedPorts.push(`${prefix}${moduleNum}/${i}`);
+        const portId = `${prefix}${moduleNum}/${i}`;
+        // Cisco physical limit check: only allow existing ports
+        if (state.ports[portId]) {
+          selectedPorts.push(portId);
+        }
       }
     }
   }
   
   if (selectedPorts.length === 0) {
-    return { success: false, error: '% Invalid interface range format. Examples: fa0/1-24, gi0/1-2, fa0/1-2,gi0/1-2' };
-  }
-  
-  // Portları oluştur (yoksa)
-  const newPorts = { ...state.ports };
-  for (const portId of selectedPorts) {
-    if (!newPorts[portId]) {
-      const isGigabit = portId.startsWith('gi');
-      newPorts[portId] = {
-        id: portId,
-        name: '',
-        status: 'notconnect',
-        vlan: 1,
-        mode: 'access',
-        duplex: 'auto',
-        speed: 'auto',
-        shutdown: false,
-        type: isGigabit ? 'gigabitethernet' : 'fastethernet'
-      };
-    }
+    return { success: false, error: language === 'tr' ? '% Geçersiz aralık veya bu cihazda bu portlar mevcut değil' : '% Invalid range or these ports do not exist on this device' };
   }
   
   return {
@@ -2444,8 +2429,7 @@ function cmdInterfaceRange(state: SwitchState, input: string): CommandResult {
     newState: {
       currentMode: 'interface',
       currentInterface: selectedPorts[0],
-      selectedInterfaces: selectedPorts,
-      ports: newPorts
+      selectedInterfaces: selectedPorts
     }
   };
 }

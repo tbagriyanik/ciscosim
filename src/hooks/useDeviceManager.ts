@@ -29,6 +29,8 @@ export function useDeviceManager(language: 'tr' | 'en') {
     return initialMap;
   });
 
+  const [pcHistories, setPcHistories] = useState<Map<string, string[]>>(() => new Map());
+
   const [isLoading, setIsLoading] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState<{ show: boolean; message: string; action: string; onConfirm: () => void; } | null>(null);
 
@@ -184,5 +186,22 @@ export function useDeviceManager(language: 'tr' | 'en') {
     ]]]));
   };
 
-  return { deviceStates, setDeviceStates, deviceOutputs, setDeviceOutputs, pcOutputs, setPcOutputs, isLoading, confirmDialog, setConfirmDialog, getOrCreateDeviceState, getOrCreateDeviceOutputs, getOrCreatePCOutputs, handleCommandForDevice, resetAll };
+  return { 
+    deviceStates, 
+    setDeviceStates, 
+    deviceOutputs, 
+    setDeviceOutputs, 
+    pcOutputs, 
+    setPcOutputs, 
+    pcHistories,
+    setPcHistories,
+    isLoading, 
+    confirmDialog, 
+    setConfirmDialog, 
+    getOrCreateDeviceState, 
+    getOrCreateDeviceOutputs, 
+    getOrCreatePCOutputs, 
+    handleCommandForDevice, 
+    resetAll 
+  };
 }

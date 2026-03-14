@@ -201,7 +201,9 @@ export default function Home() {
     setDeviceOutputs,
     pcOutputs,
     setPcOutputs,
-    isLoading,
+    pcHistories,
+    setPcHistories,
+    isLoading: isExecutingCommand,
     confirmDialog,
     setConfirmDialog,
     getOrCreateDeviceState,
@@ -221,6 +223,7 @@ export default function Home() {
     deviceStates: new Map(deviceStates),
     deviceOutputs: new Map(deviceOutputs),
     pcOutputs: new Map(pcOutputs),
+    pcHistories: new Map(pcHistories),
     cableInfo: { ...cableInfo },
     activeDeviceId: activeDeviceId || '',
     activeDeviceType: activeDeviceType || 'switch',
@@ -240,6 +243,7 @@ export default function Home() {
     setDeviceStates(new Map(state.deviceStates));
     setDeviceOutputs(new Map(state.deviceOutputs));
     setPcOutputs(new Map(state.pcOutputs));
+    setPcHistories(new Map(state.pcHistories || []));
     setCableInfo(state.cableInfo);
     setActiveDeviceId(state.activeDeviceId);
     setActiveDeviceType(state.activeDeviceType);
@@ -443,6 +447,15 @@ export default function Home() {
         setPcOutputs(newPcOutputs);
       }
 
+      // Load PC histories
+      if (projectData.pcHistories && Array.isArray(projectData.pcHistories)) {
+        const newPcHistories = new Map<string, string[]>();
+        projectData.pcHistories.forEach((item: { id: string; history: string[] }) => {
+          newPcHistories.set(item.id, item.history || []);
+        });
+        setPcHistories(newPcHistories);
+      }
+
       // Load topology
       if (projectData.topology) {
         setTopologyDevices(projectData.topology.devices || []);
@@ -480,12 +493,8 @@ export default function Home() {
         deviceStates: new Map(projectData.devices?.map((item: any) => [item.id, item.state]) || []),
         deviceOutputs: new Map(projectData.deviceOutputs?.map((item: any) => [item.id, item.outputs]) || []),
         pcOutputs: new Map(projectData.pcOutputs?.map((item: any) => [item.id, item.outputs]) || []),
-        cableInfo: projectData.cableInfo || {
-          connected: true,
-          cableType: 'straight',
-          sourceDevice: 'pc',
-          targetDevice: 'switch',
-        },
+        pcHistories: new Map(projectData.pcHistories?.map((item: any) => [item.id, item.history]) || []),
+        cableInfo: projectData.cableInfo || { connected: false, cableType: 'straight', sourceDevice: 'pc', targetDevice: 'switch' },
         activeDeviceId: projectData.activeDeviceId || 'switch-1',
         activeDeviceType: projectData.activeDeviceType || 'switch',
         zoom: projectData.zoom || 1.0,
@@ -877,6 +886,20 @@ export default function Home() {
     setHasUnsavedChanges(true);
   }, [activeDeviceId, topologyDevices, topologyConnections, showPCDeviceId, selectedDevice, setDeviceStates, setDeviceOutputs, setPcOutputs, setShowPCPanel, setShowPCDeviceId, setShowActiveDeviceDropdown, setSelectedDevice, setActiveDeviceId, setActiveDeviceType, setActiveTab, setHasUnsavedChanges]);
 
+  const handleUpdateHistory = useCallback((deviceId: string, history: string[]) => {
+    setDeviceStates(prev => {
+      const state = prev.get(deviceId);
+      if (state) {
+        return new Map(prev).set(deviceId, { ...state, commandHistory: history });
+      }
+      return prev;
+    });
+  }, [setDeviceStates]);
+
+  const handleUpdatePCHistory = useCallback((deviceId: string, history: string[]) => {
+    setPcHistories(prev => new Map(prev).set(deviceId, history));
+  }, [setPcHistories]);
+
   // Save project to JSON file
   const handleSaveProjectInternal = useCallback(() => {
     const projectData = {
@@ -893,6 +916,10 @@ export default function Home() {
       pcOutputs: Array.from(pcOutputs.entries()).map(([id, outputs]) => ({
         id,
         outputs
+      })),
+      pcHistories: Array.from(pcHistories.entries()).map(([id, history]) => ({
+        id,
+        history
       })),
       topology: {
         devices: topologyDevices,
@@ -1015,12 +1042,8 @@ export default function Home() {
         deviceStates: new Map(),
         deviceOutputs: new Map(),
         pcOutputs: new Map(),
-        cableInfo: {
-          connected: true,
-          cableType: 'straight',
-          sourceDevice: 'pc',
-          targetDevice: 'switch',
-        },
+        pcHistories: new Map(),
+        cableInfo: { connected: false, cableType: 'straight', sourceDevice: 'pc', targetDevice: 'switch' },
         activeDeviceId: 'switch-1',
         activeDeviceType: 'switch',
         zoom: 1.0,
@@ -1197,6 +1220,10 @@ export default function Home() {
           if (!isTopologyFullscreen) {
             handleNewProject();
           }
+        }
+        if (key === 'r') {
+          e.preventDefault();
+          handleReset();
         }
       }
 
@@ -1775,6 +1802,8 @@ export default function Home() {
               topologyConnections={topologyConnections || undefined}
               deviceStates={deviceStates}
               deviceOutputs={deviceOutputs}
+              pcHistories={pcHistories}
+              onUpdatePCHistory={handleUpdatePCHistory}
               onExecuteDeviceCommand={handleExecuteCommand}
             />
           </div>
@@ -1799,10 +1828,11 @@ export default function Home() {
                   onCommand={handleCommand}
                   onClear={handleClearTerminal}
                   output={output}
-                  isLoading={isLoading}
+                  isLoading={isExecutingCommand}
                   t={t}
                   theme={theme}
                   language={language}
+                  onUpdateHistory={handleUpdateHistory}
                 />
                 <QuickCommands
                   currentMode={state.currentMode}

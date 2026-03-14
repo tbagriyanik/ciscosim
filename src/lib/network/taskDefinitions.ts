@@ -42,10 +42,10 @@ export const portTasks: TaskDefinition[] = [
   {
     id: 'activate-port',
     name: { tr: 'Port Aktifleştir', en: 'Activate Port' },
-    description: { tr: 'En az 6 portu aktif hale getirin', en: 'Activate at least 6 ports' },
+    description: { tr: 'En az 1 portu aktif hale getirin', en: 'Activate at least 1 port' },
     tip: { tr: 'no shutdown komutu ile port açın', en: 'Use no shutdown command to open port' },
     weight: 20,
-    checkFn: (state) => Object.values(state.ports).filter(p => !p.shutdown).length > 5,
+    checkFn: (state) => Object.values(state.ports).filter(p => !p.shutdown).length > 0,
   },
   {
     id: 'create-trunk',

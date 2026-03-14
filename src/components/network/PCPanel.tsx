@@ -40,6 +40,8 @@ interface PCPanelProps {
   }[];
   deviceStates?: Map<string, SwitchState>;
   deviceOutputs?: Map<string, TerminalOutput[]>;
+  pcHistories?: Map<string, string[]>;
+  onUpdatePCHistory?: (deviceId: string, history: string[]) => void;
   onExecuteDeviceCommand?: (deviceId: string, command: string) => Promise<any>;
 }
 
@@ -81,6 +83,8 @@ export function PCPanel({
   topologyConnections = [],
   deviceStates,
   deviceOutputs,
+  pcHistories,
+  onUpdatePCHistory,
   onExecuteDeviceCommand
 }: PCPanelProps) {
   const { language, t } = useLanguage();
@@ -97,8 +101,19 @@ export function PCPanel({
   const [input, setInput] = useState('');
   
   // History State
-  const [history, setHistory] = useState<string[]>([]);
+  const [history, setHistory] = useState<string[]>(() => {
+    return pcHistories?.get(deviceId) || [];
+  });
   const [historyIndex, setHistoryIndex] = useState(-1);
+
+  // Sync with global history if it changes externally
+  useEffect(() => {
+    const globalHistory = pcHistories?.get(deviceId) || [];
+    if (JSON.stringify(globalHistory) !== JSON.stringify(history)) {
+      setHistory(globalHistory);
+      setHistoryIndex(-1);
+    }
+  }, [pcHistories, deviceId]);
 
   // Get device from topology
   const deviceFromTopology = topologyDevices.find(d => d.id === deviceId);
@@ -282,7 +297,11 @@ export function PCPanel({
     // Add to history
     setHistory(prev => {
       if (prev[0] === command) return prev;
-      return [command, ...prev].slice(0, 50);
+      const newHistory = [command, ...prev].slice(0, 50);
+      if (onUpdatePCHistory) {
+        onUpdatePCHistory(deviceId, newHistory);
+      }
+      return newHistory;
     });
     setHistoryIndex(-1);
     setInput('');
@@ -553,7 +572,13 @@ export function PCPanel({
     if (outputRef.current) {
       outputRef.current.scrollTop = outputRef.current.scrollHeight;
     }
-  }, [pcOutput, activeConsoleOutput, activeTab]);
+    inputRef.current?.focus();
+  }, [pcOutput, activeConsoleOutput, activeTab, deviceId]);
+
+  // Focus on mount (when tab is clicked in main app)
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, [isVisible]);
 
   if (!isVisible) return null;
 
@@ -654,7 +679,7 @@ export function PCPanel({
 
           <div 
             ref={outputRef}
-            className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-2 font-mono text-sm leading-relaxed flex flex-col"
+            className="flex-1 overflow-y-auto scroll-smooth custom-scrollbar p-6 space-y-2 font-mono text-sm leading-relaxed flex flex-col"
           >
             <div className="flex-1" /> {/* Spacer to push content down if small */}
             {(activeTab === 'desktop' ? pcOutput : activeConsoleOutput).map((line) => (

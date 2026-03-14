@@ -10,6 +10,7 @@ export interface ProjectState {
   deviceStates: Map<string, SwitchState>;
   deviceOutputs: Map<string, TerminalOutput[]>;
   pcOutputs: Map<string, any[]>;
+  pcHistories: Map<string, string[]>;
   cableInfo: CableInfo;
   activeDeviceId: string;
   activeDeviceType: 'pc' | 'switch' | 'router';
@@ -38,6 +39,7 @@ export function useHistory(initialState: ProjectState) {
         deviceStates: new Map(newState.deviceStates),
         deviceOutputs: new Map(newState.deviceOutputs),
         pcOutputs: new Map(newState.pcOutputs),
+        pcHistories: new Map(newState.pcHistories),
         topologyDevices: JSON.parse(JSON.stringify(newState.topologyDevices)),
         topologyConnections: JSON.parse(JSON.stringify(newState.topologyConnections)),
         topologyNotes: JSON.parse(JSON.stringify(newState.topologyNotes)),

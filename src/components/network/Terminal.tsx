@@ -29,6 +29,7 @@ interface TerminalProps {
   t: Translations;
   theme: string;
   language: string;
+  onUpdateHistory?: (deviceId: string, history: string[]) => void;
 }
 
 export function Terminal({
@@ -42,11 +43,21 @@ export function Terminal({
   isLoading,
   t,
   theme,
-  language
+  language,
+  onUpdateHistory
 }: TerminalProps) {
   const [input, setInput] = useState('');
-  const [history, setHistory] = useState<string[]>([]);
+  const [history, setHistory] = useState<string[]>(() => state.commandHistory || []);
   const [historyIndex, setHistoryIndex] = useState(-1);
+
+  // Sync with global history if it changes externally
+  useEffect(() => {
+    const globalHistory = state.commandHistory || [];
+    if (JSON.stringify(globalHistory) !== JSON.stringify(history)) {
+      setHistory(globalHistory);
+      setHistoryIndex(-1);
+    }
+  }, [state.commandHistory, deviceId]);
   const [tabCycleIndex, setTabCycleIndex] = useState(-1);
   const [lastTabInput, setLastTabInput] = useState('');
   
@@ -97,7 +108,12 @@ export function Terminal({
       terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
     }
     inputRef.current?.focus();
-  }, [output, isLoading]);
+  }, [output, isLoading, deviceId]);
+
+  // Focus on mount (when tab is clicked)
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
 
   const handleSubmit = async (cmdToExecute?: string) => {
     const command = (cmdToExecute || input).trim();
@@ -106,7 +122,11 @@ export function Terminal({
     // Add to history if not duplicate of last
     setHistory(prev => {
       if (prev[0] === command) return prev;
-      return [command, ...prev].slice(0, 50);
+      const newHistory = [command, ...prev].slice(0, 50);
+      if (onUpdateHistory) {
+        onUpdateHistory(deviceId, newHistory);
+      }
+      return newHistory;
     });
     setHistoryIndex(-1);
     setTabCycleIndex(-1);
@@ -233,9 +253,9 @@ export function Terminal({
         <CardContent className="p-0 flex-1 flex flex-col overflow-hidden relative min-h-0">
           <div
             ref={terminalRef}
-            className={`flex-1 overflow-y-auto p-5 font-mono text-sm leading-relaxed scroll-smooth custom-scrollbar ${terminalBg}`}
+            className={`flex-1 overflow-y-auto p-6 font-mono text-sm leading-relaxed scroll-smooth custom-scrollbar ${terminalBg}`}
           >
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               {output.map((line, index) => (
                 <div key={line.id || index} className="animate-in fade-in slide-in-from-left-1 duration-200">
                   {line.type === 'command' ? (
