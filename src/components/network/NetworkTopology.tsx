@@ -2298,6 +2298,14 @@ export function NetworkTopology({
           toggleFullscreen();
         }
       }
+
+      // Shift Shortcuts
+      if (e.shiftKey && !e.ctrlKey && !e.metaKey) {
+        if (key === 'r') {
+          e.preventDefault();
+          resetView();
+        }
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
@@ -2305,7 +2313,7 @@ export function NetworkTopology({
       window.removeEventListener('keydown', handleKeyDown);
 
     };
-  }, [selectedDeviceIds, selectedNoteIds, deleteDevice, commitNotesChange, configuringDevice, cancelDeviceConfig, selectAllDevices, devices, notes, onDeviceDelete, isDrawingConnection, isPaletteOpen, onUndo, onRedo, copyDevice, cutDevice, pasteDevice, pingSource, showPortSelector, toggleFullscreen, isFullscreen]);
+  }, [selectedDeviceIds, selectedNoteIds, deleteDevice, commitNotesChange, configuringDevice, cancelDeviceConfig, selectAllDevices, devices, notes, onDeviceDelete, isDrawingConnection, isPaletteOpen, onUndo, onRedo, copyDevice, cutDevice, pasteDevice, pingSource, showPortSelector, toggleFullscreen, isFullscreen, resetView]);
 
   // Find path between devices using BFS
   const findPath = useCallback((sourceId: string, targetId: string): string[] | null => {
@@ -3960,6 +3968,7 @@ export function NetworkTopology({
             <div className={`w-px h-5 ${isDark ? 'bg-slate-600' : 'bg-slate-300'} mx-1`} />
             <button
               onClick={resetView}
+              title="Shift+R"
               className={`px-2 py-1 text-xs rounded flex items-center gap-1 ${isDark
                 ? 'hover:bg-slate-700 text-slate-300'
                 : 'hover:bg-slate-100 text-slate-600'

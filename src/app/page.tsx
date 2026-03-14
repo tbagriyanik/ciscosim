@@ -1221,10 +1221,6 @@ export default function Home() {
             handleNewProject();
           }
         }
-        if (key === 'r') {
-          e.preventDefault();
-          handleReset();
-        }
       }
 
       if (e.key === 'Enter') {
