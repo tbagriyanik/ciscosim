@@ -122,12 +122,12 @@ export function PortPanel({ ports, t, theme, deviceName, deviceModel, activeDevi
                 <div className="absolute inset-0 rounded-full bg-green-400 animate-ping opacity-50" />
               )}
             </div>
-            <span className={`text-[10px] sm:text-xs font-mono ${isDark ? 'text-slate-300' : 'text-slate-700'} transition-colors`}>
+            <span className={`text-sm font-mono ${isDark ? 'text-slate-300' : 'text-slate-700'} transition-colors`}>
               {port.id}
             </span>
             <Badge 
               variant={port.mode === 'trunk' ? 'default' : 'secondary'}
-              className={`text-[10px] px-1 py-0 h-3 sm:h-4 mt-0.5 transition-all duration-200 ${port.mode === 'trunk' ? 'bg-purple-500/20 text-purple-400 border-purple-500/30' : ''}`}
+              className={`text-sm px-2 py-0.5 h-auto mt-0.5 transition-all duration-200 ${port.mode === 'trunk' ? 'bg-purple-500/20 text-purple-400 border-purple-500/30' : ''}`}
             >
               {port.mode === 'trunk' ? 'Trunk' : (port.vlan ? `V${port.vlan}` : t.unassigned)}
             </Badge>
@@ -177,7 +177,7 @@ export function PortPanel({ ports, t, theme, deviceName, deviceModel, activeDevi
             <CardTitle className="text-cyan-400 text-base sm:text-lg flex items-center gap-2">
               <Database className="w-4 h-4 sm:w-5 sm:h-5" />
               {deviceName || t.switchTitle}
-              <span className={`text-[10px] sm:text-xs font-mono px-2 py-0.5 rounded ${isDark ? 'bg-slate-700 text-slate-400' : 'bg-slate-100 text-slate-500'} ml-2`}>
+              <span className={`text-xs font-mono px-2 py-0.5 rounded ${isDark ? 'bg-slate-700 text-slate-400' : 'bg-slate-100 text-slate-500'} ml-2`}>
                 {deviceModel}
               </span>
             </CardTitle>
@@ -193,30 +193,30 @@ export function PortPanel({ ports, t, theme, deviceName, deviceModel, activeDevi
             <div className={`flex items-center justify-between mb-3 sm:mb-4 pb-2 border-b ${isDark ? 'border-slate-700' : 'border-slate-300'}`}>
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                <span className={`text-[10px] sm:text-xs ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{deviceModel || 'WS-C2960-24TT-L'}</span>
+                <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{deviceModel || 'WS-C2960-24TT-L'}</span>
               </div>
               <div className="flex gap-2">
-                <span className={`text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>PWR</span>
-                <span className={`text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>SYST</span>
+                <span className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>PWR</span>
+                <span className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>SYST</span>
               </div>
             </div>
             
             <div className="mb-3 sm:mb-4">
-              <div className={`text-[10px] sm:text-xs ${isDark ? 'text-slate-500' : 'text-slate-500'} mb-2`}>{t.fastEthernetPorts}</div>
+              <div className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-500'} mb-2`}>{t.fastEthernetPorts}</div>
               <div className="grid grid-cols-6 sm:grid-cols-8 gap-0.5 sm:gap-1">
                 {faPorts.map(renderPort)}
               </div>
             </div>
             
             <div className={`pt-2 border-t ${isDark ? 'border-slate-700' : 'border-slate-300'}`}>
-              <div className={`text-[10px] sm:text-xs ${isDark ? 'text-slate-500' : 'text-slate-500'} mb-2`}>{t.gigabitPorts}</div>
+              <div className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-500'} mb-2`}>{t.gigabitPorts}</div>
               <div className="flex gap-2 justify-center">
                 {giPorts.map(renderPort)}
               </div>
             </div>
           </div>
           
-          <div className="mt-3 sm:mt-4 flex flex-wrap gap-3 sm:gap-4 justify-center text-[10px] sm:text-xs">
+          <div className="mt-3 sm:mt-4 flex flex-wrap gap-3 sm:gap-4 justify-center text-xs">
             <div className="flex items-center gap-1">
               <div className="w-2 sm:w-2.5 h-2 sm:h-2.5 rounded-full bg-green-500" />
               <span className={isDark ? 'text-slate-400' : 'text-slate-600'}>{t.connected} (Green)</span>

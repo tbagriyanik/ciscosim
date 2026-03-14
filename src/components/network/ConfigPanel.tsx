@@ -160,7 +160,7 @@ export function ConfigPanel({ state, onExecuteCommand, t, theme }: ConfigPanelPr
             size="sm"
             onClick={handleSave}
             disabled={isSaving}
-            className="bg-blue-600 hover:bg-blue-700 text-[10px] sm:text-xs px-2 sm:px-3"
+            className="bg-blue-600 hover:bg-blue-700 text-xs px-2 sm:px-3"
           >
             {isSaving ? t.saving : t.save}
           </Button>
@@ -168,12 +168,12 @@ export function ConfigPanel({ state, onExecuteCommand, t, theme }: ConfigPanelPr
       </CardHeader>
       <CardContent>
         <ScrollArea className="h-48 sm:h-64">
-          <pre className={`text-[10px] sm:text-xs text-green-400 font-mono whitespace-pre-wrap ${innerBg} p-2 sm:p-3 rounded-lg`}>
+          <pre className={`text-xs text-green-400 font-mono whitespace-pre-wrap ${innerBg} p-2 sm:p-3 rounded-lg`}>
             {configText.replace(/\\n/g, '\n')}
           </pre>
         </ScrollArea>
         
-        <div className={`mt-2 text-[10px] sm:text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'} flex items-center gap-2`}>
+        <div className={`mt-2 text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'} flex items-center gap-2`}>
           <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-green-500 animate-pulse" />
           {t.realTimeUpdate}
         </div>

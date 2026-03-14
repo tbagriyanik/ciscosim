@@ -1254,7 +1254,7 @@ export default function Home() {
             
             <div className="flex items-center gap-2 mt-4">
               <div className="w-1.5 h-1.5 rounded-full bg-cyan-500 animate-pulse" />
-              <span className="text-[10px] font-bold tracking-[0.3em] text-cyan-500 uppercase">
+              <span className="text-xs font-bold tracking-[0.3em] text-cyan-500 uppercase">
                 {t.initializingSystem}
               </span>
             </div>
@@ -1285,7 +1285,7 @@ export default function Home() {
                 <h1 className="text-lg font-bold tracking-tight bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent leading-none">
                   {t.title}
                 </h1>
-                <p className={`text-[10px] font-medium mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{t.subtitle}</p>
+                <p className={`text-xs font-medium mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{t.subtitle}</p>
               </div>
             </div>
 
@@ -1293,7 +1293,7 @@ export default function Home() {
             <div className="hidden md:flex items-center gap-6">
               <div className="flex flex-col items-end gap-1.5">
                 <div className="flex items-center gap-3">
-                   <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                   <span className={`text-xs font-black uppercase tracking-[0.2em] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                     {t.labProgress}
                   </span>
                   <motion.span 
@@ -1326,7 +1326,7 @@ export default function Home() {
                     <span className={`text-sm font-black tabular-nums ${isDark ? 'text-white' : 'text-slate-900'}`}>
                       {totalScore}
                     </span>
-                    <span className={`text-[10px] font-bold opacity-30 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                    <span className={`text-xs font-bold opacity-30 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                       /{maxScore}
                     </span>
                   </div>
@@ -1369,7 +1369,7 @@ export default function Home() {
                   variant="ghost" 
                   size="sm" 
                   onClick={() => setLanguage(language === 'tr' ? 'en' : 'tr')}
-                  className="text-[10px] font-bold h-8 px-2"
+                  className="text-xs font-bold h-8 px-2"
                 >
                   <Languages className="w-3.5 h-3.5 mr-1" />
                   {language.toUpperCase()}
@@ -1402,7 +1402,7 @@ export default function Home() {
                     <div className="p-3 space-y-4">
                       {/* Navigation Sections */}
                       <div className="space-y-1">
-                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 px-2 mb-1">{t.navigation}</p>
+                        <p className="text-xs font-bold uppercase tracking-widest text-slate-500 px-2 mb-1">{t.navigation}</p>
                         <div className="grid gap-0.5">
                           {ALL_TABS.map((tab) => {
                             const isTabVisible = tab.id === 'topology' || (activeDeviceId && tab.showFor.includes(activeDeviceType));
@@ -1434,7 +1434,7 @@ export default function Home() {
 
                       {/* Project Controls */}
                       <div className="space-y-1">
-                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 px-2 mb-1">{t.project}</p>
+                        <p className="text-xs font-bold uppercase tracking-widest text-slate-500 px-2 mb-1">{t.project}</p>
                         <div className="grid gap-0.5">
                           <Button variant="ghost" className="w-full justify-start gap-3 h-9 px-3 text-xs font-bold text-slate-400" onClick={() => { handleNewProject(); setShowMobileMenu(false); }}>
                             <File className="w-3.5 h-3.5" /> {t.newProject}
@@ -1453,8 +1453,8 @@ export default function Home() {
                       {/* Lab Progress Mobile */}
                       <div className={`p-3 rounded-xl ${isDark ? 'bg-slate-800/30' : 'bg-slate-50'} border ${isDark ? 'border-slate-800/50' : 'border-slate-200'}`}>
                          <div className="flex items-center justify-between mb-1.5">
-                          <span className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-500">{t.labProgress}</span>
-                          <span className="text-xs font-black text-cyan-400">{Math.round((totalScore / maxScore) * 100)}%</span>
+                          <span className="text-xs font-bold uppercase tracking-[0.15em] text-slate-500">{t.labProgress}</span>
+                          <span className="text-xs font-bold text-cyan-400">{Math.round((totalScore / maxScore) * 100)}%</span>
                         </div>
                         <div className={`h-1.5 w-full rounded-full ${isDark ? 'bg-slate-800' : 'bg-slate-200'} overflow-hidden mb-1.5`}>
                           <div 
@@ -1462,7 +1462,7 @@ export default function Home() {
                             style={{ width: `${(totalScore / maxScore) * 100}%` }}
                           />
                         </div>
-                        <p className={`text-center text-[11px] font-black ${isDark ? 'text-white' : 'text-slate-900'}`}>{totalScore} / {maxScore} {t.pts}</p>
+                        <p className={`text-center text-xs font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>{totalScore} / {maxScore} {t.pts}</p>
                       </div>
                     </div>
                   </ScrollArea>
@@ -1507,7 +1507,7 @@ export default function Home() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className={`${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white'} w-56`}>
-                <DropdownMenuLabel className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
+                <DropdownMenuLabel className="text-xs font-bold uppercase tracking-widest text-slate-500">
                   {topologyDevices.length > 0 ? t.selectDevice : t.addDevicesFirst}
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
@@ -1523,12 +1523,14 @@ export default function Home() {
                           className={`flex items-center gap-3 py-2 cursor-pointer ${activeDeviceId === device.id ? 'bg-cyan-500/10 text-cyan-400' : ''}`}
                           onClick={() => handleDeviceSelect(device.type, device.id)}
                         >
-                          {device.type === 'pc' ? DEVICE_ICONS.pc : 
-                           device.type === 'router' ? DEVICE_ICONS.router : 
-                           DEVICE_ICONS.switch}
-                          <div className="flex flex-col">
-                            <span className="text-sm font-bold leading-none">{displayName}</span>
-                            <span className="text-[10px] opacity-50 capitalize">{device.type}</span>
+                          <div className="flex items-center gap-3 py-2 cursor-pointer">
+                            {device.type === 'pc' ? DEVICE_ICONS.pc : 
+                             device.type === 'router' ? DEVICE_ICONS.router : 
+                             DEVICE_ICONS.switch}
+                            <div className="flex flex-col">
+                              <span className="text-sm font-bold leading-none">{displayName}</span>
+                              <span className="text-xs opacity-50 capitalize">{device.type}</span>
+                            </div>
                           </div>
                         </DropdownMenuItem>
                       );

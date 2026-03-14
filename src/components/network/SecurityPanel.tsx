@@ -109,7 +109,7 @@ export function SecurityPanel({ security, t, theme }: SecurityPanelProps) {
             value={totalScore} 
             className="h-2 bg-slate-700 transition-all duration-500"
           />
-          <div className={`mt-1 text-[10px] sm:text-xs ${textMuted} transition-colors duration-300`}>
+          <div className={`mt-1 text-xs ${textMuted} transition-colors duration-300`}>
             {getScoreText(totalScore)}
           </div>
         </div>
@@ -127,12 +127,12 @@ export function SecurityPanel({ security, t, theme }: SecurityPanelProps) {
                 } ${item.enabled ? 'animate-pulse' : ''}`} />
                 <div className="min-w-0">
                   <div className={`text-xs sm:text-sm ${textPrimary} truncate transition-colors`}>{item.name}</div>
-                  <div className={`text-[10px] ${textMuted} truncate hidden sm:block transition-colors`}>{item.description}</div>
+                  <div className={`text-xs ${textMuted} truncate hidden sm:block transition-colors`}>{item.description}</div>
                 </div>
               </div>
               <Badge 
                 variant={item.enabled ? 'default' : 'destructive'}
-                className={`text-[10px] flex-shrink-0 ml-1 transition-all duration-300 ${
+                className={`text-xs flex-shrink-0 ml-1 transition-all duration-300 ${
                   item.enabled 
                     ? 'bg-green-500/20 text-green-400 border border-green-500/30 hover:bg-green-500/30' 
                     : 'hover:bg-red-500/20'
@@ -146,13 +146,13 @@ export function SecurityPanel({ security, t, theme }: SecurityPanelProps) {
 
         {security.users.length > 0 && (
           <div className={`mt-3 sm:mt-4 p-2 ${innerBg} rounded-lg animate-fade-in`}>
-            <div className={`text-[10px] sm:text-xs ${textSecondary} mb-1`}>{t.definedUsers}</div>
+            <div className={`text-xs ${textSecondary} mb-1`}>{t.definedUsers}</div>
             <div className="flex flex-wrap gap-1">
               {security.users.map((user) => (
                 <Badge 
                   key={user.username} 
                   variant="outline" 
-                  className="text-[10px] transition-all duration-200 hover:scale-105 hover:bg-orange-500/10 hover:text-orange-400"
+                  className="text-xs transition-all duration-200 hover:scale-105 hover:bg-orange-500/10 hover:text-orange-400"
                 >
                   {user.username} (priv: {user.privilege})
                 </Badge>

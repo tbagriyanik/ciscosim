@@ -3054,7 +3054,7 @@ export function NetworkTopology({
           <div className="w-12 h-1.5 rounded-full bg-slate-600" />
         </div>
         <div className="px-4 py-3 flex items-center justify-between border-b border-slate-800/50">
-          <div className={`text-[10px] font-bold tracking-widest ${isDark ? 'text-slate-500' : 'text-slate-400'} whitespace-nowrap`}>
+          <div className={`text-xs font-bold tracking-widest ${isDark ? 'text-slate-500' : 'text-slate-400'} whitespace-nowrap`}>
             {t.devices}
           </div>
           <div className="flex gap-2">
@@ -3081,7 +3081,7 @@ export function NetworkTopology({
         </div>
 
         <div className="px-4 py-3 flex items-center justify-between">
-          <div className={`text-[10px] font-bold tracking-widest ${isDark ? 'text-slate-500' : 'text-slate-400'} whitespace-nowrap`}>
+          <div className={`text-xs font-bold tracking-widest ${isDark ? 'text-slate-500' : 'text-slate-400'} whitespace-nowrap`}>
             {t.cable}
           </div>
           <div className="flex gap-1.5">
@@ -3216,7 +3216,7 @@ export function NetworkTopology({
                 <div className="flex items-center gap-1">
                   <button
                     onClick={() => addDevice('pc')}
-                    title={language === 'tr' ? "PC Ekle" : "Add PC"}
+                    title={t.addPcShort}
                     className={`p-1.5 rounded-lg transition-all ${isDark ? 'hover:bg-slate-700 text-blue-500' : 'hover:bg-slate-100 text-blue-600'}`}
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -3225,7 +3225,7 @@ export function NetworkTopology({
                   </button>
                   <button
                     onClick={() => addDevice('switch')}
-                    title={language === 'tr' ? "Switch Ekle" : "Add Switch"}
+                    title={t.addSwitchShort}
                     className={`p-1.5 rounded-lg transition-all ${isDark ? 'hover:bg-slate-700 text-emerald-500' : 'hover:bg-slate-100 text-emerald-600'}`}
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -3234,7 +3234,7 @@ export function NetworkTopology({
                   </button>
                   <button
                     onClick={() => addDevice('router')}
-                    title={language === 'tr' ? "Router Ekle" : "Add Router"}
+                    title={t.addRouterShort}
                     className={`p-1.5 rounded-lg transition-all ${isDark ? 'hover:bg-slate-700 text-purple-500' : 'hover:bg-slate-100 text-purple-600'}`}
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -3259,7 +3259,7 @@ export function NetworkTopology({
                         : isDark ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-slate-100 text-slate-600'}`}
                     >
                       <div className={`w-2.5 h-2.5 rounded-full ${CABLE_COLORS[type].bg}`} />
-                      <span className="text-[10px] font-bold">
+                      <span className="text-xs font-bold">
                         {type === 'straight' ? t.straight.substring(0, 3) :
                           type === 'crossover' ? t.crossover.substring(0, 3) :
                             t.console.substring(0, 3)}
@@ -3374,7 +3374,7 @@ export function NetworkTopology({
               <div className="p-6 space-y-8">
                 {/* Devices Section */}
                 <div className="space-y-4">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">{t.devices}</p>
+                  <p className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">{t.devices}</p>
                   <div className="grid grid-cols-3 gap-3">
                     {(['pc', 'switch', 'router'] as const).map((type) => (
                       <button
@@ -3394,7 +3394,7 @@ export function NetworkTopology({
 
                 {/* Cables Section */}
                 <div className="space-y-4">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">{t.cableTypes}</p>
+                  <p className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">{t.cableTypes}</p>
                   <div className="grid grid-cols-3 gap-3">
                     {(['straight', 'crossover', 'console'] as CableType[]).map((type) => (
                       <button
@@ -3413,7 +3413,7 @@ export function NetworkTopology({
                 </div>
 
                 <div className="space-y-4">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">
+                  <p className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">
                     {t.annotations}
                   </p>
                   <div className="grid grid-cols-3 gap-3">
@@ -3677,7 +3677,7 @@ export function NetworkTopology({
                           data-note-drag-handle
                           onMouseDown={(e) => handleNoteMouseDown(e as unknown as ReactMouseEvent, note.id)}
                           onContextMenu={(e) => handleNoteContextMenu(e as unknown as ReactMouseEvent, note.id, 'note-style')}
-                          className={`flex items-center justify-between px-2 text-[10px] font-semibold uppercase tracking-widest cursor-move select-none ${isDark ? 'bg-black/10' : 'bg-black/5'
+                          className={`flex items-center justify-between px-2 text-xs font-semibold uppercase tracking-widest cursor-move select-none ${isDark ? 'bg-black/10' : 'bg-black/5'
                             }`}
                           style={{ height: NOTE_HEADER_HEIGHT }}
                         >
@@ -4101,7 +4101,7 @@ export function NetworkTopology({
 
               {/* Device Info (MAC Address) */}
               <div className={`p-3 rounded-2xl border ${isDark ? 'bg-slate-800/30 border-slate-800/50' : 'bg-slate-50 border-slate-200/50'}`}>
-                <div className={`text-[10px] font-black tracking-widest mb-2 opacity-70 ${isDark ? 'text-cyan-400' : 'text-cyan-600'}`}>
+                <div className={`text-xs font-black tracking-widest mb-2 opacity-70 ${isDark ? 'text-cyan-400' : 'text-cyan-600'}`}>
                   {t.deviceInfo}
                 </div>
                 <div className="flex items-center justify-between">
@@ -4115,14 +4115,14 @@ export function NetworkTopology({
               {/* IP Configuration Section - Only for PCs */}
               {devices.find(d => d.id === configuringDevice)?.type === 'pc' && (
                 <div className={`${isMobile ? 'p-3' : 'p-4'} rounded-2xl border ${isDark ? 'bg-slate-800/30 border-slate-800/50' : 'bg-slate-50 border-slate-200/50'}`}>
-                  <div className={`text-[10px] font-black tracking-widest ${isMobile ? 'mb-3' : 'mb-4'} opacity-70 ${isDark ? 'text-cyan-400' : 'text-cyan-600'}`}>
+                  <div className={`text-xs font-black tracking-widest ${isMobile ? 'mb-3' : 'mb-4'} opacity-70 ${isDark ? 'text-cyan-400' : 'text-cyan-600'}`}>
                     {language === 'tr' ? 'IP Yapılandırması' : 'IP Configuration'}
                   </div>
 
                   <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-3`}>
                     <div className="space-y-1">
-                      <label className={`text-[10px] font-bold tracking-widest ml-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                        {language === 'tr' ? 'IP Adresi' : 'IP Address'}
+                      <label className={`text-xs font-bold tracking-widest ml-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                        {t.ipAddress}
                       </label>
                       <input
                         type="text"
@@ -4137,8 +4137,8 @@ export function NetworkTopology({
                     </div>
 
                     <div className="space-y-1">
-                      <label className={`text-[10px] font-bold tracking-widest ml-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                        {language === 'tr' ? 'Alt Ağ Maskesi' : 'Subnet Mask'}
+                      <label className={`text-xs font-bold tracking-widest ml-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                        {t.subnetMask}
                       </label>
                       <input
                         type="text"
@@ -4152,8 +4152,8 @@ export function NetworkTopology({
                     </div>
 
                     <div className="space-y-1">
-                      <label className={`text-[10px] font-bold tracking-widest ml-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                        {language === 'tr' ? 'Ağ Geçidi' : 'Gateway'}
+                      <label className={`text-xs font-bold tracking-widest ml-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                        {t.gateway}
                       </label>
                       <input
                         type="text"
@@ -4168,8 +4168,8 @@ export function NetworkTopology({
                     </div>
 
                     <div className="space-y-1">
-                      <label className={`text-[10px] font-bold tracking-widest ml-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                        {language === 'tr' ? 'DNS Sunucusu' : 'DNS Server'}
+                      <label className={`text-xs font-bold tracking-widest ml-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                        {t.dnsServer}
                       </label>
                       <input
                         type="text"

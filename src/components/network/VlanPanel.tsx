@@ -203,10 +203,10 @@ export function VlanPanel({ vlans, ports, deviceName, deviceModel, onExecuteComm
         <div className={`mb-4 p-2 sm:p-3 ${innerBg} rounded-lg transition-all duration-300 hover:bg-opacity-80`}>
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
-              <span className={`text-[12px] sm:text-sm ${textSecondary}`}>
+              <span className={`text-xs sm:text-sm ${textSecondary}`}>
                 {t.vlanScore}
               </span>
-              <Badge variant="outline" className="text-[12px] transition-transform hover:scale-105">
+              <Badge variant="outline" className="text-xs transition-transform hover:scale-105">
                 {completedTasks}/{vlanTasks.length}
               </Badge>
             </div>
@@ -224,7 +224,7 @@ export function VlanPanel({ vlans, ports, deviceName, deviceModel, onExecuteComm
         </div>
 
         <div className={`mb-4 p-2 sm:p-3 ${innerBg} rounded-lg`}>
-          <div className={`text-[12px] font-medium ${textSecondary} mb-2 flex items-center gap-1`}>
+          <div className={`text-xs font-medium ${textSecondary} mb-2 flex items-center gap-1`}>
             <svg className="w-3 h-3 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
             </svg>
@@ -252,14 +252,14 @@ export function VlanPanel({ vlans, ports, deviceName, deviceModel, onExecuteComm
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                       </svg>
                     ) : (
-                      <span className="text-[12px] font-bold">{task.weight}</span>
+                      <span className="text-xs font-bold">{task.weight}</span>
                     )}
                   </div>
                   <div className="min-w-0">
-                    <div className={`text-[12px] font-medium ${task.completed ? 'text-green-400' : textPrimary} truncate transition-colors`}>
+                    <div className={`text-xs font-medium ${task.completed ? 'text-green-400' : textPrimary} truncate transition-colors`}>
                       {task.name}
                     </div>
-                    <div className={`text-[12px] ${textMuted} truncate hidden sm:block`}>
+                    <div className={`text-xs ${textMuted} truncate hidden sm:block`}>
                       {task.description}
                     </div>
                   </div>
@@ -267,7 +267,7 @@ export function VlanPanel({ vlans, ports, deviceName, deviceModel, onExecuteComm
                 {!task.completed && (
                   <Badge 
                     variant="outline"
-                    className="text-[12px] px-1.5 py-0.5 text-purple-400 border-purple-500/30 transition-all hover:scale-105 hover:bg-purple-500/10"
+                    className="text-xs px-1.5 py-0.5 text-purple-400 border-purple-500/30 transition-all hover:scale-105 hover:bg-purple-500/10"
                   >
                     +{task.weight}
                   </Badge>
@@ -278,10 +278,10 @@ export function VlanPanel({ vlans, ports, deviceName, deviceModel, onExecuteComm
         </div>
 
         <div className={`mb-4 p-2 sm:p-3 ${innerBg} rounded-lg`}>
-          <div className={`text-[12px] ${textSecondary} mb-2`}>{t.newVlan}</div>
+          <div className={`text-xs ${textSecondary} mb-2`}>{t.newVlan}</div>
           <div className="flex flex-col sm:flex-row gap-2">
             <div className="flex-1">
-              <Label htmlFor="vlan-id" className={`text-[12px] ${textMuted}`}>{t.vlanId}</Label>
+              <Label htmlFor="vlan-id" className={`text-xs ${textMuted}`}>{t.vlanId}</Label>
               <Input
                 id="vlan-id"
                 type="number"
@@ -294,7 +294,7 @@ export function VlanPanel({ vlans, ports, deviceName, deviceModel, onExecuteComm
               />
             </div>
             <div className="flex-1">
-              <Label htmlFor="vlan-name" className={`text-[12px] ${textMuted}`}>{t.vlanName}</Label>
+              <Label htmlFor="vlan-name" className={`text-xs ${textMuted}`}>{t.vlanName}</Label>
               <Input
                 id="vlan-name"
                 type="text"
@@ -319,7 +319,7 @@ export function VlanPanel({ vlans, ports, deviceName, deviceModel, onExecuteComm
 
         <ScrollArea className="h-36 sm:h-48">
           <div className="space-y-1">
-            <div className={`grid grid-cols-12 gap-1 sm:gap-2 px-2 py-1 text-[12px] ${textSecondary} border-b ${isDark ? 'border-slate-700' : 'border-slate-300'}`}>
+            <div className={`grid grid-cols-12 gap-1 sm:gap-2 px-2 py-1 text-xs ${textSecondary} border-b ${isDark ? 'border-slate-700' : 'border-slate-300'}`}>
               <div className="col-span-1">{t.id}</div>
               <div className="col-span-3">{t.vlanName}</div>
               <div className="col-span-2">{t.status}</div>
@@ -345,12 +345,12 @@ export function VlanPanel({ vlans, ports, deviceName, deviceModel, onExecuteComm
                   <div className="col-span-2">
                     <Badge 
                       variant={vlan.status === 'active' ? 'default' : 'secondary'}
-                      className="text-[12px]"
+                      className="text-xs"
                     >
                       {vlan.status === 'active' ? t.active : t.suspended}
                     </Badge>
                   </div>
-                  <div className={`col-span-5 ${isDark ? 'text-slate-400' : 'text-slate-500'} truncate text-[12px]`} title={vlanPorts.join(', ')}>
+                  <div className={`col-span-5 ${isDark ? 'text-slate-400' : 'text-slate-500'} truncate text-xs`} title={vlanPorts.join(', ')}>
                     {vlanPorts.length > 0 ? vlanPorts.slice(0, 3).join(', ') + (vlanPorts.length > 3 ? '...' : '') : t.unassigned}
                   </div>
                   <div className="col-span-1">

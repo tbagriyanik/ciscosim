@@ -165,7 +165,7 @@ export function TaskCard({ tasks, state, context, color, isDark }: TaskCardProps
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                     </motion.svg>
                   ) : (
-                    <span className="text-[10px] font-bold">{task.weight}</span>
+                    <span className="text-xs font-bold">{task.weight}</span>
                   )}
                 </div>
                 <span className={`text-sm font-medium transition-all duration-500 ${
@@ -188,7 +188,7 @@ export function TaskCard({ tasks, state, context, color, isDark }: TaskCardProps
                   <svg className="w-3 h-3 text-cyan-400 flex-shrink-0 mt-0.5 transition-transform group-hover:rotate-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  <span className={`text-[11px] ${isDark ? 'text-cyan-400/80' : 'text-cyan-600'} transition-colors group-hover:text-cyan-400`}>
+                  <span className={`text-xs ${isDark ? 'text-cyan-400/80' : 'text-cyan-600'} transition-colors group-hover:text-cyan-400`}>
                     {tip}
                   </span>
                 </div>

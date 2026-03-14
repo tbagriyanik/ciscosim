@@ -461,7 +461,7 @@ export function PCPanel({
             </div>
             <div>
               <h2 className="text-sm font-black tracking-tight leading-none uppercase">{pcHostname}</h2>
-              <p className="text-[10px] font-bold text-slate-500 mt-1.5 uppercase tracking-widest">{pcIP} • {pcMAC}</p>
+              <p className="text-xs font-bold text-slate-500 mt-1.5 uppercase tracking-widest">{pcIP} • {pcMAC}</p>
             </div>
           </div>
           <Button 
@@ -509,7 +509,7 @@ export function PCPanel({
                   <Monitor className="w-8 h-8 md:w-10 md:h-10 text-blue-500 transition-transform group-hover:scale-110" />
                 </div>
                 <h3 className={`text-base md:text-lg font-black ${isDark ? 'text-white' : 'text-slate-900'} mb-1 md:mb-2 uppercase tracking-tight`}>{t.consoleTerminal}</h3>
-                <p className={`text-[10px] md:text-xs font-bold ${isDark ? 'text-slate-500' : 'text-slate-400'} mb-4 md:mb-8 leading-relaxed px-2 md:px-4`}>
+                <p className={`text-sm md:text-sm font-bold ${isDark ? 'text-slate-500' : 'text-slate-400'} mb-4 md:mb-8 leading-relaxed px-2 md:px-4`}>
                   {consoleDevice 
                     ? `${t.physicalConnectionDetected} ${consoleDevice.name}. Port: 9600-8-N-1`
                     : t.noConsoleCableDetected}
@@ -528,7 +528,7 @@ export function PCPanel({
                     <TerminalIcon className="w-5 h-5" />
                     {t.connect}
                   </Button>
-                  <p className={`text-[10px] ${isDark ? 'text-slate-700' : 'text-slate-400'} uppercase tracking-[0.2em] font-black mt-1`}>
+                  <p className={`text-sm ${isDark ? 'text-slate-700' : 'text-slate-400'} uppercase tracking-[0.2em] font-black mt-1`}>
                     {t.consoleConfiguration}
                   </p>
                 </div>
@@ -538,7 +538,7 @@ export function PCPanel({
 
           <div 
             ref={outputRef}
-            className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-2 font-mono text-[13px] leading-relaxed flex flex-col"
+            className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-2 font-mono text-sm leading-relaxed flex flex-col"
           >
             <div className="flex-1" /> {/* Spacer to push content down if small */}
             {(activeTab === 'desktop' ? pcOutput : activeConsoleOutput).map((line) => (
@@ -558,7 +558,7 @@ export function PCPanel({
                 )}
                 {line.type === 'output' && <span className={`${textColor} whitespace-pre-wrap`}>{line.content}</span>}
                 {line.type === 'error' && <span className="text-rose-500 font-bold italic">{line.content}</span>}
-                {line.type === 'success' && <span className="text-cyan-500 font-bold uppercase text-[11px] tracking-widest opacity-80">{line.content}</span>}
+                {line.type === 'success' && <span className="text-cyan-500 font-bold uppercase text-xs tracking-widest opacity-80">{line.content}</span>}
               </div>
             ))}
           </div>
@@ -568,7 +568,7 @@ export function PCPanel({
             <div className={`md:hidden flex flex-col gap-1 px-4 py-2 border-t ${isDark ? 'border-slate-800 bg-slate-900/50' : 'border-slate-200 bg-slate-100/50'}`}>
               <div className="flex items-center gap-2 mb-1">
                 <History className="w-3 h-3 text-slate-500" />
-                <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+                <span className="text-xs font-black uppercase tracking-widest text-slate-500">
                   {language === 'tr' ? 'Son Komutlar' : 'Recent Commands'}
                 </span>
               </div>
@@ -577,7 +577,7 @@ export function PCPanel({
                   <button
                     key={i}
                     onClick={() => executeCommand(cmd)}
-                    className={`px-3 py-1.5 rounded-lg text-[11px] font-mono font-bold transition-all border ${
+                    className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all border ${
                       isDark 
                         ? 'bg-slate-800 border-slate-700 text-slate-300 active:bg-cyan-500/20 active:text-cyan-400' 
                         : 'bg-white border-slate-200 text-slate-600 active:bg-cyan-50'

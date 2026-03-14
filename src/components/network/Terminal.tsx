@@ -214,7 +214,7 @@ export function Terminal({
               </div>
               <CardTitle className="text-sm font-black tracking-tight flex items-center gap-2">
                 <span className={isDark ? 'text-slate-100' : 'text-slate-900'}>{deviceName}</span>
-                <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 font-mono border border-slate-700">{t.cli}</span>
+                <span className="text-xs px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 font-mono border border-slate-700">{t.cli}</span>
               </CardTitle>
             </div>
             <div className="flex items-center gap-2">
@@ -222,7 +222,7 @@ export function Terminal({
                 variant="ghost" 
                 size="sm" 
                 onClick={onClear}
-                className="h-8 px-2.5 text-[11px] font-bold text-slate-500 hover:text-rose-400 transition-colors gap-1.5"
+                className="h-8 px-2.5 text-xs font-bold text-slate-500 hover:text-rose-400 transition-colors gap-1.5"
               >
                 <Trash2 className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">{t.clearTerminalBtn}</span>
@@ -233,7 +233,7 @@ export function Terminal({
         <CardContent className="p-0 flex-1 flex flex-col overflow-hidden relative min-h-0">
           <div
             ref={terminalRef}
-            className={`flex-1 overflow-y-auto p-5 font-mono text-[13px] leading-relaxed scroll-smooth custom-scrollbar ${terminalBg}`}
+            className={`flex-1 overflow-y-auto p-5 font-mono text-sm leading-relaxed scroll-smooth custom-scrollbar ${terminalBg}`}
           >
             <div className="space-y-1.5">
               {output.map((line, index) => (
@@ -283,7 +283,7 @@ export function Terminal({
                   spellCheck={false}
                   autoComplete="off"
                 />
-                <div className="hidden sm:flex items-center gap-1.5 px-1.5 py-0.5 rounded border border-slate-800 bg-slate-800/50 text-[10px] text-slate-500 font-bold uppercase tracking-wider">
+                <div className="hidden sm:flex items-center gap-1.5 px-1.5 py-0.5 rounded border border-slate-800 bg-slate-800/50 text-xs text-slate-500 font-bold uppercase tracking-wider">
                   <Command className="w-2.5 h-3.5" />
                   Enter
                 </div>
@@ -313,7 +313,7 @@ export function Terminal({
           <div className="sm:hidden flex flex-col gap-1 px-1">
             <div className="flex items-center gap-2 mb-1">
               <History className="w-3 h-3 text-slate-500" />
-              <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+              <span className="text-xs font-black uppercase tracking-widest text-slate-500">
                 {language === 'tr' ? 'Son Komutlar' : 'Recent Commands'}
               </span>
             </div>
@@ -322,7 +322,7 @@ export function Terminal({
                 <button
                   key={i}
                   onClick={() => handleSubmit(cmd)}
-                  className={`px-3 py-1.5 rounded-lg text-[11px] font-mono font-bold transition-all border ${
+                  className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all border ${
                     isDark 
                       ? 'bg-slate-800 border-slate-700 text-slate-300 active:bg-cyan-500/20 active:text-cyan-400' 
                       : 'bg-white border-slate-200 text-slate-600 active:bg-cyan-50'

@@ -68,7 +68,7 @@ export function QuickCommands({ currentMode, onExecuteCommand, t, theme, languag
             </svg>
             {t.quickCommands}
           </CardTitle>
-          <Badge variant="outline" className="text-[10px] sm:text-xs">
+          <Badge variant="outline" className="text-xs sm:text-xs">
             {modeLabels[currentMode]}
           </Badge>
         </div>
@@ -93,18 +93,18 @@ export function QuickCommands({ currentMode, onExecuteCommand, t, theme, languag
           </div>
         )}
         
-        <div className={`hidden sm:block mt-2 sm:mt-3 pt-2 border-t ${isDark ? 'border-slate-700' : 'border-slate-200'} text-[10px] sm:text-xs ${textMuted}`}>
+        <div className={`hidden sm:block mt-2 sm:mt-3 pt-2 border-t ${isDark ? 'border-slate-700' : 'border-slate-200'} text-xs sm:text-xs ${textMuted}`}>
           <div className="flex items-center gap-1 mb-1">
-            <kbd className={`px-1 py-0.5 ${kbdBg} rounded text-[10px]`}>TAB</kbd>
+            <kbd className={`px-1 py-0.5 ${kbdBg} rounded text-xs`}>TAB</kbd>
             <span>- {t.tabComplete}</span>
           </div>
           <div className="flex items-center gap-1 mb-1">
-            <kbd className={`px-1 py-0.5 ${kbdBg} rounded text-[10px]`}>↑</kbd>
-            <kbd className={`px-1 py-0.5 ${kbdBg} rounded text-[10px]`}>↓</kbd>
+            <kbd className={`px-1 py-0.5 ${kbdBg} rounded text-xs`}>↑</kbd>
+            <kbd className={`px-1 py-0.5 ${kbdBg} rounded text-xs`}>↓</kbd>
             <span>- {t.commandHistory}</span>
           </div>
           <div className="flex items-center gap-1">
-            <kbd className={`px-1 py-0.5 ${kbdBg} rounded text-[10px]`}>?</kbd>
+            <kbd className={`px-1 py-0.5 ${kbdBg} rounded text-xs`}>?</kbd>
             <span>- {t.help}</span>
           </div>
         </div>

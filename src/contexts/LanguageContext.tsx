@@ -139,6 +139,13 @@ export interface Translations {
   addDeviceOrCable: string;
   selectCable: string;
   deviceInfoShort: string;
+  addPcShort: string;
+  addSwitchShort: string;
+  addRouterShort: string;
+  ipAddress: string;
+  subnetMask: string;
+  gateway: string;
+  dnsServer: string;
   accessDenied: string;
   resetConfirm: string;
   clearTerminalConfirm: string;
@@ -409,6 +416,13 @@ const translations: Record<Language, Translations> = {
     addDeviceOrCable: 'Cihaz veya Kablo Ekle',
     selectCable: 'Kablo Seç',
     deviceInfoShort: 'Bilgi',
+    addPcShort: 'PC Ekle',
+    addSwitchShort: 'Switch Ekle',
+    addRouterShort: 'Router Ekle',
+    ipAddress: 'IP Adresi',
+    subnetMask: 'Alt Ağ Maskesi',
+    gateway: 'Ağ Geçidi',
+    dnsServer: 'DNS Sunucusu',
     accessDenied: '% Erişim reddedildi',
     resetConfirm: 'Tüm yapılandırma sıfırlanacak. Devam etmek istiyor musunuz?',
     clearTerminalConfirm: 'Terminal çıktısı temizlenecek. Devam etmek istiyor musunuz?',
@@ -615,6 +629,13 @@ const translations: Record<Language, Translations> = {
     addDeviceOrCable: 'Add Device or Cable',
     selectCable: 'Select Cable',
     deviceInfoShort: 'Info',
+    addPcShort: 'Add PC',
+    addSwitchShort: 'Add Switch',
+    addRouterShort: 'Add Router',
+    ipAddress: 'IP Address',
+    subnetMask: 'Subnet Mask',
+    gateway: 'Gateway',
+    dnsServer: 'DNS Server',
     accessDenied: '% Access denied',
     resetConfirm: 'All configuration will be reset. Do you want to continue?',
     clearTerminalConfirm: 'Terminal output will be cleared. Do you want to continue?',

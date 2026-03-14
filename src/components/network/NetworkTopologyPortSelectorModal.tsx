@@ -68,7 +68,7 @@ export function NetworkTopologyPortSelectorModal({
 
           <div className="mt-6 flex flex-wrap items-center gap-6">
             <div className="flex items-center gap-3">
-              <span className={`text-[10px] font-black tracking-widest ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+              <span className={`text-xs font-bold tracking-widest ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                 {t.cableType.toUpperCase()}:
               </span>
               <div className="flex bg-slate-100 dark:bg-slate-800/50 p-1 rounded-xl border border-slate-200 dark:border-slate-800">
@@ -135,13 +135,13 @@ export function NetworkTopologyPortSelectorModal({
                       {device.name}
                     </span>
                   </div>
-                  <div className={`text-[10px] font-bold tracking-widest ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                  <div className={`text-xs font-bold tracking-widest ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                     {language === 'tr' ? `${filteredPorts.length} boş port` : `${filteredPorts.length} ports free`}
                   </div>
                 </div>
 
                 <div className={`grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-3 p-4 rounded-3xl border ${isDark ? 'bg-slate-950/40 border-slate-800/50' : 'bg-slate-50 border-slate-200'}`}>
-                  <div className="col-span-full flex flex-wrap gap-3 mb-2 pb-2 border-b border-dashed border-slate-700/30 text-[10px]">
+                  <div className="col-span-full flex flex-wrap gap-3 mb-2 pb-2 border-b border-dashed border-slate-700/30 text-xs">
                     {device.type === 'pc' ? (
                       <>
                         <span className="flex items-center gap-1 text-slate-400"><span className="w-2 h-2 rounded-full bg-blue-500 inline-block" /> ETH</span>
@@ -202,7 +202,7 @@ export function NetworkTopologyPortSelectorModal({
                           : `${cardCls} hover:scale-110`}`}
                       >
                         <div className={`w-3.5 h-3.5 rounded-full transition-all duration-300 ${isConnected ? 'bg-slate-600' : `${dotCls} ${dotGlow}`}`} />
-                        <span className={`text-[10px] font-bold font-mono transition-colors ${isConnected ? 'text-slate-600' : textCls}`}>
+                        <span className={`text-xs font-bold font-mono transition-colors ${isConnected ? 'text-slate-600' : textCls}`}>
                           {port.label.replace('FastEthernet', 'Fa').replace('GigabitEthernet', 'Gi')}
                         </span>
                       </button>
@@ -229,7 +229,7 @@ export function NetworkTopologyPortSelectorModal({
         </div>
 
         <div className={`px-8 py-6 border-t ${isDark ? 'border-slate-800/50 bg-slate-800/30' : 'border-slate-100 bg-slate-50/50'} flex justify-between items-center`}>
-          <div className={`text-[10px] font-bold tracking-widest ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
+          <div className={`text-xs font-bold tracking-widest ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
             {portSelectorStep === 'source' ? t.step1 : t.step2}
           </div>
           <button
