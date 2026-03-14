@@ -1210,6 +1210,15 @@ export default function Home() {
           e.preventDefault();
           handleNewProject();
         }
+
+        // Tab shortcuts Ctrl+1 to Ctrl+5
+        if (['1', '2', '3', '4', '5'].includes(key)) {
+          const index = parseInt(key) - 1;
+          if (tabs[index]) {
+            e.preventDefault();
+            setActiveTab(tabs[index].id);
+          }
+        }
       }
 
       // Shift Shortcuts
@@ -1635,12 +1644,13 @@ export default function Home() {
 
             {/* Main Tabs (Adaptive: Icons on small, Icon+Text on large) */}
             <div className="hidden sm:flex items-end gap-1">
-              {tabs.map((tab) => {
+              {tabs.map((tab, index) => {
                 const isActive = activeTab === tab.id;
                 return (
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
+                    title={`${tab.label} (Ctrl+${index + 1})`}
                     className={`flex items-center gap-2 px-3 lg:px-5 py-3 rounded-t-xl text-sm font-semibold transition-all border-x border-t min-w-[50px] lg:min-w-[120px] justify-center ${
                       isActive
                         ? isDark ? 'bg-slate-950 border-slate-800 text-cyan-400 shadow-[0_-4px_0_0_#22d3ee]' : 'bg-slate-100 border-slate-300 text-slate-900 shadow-[0_-4px_0_0_#06b6d4]'
