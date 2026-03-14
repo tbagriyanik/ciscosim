@@ -123,6 +123,40 @@ export interface Translations {
   modeInterface: string;
   modeLine: string;
   modeVlanLabel: string;
+  macAddress: string;
+  deviceInfo: string;
+  consoleTerminal: string;
+  devices: string;
+  cableTypes: string;
+  cli: string;
+  id: string;
+  portInUse: string;
+  note: string;
+  cable: string;
+  add: string;
+  annotations: string;
+  align: string;
+  addDeviceOrCable: string;
+  selectCable: string;
+  deviceInfoShort: string;
+  accessDenied: string;
+  resetConfirm: string;
+  clearTerminalConfirm: string;
+  unsavedChangesConfirm: string;
+  newProjectConfirm: string;
+  invalidProjectFile: string;
+  failedLoadProject: string;
+  undo: string;
+  redo: string;
+  newProject: string;
+  saveProject: string;
+  loadProject: string;
+  about: string;
+  noDevicesInTopology: string;
+  addDevicesFirst: string;
+  selectDeviceDropdown: string;
+  vlanNameExample: string;
+  hostnameExample: string;
 
   // Security descriptions
   secEnableSecretOn: string;
@@ -161,6 +195,7 @@ export interface Translations {
   vTaskFullNamingName: string;
   vTaskFullNamingDesc: string;
   vTaskFullNamingHint: string;
+  saving: string;
   connect: string;
   disconnect: string;
   physicalConnectionDetected: string;
@@ -213,8 +248,8 @@ const translations: Record<Language, Translations> = {
   tr: {
     title: 'Network Simulator 2026',
     subtitle: 'Ağ Becerilerini Geliştir',
-    mode: 'Mod',
-    hostname: 'Hostname',
+    mode: 'Kip',
+    hostname: 'Ana Bilgisayar Adı',
     clearTerminal: 'Terminali Temizle',
     reset: 'Sıfırla',
     switchTitle: 'Network 2960 Switch',
@@ -227,7 +262,7 @@ const translations: Record<Language, Translations> = {
     status: 'Durum',
     portName: 'Ad',
     speed: 'Hız',
-    duplex: 'Duplex',
+    duplex: 'Çift Yönlü',
     description: 'Açıklama',
     unassigned: 'Atanmamış',
     vlanStatus: 'VLAN Durumu',
@@ -284,7 +319,7 @@ const translations: Record<Language, Translations> = {
     pcNotConnected: 'Herhangi bir switch veya router\'a bağlı değilsiniz.',
     pcCableError: 'Ağ kablosu bağlı değil.',
     pcIncompatibleCable: 'Kablo tipi uyumsuz. PC-Switch için Düz Kablo gerekli.',
-    pcAccessDenied: 'adresine doğrudan erişim yok.',
+    pcAccessDenied: 'Adrese doğrudan erişim yok.',
     pcConsoleTip: 'Konsol kablosuyla bağlısınız. Lütfen "terminal" komutunu kullanın.',
     pcPingError: 'Ping isteği zaman aşımına uğradı.',
     pcTelnetError: 'TELNET: Bağlantı kurulamadı.',
@@ -338,6 +373,7 @@ const translations: Record<Language, Translations> = {
     vTaskFullNamingName: 'Tam İsimlendirme',
     vTaskFullNamingDesc: 'Tüm VLAN\'ları isimlendir',
     vTaskFullNamingHint: 'Her VLAN için: name <isim>',
+    saving: 'Kaydediliyor...',
     connect: 'Bağla',
     disconnect: 'Bağlantıyı Kes',
     physicalConnectionDetected: 'Fiziksel bağlantı algılandı:',
@@ -357,6 +393,40 @@ const translations: Record<Language, Translations> = {
     dontSave: 'Kaydetme',
     pts: 'puan',
     initializingSystem: 'Sistem Başlatılıyor...',
+    macAddress: 'MAC Adresi',
+    deviceInfo: 'CİHAZ BİLGİSİ',
+    consoleTerminal: 'Konsol Terminali',
+    devices: 'Cihazlar',
+    cableTypes: 'Kablo Tipleri',
+    cli: 'CLI',
+    id: 'ID',
+    portInUse: 'Bu port zaten kullanımda!',
+    note: 'Not',
+    cable: 'Kablo',
+    add: 'Ekle',
+    annotations: 'Notlar',
+    align: 'Hizala',
+    addDeviceOrCable: 'Cihaz veya Kablo Ekle',
+    selectCable: 'Kablo Seç',
+    deviceInfoShort: 'Bilgi',
+    accessDenied: '% Erişim reddedildi',
+    resetConfirm: 'Tüm yapılandırma sıfırlanacak. Devam etmek istiyor musunuz?',
+    clearTerminalConfirm: 'Terminal çıktısı temizlenecek. Devam etmek istiyor musunuz?',
+    unsavedChangesConfirm: 'Kaydedilmemiş değişiklikler var. Kaydetmek istiyor musunuz?',
+    newProjectConfirm: 'Tüm yapılandırma ve topoloji sıfırlanacak. Devam etmek istiyor musunuz?',
+    invalidProjectFile: 'Proje dosyası geçersiz!',
+    failedLoadProject: 'Proje dosyası yüklenemedi!',
+    undo: 'Geri Al (Ctrl+Z)',
+    redo: 'İleri Al (Ctrl+Y)',
+    newProject: 'Yeni Proje',
+    saveProject: 'Projeyi Kaydet',
+    loadProject: 'Proje Yükle',
+    about: 'Hakkında',
+    noDevicesInTopology: 'Topolojide henüz cihaz yok.',
+    addDevicesFirst: 'Önce Cihaz Ekleyin',
+    selectDeviceDropdown: 'Cihaz Seç',
+    vlanNameExample: 'Örn: MUHASEBE',
+    hostnameExample: 'Örn: Router-X',
     aboutTitle: 'Network Simulator 2026 Hakkında',
     aboutIntro: 'Bu uygulama, ağ teknolojilerini ve terminal komutlarını öğrenmek isteyenler için tasarlanmış interaktif bir simülasyon aracıdır.',
     termsAndConditions: 'Şartlar ve Koşullar',
@@ -509,6 +579,7 @@ const translations: Record<Language, Translations> = {
     vTaskFullNamingName: 'Full Naming',
     vTaskFullNamingDesc: 'Name all VLANs properly',
     vTaskFullNamingHint: 'For each VLAN: name <name>',
+    saving: 'Saving...',
     connect: 'Connect',
     disconnect: 'Disconnect',
     physicalConnectionDetected: 'Physical connection detected to',
@@ -528,6 +599,40 @@ const translations: Record<Language, Translations> = {
     dontSave: 'Don\'t Save',
     pts: 'pts',
     initializingSystem: 'Initializing System...',
+    macAddress: 'MAC Address',
+    deviceInfo: 'DEVICE INFO',
+    consoleTerminal: 'Console Terminal',
+    devices: 'Devices',
+    cableTypes: 'Cable Types',
+    cli: 'CLI',
+    id: 'ID',
+    portInUse: 'This port already in use!',
+    note: 'Note',
+    cable: 'Cable',
+    add: 'Add',
+    annotations: 'Annotations',
+    align: 'Align',
+    addDeviceOrCable: 'Add Device or Cable',
+    selectCable: 'Select Cable',
+    deviceInfoShort: 'Info',
+    accessDenied: '% Access denied',
+    resetConfirm: 'All configuration will be reset. Do you want to continue?',
+    clearTerminalConfirm: 'Terminal output will be cleared. Do you want to continue?',
+    unsavedChangesConfirm: 'You have unsaved changes. Do you want to save?',
+    newProjectConfirm: 'All configuration and topology will be reset. Do you want to continue?',
+    invalidProjectFile: 'Invalid project file!',
+    failedLoadProject: 'Failed to load project file!',
+    undo: 'Undo (Ctrl+Z)',
+    redo: 'Redo (Ctrl+Y)',
+    newProject: 'New Project',
+    saveProject: 'Save Project',
+    loadProject: 'Load Project',
+    about: 'About',
+    noDevicesInTopology: 'No devices in topology yet.',
+    addDevicesFirst: 'Add Devices First',
+    selectDeviceDropdown: 'Select Device',
+    vlanNameExample: 'e.g. SALES',
+    hostnameExample: 'e.g. Router-X',
     aboutTitle: 'About Network Simulator 2026',
     aboutIntro: 'This application is an interactive simulation tool designed for those who want to learn network technologies and terminal commands.',
     termsAndConditions: 'Terms and Conditions',

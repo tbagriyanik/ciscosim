@@ -508,7 +508,7 @@ export function PCPanel({
                 <div className={`w-16 h-16 md:w-20 md:h-20 rounded-2xl md:rounded-3xl ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-slate-100 border-slate-200'} flex items-center justify-center mx-auto mb-4 md:mb-6 border shadow-inner group`}>
                   <Monitor className="w-8 h-8 md:w-10 md:h-10 text-blue-500 transition-transform group-hover:scale-110" />
                 </div>
-                <h3 className={`text-base md:text-lg font-black ${isDark ? 'text-white' : 'text-slate-900'} mb-1 md:mb-2 uppercase tracking-tight`}>Console Terminal</h3>
+                <h3 className={`text-base md:text-lg font-black ${isDark ? 'text-white' : 'text-slate-900'} mb-1 md:mb-2 uppercase tracking-tight`}>{t.consoleTerminal}</h3>
                 <p className={`text-[10px] md:text-xs font-bold ${isDark ? 'text-slate-500' : 'text-slate-400'} mb-4 md:mb-8 leading-relaxed px-2 md:px-4`}>
                   {consoleDevice 
                     ? `${t.physicalConnectionDetected} ${consoleDevice.name}. Port: 9600-8-N-1`

@@ -214,7 +214,7 @@ export function Terminal({
               </div>
               <CardTitle className="text-sm font-black tracking-tight flex items-center gap-2">
                 <span className={isDark ? 'text-slate-100' : 'text-slate-900'}>{deviceName}</span>
-                <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 font-mono border border-slate-700">CLI</span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 font-mono border border-slate-700">{t.cli}</span>
               </CardTitle>
             </div>
             <div className="flex items-center gap-2">
@@ -338,5 +338,3 @@ export function Terminal({
     </div>
   );
 }
-
-export type { TerminalOutput };

@@ -593,9 +593,7 @@ export default function Home() {
   const handleReset = () => {
     setConfirmDialog({
       show: true,
-      message: language === 'tr' 
-        ? 'Tüm yapılandırma sıfırlanacak. Devam etmek istiyor musunuz?'
-        : 'All configuration will be reset. Do you want to continue?',
+      message: t.resetConfirm,
       action: 'reset',
       onConfirm: () => {
         setConfirmDialog(null);
@@ -608,9 +606,7 @@ export default function Home() {
   const handleClearTerminal = () => {
     setConfirmDialog({
       show: true,
-      message: language === 'tr'
-        ? 'Terminal çıktısı temizlenecek. Devam etmek istiyor musunuz?'
-        : 'Terminal output will be cleared. Do you want to continue?',
+      message: t.clearTerminalConfirm,
       action: 'clear',
       onConfirm: () => {
         setConfirmDialog(null);
@@ -1006,9 +1002,7 @@ export default function Home() {
     if (hasUnsavedChanges) {
       setSaveDialog({
         show: true,
-        message: language === 'tr'
-          ? 'Kaydedilmemiş değişiklikler var. Kaydetmek istiyor musunuz?'
-          : 'You have unsaved changes. Do you want to save?',
+        message: t.unsavedChangesConfirm,
         onConfirm: (save: boolean) => {
           setSaveDialog(null);
           if (save) {
@@ -1020,9 +1014,7 @@ export default function Home() {
     } else {
       setConfirmDialog({
         show: true,
-        message: language === 'tr' 
-          ? 'Tüm yapılandırma ve topoloji sıfırlanacak. Devam etmek istiyor musunuz?'
-          : 'All configuration and topology will be reset. Do you want to continue?',
+        message: t.newProjectConfirm,
         action: 'new-project',
         onConfirm: () => {
           setConfirmDialog(null);
@@ -1209,10 +1201,10 @@ export default function Home() {
         if (loadProjectData(projectData)) {
           setHasUnsavedChanges(false);
         } else {
-          alert(language === 'tr' ? 'Proje dosyası geçersiz!' : 'Invalid project file!');
+          alert(t.invalidProjectFile);
         }
       } catch (error) {
-        alert(language === 'tr' ? 'Proje dosyası yüklenemedi!' : 'Failed to load project file!');
+        alert(t.failedLoadProject);
       }
     };
     reader.readAsText(file);
@@ -1346,22 +1338,22 @@ export default function Home() {
             <div className="flex items-center gap-1">
               {/* Project Group */}
               <div className={`hidden md:flex items-center px-1.5 py-1 rounded-xl border ${isDark ? 'bg-slate-800/40 border-slate-800' : 'bg-slate-100 border-slate-200'}`}>
-                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleUndo} disabled={activeTab !== 'topology' || !canUndo} title={language === 'tr' ? 'Geri Al (Ctrl+Z)' : 'Undo (Ctrl+Z)'}>
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleUndo} disabled={activeTab !== 'topology' || !canUndo} title={t.undo}>
                   <Undo2 className={`w-4 h-4 ${activeTab !== 'topology' || !canUndo ? 'opacity-30' : ''}`} />
                 </Button>
-                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleRedo} disabled={activeTab !== 'topology' || !canRedo} title={language === 'tr' ? 'İleri Al (Ctrl+Y)' : 'Redo (Ctrl+Y)'}>
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleRedo} disabled={activeTab !== 'topology' || !canRedo} title={t.redo}>
                   <Redo2 className={`w-4 h-4 ${activeTab !== 'topology' || !canRedo ? 'opacity-30' : ''}`} />
                 </Button>
                 <div className={`w-px h-4 mx-1 ${isDark ? 'bg-slate-700' : 'bg-slate-300'}`} />
-                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleNewProject} title={language === 'tr' ? 'Yeni Proje' : 'New Project'}>
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleNewProject} title={t.newProject}>
                   <File className="w-4 h-4" />
                 </Button>
                 <div className={`w-px h-4 mx-1 ${isDark ? 'bg-slate-700' : 'bg-slate-300'}`} />
-                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleSaveProject} title={language === 'tr' ? 'Projeyi Kaydet' : 'Save Project'}>
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleSaveProject} title={t.saveProject}>
                   <Save className="w-4 h-4" />
                 </Button>
                 <div className={`w-px h-4 mx-1 ${isDark ? 'bg-slate-700' : 'bg-slate-300'}`} />
-                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => fileInputRef.current?.click()} title={language === 'tr' ? 'Proje Yükle' : 'Load Project'}>
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => fileInputRef.current?.click()} title={t.loadProject}>
                   <FolderOpen className="w-4 h-4" />
                 </Button>
                 <input ref={fileInputRef} type="file" accept=".json" onChange={handleLoadProject} className="hidden" />
@@ -1369,7 +1361,7 @@ export default function Home() {
 
               {/* Info & Settings Group */}
               <div className={`flex items-center px-1.5 py-1 rounded-xl border ${isDark ? 'bg-slate-800/40 border-slate-800' : 'bg-slate-100 border-slate-200'} ml-1`}>
-                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setShowAboutModal(true)} title={language === 'tr' ? 'Hakkında' : 'About'}>
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setShowAboutModal(true)} title={t.about}>
                   <Info className="w-4 h-4" />
                 </Button>
                 <div className={`w-px h-4 mx-1 ${isDark ? 'bg-slate-700' : 'bg-slate-300'}`} />
@@ -1445,13 +1437,13 @@ export default function Home() {
                         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 px-2 mb-1">{t.project}</p>
                         <div className="grid gap-0.5">
                           <Button variant="ghost" className="w-full justify-start gap-3 h-9 px-3 text-xs font-bold text-slate-400" onClick={() => { handleNewProject(); setShowMobileMenu(false); }}>
-                            <File className="w-3.5 h-3.5" /> {language === 'tr' ? 'Yeni Proje' : 'New Project'}
+                            <File className="w-3.5 h-3.5" /> {t.newProject}
                           </Button>
                           <Button variant="ghost" className="w-full justify-start gap-3 h-9 px-3 text-xs font-bold text-slate-400" onClick={() => { handleSaveProject(); setShowMobileMenu(false); }}>
-                            <Save className="w-3.5 h-3.5" /> {language === 'tr' ? 'Projeyi Kaydet' : 'Save Project'}
+                            <Save className="w-3.5 h-3.5" /> {t.saveProject}
                           </Button>
                           <Button variant="ghost" className="w-full justify-start gap-3 h-9 px-3 text-xs font-bold text-slate-400" onClick={() => { fileInputRef.current?.click(); setShowMobileMenu(false); }}>
-                            <FolderOpen className="w-3.5 h-3.5" /> {language === 'tr' ? 'Proje Yükle' : 'Load Project'}
+                            <FolderOpen className="w-3.5 h-3.5" /> {t.loadProject}
                           </Button>
                         </div>
                       </div>
@@ -1506,7 +1498,7 @@ export default function Home() {
                       <>
                         <Plus className="w-4 h-4 text-slate-500" />
                         <span className="text-sm font-bold text-slate-500">
-                          {language === 'tr' ? 'Cihaz Seç' : 'Select Device'}
+                          {t.selectDeviceDropdown}
                         </span>
                       </>
                     )}
@@ -1516,7 +1508,7 @@ export default function Home() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className={`${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white'} w-56`}>
                 <DropdownMenuLabel className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
-                  {topologyDevices.length > 0 ? t.selectDevice : (language === 'tr' ? 'Önce Cihaz Ekleyin' : 'Add Devices First')}
+                  {topologyDevices.length > 0 ? t.selectDevice : t.addDevicesFirst}
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <ScrollArea className={topologyDevices.length > 0 ? "h-64" : "h-auto"}>
@@ -1543,7 +1535,7 @@ export default function Home() {
                     })
                   ) : (
                     <div className="p-4 text-center text-xs text-slate-500 italic">
-                      {language === 'tr' ? 'Topolojide henüz cihaz yok.' : 'No devices in topology yet.'}
+                      {t.noDevicesInTopology}
                     </div>
                   )}
                 </ScrollArea>

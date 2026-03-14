@@ -162,7 +162,7 @@ export function ConfigPanel({ state, onExecuteCommand, t, theme }: ConfigPanelPr
             disabled={isSaving}
             className="bg-blue-600 hover:bg-blue-700 text-[10px] sm:text-xs px-2 sm:px-3"
           >
-            {isSaving ? (t.language === 'tr' ? 'Kaydediliyor...' : 'Saving...') : t.save}
+            {isSaving ? t.saving : t.save}
           </Button>
         </div>
       </CardHeader>

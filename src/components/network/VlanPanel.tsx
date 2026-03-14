@@ -300,7 +300,7 @@ export function VlanPanel({ vlans, ports, deviceName, deviceModel, onExecuteComm
                 type="text"
                 value={newVlanName}
                 onChange={(e) => setNewVlanName(e.target.value)}
-                placeholder="SALES"
+                placeholder={t.vlanNameExample}
                 className={`h-8 ${isDark ? 'bg-slate-800 border-slate-600' : 'bg-white border-slate-300'} ${textPrimary} text-sm`}
               />
             </div>
@@ -320,7 +320,7 @@ export function VlanPanel({ vlans, ports, deviceName, deviceModel, onExecuteComm
         <ScrollArea className="h-36 sm:h-48">
           <div className="space-y-1">
             <div className={`grid grid-cols-12 gap-1 sm:gap-2 px-2 py-1 text-[12px] ${textSecondary} border-b ${isDark ? 'border-slate-700' : 'border-slate-300'}`}>
-              <div className="col-span-1">ID</div>
+              <div className="col-span-1">{t.id}</div>
               <div className="col-span-3">{t.vlanName}</div>
               <div className="col-span-2">{t.status}</div>
               <div className="col-span-5">{t.ports}</div>

@@ -73,7 +73,7 @@ export function NetworkTopology({
   pan: panProp,
   onPanChange,
 }: NetworkTopologyProps) {
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   const { theme } = useTheme();
   const isDark = theme === 'dark';
 
@@ -1616,7 +1616,7 @@ export function NetworkTopology({
     if (port.status === 'connected') {
       // Port is already in use - cannot connect
       if (isDrawingConnection) {
-        setConnectionError(language === 'tr' ? 'Bu port zaten kullanımda!' : 'This port is already in use!');
+        setConnectionError(t.portInUse);
         setTimeout(() => setConnectionError(null), 3000);
         setIsDrawingConnection(false);
         setConnectionStart(null);
@@ -1759,7 +1759,7 @@ export function NetworkTopology({
 
     const newNote: CanvasNote = {
       id: `note-${Date.now()}`,
-      text: language === 'tr' ? 'Not' : 'Note',
+      text: t.note,
       x: clampedX,
       y: clampedY,
       width: NOTE_DEFAULT_WIDTH,
@@ -3053,10 +3053,9 @@ export function NetworkTopology({
         <div className="flex justify-center pt-3 pb-2">
           <div className="w-12 h-1.5 rounded-full bg-slate-600" />
         </div>
-        {/* Device Buttons */}
         <div className="px-4 py-3 flex items-center justify-between border-b border-slate-800/50">
           <div className={`text-[10px] font-bold tracking-widest ${isDark ? 'text-slate-500' : 'text-slate-400'} whitespace-nowrap`}>
-            {language === 'tr' ? 'Cihazlar' : 'Devices'}
+            {t.devices}
           </div>
           <div className="flex gap-2">
             {(['pc', 'switch', 'router'] as const).map((type) => (
@@ -3081,10 +3080,9 @@ export function NetworkTopology({
           </div>
         </div>
 
-        {/* Cable Type Selector */}
         <div className="px-4 py-3 flex items-center justify-between">
           <div className={`text-[10px] font-bold tracking-widest ${isDark ? 'text-slate-500' : 'text-slate-400'} whitespace-nowrap`}>
-            {language === 'tr' ? 'Kablonuz' : 'Cable'}
+            {t.cable}
           </div>
           <div className="flex gap-1.5">
             {(['straight', 'crossover', 'console'] as CableType[]).map((type) => (
@@ -3103,10 +3101,10 @@ export function NetworkTopology({
               >
                 <div className={`w-2.5 h-2.5 rounded-full ${CABLE_COLORS[type].bg}`} />
                 {type === 'straight'
-                  ? language === 'tr' ? 'Düz' : 'Str'
+                  ? t.straight.substring(0, 3)
                   : type === 'crossover'
-                    ? language === 'tr' ? 'Çapraz' : 'Cro'
-                    : language === 'tr' ? 'Konsol' : 'Con'}
+                    ? t.crossover.substring(0, 3)
+                    : t.console.substring(0, 3)}
               </button>
             ))}
           </div>
@@ -3130,7 +3128,7 @@ export function NetworkTopology({
           <svg className="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
           </svg>
-          <span className="text-xs text-slate-300">{language === 'tr' ? 'Ekle' : 'Add'}</span>
+          <span className="text-xs text-slate-300">{t.add}</span>
         </button>
 
         {/* Cable Type */}
@@ -3141,10 +3139,10 @@ export function NetworkTopology({
           <div className={`w-4 h-4 rounded ${CABLE_COLORS[cableInfo.cableType].bg}`} />
           <span className="text-xs text-slate-300">
             {cableInfo.cableType === 'straight'
-              ? language === 'tr' ? 'Düz' : 'Straight'
+              ? t.straight
               : cableInfo.cableType === 'crossover'
-                ? language === 'tr' ? 'Çapraz' : 'X-over'
-                : language === 'tr' ? 'Konsol' : 'Console'}
+                ? t.crossover
+                : t.console}
           </span>
         </button>
 
@@ -3208,7 +3206,7 @@ export function NetworkTopology({
           <div className="flex items-center gap-2 sm:gap-4 shrink-0">
             <h3 className={`text-sm font-bold flex items-center gap-2 ${isDark ? 'text-white' : 'text-slate-800'}`}>
               <Network className="w-5 h-5 text-cyan-500 shrink-0" />
-              <span className="hidden xl:inline">{language === 'tr' ? 'Ağ Topolojisi' : 'Network Topology'}</span>
+              <span className="hidden xl:inline">{t.networkTopology}</span>
             </h3>
 
             {/* MD/LG Screen Quick Tools */}
@@ -3262,9 +3260,9 @@ export function NetworkTopology({
                     >
                       <div className={`w-2.5 h-2.5 rounded-full ${CABLE_COLORS[type].bg}`} />
                       <span className="text-[10px] font-bold">
-                        {type === 'straight' ? (language === 'tr' ? 'Düz' : 'Str') :
-                          type === 'crossover' ? (language === 'tr' ? 'Çapraz' : 'Cro') :
-                            (language === 'tr' ? 'Konsol' : 'Con')}
+                        {type === 'straight' ? t.straight.substring(0, 3) :
+                          type === 'crossover' ? t.crossover.substring(0, 3) :
+                            t.console.substring(0, 3)}
                       </span>
                     </button>
                   ))}
@@ -3277,7 +3275,7 @@ export function NetworkTopology({
                 <div className="flex items-center gap-1">
                   <button
                     onClick={addNote}
-                    title={language === 'tr' ? 'Not Ekle' : 'Add Note'}
+                    title={t.addNote}
                     className={`p-1.5 rounded-lg transition-all ${isDark ? 'hover:bg-slate-700 text-amber-300' : 'hover:bg-slate-100 text-amber-500'}`}
                   >
                     <Pencil className="w-4 h-5" />
@@ -3294,7 +3292,7 @@ export function NetworkTopology({
               <button
                 onClick={() => setIsPaletteOpen(true)}
                 className={`p-1.5 rounded-lg ${isDark ? 'hover:bg-slate-700 text-cyan-400' : 'hover:bg-slate-100 text-cyan-600'}`}
-                title={language === 'tr' ? 'Cihaz Ekle' : 'Add Device'}
+                title={t.addDevice}
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5z" />
@@ -3306,7 +3304,7 @@ export function NetworkTopology({
               <button
                 onClick={() => setIsPaletteOpen(true)}
                 className={`p-1.5 rounded-lg flex items-center gap-1 ${isDark ? 'hover:bg-slate-700' : 'hover:bg-slate-100'}`}
-                title={language === 'tr' ? 'Kablo Seç' : 'Select Cable'}
+                title={t.selectCable}
               >
                 <div className={`w-3.5 h-3.5 rounded-full ${CABLE_COLORS[cableInfo.cableType].bg}`} />
               </button>
@@ -3315,7 +3313,7 @@ export function NetworkTopology({
               <button
                 onClick={addNote}
                 className={`p-1.5 rounded-lg ${isDark ? 'hover:bg-slate-700 text-amber-300' : 'hover:bg-slate-100 text-amber-500'}`}
-                title={language === 'tr' ? 'Not Ekle' : 'Add Note'}
+                title={t.addNote}
               >
                 <Pencil className="w-3.5 h-4" />
               </button>
@@ -3351,8 +3349,8 @@ export function NetworkTopology({
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 0 0 -5.656 0l-4 4a4 4 0 1 0 5.656 5.656l1.102-1.101m-.758-4.899a4 4 0 0 0 5.656 0l4-4a4 4 0 0 0 -5.656-5.656l-1.1 1.1" />
               </svg>
-              <span className="hidden sm:inline">{language === 'tr' ? 'Cihazları Bağla' : 'Connect Devices'}</span>
-              <span className="sm:hidden">{language === 'tr' ? 'Bağla' : 'Connect'}</span>
+              <span className="hidden sm:inline">{t.connectDevices}</span>
+              <span className="sm:hidden">{t.connect}</span>
             </button>
           </div>
         </div>
@@ -3367,7 +3365,7 @@ export function NetworkTopology({
               <SheetHeader className="p-6 border-b border-slate-800/50">
                 <SheetTitle className="text-lg font-bold flex items-center gap-2">
                   <Plus className="w-5 h-5 text-cyan-500" />
-                  {language === 'tr' ? 'Cihaz veya Kablo Ekle' : 'Add Device or Cable'}
+                  {t.addDeviceOrCable}
                 </SheetTitle>
                 <SheetDescription className="sr-only">
                   Add new network devices or cables to the topology
@@ -3376,7 +3374,7 @@ export function NetworkTopology({
               <div className="p-6 space-y-8">
                 {/* Devices Section */}
                 <div className="space-y-4">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Devices</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">{t.devices}</p>
                   <div className="grid grid-cols-3 gap-3">
                     {(['pc', 'switch', 'router'] as const).map((type) => (
                       <button
@@ -3396,7 +3394,7 @@ export function NetworkTopology({
 
                 {/* Cables Section */}
                 <div className="space-y-4">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Cable Types</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">{t.cableTypes}</p>
                   <div className="grid grid-cols-3 gap-3">
                     {(['straight', 'crossover', 'console'] as CableType[]).map((type) => (
                       <button
@@ -3414,10 +3412,9 @@ export function NetworkTopology({
                   </div>
                 </div>
 
-                {/* Annotations Section */}
                 <div className="space-y-4">
                   <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">
-                    {language === 'tr' ? 'Notlar' : 'Annotations'}
+                    {t.annotations}
                   </p>
                   <div className="grid grid-cols-3 gap-3">
                     <button
@@ -3426,7 +3423,7 @@ export function NetworkTopology({
                         }`}
                     >
                       <Pencil className="w-6 h-6 text-amber-400" />
-                      <span className="text-xs font-bold">{language === 'tr' ? 'Not' : 'Note'}</span>
+                      <span className="text-xs font-bold">{t.note}</span>
                     </button>
                   </div>
                 </div>
@@ -3440,7 +3437,7 @@ export function NetworkTopology({
               } backdrop-blur-md`}>
               <div className="flex items-center gap-2 border-r pr-4 border-slate-700/30">
                 <span className="text-xs font-bold tracking-wider opacity-60">
-                  {language === 'tr' ? 'Hizala' : 'Align'}
+                  {t.align}
                 </span>
                 <div className="flex items-center gap-1">
                   <button
@@ -4097,7 +4094,7 @@ export function NetworkTopology({
                       ? 'bg-slate-950/50 border-slate-800 text-white placeholder-slate-700 focus:border-cyan-500/50 focus:bg-slate-950 focus:ring-4 focus:ring-cyan-500/10'
                       : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400 focus:border-cyan-500/50 focus:bg-white focus:ring-4 focus:ring-cyan-500/10'
                       } outline-none`}
-                    placeholder={language === 'tr' ? 'Örn: Router-X' : 'e.g. Router-X'}
+                    placeholder={t.hostname}
                   />
                 </div>
               </div>
@@ -4105,10 +4102,10 @@ export function NetworkTopology({
               {/* Device Info (MAC Address) */}
               <div className={`p-3 rounded-2xl border ${isDark ? 'bg-slate-800/30 border-slate-800/50' : 'bg-slate-50 border-slate-200/50'}`}>
                 <div className={`text-[10px] font-black tracking-widest mb-2 opacity-70 ${isDark ? 'text-cyan-400' : 'text-cyan-600'}`}>
-                  {language === 'tr' ? 'Cihaz Bilgisi' : 'DEVICE INFO'}
+                  {t.deviceInfo}
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className={`text-xs font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>MAC Address</span>
+                  <span className={`text-xs font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t.macAddress}</span>
                   <span className={`text-xs font-mono font-bold ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
                     {devices.find(d => d.id === configuringDevice)?.macAddress || 'N/A'}
                   </span>
@@ -4400,7 +4397,6 @@ export function NetworkTopology({
       <NetworkTopologyPortSelectorModal
         isOpen={showPortSelector}
         isDark={isDark}
-        language={language}
         devices={devices}
         cableType={cableInfo.cableType}
         portSelectorStep={portSelectorStep}
