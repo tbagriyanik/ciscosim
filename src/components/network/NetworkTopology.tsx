@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { useState, useRef, useEffect, useCallback, MouseEvent as ReactMouseEvent, TouchEvent as ReactTouchEvent } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo, MouseEvent as ReactMouseEvent, TouchEvent as ReactTouchEvent } from 'react';
 import { CableType, CableInfo, getCableTypeName, isCableCompatible } from '@/lib/network/types';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -709,12 +709,8 @@ export function NetworkTopology({
   useEffect(() => {
     const handleMouseMove = (e: globalThis.MouseEvent) => {
       if (isPanning) {
-        if (panAnimationFrameRef.current !== null) return;
-        
-        panAnimationFrameRef.current = requestAnimationFrame(() => {
-          setPan({ x: e.clientX - panStart.x, y: e.clientY - panStart.y });
-          panAnimationFrameRef.current = null;
-        });
+        // Direct update for immediate response
+        setPan({ x: e.clientX - panStart.x, y: e.clientY - panStart.y });
       } else if (draggedDevice && canvasRef.current) {
         // Check if we've moved enough to consider it a drag
         if (dragStartPos) {
@@ -727,11 +723,8 @@ export function NetworkTopology({
         }
 
         if (isActuallyDragging) {
-          // Throttling with requestAnimationFrame
+          // Optimized dragging with reduced calculations
           if (dragAnimationFrameRef.current !== null) return;
-
-          const mouseX = e.clientX;
-          const mouseY = e.clientY;
 
           dragAnimationFrameRef.current = requestAnimationFrame(() => {
             if (!canvasRef.current || !dragStartPos) {
@@ -739,42 +732,36 @@ export function NetworkTopology({
               return;
             }
             const rect = canvasRef.current.getBoundingClientRect();
-            const canvasMouseX = (mouseX - rect.left - pan.x) / zoom;
-            const canvasMouseY = (mouseY - rect.top - pan.y) / zoom;
-
-            const startMouseX = (dragStartPos.x - rect.left - pan.x) / zoom;
-            const startMouseY = (dragStartPos.y - rect.top - pan.y) / zoom;
-            const dx = canvasMouseX - startMouseX;
-            const dy = canvasMouseY - startMouseY;
+            const dx = (e.clientX - rect.left - pan.x) / zoom - (dragStartPos.x - rect.left - pan.x) / zoom;
+            const dy = (e.clientY - rect.top - pan.y) / zoom - (dragStartPos.y - rect.top - pan.y) / zoom;
 
             const canvasDims = getCanvasDimensions();
+            const devicesToMove = selectedDeviceIds.includes(draggedDevice)
+              ? selectedDeviceIds
+              : [draggedDevice];
 
             setDevices((prev) => {
-              const devicesToMove = selectedDeviceIds.includes(draggedDevice)
-                ? selectedDeviceIds
-                : [draggedDevice];
-
-              let changed = false;
-              const nextDevices = prev.map(d => {
-                if (!devicesToMove.includes(d.id)) return d;
-                
-                const initialPos = dragStartDevicePositions[d.id];
-                if (!initialPos) return d;
-
-                const newX = initialPos.x + dx;
-                const newY = initialPos.y + dy;
-
-                const clampedX = Math.max(20, Math.min(newX, canvasDims.width - 100));
-                const clampedY = Math.max(20, Math.min(newY, canvasDims.height - 100));
-
-                if (Math.abs(d.x - clampedX) > 0.01 || Math.abs(d.y - clampedY) > 0.01) {
-                  changed = true;
-                  return { ...d, x: clampedX, y: clampedY };
+              const updates: { id: string; x: number; y: number }[] = [];
+              
+              devicesToMove.forEach(id => {
+                const device = prev.find(d => d.id === id);
+                const initialPos = dragStartDevicePositions[id];
+                if (device && initialPos) {
+                  const newX = Math.max(20, Math.min(initialPos.x + dx, canvasDims.width - 100));
+                  const newY = Math.max(20, Math.min(initialPos.y + dy, canvasDims.height - 100));
+                  
+                  if (Math.abs(device.x - newX) > 0.01 || Math.abs(device.y - newY) > 0.01) {
+                    updates.push({ id, x: newX, y: newY });
+                  }
                 }
-                return d;
               });
 
-              return changed ? nextDevices : prev;
+              if (updates.length === 0) return prev;
+              
+              return prev.map(d => {
+                const update = updates.find(u => u.id === d.id);
+                return update ? { ...d, x: update.x, y: update.y } : d;
+              });
             });
 
             dragAnimationFrameRef.current = null;
@@ -1581,17 +1568,15 @@ export function NetworkTopology({
       const delta = -e.deltaY;
 
       setZoom(prevZoom => {
-        let newZoom = prevZoom * Math.exp(delta * zoomSensitivity);
-        newZoom = Math.max(MIN_ZOOM, Math.min(newZoom, MAX_ZOOM));
+        const newZoom = Math.max(MIN_ZOOM, Math.min(prevZoom * Math.exp(delta * zoomSensitivity), MAX_ZOOM));
 
         // Only adjust pan if zoom actually changed
         if (newZoom !== prevZoom) {
-          setPan(prevPan => {
-            return {
-              x: cursorX - (cursorX - prevPan.x) * (newZoom / prevZoom),
-              y: cursorY - (cursorY - prevPan.y) * (newZoom / prevZoom)
-            };
-          });
+          const zoomRatio = newZoom / prevZoom;
+          setPan(prevPan => ({
+            x: cursorX - (cursorX - prevPan.x) * zoomRatio,
+            y: cursorY - (cursorY - prevPan.y) * zoomRatio
+          }));
         }
         return newZoom;
       });
