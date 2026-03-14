@@ -91,7 +91,7 @@ export function SecurityPanel({ security, t, theme }: SecurityPanelProps) {
 
   return (
     <Card className={`${cardBg} transition-all duration-300 hover:shadow-lg`}>
-      <CardHeader className="pb-2">
+      <CardHeader className={`py-3 px-5 border-b ${isDark ? 'border-slate-800/50 bg-slate-800/20' : 'border-slate-200 bg-slate-50'}`}>
         <CardTitle className="text-orange-400 text-base sm:text-lg flex items-center gap-2">
           <ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5" />
           {t.securityControls}

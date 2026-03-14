@@ -594,7 +594,7 @@ export function PCPanel({
         } shadow-2xl min-h-0`}
       >
         {/* Header */}
-        <div className={`px-6 py-4 flex items-center justify-between border-b ${isDark ? 'border-slate-800 bg-slate-800/20' : 'border-slate-200 bg-slate-50'}`}>
+        <div className={`px-5 py-3 flex items-center justify-between border-b ${isDark ? 'border-slate-800/50 bg-slate-800/20' : 'border-slate-200 bg-slate-50'}`}>
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-xl bg-blue-500/10 text-blue-500">
               <PCIcon />

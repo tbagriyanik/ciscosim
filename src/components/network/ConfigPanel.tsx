@@ -148,7 +148,7 @@ export function ConfigPanel({ state, onExecuteCommand, t, theme }: ConfigPanelPr
 
   return (
     <Card className={`${cardBg}`}>
-      <CardHeader className="pb-2">
+      <CardHeader className={`py-3 px-5 border-b ${isDark ? 'border-slate-800/50 bg-slate-800/20' : 'border-slate-200 bg-slate-50'}`}>
         <div className="flex items-center justify-between">
           <CardTitle className="text-blue-400 text-base sm:text-lg flex items-center gap-2">
             <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
