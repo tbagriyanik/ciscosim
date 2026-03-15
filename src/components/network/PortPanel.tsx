@@ -48,26 +48,26 @@ const statusTextEn: Record<string, string> = {
 
 export function PortPanel({ ports, t, theme, deviceName, deviceModel, activeDeviceId, isDevicePoweredOff = false, topologyDevices = [], onTogglePower, topologyConnections }: PortPanelProps) {
   const isDark = theme === 'dark';
-  
+
   // Count open/closed ports
   const openPortsCount = isDevicePoweredOff ? 0 : Object.values(ports).filter(p => !p.shutdown).length;
   const totalPortsCount = Object.keys(ports).length;
-  
+
   // Check if a port is connected in topology
   const isPortConnectedInTopology = (portId: string): boolean => {
     if (!topologyConnections || !activeDeviceId) return false;
     const lowerPortId = portId.toLowerCase();
     const lowerDeviceId = activeDeviceId.toLowerCase();
-    
+
     return topologyConnections.some(conn => {
       if (!conn.active) return false;
       const connSourceId = conn.sourceDeviceId.toLowerCase();
       const connTargetId = conn.targetDeviceId.toLowerCase();
       const connSourcePort = conn.sourcePort.toLowerCase();
       const connTargetPort = conn.targetPort.toLowerCase();
-      
+
       return (connSourceId === lowerDeviceId && connSourcePort === lowerPortId) ||
-             (connTargetId === lowerDeviceId && connTargetPort === lowerPortId);
+        (connTargetId === lowerDeviceId && connTargetPort === lowerPortId);
     });
   };
 
@@ -83,13 +83,13 @@ export function PortPanel({ ports, t, theme, deviceName, deviceModel, activeDevi
       const connSourcePort = c.sourcePort.toLowerCase();
       const connTargetPort = c.targetPort.toLowerCase();
       return (connSourceId === lowerDeviceId && connSourcePort === lowerPortId) ||
-             (connTargetId === lowerDeviceId && connTargetPort === lowerPortId);
+        (connTargetId === lowerDeviceId && connTargetPort === lowerPortId);
     });
 
     if (!conn) return null;
     return conn.sourceDeviceId.toLowerCase() === lowerDeviceId ? conn.targetDeviceId : conn.sourceDeviceId;
   };
-  
+
   const faPorts = Object.values(ports)
     .filter(p => p.type === 'fastethernet' && p.id !== 'vlan1')
     .sort((a, b) => {
@@ -110,7 +110,7 @@ export function PortPanel({ ports, t, theme, deviceName, deviceModel, activeDevi
     const isConnectedInTopology = isPortConnectedInTopology(port.id);
     const peerId = isConnectedInTopology ? getPeerDeviceIdForPort(port.id) : null;
     const isPeerPoweredOff = !!peerId && topologyDevices.some(d => d.id === peerId && d.status === 'offline');
-    
+
     // Determine LED color based on topology connection and port state
     let ledColor: PortLEDColor;
     let statusLabel: string;
@@ -155,15 +155,15 @@ export function PortPanel({ ports, t, theme, deviceName, deviceModel, activeDevi
         </Tooltip>
       );
     }
-    
+
     // Router/Switch ports should only be green if physically connected in topology AND the peer device is powered on.
     if (isConnectedInTopology) {
       if (isPeerPoweredOff) {
         ledColor = 'gray';
         statusLabel = t.closed;
       } else {
-      ledColor = 'green';
-      statusLabel = t.connected;
+        ledColor = 'green';
+        statusLabel = t.connected;
       }
     } else if (port.shutdown) {
       ledColor = 'gray';
@@ -179,7 +179,7 @@ export function PortPanel({ ports, t, theme, deviceName, deviceModel, activeDevi
       ledColor = 'white';
       statusLabel = t.idle;
     }
-    
+
     return (
       <Tooltip key={port.id}>
         <TooltipTrigger asChild>
@@ -187,7 +187,7 @@ export function PortPanel({ ports, t, theme, deviceName, deviceModel, activeDevi
             className={`flex flex-col items-center p-1.5 sm:p-2 rounded-lg transition-all duration-200 cursor-default min-w-[45px] sm:min-w-[60px] hover:bg-slate-700/30 ${isDark ? 'hover:bg-slate-700/30' : 'hover:bg-slate-200'}`}
           >
             <div className="relative mb-1">
-              <div 
+              <div
                 className={`w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full ${ledColorClasses[ledColor]} transition-all duration-300`}
               />
               {ledColor === 'green' && (
@@ -197,7 +197,7 @@ export function PortPanel({ ports, t, theme, deviceName, deviceModel, activeDevi
             <span className={`text-sm font-mono ${isDark ? 'text-slate-300' : 'text-slate-700'} transition-colors`}>
               {port.id}
             </span>
-            <Badge 
+            <Badge
               variant={port.mode === 'trunk' ? 'default' : 'secondary'}
               className={`text-sm px-2 py-0.5 h-auto mt-0.5 transition-all duration-200 ${port.mode === 'trunk' ? 'bg-purple-500/20 text-purple-400 border-purple-500/30' : ''}`}
             >
@@ -205,7 +205,7 @@ export function PortPanel({ ports, t, theme, deviceName, deviceModel, activeDevi
             </Badge>
           </div>
         </TooltipTrigger>
-        <TooltipContent 
+        <TooltipContent
           side="bottom"
           hideArrow
           className={`${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'} ${isDark ? 'text-white' : 'text-slate-900'} p-3 max-w-xs`}
@@ -276,8 +276,8 @@ export function PortPanel({ ports, t, theme, deviceName, deviceModel, activeDevi
                 </TooltipTrigger>
                 <TooltipContent hideArrow side="bottom" className={`${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'} ${isDark ? 'text-white' : 'text-slate-900'} p-2 text-xs`}>
                   {t.language === 'tr'
-                    ? `Güç: ${isDevicePoweredOff ? 'KAPALI' : 'AÇIK'}`
-                    : `Power: ${isDevicePoweredOff ? 'OFF' : 'ON'}`}
+                    ? `Güç: ${isDevicePoweredOff ? 'Kapalı' : 'Açık'}`
+                    : `Power: ${isDevicePoweredOff ? 'Off' : 'On'}`}
                 </TooltipContent>
               </Tooltip>
             </div>
@@ -285,17 +285,17 @@ export function PortPanel({ ports, t, theme, deviceName, deviceModel, activeDevi
         </CardHeader>
         <CardContent>
           <div className={`${innerBg} rounded-lg p-2 sm:p-4 border ${innerBorder}`}>
-          <div className={`flex items-center justify-between mb-3 sm:mb-4 pb-2 border-b ${isDark ? 'border-slate-700' : 'border-slate-300'}`}>
-            <div className="flex items-center gap-2">
-              <div className={`w-2 h-2 rounded-full ${isDevicePoweredOff ? 'bg-gray-500' : 'bg-green-500 animate-pulse'}`} />
-              <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{deviceModel || 'WS-C2960-24TT-L'}</span>
-            </div>
+            <div className={`flex items-center justify-between mb-3 sm:mb-4 pb-2 border-b ${isDark ? 'border-slate-700' : 'border-slate-300'}`}>
+              <div className="flex items-center gap-2">
+                <div className={`w-2 h-2 rounded-full ${isDevicePoweredOff ? 'bg-gray-500' : 'bg-green-500 animate-pulse'}`} />
+                <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{deviceModel || 'WS-C2960-24TT-L'}</span>
+              </div>
               <div className="flex gap-2">
                 <span className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>PWR</span>
                 <span className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>SYST</span>
               </div>
             </div>
-            
+
             {faPorts.length > 0 && (
               <div className="mb-3 sm:mb-4">
                 <div className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-500'} mb-2`}>{t.fastEthernetPorts}</div>
@@ -304,7 +304,7 @@ export function PortPanel({ ports, t, theme, deviceName, deviceModel, activeDevi
                 </div>
               </div>
             )}
-            
+
             {giPorts.length > 0 && (
               <div className={`pt-2 ${faPorts.length > 0 ? 'border-t' : ''} ${isDark ? 'border-slate-700' : 'border-slate-300'}`}>
                 <div className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-500'} mb-2`}>{t.gigabitPorts}</div>
@@ -314,7 +314,7 @@ export function PortPanel({ ports, t, theme, deviceName, deviceModel, activeDevi
               </div>
             )}
           </div>
-          
+
           <div className="mt-3 sm:mt-4 flex flex-wrap gap-3 sm:gap-4 justify-center text-xs">
             <div className="flex items-center gap-1">
               <div className="w-2 sm:w-2.5 h-2 sm:h-2.5 rounded-full bg-green-500" />

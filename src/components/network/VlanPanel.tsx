@@ -40,7 +40,7 @@ export function VlanPanel({ vlans, ports, deviceName, deviceModel, deviceId, onT
   const [newVlanId, setNewVlanId] = useState('');
   const [newVlanName, setNewVlanName] = useState('');
   const [isCreating, setIsCreating] = useState(false);
-  
+
   const isDark = theme === 'dark';
 
   const cardBg = isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200';
@@ -82,7 +82,7 @@ export function VlanPanel({ vlans, ports, deviceName, deviceModel, deviceId, onT
     const namedVlans = userVlans.filter(v => v.name !== `VLAN${v.id}`);
     const trunkPorts = Object.values(ports).filter(p => p.mode === 'trunk' && !p.shutdown);
     const portsWithNonDefaultVlan = Object.values(ports).filter(p => p.vlan !== 1 && !p.shutdown);
-    
+
     return [
       {
         id: 'create-vlan',
@@ -159,7 +159,7 @@ export function VlanPanel({ vlans, ports, deviceName, deviceModel, deviceId, onT
     if (isNaN(id) || id < 1 || id > 4094) {
       return;
     }
-    
+
     setIsCreating(true);
     try {
       await onExecuteCommand('configure terminal');
@@ -193,7 +193,7 @@ export function VlanPanel({ vlans, ports, deviceName, deviceModel, deviceId, onT
   };
 
   const sortedVlans = Object.values(vlans).sort((a, b) => a.id - b.id);
-  
+
   return (
     <Card className={`${cardBg} transition-all duration-300 hover:shadow-lg`}>
       <CardHeader className={`py-3 px-5 border-b ${isDark ? 'border-slate-800/50 bg-slate-800/20' : 'border-slate-200 bg-slate-50'}`}>
@@ -224,8 +224,8 @@ export function VlanPanel({ vlans, ports, deviceName, deviceModel, deviceId, onT
               </TooltipTrigger>
               <TooltipContent hideArrow side="bottom" className={`${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'} ${isDark ? 'text-white' : 'text-slate-900'} p-2 text-xs`}>
                 {t.language === 'tr'
-                  ? `Güç: ${isDevicePoweredOff ? 'KAPALI' : 'AÇIK'}`
-                  : `Power: ${isDevicePoweredOff ? 'OFF' : 'ON'}`}
+                  ? `Güç: ${isDevicePoweredOff ? 'Kapalı' : 'Açık'}`
+                  : `Power: ${isDevicePoweredOff ? 'Off' : 'On'}`}
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -251,8 +251,8 @@ export function VlanPanel({ vlans, ports, deviceName, deviceModel, deviceId, onT
               {totalScore}%
             </span>
           </div>
-          <Progress 
-            value={totalScore} 
+          <Progress
+            value={totalScore}
             className="h-2 bg-slate-700 transition-all duration-500"
           />
           <div className={`mt-1 text-[12px] ${textMuted} transition-colors duration-300`}>
@@ -271,19 +271,17 @@ export function VlanPanel({ vlans, ports, deviceName, deviceModel, deviceId, onT
             {vlanTasks.map((task, index) => (
               <div
                 key={task.id}
-                className={`flex items-center justify-between p-1.5 sm:p-2 rounded-lg transition-all duration-300 ${
-                  task.completed 
-                    ? 'bg-green-500/10 border border-green-500/20' 
+                className={`flex items-center justify-between p-1.5 sm:p-2 rounded-lg transition-all duration-300 ${task.completed
+                    ? 'bg-green-500/10 border border-green-500/20'
                     : itemBg
-                }`}
+                  }`}
                 style={{ animationDelay: `${index * 50}ms` }}
               >
                 <div className="flex items-center gap-2 min-w-0">
-                  <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-300 ${
-                    task.completed 
-                      ? 'bg-green-500 text-white scale-110' 
+                  <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-300 ${task.completed
+                      ? 'bg-green-500 text-white scale-110'
                       : isDark ? 'bg-slate-700 text-slate-400' : 'bg-slate-200 text-slate-500'
-                  }`}>
+                    }`}>
                     {task.completed ? (
                       <svg className="w-3 h-3 animate-success-pop" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
@@ -302,7 +300,7 @@ export function VlanPanel({ vlans, ports, deviceName, deviceModel, deviceId, onT
                   </div>
                 </div>
                 {!task.completed && (
-                  <Badge 
+                  <Badge
                     variant="outline"
                     className="text-xs px-1.5 py-0.5 text-purple-400 border-purple-500/30 transition-all hover:scale-105 hover:bg-purple-500/10"
                   >
@@ -365,11 +363,11 @@ export function VlanPanel({ vlans, ports, deviceName, deviceModel, deviceId, onT
               <div className="col-span-5">{t.ports}</div>
               <div className="col-span-1"></div>
             </div>
-            
+
             {sortedVlans.map((vlan) => {
               const vlanPorts = getPortsForVlan(vlan.id);
               const isDefault = [1, 1002, 1003, 1004, 1005].includes(vlan.id);
-              
+
               return (
                 <div
                   key={vlan.id}
@@ -382,7 +380,7 @@ export function VlanPanel({ vlans, ports, deviceName, deviceModel, deviceId, onT
                     {vlan.name}
                   </div>
                   <div className="col-span-2">
-                    <Badge 
+                    <Badge
                       variant={vlan.status === 'active' ? 'default' : 'secondary'}
                       className="text-xs"
                     >

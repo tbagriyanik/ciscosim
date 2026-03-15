@@ -27,7 +27,7 @@ interface SecurityItem {
 
 export function SecurityPanel({ security, t, theme, deviceId, isDevicePoweredOff = false, onTogglePower }: SecurityPanelProps) {
   const isDark = theme === 'dark';
-  
+
   const securityItems: SecurityItem[] = [
     {
       name: t.enableSecret,
@@ -55,16 +55,16 @@ export function SecurityPanel({ security, t, theme, deviceId, isDevicePoweredOff
     },
     {
       name: t.sshAccess,
-      enabled: security.vtyLines.transportInput.includes('ssh') && 
-               !security.vtyLines.transportInput.includes('telnet') &&
-               security.vtyLines.transportInput[0] !== 'all' &&
-               security.vtyLines.transportInput[0] !== 'none',
-      description: security.vtyLines.transportInput.includes('ssh') && 
-                   !security.vtyLines.transportInput.includes('telnet')
+      enabled: security.vtyLines.transportInput.includes('ssh') &&
+        !security.vtyLines.transportInput.includes('telnet') &&
+        security.vtyLines.transportInput[0] !== 'all' &&
+        security.vtyLines.transportInput[0] !== 'none',
+      description: security.vtyLines.transportInput.includes('ssh') &&
+        !security.vtyLines.transportInput.includes('telnet')
         ? t.secSshOnly
         : security.vtyLines.transportInput.includes('telnet')
-        ? t.secTelnetWarn
-        : t.secNoProtocol,
+          ? t.secTelnetWarn
+          : t.secNoProtocol,
       weight: 20
     }
   ];
@@ -121,8 +121,8 @@ export function SecurityPanel({ security, t, theme, deviceId, isDevicePoweredOff
               </TooltipTrigger>
               <TooltipContent hideArrow side="bottom" className={`${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'} ${isDark ? 'text-white' : 'text-slate-900'} p-2 text-xs`}>
                 {t.language === 'tr'
-                  ? `Güç: ${isDevicePoweredOff ? 'KAPALI' : 'AÇIK'}`
-                  : `Power: ${isDevicePoweredOff ? 'OFF' : 'ON'}`}
+                  ? `Güç: ${isDevicePoweredOff ? 'Kapalı' : 'Açık'}`
+                  : `Power: ${isDevicePoweredOff ? 'Off' : 'On'}`}
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -141,8 +141,8 @@ export function SecurityPanel({ security, t, theme, deviceId, isDevicePoweredOff
               {totalScore}%
             </span>
           </div>
-          <Progress 
-            value={totalScore} 
+          <Progress
+            value={totalScore}
             className="h-2 bg-slate-700 transition-all duration-500"
           />
           <div className={`mt-1 text-xs ${textMuted} transition-colors duration-300`}>
@@ -158,21 +158,19 @@ export function SecurityPanel({ security, t, theme, deviceId, isDevicePoweredOff
               style={{ animationDelay: `${index * 50}ms` }}
             >
               <div className="flex items-center gap-2 min-w-0">
-                <div className={`w-2 h-2 rounded-full flex-shrink-0 transition-all duration-300 ${
-                  item.enabled ? 'bg-green-500 shadow-[0_0_6px_rgba(34,197,94,0.5)]' : 'bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.5)]'
-                } ${item.enabled ? 'animate-pulse' : ''}`} />
+                <div className={`w-2 h-2 rounded-full flex-shrink-0 transition-all duration-300 ${item.enabled ? 'bg-green-500 shadow-[0_0_6px_rgba(34,197,94,0.5)]' : 'bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.5)]'
+                  } ${item.enabled ? 'animate-pulse' : ''}`} />
                 <div className="min-w-0">
                   <div className={`text-xs sm:text-sm ${textPrimary} truncate transition-colors`}>{item.name}</div>
                   <div className={`text-xs ${textMuted} truncate hidden sm:block transition-colors`}>{item.description}</div>
                 </div>
               </div>
-              <Badge 
+              <Badge
                 variant={item.enabled ? 'default' : 'destructive'}
-                className={`text-xs flex-shrink-0 ml-1 transition-all duration-300 ${
-                  item.enabled 
-                    ? 'bg-green-500/20 text-green-400 border border-green-500/30 hover:bg-green-500/30' 
+                className={`text-xs flex-shrink-0 ml-1 transition-all duration-300 ${item.enabled
+                    ? 'bg-green-500/20 text-green-400 border border-green-500/30 hover:bg-green-500/30'
                     : 'hover:bg-red-500/20'
-                }`}
+                  }`}
               >
                 {item.enabled ? t.on : t.off}
               </Badge>
@@ -185,9 +183,9 @@ export function SecurityPanel({ security, t, theme, deviceId, isDevicePoweredOff
             <div className={`text-xs ${textSecondary} mb-1`}>{t.definedUsers}</div>
             <div className="flex flex-wrap gap-1">
               {security.users.map((user) => (
-                <Badge 
-                  key={user.username} 
-                  variant="outline" 
+                <Badge
+                  key={user.username}
+                  variant="outline"
                   className="text-xs transition-all duration-200 hover:scale-105 hover:bg-orange-500/10 hover:text-orange-400"
                 >
                   {user.username} (priv: {user.privilege})

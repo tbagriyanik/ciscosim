@@ -253,7 +253,7 @@ export default function Home() {
     activeDeviceType: activeDeviceType || 'switch',
     zoom,
     pan: { ...pan }
-  }), [topologyDevices, topologyConnections, topologyNotes, deviceStates, deviceOutputs, pcOutputs, cableInfo, activeDeviceId, activeDeviceType, zoom, pan]);
+  }), [topologyDevices, topologyConnections, topologyNotes, deviceStates, deviceOutputs, pcOutputs, pcHistories, cableInfo, activeDeviceId, activeDeviceType, zoom, pan]);
 
   const { pushState, undo, redo, canUndo, canRedo, resetHistory } = useHistory(getCurrentState());
 
@@ -277,7 +277,7 @@ export default function Home() {
     setZoom(state.zoom);
     setPan(state.pan);
     // setTopologyKey(prev => prev + 1); // Only for resets
-  }, [setTopologyDevices, setTopologyConnections, setDeviceStates, setDeviceOutputs, setPcOutputs, setCableInfo, setActiveDeviceId, setActiveDeviceType, setZoom, setPan]);
+  }, [setTopologyDevices, setTopologyConnections, setTopologyNotes, setDeviceStates, setDeviceOutputs, setPcOutputs, setPcHistories, setCableInfo, setActiveDeviceId, setActiveDeviceType, setZoom, setPan]);
 
   const isApplyingHistoryRef = useRef(false);
 
@@ -540,7 +540,7 @@ export default function Home() {
       console.error("Error loading project data", error);
       return false;
     }
-  }, [setDeviceStates, setDeviceOutputs, setPcOutputs, setTopologyDevices, setTopologyConnections, setTopologyNotes, setCableInfo, setActiveDeviceId, setActiveDeviceType, setActiveTab, setTopologyKey, setHasUnsavedChanges]);
+  }, [setDeviceStates, setDeviceOutputs, setPcOutputs, setPcHistories, setTopologyDevices, setTopologyConnections, setTopologyNotes, setCableInfo, setActiveDeviceId, setActiveDeviceType, setActiveTab, setTopologyKey, setHasUnsavedChanges, resetHistory]);
 
   // Persistence: Load from localStorage on mount
   useEffect(() => {
@@ -664,7 +664,7 @@ export default function Home() {
       getOrCreateDeviceState(deviceId, actualDeviceType, deviceObj?.name);
       getOrCreateDeviceOutputs(deviceId);
     }
-  }, [getOrCreateDeviceState, getOrCreateDeviceOutputs, topologyDevices]);
+  }, [getOrCreateDeviceState, getOrCreateDeviceOutputs, topologyDevices, setSelectedDevice, setActiveDeviceId, setActiveDeviceType]);
 
   // Topology canvas click: selects device only (no zoom/pan).
   const handleDeviceSelectFromCanvas = useCallback((device: 'pc' | 'switch' | 'router', deviceId?: string) => {
@@ -684,7 +684,7 @@ export default function Home() {
     } else {
       pendingFocusDeviceRef.current = deviceId;
     }
-  }, [applyDeviceSelection, focusDeviceInTopology, resetTopologyView]);
+  }, [applyDeviceSelection, focusDeviceInTopology, resetTopologyView, setActiveTab]);
 
   useLayoutEffect(() => {
     if (activeTab !== 'topology') return;
@@ -1031,7 +1031,7 @@ export default function Home() {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     setHasUnsavedChanges(false);
-  }, [deviceStates, deviceOutputs, pcOutputs, topologyDevices, topologyConnections, topologyNotes, cableInfo, activeDeviceId, activeDeviceType, setHasUnsavedChanges]);
+  }, [deviceStates, deviceOutputs, pcOutputs, pcHistories, topologyDevices, topologyConnections, topologyNotes, cableInfo, activeDeviceId, activeDeviceType, setHasUnsavedChanges]);
 
   // Handle Project Saving (Wrapper)
   function handleSaveProject() {
@@ -1164,7 +1164,7 @@ export default function Home() {
         }
       });
     }
-  }, [language, hasUnsavedChanges, handleSaveProject, setDeviceStates, setDeviceOutputs, setTopologyDevices, setTopologyConnections, setActiveDeviceId, setActiveDeviceType, setActiveTab, setHasUnsavedChanges, setTopologyKey, setSaveDialog, setConfirmDialog]);
+  }, [hasUnsavedChanges, handleSaveProject, resetHistory, setDeviceStates, setDeviceOutputs, setPcOutputs, setPcHistories, setTopologyDevices, setTopologyConnections, setTopologyNotes, setActiveDeviceId, setActiveDeviceType, setSelectedDevice, setShowPCPanel, setActiveTab, setHasUnsavedChanges, setTopologyKey, setSaveDialog, setConfirmDialog, t.unsavedChangesConfirm, t.newProjectConfirm]);
 
   function handleNewProject() {
     if (isTopologyFullscreen) return; // Prevent new project in fullscreen
@@ -1265,6 +1265,18 @@ export default function Home() {
 
   const [isTopologyFullscreen, setIsTopologyFullscreen] = useState(false);
 
+  // Derive visible tabs based on current state
+  const tabs = ALL_TABS.filter(tab => {
+    // Topology tab always visible
+    if (tab.id === 'topology') return true;
+
+    // Show other tabs only if a device is active and compatible
+    return activeDeviceId && (topologyDevices.some(d => d.id === activeDeviceId)) && tab.showFor.includes(activeDeviceType);
+  }).map(tab => ({
+    ...tab,
+    label: t[tab.labelKey as keyof typeof t] as string
+  }));
+
   // Handle key events: ESC to close, ENTER to confirm
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -1361,19 +1373,7 @@ export default function Home() {
     reader.readAsText(file);
     // Reset input
     event.target.value = '';
-  }, [language, loadProjectData, setHasUnsavedChanges]);
-
-  // Derive visible tabs based on current state
-  const tabs = ALL_TABS.filter(tab => {
-    // Topology tab always visible
-    if (tab.id === 'topology') return true;
-    
-    // Show other tabs only if a device is active and compatible
-    return activeDeviceId && (topologyDevices.some(d => d.id === activeDeviceId)) && tab.showFor.includes(activeDeviceType);
-  }).map(tab => ({
-    ...tab,
-    label: t[tab.labelKey as keyof typeof t] as string
-  }));
+  }, [loadProjectData, setHasUnsavedChanges, t.invalidProjectFile, t.failedLoadProject]);
 
   const isDark = theme === 'dark';
 

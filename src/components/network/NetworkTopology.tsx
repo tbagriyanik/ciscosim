@@ -222,7 +222,7 @@ export function NetworkTopology({
       nextDevices = initialDevices;
       changed = true;
     }
-    
+
     if (initialConnections && JSON.stringify(initialConnections) !== JSON.stringify(connections)) {
       nextConnections = initialConnections;
       changed = true;
@@ -245,12 +245,12 @@ export function NetworkTopology({
       if (nextDevices !== devices) setDevices(nextDevices);
       if (nextConnections !== connections) setConnections(nextConnections);
       if (nextNotes !== notes) setNotes(nextNotes);
-      
+
       // Update the reported ref to match EXACTLY what we just set to prevent outgoing sync loop
-      lastStateReportedRef.current = JSON.stringify({ 
-        devices: nextDevices, 
-        connections: nextConnections, 
-        notes: nextNotes 
+      lastStateReportedRef.current = JSON.stringify({
+        devices: nextDevices,
+        connections: nextConnections,
+        notes: nextNotes
       });
     }
   }, [initialDevices, initialConnections, initialNotes, noteFonts]);
@@ -618,13 +618,13 @@ export function NetworkTopology({
     if (selectedDeviceIds.length + selectedNoteIds.length < 2) return;
 
     const allSelectedItems: { id: string; x: number; y: number; isDevice: boolean }[] = [];
-    
+
     devices.forEach(d => {
       if (selectedDeviceIds.includes(d.id)) {
         allSelectedItems.push({ id: d.id, x: d.x, y: d.y, isDevice: true });
       }
     });
-    
+
     notes.forEach(n => {
       if (selectedNoteIds.includes(n.id)) {
         allSelectedItems.push({ id: n.id, x: n.x, y: n.y, isDevice: false });
@@ -856,18 +856,18 @@ export function NetworkTopology({
 
             setDevices((prev) => {
               const updates: { id: string; x: number; y: number }[] = [];
-              
+
               devicesToMove.forEach(id => {
-                  const device = prev.find(d => d.id === id);
-                  const initialPos = dragStartDevicePositions[id];
-                  if (device && initialPos) {
+                const device = prev.find(d => d.id === id);
+                const initialPos = dragStartDevicePositions[id];
+                if (device && initialPos) {
                   const rawX = initialPos.x + dx;
                   const rawY = initialPos.y + dy;
                   const snappedX = snapToGrid(rawX);
                   const snappedY = snapToGrid(rawY);
                   const newX = Math.max(20, Math.min(snappedX, canvasDims.width - 100));
                   const newY = Math.max(20, Math.min(snappedY, canvasDims.height - 100));
-                  
+
                   if (Math.abs(device.x - newX) > 0.01 || Math.abs(device.y - newY) > 0.01) {
                     updates.push({ id, x: newX, y: newY });
                   }
@@ -875,7 +875,7 @@ export function NetworkTopology({
               });
 
               if (updates.length === 0) return prev;
-              
+
               return prev.map(d => {
                 const update = updates.find(u => u.id === d.id);
                 return update ? { ...d, x: update.x, y: update.y } : d;
@@ -916,10 +916,10 @@ export function NetworkTopology({
       } else if (draggedNoteId && noteDragStartPos) {
         const coords = getCanvasCoords(e.clientX, e.clientY);
         const distance = Math.sqrt(Math.pow(noteDragStartPos.x - coords.x, 2) + Math.pow(noteDragStartPos.y - coords.y, 2));
-        
+
         if (distance > DRAG_THRESHOLD) {
           wasDraggingRef.current = true;
-          
+
           const canvasDims = getCanvasDimensions();
           const dx = coords.x - noteDragStartPos.x;
           const dy = coords.y - noteDragStartPos.y;
@@ -927,35 +927,35 @@ export function NetworkTopology({
 
           setNotes(prev =>
             prev.map(n => {
-            if (!targets.includes(n.id)) return n;
-            const start = noteDragStartPositions[n.id] || { x: n.x, y: n.y };
-            const rawX = start.x + dx;
-            const rawY = start.y + dy;
-            const snappedX = snapToGrid(rawX);
-            const snappedY = snapToGrid(rawY);
-            const clampedX = Math.max(20, Math.min(snappedX, canvasDims.width - NOTE_DEFAULT_WIDTH - 20));
-            const clampedY = Math.max(20, Math.min(snappedY, canvasDims.height - NOTE_DEFAULT_HEIGHT - 20));
-            return { ...n, x: clampedX, y: clampedY };
-          })
-        );
-
-        // Also move selected devices when dragging notes
-        if (selectedDeviceIds.length > 0 && Object.keys(dragStartDevicePositions).length > 0) {
-          setDevices(prev =>
-            prev.map(d => {
-              if (!selectedDeviceIds.includes(d.id)) return d;
-              const start = dragStartDevicePositions[d.id];
-              if (!start) return d;
+              if (!targets.includes(n.id)) return n;
+              const start = noteDragStartPositions[n.id] || { x: n.x, y: n.y };
               const rawX = start.x + dx;
               const rawY = start.y + dy;
               const snappedX = snapToGrid(rawX);
               const snappedY = snapToGrid(rawY);
-              const newX = Math.max(20, Math.min(snappedX, canvasDims.width - 100));
-              const newY = Math.max(20, Math.min(snappedY, canvasDims.height - 100));
-              return { ...d, x: newX, y: newY };
+              const clampedX = Math.max(20, Math.min(snappedX, canvasDims.width - NOTE_DEFAULT_WIDTH - 20));
+              const clampedY = Math.max(20, Math.min(snappedY, canvasDims.height - NOTE_DEFAULT_HEIGHT - 20));
+              return { ...n, x: clampedX, y: clampedY };
             })
           );
-        }
+
+          // Also move selected devices when dragging notes
+          if (selectedDeviceIds.length > 0 && Object.keys(dragStartDevicePositions).length > 0) {
+            setDevices(prev =>
+              prev.map(d => {
+                if (!selectedDeviceIds.includes(d.id)) return d;
+                const start = dragStartDevicePositions[d.id];
+                if (!start) return d;
+                const rawX = start.x + dx;
+                const rawY = start.y + dy;
+                const snappedX = snapToGrid(rawX);
+                const snappedY = snapToGrid(rawY);
+                const newX = Math.max(20, Math.min(snappedX, canvasDims.width - 100));
+                const newY = Math.max(20, Math.min(snappedY, canvasDims.height - 100));
+                return { ...d, x: newX, y: newY };
+              })
+            );
+          }
         }
       } else if (isDrawingConnection) {
         const coords = getCanvasCoords(e.clientX, e.clientY);
@@ -984,7 +984,7 @@ export function NetworkTopology({
 
       // Save to history and notify parent if we were actually dragging
       if (isActuallyDragging && draggedDevice) {
-            if (onTopologyChange) {
+        if (onTopologyChange) {
           onTopologyChange(devices, connections, notes);
         }
       }
@@ -994,13 +994,13 @@ export function NetworkTopology({
       }
 
       if (resizingNoteId) {
-            if (onTopologyChange) {
+        if (onTopologyChange) {
           onTopologyChange(devices, connections, notes);
         }
       }
 
       if (draggedNoteId) {
-            if (onTopologyChange) {
+        if (onTopologyChange) {
           onTopologyChange(devices, connections, notes);
         }
       }
@@ -2051,7 +2051,7 @@ export function NetworkTopology({
 
   const showDeviceTooltip = useCallback((e: ReactMouseEvent | MouseEvent, deviceId: string) => {
     if (isActuallyDragging || isTouchDragging) return;
-    
+
     const device = devices.find(d => d.id === deviceId);
     if (!device) return;
 
@@ -2133,7 +2133,7 @@ export function NetworkTopology({
     const updatedDevices = devices.map(device => {
       let deviceChanged = false;
       const deviceState = deviceStates.get(device.id);
-      
+
       // Part 1: Sync shutdown status from simulator state to canvas ports
       const updatedPorts = device.ports.map(port => {
         if (!deviceState) return port;
@@ -2153,7 +2153,7 @@ export function NetworkTopology({
           const otherDeviceId = conn.sourceDeviceId === device.id ? conn.targetDeviceId : conn.sourceDeviceId;
           const otherPortId = conn.sourceDeviceId === device.id ? conn.targetPort : conn.sourcePort;
           const otherDeviceState = deviceStates.get(otherDeviceId);
-          
+
           if (otherDeviceState && otherDeviceState.ports[otherPortId]) {
             const portVlan = otherDeviceState.ports[otherPortId].vlan;
             if (portVlan !== undefined && portVlan !== device.vlan) {
@@ -2266,7 +2266,7 @@ export function NetworkTopology({
   // Confirm rename
   const confirmRename = useCallback(() => {
     if (renamingDevice && renameValue.trim()) {
-        setDevices(prev => prev.map(d =>
+      setDevices(prev => prev.map(d =>
         d.id === renamingDevice ? { ...d, name: renameValue.trim() } : d
       ));
     }
@@ -2548,7 +2548,7 @@ export function NetworkTopology({
     // VLAN check - success if same VLAN, else fail
     const sourceVlan = sourceDevice?.vlan || 1;
     const targetVlan = targetDevice?.vlan || 1;
-    
+
     if (sourceVlan !== targetVlan) {
       setPingAnimation({
         sourceId,
@@ -2906,12 +2906,12 @@ export function NetworkTopology({
             }}
           >
             {/* Subtle background rectangle with hover pulse */}
-            <rect 
-              x="-10" y="-10" 
-              width="20" height="20" 
-              rx="6" 
-              fill={isDark ? '#1e293b' : '#ffffff'} 
-              className={`drop-shadow-sm transition-all duration-200 group-hover:scale-110 ${isDark ? 'group-hover:fill-slate-700' : 'group-hover:fill-slate-100'}`} 
+            <rect
+              x="-10" y="-10"
+              width="20" height="20"
+              rx="6"
+              fill={isDark ? '#1e293b' : '#ffffff'}
+              className={`drop-shadow-sm transition-all duration-200 group-hover:scale-110 ${isDark ? 'group-hover:fill-slate-700' : 'group-hover:fill-slate-100'}`}
             />
             <svg
               x={-7}
@@ -3017,8 +3017,8 @@ export function NetworkTopology({
           rx={8}
           fill={
             device.type === 'pc' ? 'url(#pcGradient)' :
-            device.type === 'switch' ? 'url(#switchGradient)' :
-            'url(#routerGradient)'
+              device.type === 'switch' ? 'url(#switchGradient)' :
+                'url(#routerGradient)'
           }
           stroke={isSelected ? '#06b6d4' : isDark ? '#475569' : '#cbd5e1'}
           strokeWidth={isSelected ? 2 : 1}
@@ -3520,115 +3520,115 @@ export function NetworkTopology({
       <div
         className={`px-4 pt-2 pb-2 border-b shrink-0 hidden sm:block ${isDark ? 'border-slate-700/50 bg-slate-800/80' : 'border-slate-200/50 bg-white/80'} backdrop-blur-md sticky top-0 z-40`}
       >
-          <div className="flex items-center justify-between gap-2 overflow-x-auto no-scrollbar">
-            <div className="flex items-center gap-4 shrink-0">
-              {/* SM/MD/LG Screen Quick Tools (640px and above) */}
-              <div className="flex items-center">
-                <div className={`flex items-center gap-2 p-1.5 rounded-lg border ${isDark ? 'bg-slate-900/40 border-slate-700/30' : 'bg-blue-50/50 border-blue-100/50'}`}>
-                  {/* Devices Group */}
-                  <div className="flex items-center gap-1">
-                    <button
-                      onClick={() => addDevice('pc')}
-                      title={t.addPcShort}
-                      className={`group relative p-2 rounded-lg transition-all duration-200 ${isDark 
-                        ? 'hover:bg-slate-700/80 hover:shadow-lg hover:shadow-blue-500/20 text-blue-400 hover:text-blue-300' 
-                        : 'hover:bg-slate-100 hover:shadow-lg hover:shadow-blue-500/10 text-blue-600 hover:text-blue-500'}`}
-                    >
-                      <svg className="w-6 h-6 transform group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 0 0 2-2V5a2 2 0 0 0 -2-2H5a2 2 0 0 0 -2 2v10a2 2 0 0 0 2 2z" />
-                      </svg>
-                      <span className={`absolute -bottom-1 left-1/2 -translate-x-1/2 text-[10px] font-medium ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>PC</span>
-                    </button>
-                    <button
-                      onClick={() => addDevice('switch')}
-                      title={t.addSwitchShort}
-                      className={`group relative p-2 rounded-xl transition-all duration-200 ${isDark 
-                        ? 'hover:bg-slate-700/80 hover:shadow-lg hover:shadow-emerald-500/20 text-emerald-400 hover:text-emerald-300' 
-                        : 'hover:bg-slate-100 hover:shadow-lg hover:shadow-emerald-500/10 text-emerald-600 hover:text-emerald-500'}`}
-                    >
-                      <svg className="w-6 h-6 transform group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 12h14M5 12a2 2 0 0 1 -2-2V6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1 -2 2M5 12a2 2 0 0 0 -2 2v4a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4a2 2 0 0 0 -2-2m-2-4h.01M17 16h.01" />
-                      </svg>
-                      <span className={`absolute -bottom-1 left-1/2 -translate-x-1/2 text-[10px] font-medium ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>SW</span>
-                    </button>
-                    <button
-                      onClick={() => addDevice('router')}
-                      title={t.addRouterShort}
-                      className={`group relative p-2 rounded-xl transition-all duration-200 ${isDark 
-                        ? 'hover:bg-slate-700/80 hover:shadow-lg hover:shadow-purple-500/20 text-purple-400 hover:text-purple-300' 
-                        : 'hover:bg-slate-100 hover:shadow-lg hover:shadow-purple-500/10 text-purple-600 hover:text-purple-500'}`}
-                    >
-                      <svg className="w-6 h-6 transform group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <circle cx="12" cy="12" r="9" strokeWidth={1.5} />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 5v14M5 12h14M12 5l-2 2m2-2l2 2m-2 12l-2-2m2 2l2-2M5 12l2-2m-2 2l2 2M19 12l-2-2m2 2l-2 2" />
-                      </svg>
-                      <span className={`absolute -bottom-1 left-1/2 -translate-x-1/2 text-[10px] font-medium ${isDark ? 'text-purple-400' : 'text-purple-600'}`}>RT</span>
-                    </button>
-                  </div>
+        <div className="flex items-center justify-between gap-2 overflow-x-auto no-scrollbar">
+          <div className="flex items-center gap-4 shrink-0">
+            {/* SM/MD/LG Screen Quick Tools (640px and above) */}
+            <div className="flex items-center">
+              <div className={`flex items-center gap-2 p-1.5 rounded-lg border ${isDark ? 'bg-slate-900/40 border-slate-700/30' : 'bg-blue-50/50 border-blue-100/50'}`}>
+                {/* Devices Group */}
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => addDevice('pc')}
+                    title={t.addPcShort}
+                    className={`group relative p-2 rounded-lg transition-all duration-200 ${isDark
+                      ? 'hover:bg-slate-700/80 hover:shadow-lg hover:shadow-blue-500/20 text-blue-400 hover:text-blue-300'
+                      : 'hover:bg-slate-100 hover:shadow-lg hover:shadow-blue-500/10 text-blue-600 hover:text-blue-500'}`}
+                  >
+                    <svg className="w-6 h-6 transform group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 0 0 2-2V5a2 2 0 0 0 -2-2H5a2 2 0 0 0 -2 2v10a2 2 0 0 0 2 2z" />
+                    </svg>
+                    <span className={`absolute -bottom-1 left-1/2 -translate-x-1/2 text-[10px] font-medium ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>PC</span>
+                  </button>
+                  <button
+                    onClick={() => addDevice('switch')}
+                    title={t.addSwitchShort}
+                    className={`group relative p-2 rounded-xl transition-all duration-200 ${isDark
+                      ? 'hover:bg-slate-700/80 hover:shadow-lg hover:shadow-emerald-500/20 text-emerald-400 hover:text-emerald-300'
+                      : 'hover:bg-slate-100 hover:shadow-lg hover:shadow-emerald-500/10 text-emerald-600 hover:text-emerald-500'}`}
+                  >
+                    <svg className="w-6 h-6 transform group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 12h14M5 12a2 2 0 0 1 -2-2V6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1 -2 2M5 12a2 2 0 0 0 -2 2v4a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4a2 2 0 0 0 -2-2m-2-4h.01M17 16h.01" />
+                    </svg>
+                    <span className={`absolute -bottom-1 left-1/2 -translate-x-1/2 text-[10px] font-medium ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>SW</span>
+                  </button>
+                  <button
+                    onClick={() => addDevice('router')}
+                    title={t.addRouterShort}
+                    className={`group relative p-2 rounded-xl transition-all duration-200 ${isDark
+                      ? 'hover:bg-slate-700/80 hover:shadow-lg hover:shadow-purple-500/20 text-purple-400 hover:text-purple-300'
+                      : 'hover:bg-slate-100 hover:shadow-lg hover:shadow-purple-500/10 text-purple-600 hover:text-purple-500'}`}
+                  >
+                    <svg className="w-6 h-6 transform group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <circle cx="12" cy="12" r="9" strokeWidth={1.5} />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 5v14M5 12h14M12 5l-2 2m2-2l2 2m-2 12l-2-2m2 2l2-2M5 12l2-2m-2 2l2 2M19 12l-2-2m2 2l-2 2" />
+                    </svg>
+                    <span className={`absolute -bottom-1 left-1/2 -translate-x-1/2 text-[10px] font-medium ${isDark ? 'text-purple-400' : 'text-purple-600'}`}>RT</span>
+                  </button>
+                </div>
 
-                  {/* Separator */}
-                  <div className={`w-px h-6 ${isDark ? 'bg-slate-700/50' : 'bg-slate-300'} mx-1`} />
+                {/* Separator */}
+                <div className={`w-px h-6 ${isDark ? 'bg-slate-700/50' : 'bg-slate-300'} mx-1`} />
 
-                  {/* Cable Types Group */}
-                  <div className="flex items-center gap-1">
-                    {(['straight', 'crossover', 'console'] as CableType[]).map((type) => (
-                      <button
-                        key={type}
-                        onClick={() => onCableChange({ ...cableInfo, cableType: type })}
-                        title={getDualCableLabel(type)}
-                        aria-label={getDualCableLabel(type)}
-                        className={`group relative flex flex-col items-center gap-1 p-2 rounded-lg transition-all duration-200 ${cableInfo.cableType === type
-                          ? `${CABLE_COLORS[type].bg} text-white hover:scale-105`
-                          : isDark ? 'hover:bg-slate-700 text-slate-400 hover:scale-105' : 'hover:bg-slate-100 text-slate-600 hover:scale-105'}`}
-                      >
-                        <div className={`w-2.5 h-2.5 rounded-full ${cableInfo.cableType === type ? 'bg-white' : CABLE_COLORS[type].bg}`} />
-                        <span className="text-[10px] font-bold">
-                          {type === 'straight' ? t.straight.substring(0, 3) :
-                            type === 'crossover' ? t.crossover.substring(0, 3) :
-                              t.console.substring(0, 3)}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* Separator */}
-                  <div className={`w-px h-6 ${isDark ? 'bg-slate-700/50' : 'bg-slate-300'} mx-1`} />
-
-                  {/* Notes */}
-                  <div className="flex items-center gap-1">
+                {/* Cable Types Group */}
+                <div className="flex items-center gap-1">
+                  {(['straight', 'crossover', 'console'] as CableType[]).map((type) => (
                     <button
-                      onClick={addNote}
-                      title={t.addNote}
-                      className={`p-1.5 rounded-lg transition-all ${isDark ? 'hover:bg-slate-700 text-amber-300' : 'hover:bg-slate-100 text-amber-500'}`}
+                      key={type}
+                      onClick={() => onCableChange({ ...cableInfo, cableType: type })}
+                      title={getDualCableLabel(type)}
+                      aria-label={getDualCableLabel(type)}
+                      className={`group relative flex flex-col items-center gap-1 p-2 rounded-lg transition-all duration-200 ${cableInfo.cableType === type
+                        ? `${CABLE_COLORS[type].bg} text-white hover:scale-105`
+                        : isDark ? 'hover:bg-slate-700 text-slate-400 hover:scale-105' : 'hover:bg-slate-100 text-slate-600 hover:scale-105'}`}
                     >
-                      <Pencil className="w-4 h-5" />
+                      <div className={`w-2.5 h-2.5 rounded-full ${cableInfo.cableType === type ? 'bg-white' : CABLE_COLORS[type].bg}`} />
+                      <span className="text-[10px] font-bold">
+                        {type === 'straight' ? t.straight.substring(0, 3) :
+                          type === 'crossover' ? t.crossover.substring(0, 3) :
+                            t.console.substring(0, 3)}
+                      </span>
                     </button>
-                  </div>
+                  ))}
+                </div>
+
+                {/* Separator */}
+                <div className={`w-px h-6 ${isDark ? 'bg-slate-700/50' : 'bg-slate-300'} mx-1`} />
+
+                {/* Notes */}
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={addNote}
+                    title={t.addNote}
+                    className={`p-1.5 rounded-lg transition-all ${isDark ? 'hover:bg-slate-700 text-amber-300' : 'hover:bg-slate-100 text-amber-500'}`}
+                  >
+                    <Pencil className="w-4 h-5" />
+                  </button>
                 </div>
               </div>
             </div>
+          </div>
 
-            <div className="flex items-center gap-1.5 sm:gap-2">
-              <button
-                onClick={() => {
-                  setShowPortSelector(true);
-                  setPortSelectorStep('source');
-                  setSelectedSourcePort(null);
-                }}
-                className={`flex items-center gap-1.5 px-3 sm:px-4 py-1.5 rounded-xl text-xs font-semibold shadow-sm transition-all ${isDark
-                  ? 'bg-cyan-600 hover:bg-cyan-700 text-white'
-                  : 'bg-cyan-500 hover:bg-cyan-600 text-white'
-                  }`}
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 0 0 -5.656 0l-4 4a4 4 0 1 0 5.656 5.656l1.102-1.101m-.758-4.899a4 4 0 0 0 5.656 0l4-4a4 4 0 0 0 -5.656-5.656l-1.1 1.1" />
-                </svg>
-                <span className="hidden sm:inline">{t.connectDevices}</span>
-                <span className="sm:hidden">{t.connect}</span>
-              </button>
-            </div>
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <button
+              onClick={() => {
+                setShowPortSelector(true);
+                setPortSelectorStep('source');
+                setSelectedSourcePort(null);
+              }}
+              className={`flex items-center gap-1.5 px-3 sm:px-4 py-1.5 rounded-xl text-xs font-semibold shadow-sm transition-all ${isDark
+                ? 'bg-cyan-600 hover:bg-cyan-700 text-white'
+                : 'bg-cyan-500 hover:bg-cyan-600 text-white'
+                }`}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 0 0 -5.656 0l-4 4a4 4 0 1 0 5.656 5.656l1.102-1.101m-.758-4.899a4 4 0 0 0 5.656 0l4-4a4 4 0 0 0 -5.656-5.656l-1.1 1.1" />
+              </svg>
+              <span className="hidden sm:inline">{t.connectDevices}</span>
+              <span className="sm:hidden">{t.connect}</span>
+            </button>
           </div>
         </div>
+      </div>
 
       <div className="flex flex-1 overflow-hidden">
         {/* Canvas Area */}
@@ -3656,8 +3656,8 @@ export function NetworkTopology({
                       <button
                         key={type}
                         onClick={() => { addDevice(type); setIsPaletteOpen(false); }}
-                        className={`group relative flex flex-col items-center gap-2 p-4 rounded-2xl border transition-all duration-200 ${isDark 
-                          ? 'bg-slate-800 border-slate-700 active:bg-slate-700 active:scale-95 hover:shadow-lg' 
+                        className={`group relative flex flex-col items-center gap-2 p-4 rounded-2xl border transition-all duration-200 ${isDark
+                          ? 'bg-slate-800 border-slate-700 active:bg-slate-700 active:scale-95 hover:shadow-lg'
                           : 'bg-slate-50 border-slate-200 active:bg-slate-100 active:scale-95 hover:shadow-lg'
                           } ${type === 'pc' ? 'hover:shadow-blue-500/10' : type === 'switch' ? 'hover:shadow-emerald-500/10' : 'hover:shadow-purple-500/10'}`}
                       >
@@ -3821,7 +3821,7 @@ export function NetworkTopology({
                     <stop offset="0%" stopColor={isDark ? '#3b82f6' : '#60a5fa'} />
                     <stop offset="100%" stopColor={isDark ? '#1d4ed8' : '#2563eb'} />
                   </linearGradient>
-                  
+
                   <linearGradient id="switchGradient" x1="0%" y1="0%" x2="0%" y2="100%">
                     <stop offset="0%" stopColor={isDark ? '#10b981' : '#34d399'} />
                     <stop offset="100%" stopColor={isDark ? '#047857' : '#059669'} />
@@ -3831,7 +3831,7 @@ export function NetworkTopology({
                     <stop offset="0%" stopColor={isDark ? '#8b5cf6' : '#a78bfa'} />
                     <stop offset="100%" stopColor={isDark ? '#6d28d9' : '#7c3aed'} />
                   </linearGradient>
-                  
+
                   {/* Glossy overlay effect for 3D look */}
                   <linearGradient id="glossOverlay" x1="0%" y1="0%" x2="0%" y2="100%">
                     <stop offset="0%" stopColor="white" stopOpacity="0.15" />
@@ -3940,15 +3940,14 @@ export function NetworkTopology({
                       className="pointer-events-none"
                     >
                       <div
-                        className={`pointer-events-auto relative flex flex-col w-full h-full rounded-br-3xl shadow-xl text-white transition-all duration-300 ${
-                          selectedNoteIds.includes(note.id) 
-                            ? 'ring-2 ring-emerald-400 shadow-[0_0_20px_rgba(52,211,153,0.5)] animate-pulse scale-[1.01]' 
+                        className={`pointer-events-auto relative flex flex-col w-full h-full rounded-br-3xl shadow-xl text-white transition-all duration-300 ${selectedNoteIds.includes(note.id)
+                            ? 'ring-2 ring-emerald-400 shadow-[0_0_20px_rgba(52,211,153,0.5)] animate-pulse scale-[1.01]'
                             : 'hover:shadow-2xl hover:scale-[1.005]'
-                        }`}
+                          }`}
                         data-note-id={note.id}
-                        style={{ 
-                          backgroundColor: note.color, 
-                          fontFamily: note.font, 
+                        style={{
+                          backgroundColor: note.color,
+                          fontFamily: note.font,
                           opacity: note.opacity,
                           backgroundImage: 'linear-gradient(to bottom, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 50%, rgba(0,0,0,0.05) 100%)',
                           boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.3)',
@@ -3960,9 +3959,9 @@ export function NetworkTopology({
                         onClick={(e) => {
                           e.stopPropagation();
                           if (wasDraggingRef.current) return;
-                          
+
                           const isHeaderClick = (e.target as HTMLElement).closest('[data-note-drag-handle]');
-                          
+
                           if (e.shiftKey) {
                             if (isHeaderClick) return; // Prevent double toggle since handleNoteMouseDown already handled it
                             setSelectedNoteIds(prev => prev.includes(note.id) ? prev.filter(id => id !== note.id) : [...prev, note.id]);
@@ -4007,8 +4006,8 @@ export function NetworkTopology({
                             }
                           }}
                           className="flex-1 px-2 py-1 bg-transparent outline-none resize-none text-white placeholder:text-white/50"
-                          style={{ 
-                            fontSize: note.fontSize, 
+                          style={{
+                            fontSize: note.fontSize,
                             height: note.height - NOTE_HEADER_HEIGHT - 6,
                             textShadow: '1px 1px 2px rgba(0,0,0,1)'
                           }}
@@ -4321,8 +4320,8 @@ export function NetworkTopology({
         onNoteSelectAllText={handleNoteTextSelectAll}
         onDuplicateNote={duplicateNote}
         onPasteNotes={pasteNotes}
-        onUndo={onUndo || (() => {})}
-        onRedo={onRedo || (() => {})}
+        onUndo={onUndo || (() => { })}
+        onRedo={onRedo || (() => { })}
         onSelectAll={selectAllDevices}
         onOpenDevice={(device) => handleDeviceDoubleClick(device)}
         onCutDevices={cutDevice}
@@ -4331,7 +4330,7 @@ export function NetworkTopology({
         onDeleteDevices={(ids) => ids.forEach((id) => deleteDevice(id))}
         onStartConfig={startDeviceConfig}
         onStartPing={(id) => setPingSource(id)}
-        onSaveToHistory={onUndo ? (() => {}) : (() => {})} // Dummy if we have onUndo from parent which implies automated history
+        onSaveToHistory={onUndo ? (() => { }) : (() => { })} // Dummy if we have onUndo from parent which implies automated history
         onClearDeviceSelection={() => setSelectedDeviceIds([])}
       />
       {/* Device Configuration Modal (Name & IP) */}
@@ -4387,8 +4386,8 @@ export function NetworkTopology({
                     </TooltipTrigger>
                     <TooltipContent side="bottom" className={`${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'} ${isDark ? 'text-white' : 'text-slate-900'} p-2 text-xs`}>
                       {devices.find(d => d.id === configuringDevice)?.status === 'offline'
-                        ? (language === 'tr' ? 'KAPALI' : 'OFF')
-                        : (language === 'tr' ? 'AÇIK' : 'ON')}
+                        ? (language === 'tr' ? 'Kapalı' : 'Off')
+                        : (language === 'tr' ? 'Açık' : 'On')}
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
@@ -4679,9 +4678,9 @@ export function NetworkTopology({
               <div className="flex items-center justify-between gap-4">
                 <span className="font-bold">{port.label}</span>
                 <span className={`px-1.5 py-0.5 rounded text-[9px] font-black uppercase ${port.status === 'connected' ? 'bg-emerald-500/20 text-emerald-500' :
-                    port.status === 'blocked' ? 'bg-amber-500/20 text-amber-500' :
-                      port.status === 'disabled' ? 'bg-red-500/20 text-red-500' :
-                        'bg-slate-500/20 text-slate-500'
+                  port.status === 'blocked' ? 'bg-amber-500/20 text-amber-500' :
+                    port.status === 'disabled' ? 'bg-red-500/20 text-red-500' :
+                      'bg-slate-500/20 text-slate-500'
                   }`}>
                   {port.status}
                 </span>
