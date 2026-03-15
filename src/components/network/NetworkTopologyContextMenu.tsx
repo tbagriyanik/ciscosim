@@ -421,6 +421,7 @@ export function NetworkTopologyContextMenu({
                 {renderMenuItem({
                   label: language === 'tr' ? 'Yapılandır' : 'Configure',
                   icon: 'config',
+                  shortcut: 'Alt+Enter',
                   onClick: () => { onStartConfig(contextMenu.deviceId!); onClose(); },
                   disabled: !device
                 })}

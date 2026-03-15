@@ -11,12 +11,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Translations } from '@/contexts/LanguageContext';
 import { Layers, Trash2 } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface VlanPanelProps {
   vlans: Record<number, Vlan>;
   ports: Record<string, Port>;
   deviceName?: string;
   deviceModel?: string;
+  deviceId?: string;
+  onTogglePower?: (deviceId: string) => void;
   onExecuteCommand: (command: string) => Promise<void>;
   t: Translations;
   theme: string;
@@ -33,7 +36,7 @@ interface VlanTask {
   hint: string;
 }
 
-export function VlanPanel({ vlans, ports, deviceName, deviceModel, onExecuteCommand, t, theme, activeDeviceType, isDevicePoweredOff = false }: VlanPanelProps) {
+export function VlanPanel({ vlans, ports, deviceName, deviceModel, deviceId, onTogglePower, onExecuteCommand, t, theme, activeDeviceType, isDevicePoweredOff = false }: VlanPanelProps) {
   const [newVlanId, setNewVlanId] = useState('');
   const [newVlanName, setNewVlanName] = useState('');
   const [isCreating, setIsCreating] = useState(false);
@@ -194,13 +197,39 @@ export function VlanPanel({ vlans, ports, deviceName, deviceModel, onExecuteComm
   return (
     <Card className={`${cardBg} transition-all duration-300 hover:shadow-lg`}>
       <CardHeader className={`py-3 px-5 border-b ${isDark ? 'border-slate-800/50 bg-slate-800/20' : 'border-slate-200 bg-slate-50'}`}>
-        <CardTitle className="text-purple-400 text-base sm:text-lg flex items-center gap-2">
-          <Layers className="w-4 h-4 sm:w-5 sm:h-5 animate-pulse" />
-          {deviceName || t.vlanStatus}
-          <span className={`text-[12px] font-mono px-2 py-0.5 rounded ${isDark ? 'bg-slate-700 text-slate-400' : 'bg-slate-100 text-slate-500'} ml-2`}>
-            {deviceModel}
-          </span>
-        </CardTitle>
+        <div className="flex items-center justify-between gap-3">
+          <CardTitle className="text-purple-400 text-base sm:text-lg flex items-center gap-2">
+            <Layers className="w-4 h-4 sm:w-5 sm:h-5 animate-pulse" />
+            {deviceName || t.vlanStatus}
+            <span className={`text-[12px] font-mono px-2 py-0.5 rounded ${isDark ? 'bg-slate-700 text-slate-400' : 'bg-slate-100 text-slate-500'} ml-2`}>
+              {deviceModel}
+            </span>
+          </CardTitle>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => deviceId && onTogglePower?.(deviceId)}
+                  className={`h-8 w-8 rounded-lg transition-all ${isDevicePoweredOff ? 'text-rose-500 hover:bg-rose-500/10' : 'text-emerald-500 hover:bg-emerald-500/10'}`}
+                  aria-label={t.language === 'tr' ? 'Güç' : 'Power'}
+                  disabled={!deviceId || !onTogglePower}
+                >
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 2v10" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 5.636a9 9 0 1 1-12.728 0" />
+                  </svg>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent hideArrow side="bottom" className={`${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'} ${isDark ? 'text-white' : 'text-slate-900'} p-2 text-xs`}>
+                {t.language === 'tr'
+                  ? `Güç: ${isDevicePoweredOff ? 'KAPALI' : 'AÇIK'}`
+                  : `Power: ${isDevicePoweredOff ? 'OFF' : 'ON'}`}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
       </CardHeader>
       <CardContent>
         {isDevicePoweredOff && (

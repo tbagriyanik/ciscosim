@@ -6,11 +6,16 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Translations } from '@/contexts/LanguageContext';
 import { ShieldCheck } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface SecurityPanelProps {
   security: SecurityConfig;
   t: Translations;
   theme: string;
+  deviceId?: string;
+  isDevicePoweredOff?: boolean;
+  onTogglePower?: (deviceId: string) => void;
 }
 
 interface SecurityItem {
@@ -20,7 +25,7 @@ interface SecurityItem {
   weight: number;
 }
 
-export function SecurityPanel({ security, t, theme }: SecurityPanelProps) {
+export function SecurityPanel({ security, t, theme, deviceId, isDevicePoweredOff = false, onTogglePower }: SecurityPanelProps) {
   const isDark = theme === 'dark';
   
   const securityItems: SecurityItem[] = [
@@ -92,12 +97,43 @@ export function SecurityPanel({ security, t, theme }: SecurityPanelProps) {
   return (
     <Card className={`${cardBg} transition-all duration-300 hover:shadow-lg`}>
       <CardHeader className={`py-3 px-5 border-b ${isDark ? 'border-slate-800/50 bg-slate-800/20' : 'border-slate-200 bg-slate-50'}`}>
-        <CardTitle className="text-orange-400 text-base sm:text-lg flex items-center gap-2">
-          <ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5" />
-          {t.securityControls}
-        </CardTitle>
+        <div className="flex items-center justify-between gap-3">
+          <CardTitle className="text-orange-400 text-base sm:text-lg flex items-center gap-2">
+            <ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5" />
+            {t.securityControls}
+          </CardTitle>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => deviceId && onTogglePower?.(deviceId)}
+                  className={`h-8 w-8 rounded-lg transition-all ${isDevicePoweredOff ? 'text-rose-500 hover:bg-rose-500/10' : 'text-emerald-500 hover:bg-emerald-500/10'}`}
+                  aria-label={t.language === 'tr' ? 'Güç' : 'Power'}
+                  disabled={!deviceId || !onTogglePower}
+                >
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 2v10" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 5.636a9 9 0 1 1-12.728 0" />
+                  </svg>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent hideArrow side="bottom" className={`${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'} ${isDark ? 'text-white' : 'text-slate-900'} p-2 text-xs`}>
+                {t.language === 'tr'
+                  ? `Güç: ${isDevicePoweredOff ? 'KAPALI' : 'AÇIK'}`
+                  : `Power: ${isDevicePoweredOff ? 'OFF' : 'ON'}`}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
       </CardHeader>
       <CardContent>
+        {isDevicePoweredOff && (
+          <div className="mb-4 px-3 py-2 rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-500 text-xs font-bold tracking-wider text-center">
+            {t.language === 'tr' ? 'Bağlantı hatası' : 'Connection error'}
+          </div>
+        )}
         <div className={`mb-4 p-2 sm:p-3 ${innerBg} rounded-lg transition-all duration-300 hover:bg-opacity-80`}>
           <div className="flex items-center justify-between mb-2">
             <span className={`text-xs sm:text-sm ${textSecondary}`}>{t.securityLevel}</span>

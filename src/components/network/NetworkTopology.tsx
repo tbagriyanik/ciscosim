@@ -2276,6 +2276,14 @@ export function NetworkTopology({
         }
       }
 
+      // Alt+Enter: configure selected device
+      if (e.altKey && e.key === 'Enter') {
+        if (!configuringDevice && selectedDeviceIds.length === 1) {
+          e.preventDefault();
+          startDeviceConfig(selectedDeviceIds[0]);
+        }
+      }
+
       // Ctrl Shortcuts
       if (e.ctrlKey || e.metaKey) {
         // Ctrl+A to select all
@@ -2334,7 +2342,7 @@ export function NetworkTopology({
       window.removeEventListener('keydown', handleKeyDown);
 
     };
-  }, [selectedDeviceIds, selectedNoteIds, deleteDevice, commitNotesChange, configuringDevice, cancelDeviceConfig, selectAllDevices, devices, notes, onDeviceDelete, isDrawingConnection, isPaletteOpen, onUndo, onRedo, copyDevice, cutDevice, pasteDevice, pingSource, showPortSelector, toggleFullscreen, isFullscreen, resetView]);
+  }, [selectedDeviceIds, selectedNoteIds, deleteDevice, commitNotesChange, configuringDevice, cancelDeviceConfig, selectAllDevices, devices, notes, onDeviceDelete, isDrawingConnection, isPaletteOpen, onUndo, onRedo, copyDevice, cutDevice, pasteDevice, pingSource, showPortSelector, toggleFullscreen, isFullscreen, resetView, startDeviceConfig]);
 
   // Find path between devices using BFS
   const findPath = useCallback((sourceId: string, targetId: string): string[] | null => {

@@ -1973,6 +1973,8 @@ export default function Home() {
                 ports={state.ports}
                 deviceName={state.hostname}
                 deviceModel={activeDeviceType === 'router' ? 'NETWORK-1941' : 'WS-C2960-24TT-L'}
+                deviceId={activeDeviceId}
+                onTogglePower={toggleDevicePower}
                 onExecuteCommand={handleCommand}
                 t={t}
                 theme={theme}
@@ -1996,7 +1998,14 @@ export default function Home() {
         {activeTab === 'security' && (
           <div className="grid lg:grid-cols-3 gap-4 flex-1 overflow-y-auto custom-scrollbar">
             <div className="lg:col-span-2">
-              <SecurityPanel security={state.security} t={t} theme={theme} />
+                <SecurityPanel
+                  security={state.security}
+                  t={t}
+                  theme={theme}
+                  deviceId={activeDeviceId}
+                  isDevicePoweredOff={topologyDevices.some(d => d.id === activeDeviceId && d.status === 'offline')}
+                  onTogglePower={toggleDevicePower}
+                />
             </div>
             <div>
               <TaskCard
