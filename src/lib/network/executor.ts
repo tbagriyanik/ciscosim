@@ -2,7 +2,7 @@
 import { SwitchState, CommandMode, CommandResult, Port, Vlan, PortStatus } from './types';
 import { checkConnectivity } from './connectivity';
 import { parseCommand, validateCommand, getHelpContent, commandPatterns } from './parser';
-import { normalizePortId, getModePrompt, createInitialState } from './initialState';
+import { normalizePortId, getModePrompt, buildStartupConfig, applyStartupConfig } from './initialState';
 
 // Network tarzı komut ağacı - ? için
 const commandHelp: Record<string, Record<string, string[]>> = {
@@ -2106,7 +2106,10 @@ function cmdShowMacAddressTable(state: SwitchState): CommandResult {
 function cmdWriteMemory(state: SwitchState): CommandResult {
   return {
     success: true,
-    output: 'Building configuration...\n[OK]'
+    output: 'Building configuration...\n[OK]',
+    newState: {
+      startupConfig: buildStartupConfig(state)
+    }
   };
 }
 
@@ -2799,10 +2802,13 @@ function cmdShowRunningConfig(state: SwitchState, input: string): CommandResult 
 
 // Show Startup Config
 function cmdShowStartupConfig(state: SwitchState): CommandResult {
-  return {
-    success: true,
-    output: '!\n! Startup configuration is not available in simulation\n!\n'
-  };
+  if (!state.startupConfig) {
+    return { success: true, output: '%% No startup configuration present\n' };
+  }
+
+  const startupState = applyStartupConfig(state, state.startupConfig);
+  const config = generateRunningConfig(startupState);
+  return { success: true, output: config };
 }
 
 // Show Interfaces with filter
@@ -3275,13 +3281,9 @@ function cmdEraseStartupConfig(state: SwitchState): CommandResult {
     output: 'Erasing the nvram filesystem will remove all configuration files! Continue? [confirm]',
     // When confirmed, mark as erased (running-config remains but startup is gone)
     newState: {
+      startupConfig: undefined,
       // Reset running config to minimal
-      runningConfig: [
-        '!',
-        '!',
-        '!',
-        'end'
-      ]
+      runningConfig: ['!', '!', '!', 'end']
     }
   };
 }

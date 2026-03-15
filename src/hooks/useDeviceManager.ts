@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { SwitchState } from '@/lib/network/types';
-import { createInitialState, createInitialRouterState } from '@/lib/network/initialState';
+import { createInitialState, createInitialRouterState, applyStartupConfig } from '@/lib/network/initialState';
 import { executeCommand, getPrompt } from '@/lib/network/executor';
 import type { TerminalOutput } from '@/components/network/Terminal';
 import { CanvasDevice, CanvasConnection } from '@/components/network/networkTopology.types';
@@ -244,13 +244,34 @@ export function useDeviceManager(language: 'tr' | 'en') {
         }
         if (result.reloadDevice) {
           const baseState = deviceId.includes('router') ? createInitialRouterState() : createInitialState();
-          const reloadedState = { ...baseState, hostname: deviceState.hostname };
+          const baseIdentityState = {
+            ...baseState,
+            hostname: deviceState.hostname,
+            macAddress: deviceState.macAddress,
+            version: deviceState.version
+          };
+          const appliedState = deviceState.startupConfig
+            ? applyStartupConfig(baseIdentityState, deviceState.startupConfig)
+            : baseIdentityState;
+          const reloadedState = {
+            ...appliedState,
+            startupConfig: deviceState.startupConfig,
+            currentMode: 'user',
+            currentInterface: undefined,
+            selectedInterfaces: undefined,
+            currentLine: undefined,
+            currentVlan: undefined,
+            awaitingPassword: false,
+            commandHistory: [],
+            historyIndex: -1
+          };
           setDeviceStates(prev => new Map(prev).set(deviceId, reloadedState));
           const isRouter = deviceId.includes('router');
           const bootOutputs: TerminalOutput[] = [
             { id: `boot-1-${Date.now()}`, type: 'output', content: isRouter ? '\n\nSystem Bootstrap, Version 15.1(4)M4, RELEASE SOFTWARE (fc1)\nTechnical Support: http://yunus.sf.net\nCopyright (c) 1986-2026 by Systems, Inc.\n' : '\n\nSystem Bootstrap, Version 12.1(11r)EA1, RELEASE SOFTWARE (fc1)\nTechnical Support: http://yunus.sf.net\nCopyright (c) 1986-2026 by Systems, Inc.\n' },
             { id: `boot-2-${Date.now()}`, type: 'output', content: isRouter ? 'C1900 platform with 524288K bytes of main memory\nMain memory configured to 64 bit mode with ECC disabled\n' : 'C2960 platform with 262144K bytes of main memory\nMain memory configured to 32 bit mode with ECC enabled\n' },
             { id: `boot-3-${Date.now()}`, type: 'output', content: '\nLoading the runtime image: ######################################## [OK]\n' },
+            { id: `boot-beep-${Date.now()}`, type: 'output', content: '\n*BEEP* System is powering on...\n' },
             { id: `boot-ready-${Date.now()}`, type: 'output', content: '\nPress RETURN to get started!\n' }
           ];
           setDeviceOutputs(prev => new Map(prev).set(deviceId, bootOutputs));

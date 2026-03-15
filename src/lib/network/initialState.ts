@@ -1,5 +1,5 @@
 // Network Switch Initial State
-import { SwitchState, Port, Vlan, SecurityConfig, CommandMode } from './types';
+import { SwitchState, Port, Vlan, SecurityConfig, CommandMode, StartupConfig } from './types';
 
 // 24 FastEthernet + 2 GigabitEthernet portu oluştur
 function createInitialPorts(): Record<string, Port> {
@@ -224,6 +224,78 @@ export function createInitialRouterState(): SwitchState {
     },
     macAddressTable: [],
     ipRouting: false
+  };
+}
+
+export function buildStartupConfig(state: SwitchState): StartupConfig {
+  return {
+    hostname: state.hostname,
+    ports: JSON.parse(JSON.stringify(state.ports)),
+    vlans: JSON.parse(JSON.stringify(state.vlans)),
+    security: JSON.parse(JSON.stringify(state.security)),
+    bannerMOTD: state.bannerMOTD,
+    domainName: state.domainName,
+    defaultGateway: state.defaultGateway,
+    dnsServer: state.dnsServer,
+    sshVersion: state.sshVersion,
+    cdpEnabled: state.cdpEnabled,
+    spanningTreeMode: state.spanningTreeMode,
+    vtpMode: state.vtpMode,
+    vtpDomain: state.vtpDomain,
+    mlsQosEnabled: state.mlsQosEnabled,
+    dhcpSnoopingEnabled: state.dhcpSnoopingEnabled,
+    ntpServers: state.ntpServers ? [...state.ntpServers] : undefined,
+    ipv6Enabled: state.ipv6Enabled,
+    ipRouting: state.ipRouting
+  };
+}
+
+export function applyStartupConfig(baseState: SwitchState, startup: StartupConfig): SwitchState {
+  const mergedPorts: Record<string, Port> = {};
+  Object.entries(baseState.ports).forEach(([id, basePort]) => {
+    const savedPort = startup.ports[id];
+    if (!savedPort) {
+      mergedPorts[id] = basePort;
+      return;
+    }
+    mergedPorts[id] = {
+      ...basePort,
+      name: savedPort.name,
+      vlan: savedPort.vlan,
+      mode: savedPort.mode,
+      duplex: savedPort.duplex,
+      speed: savedPort.speed,
+      shutdown: savedPort.shutdown,
+      type: savedPort.type,
+      allowedVlans: savedPort.allowedVlans,
+      portSecurity: savedPort.portSecurity,
+      ipAddress: savedPort.ipAddress,
+      subnetMask: savedPort.subnetMask,
+      ipv6Address: savedPort.ipv6Address,
+      ipv6Prefix: savedPort.ipv6Prefix
+    };
+  });
+
+  return {
+    ...baseState,
+    hostname: startup.hostname,
+    ports: mergedPorts,
+    vlans: JSON.parse(JSON.stringify(startup.vlans)),
+    security: JSON.parse(JSON.stringify(startup.security)),
+    bannerMOTD: startup.bannerMOTD,
+    domainName: startup.domainName,
+    defaultGateway: startup.defaultGateway,
+    dnsServer: startup.dnsServer,
+    sshVersion: startup.sshVersion,
+    cdpEnabled: startup.cdpEnabled,
+    spanningTreeMode: startup.spanningTreeMode,
+    vtpMode: startup.vtpMode,
+    vtpDomain: startup.vtpDomain,
+    mlsQosEnabled: startup.mlsQosEnabled,
+    dhcpSnoopingEnabled: startup.dhcpSnoopingEnabled,
+    ntpServers: startup.ntpServers ? [...startup.ntpServers] : undefined,
+    ipv6Enabled: startup.ipv6Enabled,
+    ipRouting: startup.ipRouting
   };
 }
 

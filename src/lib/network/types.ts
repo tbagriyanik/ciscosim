@@ -100,6 +100,28 @@ export interface SwitchState {
   ntpServers?: string[];
   ipv6Enabled?: boolean;
   ipRouting: boolean;
+  startupConfig?: StartupConfig;
+}
+
+export interface StartupConfig {
+  hostname: string;
+  ports: Record<string, Port>;
+  vlans: Record<number, Vlan>;
+  security: SecurityConfig;
+  bannerMOTD?: string;
+  domainName?: string;
+  defaultGateway?: string;
+  dnsServer?: string;
+  sshVersion?: 1 | 2;
+  cdpEnabled?: boolean;
+  spanningTreeMode?: 'pvst' | 'rapid-pvst' | 'mst';
+  vtpMode?: 'server' | 'client' | 'transparent' | 'off';
+  vtpDomain?: string;
+  mlsQosEnabled?: boolean;
+  dhcpSnoopingEnabled?: boolean;
+  ntpServers?: string[];
+  ipv6Enabled?: boolean;
+  ipRouting: boolean;
 }
 
 export interface CommandResult {
