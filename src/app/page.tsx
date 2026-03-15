@@ -4,7 +4,6 @@ import { useState, useCallback, useRef, useEffect, useLayoutEffect } from 'react
 import { motion, AnimatePresence } from 'framer-motion';
 
 import { SwitchState, CableInfo } from '@/lib/network/types';
-import { createInitialState } from '@/lib/network/initialState';
 import { useDeviceManager } from '@/hooks/useDeviceManager';
 // Duplicate removed
 import { NetworkTopology } from '@/components/network/NetworkTopology';
@@ -47,7 +46,7 @@ import {
 import { TaskCard } from '@/components/network/TaskCard';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { ChevronDown, Menu, Plus, Save, FolderOpen, Languages, Sun, Moon, Laptop, Monitor, Network, ShieldCheck, Database, Info, File, Layers, Terminal as TerminalIcon, Undo2, Redo2, Link2 } from "lucide-react";
+import { ChevronDown, Menu, Plus, Save, FolderOpen, Languages, Sun, Moon, Network, ShieldCheck, Database, Info, File, Layers, Terminal as TerminalIcon, Undo2, Redo2, Link2 } from "lucide-react";
 
 import { Button } from '@/components/ui/button';
 import { useLanguage, Translations } from '@/contexts/LanguageContext';
@@ -349,12 +348,13 @@ export default function Home() {
   // No longer needed here as it's declared earlier
 
   useEffect(() => {
-    // Initial loading sequence: Start Dark -> Glitch -> Show Content (respecting actual theme)
+    // Initial loading sequence: short splash, then reveal content.
+    const prefersReducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+    const splashMs = prefersReducedMotion ? 300 : 700;
     const timer = setTimeout(() => {
       setIsLoading(false);
-      // Small delay before showing content for smooth transition
       setTimeout(() => setShowContent(true), 100);
-    }, 2000);
+    }, splashMs);
     return () => clearTimeout(timer);
   }, []);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -388,13 +388,6 @@ export default function Home() {
   // Calculate max possible score
   const maxScore = [...topologyTasks, ...portTasks, ...vlanTasks, ...securityTasks].reduce((acc, task) => acc + task.weight, 0);
 
-  // Score animation state
-  const [scoreAnimation, setScoreAnimation] = useState<{ 
-    change: number; 
-    isIncreasing: boolean; 
-    showAnimation: boolean 
-  }>({ change: 0, isIncreasing: true, showAnimation: false });
-
   const [selectedDevice, setSelectedDevice] = useState<'pc' | 'switch' | 'router' | null>(null);
   const [showPCPanel, setShowPCPanel] = useState(false);
   const [showPCDeviceId, setShowPCDeviceId] = useState<string>('pc-1');
@@ -410,30 +403,44 @@ export default function Home() {
   // UI state for dropdowns
   const [showAboutModal, setShowAboutModal] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
-  const [showActiveDeviceDropdown, setShowActiveDeviceDropdown] = useState(false);
+  const autosaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const modalHistoryPushedRef = useRef(false);
 
   // Persistence: Save to localStorage
   useEffect(() => {
     if (isAppLoading) return;
 
-    const projectData = {
-      version: '1.0',
-      timestamp: new Date().toISOString(),
-      devices: Array.from(deviceStates.entries()).map(([id, state]) => ({ id, state })),
-      deviceOutputs: Array.from(deviceOutputs.entries()).map(([id, outputs]) => ({ id, outputs })),
-      pcOutputs: Array.from(pcOutputs.entries()).map(([id, outputs]) => ({ id, outputs })),
-      topology: {
-        devices: topologyDevices,
-        connections: topologyConnections,
-        notes: topologyNotes
-      },
-      cableInfo,
-      activeDeviceId,
-      activeDeviceType,
-      activeTab
-    };
+    if (autosaveTimerRef.current) {
+      clearTimeout(autosaveTimerRef.current);
+    }
 
-    localStorage.setItem('netsim_autosave', JSON.stringify(projectData));
+    autosaveTimerRef.current = setTimeout(() => {
+      const projectData = {
+        version: '1.0',
+        timestamp: new Date().toISOString(),
+        devices: Array.from(deviceStates.entries()).map(([id, state]) => ({ id, state })),
+        deviceOutputs: Array.from(deviceOutputs.entries()).map(([id, outputs]) => ({ id, outputs })),
+        pcOutputs: Array.from(pcOutputs.entries()).map(([id, outputs]) => ({ id, outputs })),
+        topology: {
+          devices: topologyDevices,
+          connections: topologyConnections,
+          notes: topologyNotes
+        },
+        cableInfo,
+        activeDeviceId,
+        activeDeviceType,
+        activeTab
+      };
+
+      localStorage.setItem('netsim_autosave', JSON.stringify(projectData));
+      autosaveTimerRef.current = null;
+    }, 800);
+
+    return () => {
+      if (autosaveTimerRef.current) {
+        clearTimeout(autosaveTimerRef.current);
+      }
+    };
   }, [deviceStates, deviceOutputs, pcOutputs, topologyDevices, topologyConnections, topologyNotes, cableInfo, activeDeviceId, activeDeviceType, activeTab, isAppLoading]);
 
   // Load project from JSON data
@@ -570,8 +577,6 @@ export default function Home() {
     }
   }, [activeDeviceType, activeTab]);
 
-  const dropdownTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
   // Broadcast to other components (like NetworkTopology)
   const broadcastCloseMenus = useCallback((source: string) => {
     window.dispatchEvent(new CustomEvent('close-menus-broadcast', { detail: { source } }));
@@ -579,12 +584,11 @@ export default function Home() {
 
   const closeLocalMenus = useCallback((exclude?: string) => {
     if (exclude !== 'mobile') setShowMobileMenu(false);
-    if (exclude !== 'device') setShowActiveDeviceDropdown(false);
     if (exclude !== 'modal') {
       setConfirmDialog(null);
       setSaveDialog(null);
     }
-  }, [setConfirmDialog, setSaveDialog]);
+  }, [setShowMobileMenu, setConfirmDialog, setSaveDialog]);
 
   const openMobileMenu = useCallback(() => {
     const nextState = !showMobileMenu;
@@ -594,27 +598,6 @@ export default function Home() {
     }
     setShowMobileMenu(nextState);
   }, [showMobileMenu, closeLocalMenus, broadcastCloseMenus]);
-
-  const openDeviceDropdown = useCallback(() => {
-    if (!topologyDevices || topologyDevices.length === 0) return;
-    const nextState = !showActiveDeviceDropdown;
-    
-    if (dropdownTimerRef.current) {
-      clearTimeout(dropdownTimerRef.current);
-    }
-
-    if (nextState) {
-      closeLocalMenus('device');
-      broadcastCloseMenus('device');
-      
-      // Auto-close after 3 seconds
-      dropdownTimerRef.current = setTimeout(() => {
-        setShowActiveDeviceDropdown(false);
-      }, 3000);
-    }
-    
-    setShowActiveDeviceDropdown(nextState);
-  }, [showActiveDeviceDropdown, closeLocalMenus, broadcastCloseMenus, topologyDevices]);
 
   const focusDeviceInTopology = useCallback((deviceId?: string) => {
     if (!deviceId) return;
@@ -828,9 +811,6 @@ export default function Home() {
       setShowPCDeviceId('pc-1');
     }
     
-    // Close device dropdown if open
-    setShowActiveDeviceDropdown(false);
-
     // Reset selected device if deleted
     if (selectedDevice) {
       setSelectedDevice(null);
@@ -974,7 +954,7 @@ export default function Home() {
       }
     }
     setHasUnsavedChanges(true);
-  }, [activeDeviceId, topologyDevices, topologyConnections, showPCDeviceId, selectedDevice, setDeviceStates, setDeviceOutputs, setPcOutputs, setShowPCPanel, setShowPCDeviceId, setShowActiveDeviceDropdown, setSelectedDevice, setActiveDeviceId, setActiveDeviceType, setActiveTab, setHasUnsavedChanges]);
+  }, [activeDeviceId, topologyDevices, topologyConnections, showPCDeviceId, selectedDevice, setDeviceStates, setDeviceOutputs, setPcOutputs, setShowPCPanel, setShowPCDeviceId, setSelectedDevice, setActiveDeviceId, setActiveDeviceType, setActiveTab, setHasUnsavedChanges]);
 
   const handleUpdateHistory = useCallback((deviceId: string, history: string[]) => {
     setDeviceStates(prev => {
@@ -1225,26 +1205,9 @@ export default function Home() {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [hasUnsavedChanges]);
 
-  // Position device dropdown when it opens
-  useEffect(() => {
-    if (showActiveDeviceDropdown) {
-      const menu = document.getElementById('device-dropdown-menu');
-      const container = document.querySelector('.device-dropdown-container');
-      if (menu && container) {
-        const btn = container.querySelector('button');
-        if (btn) {
-          const rect = btn.getBoundingClientRect();
-          menu.style.top = `${rect.bottom + 4}px`;
-          menu.style.left = `${rect.left}px`;
-        }
-      }
-    }
-  }, [showActiveDeviceDropdown]);
-
   // Handle back button on mobile: popstate shuts down everything
   useEffect(() => {
     const handlePopState = () => {
-      setShowActiveDeviceDropdown(false);
       setShowMobileMenu(false);
       setConfirmDialog(null);
       setSaveDialog(null);
@@ -1253,15 +1216,19 @@ export default function Home() {
     };
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, [setShowActiveDeviceDropdown, setShowMobileMenu, setConfirmDialog, setSaveDialog, setShowPCPanel]);
+  }, [setShowMobileMenu, setConfirmDialog, setSaveDialog, setShowPCPanel]);
 
   // History pushState for back button tracking
   useEffect(() => {
-    const anyModalOpen = showActiveDeviceDropdown || showMobileMenu || !!confirmDialog || !!saveDialog || showPCPanel;
-    if (anyModalOpen) {
+    const anyModalOpen = showMobileMenu || !!confirmDialog || !!saveDialog || showPCPanel;
+    if (anyModalOpen && !modalHistoryPushedRef.current) {
       window.history.pushState({ modal: true }, '');
+      modalHistoryPushedRef.current = true;
     }
-  }, [showActiveDeviceDropdown, showMobileMenu, confirmDialog, saveDialog, showPCPanel]);
+    if (!anyModalOpen) {
+      modalHistoryPushedRef.current = false;
+    }
+  }, [showMobileMenu, confirmDialog, saveDialog, showPCPanel]);
 
   const [isTopologyFullscreen, setIsTopologyFullscreen] = useState(false);
 
@@ -1281,7 +1248,6 @@ export default function Home() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        setShowActiveDeviceDropdown(false);
         setShowMobileMenu(false);
         setConfirmDialog(null);
         setSaveDialog(null);
@@ -1350,7 +1316,7 @@ export default function Home() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [showActiveDeviceDropdown, showMobileMenu, confirmDialog, saveDialog, showPCPanel, handleSaveProject, handleNewProject, setShowActiveDeviceDropdown, setShowMobileMenu, setConfirmDialog, setSaveDialog, setShowPCPanel, isTopologyFullscreen, activeTab]);
+  }, [showMobileMenu, confirmDialog, saveDialog, showPCPanel, handleSaveProject, handleNewProject, handleUndo, handleRedo, tabs, setShowMobileMenu, setConfirmDialog, setSaveDialog, setShowPCPanel, isTopologyFullscreen]);
 
   // Load project from JSON file
   const handleLoadProject = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {

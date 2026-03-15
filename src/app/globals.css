@@ -96,6 +96,9 @@
     @apply bg-background text-foreground font-sans;
     letter-spacing: -0.011em;
   }
+  :focus-visible {
+    @apply outline-none ring-2 ring-cyan-500/60 ring-offset-2 ring-offset-background;
+  }
   
   /* Sharp text for specific elements */
   h1, h2, h3, h4, h5, h6, .font-black, .font-bold {
