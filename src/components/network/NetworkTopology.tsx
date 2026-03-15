@@ -2091,9 +2091,27 @@ export function NetworkTopology({
 
   // Reset view
   const resetView = useCallback(() => {
-    setZoom(DEFAULT_ZOOM);
-    setPan({ x: 0, y: 0 });
-  }, []);
+    const nextZoom = DEFAULT_ZOOM;
+
+    // If there are no objects, keep the origin.
+    if (devices.length === 0 && notes.length === 0) {
+      setZoom(nextZoom);
+      setPan({ x: 0, y: 0 });
+      return;
+    }
+
+    // Pan to the top-leftmost object (min x/y) so it is visible even if nothing is near the origin.
+    const PADDING = 40;
+    const minDeviceX = devices.reduce((acc, d) => Math.min(acc, d.x), Infinity);
+    const minDeviceY = devices.reduce((acc, d) => Math.min(acc, d.y), Infinity);
+    const minNoteX = notes.reduce((acc, n) => Math.min(acc, n.x), Infinity);
+    const minNoteY = notes.reduce((acc, n) => Math.min(acc, n.y), Infinity);
+    const minX = Math.min(minDeviceX, minNoteX);
+    const minY = Math.min(minDeviceY, minNoteY);
+
+    setZoom(nextZoom);
+    setPan({ x: PADDING - minX * nextZoom, y: PADDING - minY * nextZoom });
+  }, [devices, notes]);
 
   // Toggle Fullscreen
   const toggleFullscreen = useCallback(() => {
@@ -3353,7 +3371,8 @@ export function NetworkTopology({
                       <button
                         key={type}
                         onClick={() => onCableChange({ ...cableInfo, cableType: type })}
-                        title={type.charAt(0).toUpperCase() + type.slice(1)}
+                        title={getDualCableLabel(type)}
+                        aria-label={getDualCableLabel(type)}
                         className={`group relative flex flex-col items-center gap-1 p-2 rounded-lg transition-all duration-200 ${cableInfo.cableType === type
                           ? `${CABLE_COLORS[type].bg} text-white hover:scale-105`
                           : isDark ? 'hover:bg-slate-700 text-slate-400 hover:scale-105' : 'hover:bg-slate-100 text-slate-600 hover:scale-105'}`}

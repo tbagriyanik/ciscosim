@@ -62,7 +62,7 @@ import {
   TaskContext
 } from '@/lib/network/taskDefinitions';
 
-import { DEVICE_ICONS } from '@/components/network/networkTopology.constants';
+import { DeviceIcon } from '@/components/network/DeviceIcon';
 
 type TabType = 'topology' | 'cmd' | 'terminal' | 'ports' | 'vlan' | 'security';
 
@@ -1613,9 +1613,10 @@ export default function Home() {
                   <div className="flex items-center gap-2">
                     {activeDeviceId && (topologyDevices.some(d => d.id === activeDeviceId)) ? (
                       <>
-                        {activeDeviceType === 'pc' ? DEVICE_ICONS.pc : 
-                         activeDeviceType === 'router' ? DEVICE_ICONS.router : 
-                         DEVICE_ICONS.switch}
+                        <DeviceIcon
+                          type={activeDeviceType}
+                          className={`${activeDeviceType === 'pc' ? 'text-blue-500' : activeDeviceType === 'router' ? 'text-purple-500' : 'text-emerald-500'} w-5 h-5`}
+                        />
                         <span className="text-xs font-bold">
                           {deviceStates.get(activeDeviceId)?.hostname || activeDeviceId}
                         </span>
@@ -1650,9 +1651,10 @@ export default function Home() {
                           onClick={() => handleDeviceSelect(device.type, device.id)}
                         >
                           <div className="flex items-center gap-2 cursor-pointer">
-                            {device.type === 'pc' ? DEVICE_ICONS.pc : 
-                             device.type === 'router' ? DEVICE_ICONS.router : 
-                             DEVICE_ICONS.switch}
+                            <DeviceIcon
+                              type={device.type}
+                              className={`${device.type === 'pc' ? 'text-blue-500' : device.type === 'router' ? 'text-purple-500' : 'text-emerald-500'} w-5 h-5`}
+                            />
                             <div className="flex flex-col">
                               <span className="text-xs font-bold leading-none">{displayName}</span>
                               <span className="text-[10px] opacity-50 capitalize">{device.type}</span>
