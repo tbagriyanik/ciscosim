@@ -1,5 +1,5 @@
 import { CanvasDevice, CanvasConnection } from '@/components/network/networkTopology.types';
-import { SwitchState } from './types';
+import { CableInfo, SwitchState, isCableCompatible } from './types';
 
 /**
  * Robust Network connectivity checker for simulation
@@ -58,7 +58,7 @@ export function checkConnectivity(
 
     for (const neighborId of neighbors) {
       if (!visited.has(neighborId)) {
-        // Check if port is shutdown on either side
+        // Check if port is shutdown or device is powered off on either side
         const conn = connections.find(c => 
           (c.sourceDeviceId === currentId && c.targetDeviceId === neighborId) ||
           (c.sourceDeviceId === neighborId && c.targetDeviceId === currentId)
@@ -71,11 +71,16 @@ export function checkConnectivity(
           
           const srcDevice = devices.find(d => d.id === currentId);
           const dstDevice = devices.find(d => d.id === neighborId);
-          
+
           const isSrcShutdown = isPortShutdown(currentId, srcPortId, devices, deviceStates);
           const isDstShutdown = isPortShutdown(neighborId, dstPortId, devices, deviceStates);
+          const isSrcPoweredOff = !isDevicePoweredOn(srcDevice);
+          const isDstPoweredOff = !isDevicePoweredOn(dstDevice);
 
-          if (!isSrcShutdown && !isDstShutdown) {
+          // Validate cable type for this physical link (e.g. console vs ethernet, straight vs crossover).
+          const isCableOk = isConnectionCableCompatible(conn, srcDevice, dstDevice);
+
+          if (!isSrcShutdown && !isDstShutdown && !isSrcPoweredOff && !isDstPoweredOff && isCableOk) {
             visited.add(neighborId);
             parent.set(neighborId, currentId);
             queue.push(neighborId);
@@ -95,6 +100,40 @@ export function checkConnectivity(
   while (curr) {
     path.unshift(curr);
     curr = parent.get(curr);
+  }
+
+  // 3. Validate endpoint VLANs when PCs are involved (PC VLAN must match adjacent switch access VLAN).
+  if (deviceStates && path.length >= 2) {
+    for (let i = 0; i < path.length - 1; i++) {
+      const aId = path[i];
+      const bId = path[i + 1];
+      const a = devices.find(d => d.id === aId);
+      const b = devices.find(d => d.id === bId);
+      const conn = connections.find(c =>
+        (c.sourceDeviceId === aId && c.targetDeviceId === bId) ||
+        (c.sourceDeviceId === bId && c.targetDeviceId === aId)
+      );
+      if (!a || !b || !conn) continue;
+
+      // If a PC connects to a switch, enforce VLAN match unless the switch port is trunk.
+      const pc = a.type === 'pc' ? a : b.type === 'pc' ? b : null;
+      const sw = a.type === 'switch' ? a : b.type === 'switch' ? b : null;
+      if (pc && sw) {
+        const swPortId = conn.sourceDeviceId === sw.id ? conn.sourcePort : conn.targetPort;
+        const swState = deviceStates.get(sw.id);
+        const swPort = swState?.ports?.[swPortId];
+        const swVlan = swPort?.vlan || 1;
+        const pcVlan = pc.vlan || 1;
+
+        if (swPort?.mode !== 'trunk' && swVlan !== pcVlan) {
+          return {
+            success: false,
+            hops: path.slice(0, i + 2).map(id => devices.find(d => d.id === id)?.name || id),
+            error: `VLAN mismatch: ${pc.name} is in VLAN ${pcVlan}, but ${sw.name} port ${swPortId} is VLAN ${swVlan}.`,
+          };
+        }
+      }
+    }
   }
 
   // 4. VLAN check across the path
@@ -185,4 +224,27 @@ function isManagementIpSet(deviceId: string, deviceStates?: Map<string, SwitchSt
   const state = deviceStates.get(deviceId);
   if (!state) return false;
   return !!state.ports['vlan1']?.ipAddress;
+}
+
+function isDevicePoweredOn(device: CanvasDevice | undefined): boolean {
+  if (!device) return false;
+  return device.status !== 'offline';
+}
+
+function isConnectionCableCompatible(conn: CanvasConnection, a?: CanvasDevice, b?: CanvasDevice): boolean {
+  if (!a || !b) return true;
+
+  // The compatibility helper only knows pc/switch + ports; treat router as switch for physical cabling.
+  const toCompatType = (t: CanvasDevice['type']): 'pc' | 'switch' => (t === 'pc' ? 'pc' : 'switch');
+
+  const cable: CableInfo = {
+    connected: true,
+    cableType: conn.cableType,
+    sourceDevice: toCompatType(a.type),
+    targetDevice: toCompatType(b.type),
+    sourcePort: conn.sourceDeviceId === a.id ? conn.sourcePort : conn.targetPort,
+    targetPort: conn.sourceDeviceId === a.id ? conn.targetPort : conn.sourcePort,
+  };
+
+  return isCableCompatible(cable);
 }

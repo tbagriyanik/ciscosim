@@ -26,6 +26,8 @@ interface TerminalProps {
   onClear: () => void;
   output: TerminalOutput[];
   isLoading: boolean;
+  isConnectionError?: boolean;
+  connectionErrorMessage?: string;
   t: Translations;
   theme: string;
   language: string;
@@ -41,6 +43,8 @@ export function Terminal({
   onClear,
   output,
   isLoading,
+  isConnectionError = false,
+  connectionErrorMessage,
   t,
   theme,
   language,
@@ -63,6 +67,7 @@ export function Terminal({
   
   const terminalRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const isInputDisabled = isLoading || isConnectionError;
 
   // Advanced Command Help Tree for Network
   const networkHelp: Record<string, Record<string, string[]>> = {
@@ -117,7 +122,7 @@ export function Terminal({
 
   const handleSubmit = async (cmdToExecute?: string) => {
     const command = (cmdToExecute || input).trim();
-    if (!command || isLoading) return;
+    if (!command || isInputDisabled) return;
 
     // Add to history if not duplicate of last
     if (history[0] !== command) {
@@ -284,6 +289,11 @@ export function Terminal({
 
           {/* Input Area */}
           <div className={`p-3 border-t ${isDark ? 'border-slate-800 bg-slate-900/50' : 'bg-slate-50 border-slate-200'}`}>
+            {isConnectionError && (
+              <div className="mb-2 px-3 py-2 rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-500 text-xs font-bold tracking-wider">
+                {connectionErrorMessage || (language === 'tr' ? 'Bağlantı hatası' : 'Connection error')}
+              </div>
+            )}
             <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="flex items-center gap-2 max-w-full">
               <div className={`flex items-center gap-2 px-3 py-2 ${inputBg} rounded-lg border ${inputBorder} flex-1 group focus-within:border-cyan-500/50 transition-all`}>
                 <span className="text-cyan-500 font-bold text-xs select-none shrink-0 group-focus-within:opacity-100 transition-opacity">
@@ -295,7 +305,7 @@ export function Terminal({
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  disabled={isLoading}
+                  disabled={isInputDisabled}
                   className={`flex-1 bg-transparent border-none outline-none ${cmdColor} font-mono text-[13px] placeholder:text-slate-500 w-full`}
                   placeholder={t.typeCommand}
                   autoFocus
@@ -310,7 +320,7 @@ export function Terminal({
               
               <Button 
                 type="submit"
-                disabled={isLoading || !input.trim()}
+                disabled={isInputDisabled || !input.trim()}
                 size="icon"
                 className={`shrink-0 h-10 w-10 rounded-lg transition-all shadow-lg ${
                   input.trim() 

@@ -29,7 +29,7 @@ interface PCPanelProps {
   cableInfo: CableInfo;
   isVisible: boolean;
   onClose: () => void;
-  topologyDevices?: { id: string; type: string; name: string; ip: string; subnet?: string; gateway?: string; dns?: string; macAddress?: string; ports: { id: string; status: string }[] }[];
+  topologyDevices?: { id: string; type: string; name: string; ip: string; subnet?: string; gateway?: string; dns?: string; macAddress?: string; status?: string; vlan?: number; ports: { id: string; status: string }[] }[];
   topologyConnections?: { 
     sourceDeviceId: string; 
     sourcePort: string; 
@@ -118,6 +118,7 @@ export function PCPanel({
   // Get device from topology
   const deviceFromTopology = topologyDevices.find(d => d.id === deviceId);
   const defaultConfig = getPCConfigDefaults(deviceId);
+  const isPcPoweredOff = deviceFromTopology?.status === 'offline';
   
   const [pcIP, setPcIP] = useState(deviceFromTopology?.ip || defaultConfig.ip);
   const [pcHostname, setPcHostname] = useState(deviceFromTopology?.name || deviceId);
@@ -270,6 +271,20 @@ export function PCPanel({
     return deviceOutputs.get(connectedDeviceId) || [];
   }, [isConsoleConnected, connectedDeviceId, deviceOutputs]);
 
+  const connectedConsoleDevice = useMemo(() => {
+    if (!connectedDeviceId) return null;
+    return topologyDevices.find(d => d.id === connectedDeviceId) || null;
+  }, [connectedDeviceId, topologyDevices]);
+
+  const isConsoleTargetPoweredOff = isConsoleConnected && !!connectedConsoleDevice && connectedConsoleDevice.status === 'offline';
+  const isCmdInputDisabled = isPcPoweredOff;
+  const isConsoleInputDisabled = isPcPoweredOff || !isConsoleConnected || isConsoleTargetPoweredOff;
+
+  const connectionErrorText = useMemo(() => {
+    if (!isPcPoweredOff && !isConsoleTargetPoweredOff) return '';
+    return language === 'tr' ? 'Bağlantı hatası' : 'Connection error';
+  }, [isPcPoweredOff, isConsoleTargetPoweredOff, language]);
+
   const addLocalOutput = useCallback((type: OutputLine['type'], content: string, prompt?: string) => {
     const newLine: OutputLine = { id: Math.random().toString(36).substr(2, 9), type, content, prompt };
     setPcOutput(prev => [...prev, newLine]);
@@ -293,6 +308,12 @@ export function PCPanel({
   const executeCommand = async (cmdToExecute?: string) => {
     const command = (cmdToExecute || input).trim();
     if (!command) return;
+
+    if ((activeTab === 'desktop' && isCmdInputDisabled) || (activeTab === 'terminal' && isConsoleInputDisabled)) {
+      addLocalOutput('error', connectionErrorText || (language === 'tr' ? 'Bağlantı hatası' : 'Connection error'));
+      setInput('');
+      return;
+    }
 
     // Add to history
     if (history[0] !== command) {
@@ -717,6 +738,7 @@ export function PCPanel({
                   <button
                     key={i}
                     onClick={() => executeCommand(cmd)}
+                    disabled={activeTab === 'desktop' ? isCmdInputDisabled : isConsoleInputDisabled}
                     className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all border ${
                       isDark 
                         ? 'bg-slate-800 border-slate-700 text-slate-300 active:bg-cyan-500/20 active:text-cyan-400' 
@@ -731,6 +753,11 @@ export function PCPanel({
           )}
 
           <div className={`p-4 border-t ${isDark ? 'border-slate-800 bg-slate-900/30' : 'border-slate-200 bg-slate-50'}`}>
+            {((activeTab === 'desktop' && isCmdInputDisabled) || (activeTab === 'terminal' && (isPcPoweredOff || isConsoleTargetPoweredOff))) && (
+              <div className="mb-2 px-3 py-2 rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-500 text-xs font-bold tracking-wider">
+                {connectionErrorText || (language === 'tr' ? 'Bağlantı hatası' : 'Connection error')}
+              </div>
+            )}
             <div className="flex items-center gap-3 max-w-full">
               <div className={`flex items-center gap-3 px-4 py-2.5 ${inputBg} rounded-xl border ${inputBorder} flex-1 focus-within:border-blue-500/50 transition-all group`}>
                 <span className="text-emerald-500 font-black text-xs select-none shrink-0 opacity-50 group-focus-within:opacity-100 transition-opacity">
@@ -743,9 +770,9 @@ export function PCPanel({
                   type="text"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  disabled={activeTab === 'terminal' && !isConsoleConnected}
+                  disabled={activeTab === 'desktop' ? isCmdInputDisabled : isConsoleInputDisabled}
                   className={`flex-1 bg-transparent border-none outline-none ${cmdColor} font-mono text-[13px] placeholder:text-slate-500 w-full`}
-                  placeholder={activeTab === 'terminal' && !isConsoleConnected ? t.waitingForConnection : t.typeCommand}
+                  placeholder={activeTab === 'terminal' && !isConsoleConnected ? t.waitingForConnection : (activeTab === 'desktop' ? (isCmdInputDisabled ? connectionErrorText : t.typeCommand) : (isConsoleInputDisabled && isConsoleConnected ? connectionErrorText : t.typeCommand))}
                   onKeyDown={handleKeyDown}
                   autoComplete="off"
                   spellCheck={false}
@@ -758,7 +785,7 @@ export function PCPanel({
               
               <Button 
                 onClick={() => executeCommand()}
-                disabled={(activeTab === 'terminal' && !isConsoleConnected) || !input.trim()}
+                disabled={(activeTab === 'desktop' ? isCmdInputDisabled : isConsoleInputDisabled) || !input.trim()}
                 size="icon"
                 className={`shrink-0 h-11 w-11 rounded-xl transition-all shadow-lg ${
                   input.trim() 

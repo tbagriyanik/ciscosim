@@ -586,52 +586,82 @@ export default function Home() {
 
   const focusDeviceInTopology = useCallback((deviceId?: string) => {
     if (!deviceId) return;
-    const rect = topologyContainerRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    const targetDevice = topologyDevices.find((device) => device.id === deviceId);
-    if (!targetDevice) return;
-    setPan({
-      x: rect.width / 2 - targetDevice.x * zoom,
-      y: rect.height / 2 - targetDevice.y * zoom,
+    // Pan after any programmatic zoom/pan changes so centering uses fresh layout.
+    requestAnimationFrame(() => {
+      const rect = topologyContainerRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      const targetDevice = topologyDevices.find((device) => device.id === deviceId);
+      if (!targetDevice) return;
+      setPan({
+        x: rect.width / 2 - targetDevice.x * zoom,
+        y: rect.height / 2 - targetDevice.y * zoom,
+      });
     });
   }, [topologyDevices, zoom]);
 
-  // Handle device selection (single click) - switch to topology tab when device is selected
-  const handleDeviceSelect = useCallback((device: 'pc' | 'switch' | 'router', deviceId?: string) => {
-    setSelectedDevice(device);
-    if (deviceId) {
-      // Determine actual device type from deviceId or use the passed type
-      const actualDeviceType = deviceId.includes('router') ? 'router' : deviceId.includes('pc') ? 'pc' : 'switch';
+  const resetTopologyView = useCallback(() => {
+    const nextZoom = 1.0;
+    const PADDING = 40;
+    setZoom(nextZoom);
 
-      // Set the active device
-      setActiveDeviceId(deviceId);
-      setActiveDeviceType(actualDeviceType);
-
-      // Initialize device state if needed (for switches/routers)
-      if (actualDeviceType !== 'pc') {
-        const deviceObj = topologyDevices?.find(d => d.id === deviceId);
-        getOrCreateDeviceState(deviceId, actualDeviceType, deviceObj?.name);
-        getOrCreateDeviceOutputs(deviceId);
-      }
-      
-      // Auto-switch to topology tab when a device is selected from dropdown
-      setActiveTab('topology');
-      if (topologyContainerRef.current) {
-        focusDeviceInTopology(deviceId);
-        pendingFocusDeviceRef.current = null;
-      } else {
-        pendingFocusDeviceRef.current = deviceId;
-      }
+    if (topologyDevices.length === 0 && topologyNotes.length === 0) {
+      setPan({ x: 0, y: 0 });
+      return;
     }
-  }, [getOrCreateDeviceState, getOrCreateDeviceOutputs, topologyDevices, setSelectedDevice, setActiveDeviceId, setActiveDeviceType, setActiveTab, focusDeviceInTopology]);
+
+    const minDeviceX = topologyDevices.reduce((acc, d) => Math.min(acc, d.x), Infinity);
+    const minDeviceY = topologyDevices.reduce((acc, d) => Math.min(acc, d.y), Infinity);
+    const minNoteX = topologyNotes.reduce((acc, n) => Math.min(acc, n.x), Infinity);
+    const minNoteY = topologyNotes.reduce((acc, n) => Math.min(acc, n.y), Infinity);
+    const minX = Math.min(minDeviceX, minNoteX);
+    const minY = Math.min(minDeviceY, minNoteY);
+
+    setPan({ x: PADDING - minX * nextZoom, y: PADDING - minY * nextZoom });
+  }, [topologyDevices, topologyNotes]);
+
+  const applyDeviceSelection = useCallback((device: 'pc' | 'switch' | 'router', deviceId?: string) => {
+    setSelectedDevice(device);
+    if (!deviceId) return;
+
+    const actualDeviceType = deviceId.includes('router') ? 'router' : deviceId.includes('pc') ? 'pc' : 'switch';
+    setActiveDeviceId(deviceId);
+    setActiveDeviceType(actualDeviceType);
+
+    if (actualDeviceType !== 'pc') {
+      const deviceObj = topologyDevices?.find(d => d.id === deviceId);
+      getOrCreateDeviceState(deviceId, actualDeviceType, deviceObj?.name);
+      getOrCreateDeviceOutputs(deviceId);
+    }
+  }, [getOrCreateDeviceState, getOrCreateDeviceOutputs, topologyDevices]);
+
+  // Topology canvas click: selects device only (no zoom/pan).
+  const handleDeviceSelectFromCanvas = useCallback((device: 'pc' | 'switch' | 'router', deviceId?: string) => {
+    applyDeviceSelection(device, deviceId);
+  }, [applyDeviceSelection]);
+
+  // Device dropdown/menu click: focus the selected device at 100% zoom.
+  const handleDeviceSelectFromMenu = useCallback((device: 'pc' | 'switch' | 'router', deviceId?: string) => {
+    applyDeviceSelection(device, deviceId);
+    if (!deviceId) return;
+
+    setActiveTab('topology');
+    if (topologyContainerRef.current) {
+      resetTopologyView();
+      focusDeviceInTopology(deviceId);
+      pendingFocusDeviceRef.current = null;
+    } else {
+      pendingFocusDeviceRef.current = deviceId;
+    }
+  }, [applyDeviceSelection, focusDeviceInTopology, resetTopologyView]);
 
   useLayoutEffect(() => {
     if (activeTab !== 'topology') return;
     if (!pendingFocusDeviceRef.current) return;
     if (!topologyContainerRef.current) return;
+    resetTopologyView();
     focusDeviceInTopology(pendingFocusDeviceRef.current);
     pendingFocusDeviceRef.current = null;
-  }, [activeTab, focusDeviceInTopology]);
+  }, [activeTab, focusDeviceInTopology, resetTopologyView]);
 
   // Handle command using active device
   const handleCommand = useCallback(async (command: string) => {
@@ -1648,7 +1678,7 @@ export default function Home() {
                         <DropdownMenuItem 
                           key={device.id}
                           className={`flex items-center gap-2 py-1.5 cursor-pointer ${activeDeviceId === device.id ? 'bg-cyan-500/10 text-cyan-400' : ''}`}
-                          onClick={() => handleDeviceSelect(device.type, device.id)}
+                          onClick={() => handleDeviceSelectFromMenu(device.type, device.id)}
                         >
                           <div className="flex items-center gap-2 cursor-pointer">
                             <DeviceIcon
@@ -1801,7 +1831,7 @@ export default function Home() {
                   cableInfo={cableInfo}
                   onCableChange={setCableInfo}
                   selectedDevice={selectedDevice}
-                  onDeviceSelect={handleDeviceSelect}
+                  onDeviceSelect={handleDeviceSelectFromCanvas}
                   onDeviceDoubleClick={handleDeviceDoubleClick}
                   onTopologyChange={handleTopologyChange}
                   onDeviceDelete={handleDeviceDelete}
@@ -1865,6 +1895,8 @@ export default function Home() {
                   onClear={handleClearTerminal}
                   output={output}
                   isLoading={isExecutingCommand}
+                  isConnectionError={topologyDevices.some(d => d.id === activeDeviceId && d.status === 'offline')}
+                  connectionErrorMessage={language === 'tr' ? 'Bağlantı hatası' : 'Connection error'}
                   t={t}
                   theme={theme}
                   language={language}
