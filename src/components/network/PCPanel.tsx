@@ -31,13 +31,13 @@ interface PCPanelProps {
   onClose: () => void;
   onTogglePower?: (deviceId: string) => void;
   topologyDevices?: { id: string; type: string; name: string; ip: string; subnet?: string; gateway?: string; dns?: string; macAddress?: string; status?: string; vlan?: number; ports: { id: string; status: string }[] }[];
-  topologyConnections?: { 
-    sourceDeviceId: string; 
-    sourcePort: string; 
-    targetDeviceId: string; 
-    targetPort: string; 
+  topologyConnections?: {
+    sourceDeviceId: string;
+    sourcePort: string;
+    targetDeviceId: string;
+    targetPort: string;
     cableType?: string;
-    active?: boolean 
+    active?: boolean
   }[];
   deviceStates?: Map<string, SwitchState>;
   deviceOutputs?: Map<string, TerminalOutput[]>;
@@ -75,15 +75,15 @@ const networkHelp: Record<string, Record<string, string[]>> = {
   }
 };
 
-export function PCPanel({ 
-  deviceId, 
-  cableInfo, 
-  isVisible, 
-  onClose, 
+export function PCPanel({
+  deviceId,
+  cableInfo,
+  isVisible,
+  onClose,
   onTogglePower,
-  topologyDevices = [], 
-  topologyConnections = [], 
-  deviceStates, 
+  topologyDevices = [],
+  topologyConnections = [],
+  deviceStates,
   deviceOutputs,
   pcHistories,
   onUpdatePCHistory,
@@ -98,10 +98,10 @@ export function PCPanel({
   const cmdColor = isDark ? 'text-slate-100' : 'text-slate-900';
   const inputBg = isDark ? 'bg-black/50' : 'bg-white';
   const inputBorder = isDark ? 'border-slate-800' : 'border-slate-300';
-  
+
   const [activeTab, setActiveTab] = useState<PCActiveTab>('desktop');
   const [input, setInput] = useState('');
-  
+
   // History State
   const [history, setHistory] = useState<string[]>(() => {
     return pcHistories?.get(deviceId) || [];
@@ -121,7 +121,7 @@ export function PCPanel({
   const deviceFromTopology = topologyDevices.find(d => d.id === deviceId);
   const defaultConfig = getPCConfigDefaults(deviceId);
   const isPcPoweredOff = deviceFromTopology?.status === 'offline';
-  
+
   const [pcIP, setPcIP] = useState(deviceFromTopology?.ip || defaultConfig.ip);
   const [pcHostname, setPcHostname] = useState(deviceFromTopology?.name || deviceId);
   const pcMAC = deviceFromTopology?.macAddress || defaultConfig.mac;
@@ -134,16 +134,16 @@ export function PCPanel({
       content: 'OS Windows [Version 10.0.19045.4412]\n(c) OS Corporation. All rights reserved.\n'
     }
   ]);
-  
+
   // Tab cycle state
   const [tabCycleIndex, setTabCycleIndex] = useState(-1);
   const [lastTabInput, setLastTabInput] = useState('');
 
   // Game state
   const [gameActive, setGameActive] = useState(false);
-  const [snake, setSnake] = useState<{x: number, y: number}[]>([{x: 10, y: 10}]);
-  const [food, setFood] = useState({x: 15, y: 15});
-  const [direction, setDirection] = useState({x: 1, y: 0});
+  const [snake, setSnake] = useState<{ x: number, y: number }[]>([{ x: 10, y: 10 }]);
+  const [food, setFood] = useState({ x: 15, y: 15 });
+  const [direction, setDirection] = useState({ x: 1, y: 0 });
   const [gameScore, setGameScore] = useState(0);
   const [gameOver, setGameOver] = useState(false);
   const [gameLanguage, setGameLanguage] = useState<'en' | 'tr'>('en');
@@ -151,7 +151,7 @@ export function PCPanel({
   // Console connection state
   const [isConsoleConnected, setIsConsoleConnected] = useState(false);
   const [connectedDeviceId, setConnectedDeviceId] = useState<string | null>(null);
-  
+
   const outputRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -161,10 +161,10 @@ export function PCPanel({
     const connection = topologyConnections.find(conn => {
       // Must be an active console cable
       if (conn.cableType !== 'console' || conn.active === false) return false;
-      
+
       const isSource = conn.sourceDeviceId === deviceId;
       const isTarget = conn.targetDeviceId === deviceId;
-      
+
       // Port name checks (case insensitive)
       if (isSource) {
         const port = conn.sourcePort.toLowerCase();
@@ -191,24 +191,24 @@ export function PCPanel({
       setSnake(currentSnake => {
         const newSnake = [...currentSnake];
         const head = { ...newSnake[0] };
-        
+
         head.x += direction.x;
         head.y += direction.y;
-        
+
         // Check walls
         if (head.x < 0 || head.x >= 30 || head.y < 0 || head.y >= 20) {
           setGameOver(true);
           return currentSnake;
         }
-        
+
         // Check self collision
         if (newSnake.some(segment => segment.x === head.x && segment.y === head.y)) {
           setGameOver(true);
           return currentSnake;
         }
-        
+
         newSnake.unshift(head);
-        
+
         // Check food
         if (head.x === food.x && head.y === food.y) {
           setGameScore(prev => prev + 10);
@@ -219,7 +219,7 @@ export function PCPanel({
         } else {
           newSnake.pop();
         }
-        
+
         return newSnake;
       });
     }, 150);
@@ -236,29 +236,29 @@ export function PCPanel({
         setGameActive(false);
         return;
       }
-      
+
       if (gameOver && e.key === ' ') {
-        setSnake([{x: 10, y: 10}]);
-        setFood({x: 15, y: 15});
-        setDirection({x: 1, y: 0});
+        setSnake([{ x: 10, y: 10 }]);
+        setFood({ x: 15, y: 15 });
+        setDirection({ x: 1, y: 0 });
         setGameScore(0);
         setGameOver(false);
         return;
       }
-      
+
       // Prevent reverse direction
-      switch(e.key) {
+      switch (e.key) {
         case 'ArrowUp':
-          if (direction.y === 0) setDirection({x: 0, y: -1});
+          if (direction.y === 0) setDirection({ x: 0, y: -1 });
           break;
         case 'ArrowDown':
-          if (direction.y === 0) setDirection({x: 0, y: 1});
+          if (direction.y === 0) setDirection({ x: 0, y: 1 });
           break;
         case 'ArrowLeft':
-          if (direction.x === 0) setDirection({x: -1, y: 0});
+          if (direction.x === 0) setDirection({ x: -1, y: 0 });
           break;
         case 'ArrowRight':
-          if (direction.x === 0) setDirection({x: 1, y: 0});
+          if (direction.x === 0) setDirection({ x: 1, y: 0 });
           break;
       }
     };
@@ -290,7 +290,7 @@ export function PCPanel({
   const addLocalOutput = useCallback((type: OutputLine['type'], content: string, prompt?: string) => {
     const newLine: OutputLine = { id: Math.random().toString(36).substr(2, 9), type, content, prompt };
     setPcOutput(prev => [...prev, newLine]);
-    
+
     setTimeout(() => {
       if (outputRef.current) outputRef.current.scrollTop = outputRef.current.scrollHeight;
     }, 0);
@@ -298,12 +298,12 @@ export function PCPanel({
 
   const handleConnect = () => {
     if (!consoleDevice) return;
-    
+
     setIsConsoleConnected(true);
     setConnectedDeviceId(consoleDevice.id);
-    
+
     if (onExecuteDeviceCommand) {
-      onExecuteDeviceCommand(consoleDevice.id, '').then(() => {});
+      onExecuteDeviceCommand(consoleDevice.id, '').then(() => { });
     }
   };
 
@@ -330,7 +330,7 @@ export function PCPanel({
 
     if (activeTab === 'desktop') {
       addLocalOutput('command', command);
-      
+
       const parts = command.split(' ');
       const cmd = parts[0].toLowerCase();
       const args = parts.slice(1);
@@ -338,9 +338,9 @@ export function PCPanel({
       // Check for secret game command
       if (cmd === 'snake' || cmd === 'yilan') {
         setGameActive(true);
-        setSnake([{x: 10, y: 10}]);
-        setFood({x: 15, y: 15});
-        setDirection({x: 1, y: 0});
+        setSnake([{ x: 10, y: 10 }]);
+        setFood({ x: 15, y: 15 });
+        setDirection({ x: 1, y: 0 });
         setGameScore(0);
         setGameOver(false);
         setGameLanguage(cmd === 'yilan' ? 'tr' : 'en');
@@ -396,8 +396,8 @@ export function PCPanel({
           }
         }
       } else if (cmd === 'nslookup') {
-        const target = args[0] || 'example.com';
-        addLocalOutput('output', `Server:  public-dns.example.com\nAddress:  8.8.8.8\n\nNon-authoritative answer:\nName:    ${target}\nAddresses:  93.184.216.34`);
+        const target = args[0] || 'yunus.sf.net';
+        addLocalOutput('output', `Server:  public-dns.yunus.sf.net\nAddress:  8.8.8.8\n\nNon-authoritative answer:\nName:    ${target}\nAddresses:  93.184.216.34`);
       } else if (cmd === 'arp') {
         if (args[0] === '-a' || !args[0]) {
           addLocalOutput('output', `Interface: ${pcIP} --- 0x2\n  Internet Address      Physical Address      Type\n  192.168.1.1           00-15-2b-e4-9b-60     dynamic\n  192.168.1.255         ff-ff-ff-ff-ff-ff     static`);
@@ -437,8 +437,8 @@ export function PCPanel({
       } else if (cmd === 'hostname') {
         if (args[0]) {
           let name = args[0];
-          if ((name.startsWith('"') && name.endsWith('"')) || 
-              (name.startsWith("'") && name.endsWith("'"))) {
+          if ((name.startsWith('"') && name.endsWith('"')) ||
+            (name.startsWith("'") && name.endsWith("'"))) {
             name = name.substring(1, name.length - 1);
           }
           setPcHostname(name);
@@ -492,7 +492,7 @@ export function PCPanel({
       if (onExecuteDeviceCommand && connectedDeviceId) {
         try {
           await onExecuteDeviceCommand(connectedDeviceId, command);
-        } catch (err) {}
+        } catch (err) { }
       }
     }
   };
@@ -536,7 +536,7 @@ export function PCPanel({
     if (activeTab === 'desktop') {
       const pcCmds = ['ipconfig', 'ipv6config', 'ping', 'tracert', 'nslookup', 'arp', 'netstat', 'hostname', 'dir', 'ver', 'help', 'cls', 'exit', 'quit', 'mkdir', 'rmdir', 'delete', 'ftp', 'ssh', 'telnet', 'python', 'js', 'ide', 'ioxclient', 'snake', 'yilan'];
       const matches = pcCmds.filter(c => c.toLowerCase().startsWith(value.toLowerCase()));
-      
+
       if (matches.length > 0) {
         if (tabCycleIndex === -1) {
           setLastTabInput(value);
@@ -554,14 +554,14 @@ export function PCPanel({
 
       const mode = state.currentMode;
       const helpTree = networkHelp[mode] || networkHelp.user;
-      
+
       const parts = value.split(/\s+/);
       const hasTrailingSpace = value.endsWith(' ');
-      
+
       const currentWord = hasTrailingSpace ? '' : parts[parts.length - 1].toLowerCase();
       const previousContext = hasTrailingSpace ? value.trim() : parts.slice(0, -1).join(' ');
       const contextKey = previousContext.toLowerCase();
-      
+
       let options: string[] = [];
       if (!previousContext) {
         options = helpTree[''];
@@ -570,7 +570,7 @@ export function PCPanel({
       }
 
       const matches = options.filter(opt => opt.toLowerCase().startsWith(currentWord));
-      
+
       if (matches.length > 0) {
         if (tabCycleIndex === -1) {
           setLastTabInput(value);
@@ -609,12 +609,11 @@ export function PCPanel({
 
   return (
     <div className={`w-full h-full flex flex-col flex-1 overflow-hidden h-full min-h-0`}>
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className={`w-full h-full flex flex-col flex-1 rounded-2xl overflow-hidden border ${
-          isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'
-        } shadow-2xl min-h-0`}
+        className={`w-full h-full flex flex-col flex-1 rounded-2xl overflow-hidden border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'
+          } shadow-2xl min-h-0`}
       >
         {/* Header */}
         <div className={`px-5 py-3 flex items-center justify-between border-b ${isDark ? 'border-slate-800/50 bg-slate-800/20' : 'border-slate-200 bg-slate-50'}`}>
@@ -655,24 +654,22 @@ export function PCPanel({
 
         {/* Navigation Tabs */}
         <div className={`px-4 py-1.5 flex items-center gap-1 border-b ${isDark ? 'border-slate-800 bg-slate-900' : 'border-slate-200 bg-white'}`}>
-          <Button 
+          <Button
             variant={activeTab === 'desktop' ? 'secondary' : 'ghost'}
             size="sm"
             onClick={() => setActiveTab('desktop')}
-            className={`h-9 px-4 text-xs font-black tracking-wider uppercase transition-all gap-2 ${
-              activeTab === 'desktop' ? 'bg-blue-500/10 text-blue-400' : 'text-slate-500'
-            }`}
+            className={`h-9 px-4 text-xs font-black tracking-wider uppercase transition-all gap-2 ${activeTab === 'desktop' ? 'bg-blue-500/10 text-blue-400' : 'text-slate-500'
+              }`}
           >
             <Globe className="w-3.5 h-3.5" />
             Desktop
           </Button>
-          <Button 
+          <Button
             variant={activeTab === 'terminal' ? 'secondary' : 'ghost'}
             size="sm"
             onClick={() => setActiveTab('terminal')}
-            className={`h-9 px-4 text-xs font-black tracking-wider uppercase transition-all gap-2 ${
-              activeTab === 'terminal' ? 'bg-blue-500/10 text-blue-400' : 'text-slate-500'
-            }`}
+            className={`h-9 px-4 text-xs font-black tracking-wider uppercase transition-all gap-2 ${activeTab === 'terminal' ? 'bg-blue-500/10 text-blue-400' : 'text-slate-500'
+              }`}
           >
             <TerminalIcon className="w-3.5 h-3.5" />
             Console
@@ -689,20 +686,19 @@ export function PCPanel({
                 </div>
                 <h3 className={`text-sm font-black ${isDark ? 'text-white' : 'text-slate-900'} mb-1 uppercase tracking-tight`}>{t.consoleTerminal}</h3>
                 <p className={`text-xs font-bold ${isDark ? 'text-slate-500' : 'text-slate-400'} mb-3 leading-relaxed px-1`}>
-                  {consoleDevice 
+                  {consoleDevice
                     ? `${t.physicalConnectionDetected} ${consoleDevice.name}. Port: 9600-8-N-1`
                     : t.noConsoleCableDetected}
                 </p>
                 <div className="flex flex-col gap-2">
-                  <Button 
+                  <Button
                     disabled={!consoleDevice}
                     onClick={handleConnect}
                     size="sm"
-                    className={`rounded-lg font-black uppercase tracking-widest gap-2 h-8 ${
-                      consoleDevice 
-                        ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/20 active:scale-95' 
+                    className={`rounded-lg font-black uppercase tracking-widest gap-2 h-8 ${consoleDevice
+                        ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/20 active:scale-95'
                         : isDark ? 'bg-slate-800 text-slate-600' : 'bg-slate-200 text-slate-400'
-                    } cursor-not-allowed`}
+                      } cursor-not-allowed`}
                   >
                     <TerminalIcon className="w-4 h-4" />
                     {t.connect}
@@ -715,7 +711,7 @@ export function PCPanel({
             </div>
           )}
 
-          <div 
+          <div
             ref={outputRef}
             className="flex-1 overflow-y-auto scroll-smooth custom-scrollbar p-6 space-y-2 font-mono text-sm leading-relaxed flex flex-col"
           >
@@ -757,11 +753,10 @@ export function PCPanel({
                     key={i}
                     onClick={() => executeCommand(cmd)}
                     disabled={activeTab === 'desktop' ? isCmdInputDisabled : isConsoleInputDisabled}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all border ${
-                      isDark 
-                        ? 'bg-slate-800 border-slate-700 text-slate-300 active:bg-cyan-500/20 active:text-cyan-400' 
+                    className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all border ${isDark
+                        ? 'bg-slate-800 border-slate-700 text-slate-300 active:bg-cyan-500/20 active:text-cyan-400'
                         : 'bg-white border-slate-200 text-slate-600 active:bg-cyan-50'
-                    }`}
+                      }`}
                   >
                     {cmd}
                   </button>
@@ -779,8 +774,8 @@ export function PCPanel({
             <div className="flex items-center gap-3 max-w-full">
               <div className={`flex items-center gap-3 px-4 py-2.5 ${inputBg} rounded-xl border ${inputBorder} flex-1 focus-within:border-blue-500/50 transition-all group`}>
                 <span className="text-emerald-500 font-black text-xs select-none shrink-0 opacity-50 group-focus-within:opacity-100 transition-opacity">
-                  {activeTab === 'desktop' 
-                    ? 'C:\\>' 
+                  {activeTab === 'desktop'
+                    ? 'C:\\>'
                     : (isConsoleConnected ? (activeConsoleOutput.findLast(l => l.prompt !== undefined)?.prompt || '>') : 'OFFLINE>')}
                 </span>
                 <input
@@ -800,16 +795,15 @@ export function PCPanel({
                   Enter
                 </div>
               </div>
-              
-              <Button 
+
+              <Button
                 onClick={() => executeCommand()}
                 disabled={(activeTab === 'desktop' ? isCmdInputDisabled : isConsoleInputDisabled) || !input.trim()}
                 size="icon"
-                className={`shrink-0 h-11 w-11 rounded-xl transition-all shadow-lg ${
-                  input.trim() 
-                    ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-500/20 active:scale-95' 
+                className={`shrink-0 h-11 w-11 rounded-xl transition-all shadow-lg ${input.trim()
+                    ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-500/20 active:scale-95'
                     : isDark ? 'bg-slate-800 text-slate-700' : 'bg-slate-200 text-slate-400'
-                } cursor-not-allowed opacity-50`}
+                  } cursor-not-allowed opacity-50`}
               >
                 <CornerDownLeft className="w-5 h-5" />
               </Button>
@@ -853,7 +847,7 @@ export function PCPanel({
                   </Button>
                 </div>
               </div>
-              
+
               <div className="relative bg-black rounded-lg p-4 mb-4 overflow-hidden">
                 <div className="grid grid-cols-30 gap-0" style={{ gridTemplateColumns: 'repeat(30, 1fr)' }}>
                   {Array.from({ length: 600 }).map((_, index) => {
@@ -862,21 +856,20 @@ export function PCPanel({
                     const isSnake = snake.some(s => s.x === x && s.y === y);
                     const isFood = food.x === x && food.y === y;
                     const isHead = snake[0]?.x === x && snake[0]?.y === y;
-                    
+
                     return (
                       <div
                         key={index}
-                        className={`aspect-square ${
-                          isHead ? 'bg-cyan-400' :
-                          isSnake ? 'bg-cyan-600' :
-                          isFood ? 'bg-red-500' :
-                          'border border-slate-800/30'
-                        }`}
+                        className={`aspect-square ${isHead ? 'bg-cyan-400' :
+                            isSnake ? 'bg-cyan-600' :
+                              isFood ? 'bg-red-500' :
+                                'border border-slate-800/30'
+                          }`}
                       />
                     );
                   })}
                 </div>
-                
+
                 {gameOver && (
                   <div className="absolute inset-0 bg-black/80 flex items-center justify-center">
                     <div className="text-center">
@@ -888,9 +881,9 @@ export function PCPanel({
                       </p>
                       <button
                         onClick={() => {
-                          setSnake([{x: 10, y: 10}]);
-                          setFood({x: 15, y: 15});
-                          setDirection({x: 1, y: 0});
+                          setSnake([{ x: 10, y: 10 }]);
+                          setFood({ x: 15, y: 15 });
+                          setDirection({ x: 1, y: 0 });
                           setGameScore(0);
                           setGameOver(false);
                         }}
@@ -902,7 +895,7 @@ export function PCPanel({
                   </div>
                 )}
               </div>
-              
+
               {/* Mobile Controls */}
               <div className="flex flex-col items-center gap-4 mt-4 sm:hidden">
                 <div className="grid grid-cols-3 gap-2">
@@ -911,17 +904,17 @@ export function PCPanel({
                     variant="outline"
                     size="icon"
                     className="w-14 h-14 rounded-full border-cyan-500/30 bg-cyan-500/5"
-                    onClick={() => direction.y === 0 && setDirection({x: 0, y: -1})}
+                    onClick={() => direction.y === 0 && setDirection({ x: 0, y: -1 })}
                   >
                     <ChevronUp className="w-8 h-8 text-cyan-500" />
                   </Button>
                   <div />
-                  
+
                   <Button
                     variant="outline"
                     size="icon"
                     className="w-14 h-14 rounded-full border-cyan-500/30 bg-cyan-500/5"
-                    onClick={() => direction.x === 0 && setDirection({x: -1, y: 0})}
+                    onClick={() => direction.x === 0 && setDirection({ x: -1, y: 0 })}
                   >
                     <ChevronLeft className="w-8 h-8 text-cyan-500" />
                   </Button>
@@ -930,13 +923,13 @@ export function PCPanel({
                     size="icon"
                     className="w-14 h-14 rounded-full border-cyan-500/30 bg-cyan-500/5"
                     onClick={() => {
-                       if (gameOver) {
-                         setSnake([{x: 10, y: 10}]);
-                         setFood({x: 15, y: 15});
-                         setDirection({x: 1, y: 0});
-                         setGameScore(0);
-                         setGameOver(false);
-                       }
+                      if (gameOver) {
+                        setSnake([{ x: 10, y: 10 }]);
+                        setFood({ x: 15, y: 15 });
+                        setDirection({ x: 1, y: 0 });
+                        setGameScore(0);
+                        setGameOver(false);
+                      }
                     }}
                   >
                     <div className="w-4 h-4 rounded-full bg-cyan-500 animate-pulse" />
@@ -945,17 +938,17 @@ export function PCPanel({
                     variant="outline"
                     size="icon"
                     className="w-14 h-14 rounded-full border-cyan-500/30 bg-cyan-500/5"
-                    onClick={() => direction.x === 0 && setDirection({x: 1, y: 0})}
+                    onClick={() => direction.x === 0 && setDirection({ x: 1, y: 0 })}
                   >
                     <ChevronRight className="w-8 h-8 text-cyan-500" />
                   </Button>
-                  
+
                   <div />
                   <Button
                     variant="outline"
                     size="icon"
                     className="w-14 h-14 rounded-full border-cyan-500/30 bg-cyan-500/5"
-                    onClick={() => direction.y === 0 && setDirection({x: 0, y: 1})}
+                    onClick={() => direction.y === 0 && setDirection({ x: 0, y: 1 })}
                   >
                     <ChevronDown className="w-8 h-8 text-cyan-500" />
                   </Button>

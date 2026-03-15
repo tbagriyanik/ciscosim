@@ -2412,7 +2412,7 @@ function cmdInterfaceRange(state: SwitchState, input: string, language: 'tr' | '
       
       for (let i = startPort; i <= endPort; i++) {
         const portId = `${prefix}${moduleNum}/${i}`;
-        // Cisco physical limit check: only allow existing ports
+        // physical limit check: only allow existing ports
         if (state.ports[portId]) {
           selectedPorts.push(portId);
         }

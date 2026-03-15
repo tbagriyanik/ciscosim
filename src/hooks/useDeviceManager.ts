@@ -68,7 +68,7 @@ export function useDeviceManager(language: 'tr' | 'en') {
       const state = deviceStates.get(deviceId);
       const isRouter = deviceId.includes('router');
       outputs = [
-        { id: `boot-1-${Date.now()}`, type: 'output', content: isRouter ? '\n\nSystem Bootstrap, Version 15.1(4)M4, RELEASE SOFTWARE (fc1)\nTechnical Support: http://example.com\nCopyright (c) 1986-2026 by Systems, Inc.\n' : '\n\nSystem Bootstrap, Version 12.1(11r)EA1, RELEASE SOFTWARE (fc1)\nTechnical Support: http://example.com\nCopyright (c) 1986-2026 by Systems, Inc.\n' },
+        { id: `boot-1-${Date.now()}`, type: 'output', content: isRouter ? '\n\nSystem Bootstrap, Version 15.1(4)M4, RELEASE SOFTWARE (fc1)\nTechnical Support: http://yunus.sf.net\nCopyright (c) 1986-2026 by Systems, Inc.\n' : '\n\nSystem Bootstrap, Version 12.1(11r)EA1, RELEASE SOFTWARE (fc1)\nTechnical Support: http://yunus.sf.net\nCopyright (c) 1986-2026 by Systems, Inc.\n' },
         { id: `boot-2-${Date.now()}`, type: 'output', content: isRouter ? 'C1900 platform with 524288K bytes of main memory\nMain memory configured to 64 bit mode with ECC disabled\n' : 'C2960 platform with 262144K bytes of main memory\nMain memory configured to 32 bit mode with ECC enabled\n' },
         { id: `boot-3-${Date.now()}`, type: 'output', content: '\nLoading the runtime image: ######################################## [OK]\n' }
       ];
@@ -186,22 +186,22 @@ export function useDeviceManager(language: 'tr' | 'en') {
     ]]]));
   };
 
-  return { 
-    deviceStates, 
-    setDeviceStates, 
-    deviceOutputs, 
-    setDeviceOutputs, 
-    pcOutputs, 
-    setPcOutputs, 
+  return {
+    deviceStates,
+    setDeviceStates,
+    deviceOutputs,
+    setDeviceOutputs,
+    pcOutputs,
+    setPcOutputs,
     pcHistories,
     setPcHistories,
-    isLoading, 
-    confirmDialog, 
-    setConfirmDialog, 
-    getOrCreateDeviceState, 
-    getOrCreateDeviceOutputs, 
-    getOrCreatePCOutputs, 
-    handleCommandForDevice, 
-    resetAll 
+    isLoading,
+    confirmDialog,
+    setConfirmDialog,
+    getOrCreateDeviceState,
+    getOrCreateDeviceOutputs,
+    getOrCreatePCOutputs,
+    handleCommandForDevice,
+    resetAll
   };
 }

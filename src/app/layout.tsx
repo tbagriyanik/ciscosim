@@ -26,7 +26,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Network Simulator 2026",
     description: "Practice Network NOS commands in an interactive web-based simulator",
-    url: "https://network-simulator.example.com",
+    url: "https://yunus.sf.net",
     siteName: "Network Simulator 2026",
     type: "website",
   },
