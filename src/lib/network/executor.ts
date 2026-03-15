@@ -1720,7 +1720,17 @@ function cmdSwitchportMode(state: SwitchState, input: string): CommandResult {
   const newPorts = { ...state.ports };
   for (const portId of interfaces) {
     if (newPorts[portId]) {
-      newPorts[portId] = { ...newPorts[portId], mode };
+      const current = newPorts[portId];
+      if (mode === 'trunk') {
+        newPorts[portId] = {
+          ...current,
+          mode,
+          allowedVlans: current.allowedVlans ?? 'all'
+        };
+      } else {
+        const { allowedVlans, ...rest } = current;
+        newPorts[portId] = { ...rest, mode };
+      }
     }
   }
   
@@ -1998,6 +2008,9 @@ function cmdShowInterfacesStatus(state: SwitchState): CommandResult {
 }
 
 function cmdShowInterface(state: SwitchState, input: string): CommandResult {
+  if (/^show\s+interface\s+trunk$/i.test(input.trim())) {
+    return cmdShowInterfacesTrunk(state);
+  }
   const match = input.match(/^show\s+interface\s+(.+)$/i);
   if (!match) return { success: false, error: '% Invalid interface' };
   
@@ -2772,6 +2785,9 @@ function cmdShowInterfaces(state: SwitchState, input: string): CommandResult {
   if (input.toLowerCase().includes('status')) {
     return cmdShowInterfacesStatus(state);
   }
+  if (input.toLowerCase().includes('trunk')) {
+    return cmdShowInterfacesTrunk(state);
+  }
   
   let output = '';
   
@@ -2788,6 +2804,81 @@ function cmdShowInterfaces(state: SwitchState, input: string): CommandResult {
     output += `  Duplex: ${port.duplex}, Speed: ${port.speed}\n\n`;
   });
   
+  return { success: true, output };
+}
+
+function cmdShowInterfacesTrunk(state: SwitchState): CommandResult {
+  const trunkPorts = Object.values(state.ports)
+    .filter(p => p.mode === 'trunk')
+    .sort((a, b) => a.id.localeCompare(b.id));
+
+  if (trunkPorts.length === 0) {
+    return { success: true, output: '\nNo trunking interfaces found.\n' };
+  }
+
+  const formatVlanList = (vlans: number[]): string => {
+    const sorted = Array.from(new Set(vlans)).sort((a, b) => a - b);
+    const ranges: string[] = [];
+    let start = sorted[0];
+    let prev = sorted[0];
+    for (let i = 1; i < sorted.length; i++) {
+      const curr = sorted[i];
+      if (curr === prev + 1) {
+        prev = curr;
+        continue;
+      }
+      ranges.push(start === prev ? `${start}` : `${start}-${prev}`);
+      start = curr;
+      prev = curr;
+    }
+    ranges.push(start === prev ? `${start}` : `${start}-${prev}`);
+    return ranges.join(',');
+  };
+
+  const activeVlans = Object.values(state.vlans).map(v => v.id).sort((a, b) => a - b);
+  const activeList = activeVlans.length ? formatVlanList(activeVlans) : '1';
+
+  let output = '\nPort        Mode         Encapsulation  Status        Native vlan\n';
+  output += '----------- ------------ ------------- ------------- -----------\n';
+
+  trunkPorts.forEach(port => {
+    const portUpper = port.id.toUpperCase().replace('FA', 'FastEthernet').replace('GI', 'GigabitEthernet');
+    const status = port.shutdown ? 'not-trunking' : 'trunking';
+    output += `${portUpper.padEnd(11)} on           802.1q        ${status.padEnd(13)} 1\n`;
+  });
+
+  output += '\nPort        Vlans allowed on trunk\n';
+  output += '----------- -------------------------\n';
+  trunkPorts.forEach(port => {
+    const portUpper = port.id.toUpperCase().replace('FA', 'FastEthernet').replace('GI', 'GigabitEthernet');
+    const allowed = port.allowedVlans === 'all' || !port.allowedVlans
+      ? '1-4094'
+      : formatVlanList(port.allowedVlans);
+    output += `${portUpper.padEnd(11)} ${allowed}\n`;
+  });
+
+  output += '\nPort        Vlans allowed and active in management domain\n';
+  output += '----------- -------------------------------------------\n';
+  trunkPorts.forEach(port => {
+    const portUpper = port.id.toUpperCase().replace('FA', 'FastEthernet').replace('GI', 'GigabitEthernet');
+    const allowedSet = port.allowedVlans === 'all' || !port.allowedVlans
+      ? activeVlans
+      : activeVlans.filter(v => port.allowedVlans?.includes(v));
+    const allowedActive = allowedSet.length ? formatVlanList(allowedSet) : 'none';
+    output += `${portUpper.padEnd(11)} ${allowedActive}\n`;
+  });
+
+  output += '\nPort        Vlans in spanning tree forwarding state and not pruned\n';
+  output += '----------- -----------------------------------------------------\n';
+  trunkPorts.forEach(port => {
+    const portUpper = port.id.toUpperCase().replace('FA', 'FastEthernet').replace('GI', 'GigabitEthernet');
+    const allowedSet = port.allowedVlans === 'all' || !port.allowedVlans
+      ? activeVlans
+      : activeVlans.filter(v => port.allowedVlans?.includes(v));
+    const stpList = allowedSet.length ? formatVlanList(allowedSet) : 'none';
+    output += `${portUpper.padEnd(11)} ${stpList}\n`;
+  });
+
   return { success: true, output };
 }
 

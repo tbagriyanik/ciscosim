@@ -184,6 +184,35 @@ export function checkConnectivity(
     }
   }
 
+  // 5. Enforce same-VLAN ping for L2-only simulation
+  if (deviceStates) {
+    const getDeviceVlanForIp = (deviceId: string, ip: string): number | null => {
+      const device = devices.find(d => d.id === deviceId);
+      if (!device) return null;
+      if (device.type === 'pc') return device.vlan || 1;
+
+      const state = deviceStates.get(deviceId);
+      if (!state) return null;
+      if (state.ports['vlan1']?.ipAddress === ip) return 1;
+
+      // If IP is on a routed physical interface, treat as L3 (skip VLAN enforcement here)
+      const onPhysical = Object.values(state.ports).some(p => p.ipAddress === ip);
+      return onPhysical ? null : 1;
+    };
+
+    const sourceDevice = devices.find(d => d.id === sourceId);
+    const sourceIp = sourceDevice?.ip || deviceStates.get(sourceId)?.ports['vlan1']?.ipAddress || '';
+    const sourceVlan = sourceIp ? getDeviceVlanForIp(sourceId, sourceIp) : null;
+    const targetVlan = getDeviceVlanForIp(targetDevice.id, targetIp);
+    if (sourceVlan !== null && targetVlan !== null && sourceVlan !== targetVlan) {
+      return {
+        success: false,
+        hops: path.map(id => devices.find(d => d.id === id)?.name || id),
+        error: `VLAN mismatch: source VLAN ${sourceVlan}, target VLAN ${targetVlan}.`
+      };
+    }
+  }
+
   // 3. Layer 3 Logic (Simplified for simulation)
   // For a "kusursuz" (flawless) system, we should check subnets
   // But for now, if physical path exists and IPs are in same subnet or routed, it's a success

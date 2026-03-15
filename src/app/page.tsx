@@ -685,9 +685,10 @@ export default function Home() {
       command, 
       topologyDevices, 
       setActiveDeviceId, 
-      setActiveDeviceType
+      setActiveDeviceType,
+      topologyConnections
     );
-  }, [activeDeviceId, handleCommandForDevice, topologyDevices, setActiveDeviceId, setActiveDeviceType]);
+  }, [activeDeviceId, handleCommandForDevice, topologyDevices, topologyConnections, setActiveDeviceId, setActiveDeviceType]);
 
   const prompt = getPrompt(state);
 
@@ -697,9 +698,10 @@ export default function Home() {
       command,
       topologyDevices,
       setActiveDeviceId,
-      setActiveDeviceType
+      setActiveDeviceType,
+      topologyConnections
     );
-  }, [handleCommandForDevice, topologyDevices, setActiveDeviceId, setActiveDeviceType]);
+  }, [handleCommandForDevice, topologyDevices, topologyConnections, setActiveDeviceId, setActiveDeviceType]);
 
   const handleReset = () => {
     setConfirmDialog({

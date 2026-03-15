@@ -132,9 +132,6 @@ export function useDeviceManager(language: 'tr' | 'en') {
       const newOutputs: TerminalOutput[] = [];
       if (!deviceState.awaitingPassword) {
         newOutputs.push({ id: Date.now().toString(), type: 'command', content: command, prompt: devicePrompt });
-        if (newState?.commandHistory) {
-          setDeviceStates(prev => new Map(prev).set(deviceId, { ...deviceState, commandHistory: newState.commandHistory! }));
-        }
       }
 
       if (success) {
@@ -144,7 +141,91 @@ export function useDeviceManager(language: 'tr' | 'en') {
           newOutputs.push({ id: `${Date.now()}-out`, type: 'output', content: result.output });
         }
         if (newState) {
-          setDeviceStates(prev => new Map(prev).set(deviceId, { ...deviceState, ...newState }));
+          const shouldPropagateVlans = !!topologyConnections && !!topologyDevices && /^(no\s+)?vlan\s+\d+/i.test(command.trim());
+          setDeviceStates(prev => {
+            const next = new Map(prev);
+            const mergedState = { ...deviceState, ...newState };
+            next.set(deviceId, mergedState);
+
+            if (shouldPropagateVlans) {
+              const beforeVlans = new Set(Object.keys(deviceState.vlans || {}).map(Number));
+              const afterVlans = new Set(Object.keys(mergedState.vlans || {}).map(Number));
+              const addedVlans = Array.from(afterVlans).filter(v => !beforeVlans.has(v));
+              const removedVlans = Array.from(beforeVlans).filter(v => !afterVlans.has(v));
+
+              const sourceDevice = topologyDevices.find(d => d.id === deviceId);
+              if (sourceDevice?.type === 'switch') {
+                const sourceMode = mergedState.vtpMode;
+                if (sourceMode !== 'transparent' && sourceMode !== 'off' && sourceMode !== 'client') {
+                  const sourceDomain = mergedState.vtpDomain || '';
+
+                  topologyConnections.forEach(conn => {
+                    const isSource = conn.sourceDeviceId === deviceId || conn.targetDeviceId === deviceId;
+                    if (!isSource) return;
+
+                    const neighborId = conn.sourceDeviceId === deviceId ? conn.targetDeviceId : conn.sourceDeviceId;
+                    const neighborDevice = topologyDevices.find(d => d.id === neighborId);
+                    if (neighborDevice?.type !== 'switch') return;
+
+                    const sourcePortId = conn.sourceDeviceId === deviceId ? conn.sourcePort : conn.targetPort;
+                    const neighborPortId = conn.sourceDeviceId === deviceId ? conn.targetPort : conn.sourcePort;
+                    const sourcePort = mergedState.ports[sourcePortId];
+                    const neighborState = next.get(neighborId);
+                    if (!neighborState || !sourcePort) return;
+
+                    const neighborPort = neighborState.ports[neighborPortId];
+                    if (!neighborPort) return;
+
+                    if (sourcePort.mode !== 'trunk' || neighborPort.mode !== 'trunk') return;
+
+                    const neighborMode = neighborState.vtpMode;
+                    if (neighborMode === 'transparent' || neighborMode === 'off') return;
+
+                    const neighborDomain = neighborState.vtpDomain || '';
+                    if (sourceDomain !== neighborDomain) return;
+
+                    const isAllowed = (port: typeof sourcePort, vlanId: number) => {
+                      if (!port.allowedVlans || port.allowedVlans === 'all') return true;
+                      return port.allowedVlans.includes(vlanId);
+                    };
+
+                    const nextVlans = { ...neighborState.vlans };
+                    let changed = false;
+
+                    addedVlans.forEach(vlanId => {
+                      if (!isAllowed(sourcePort, vlanId) || !isAllowed(neighborPort, vlanId)) return;
+                      if (!nextVlans[vlanId]) {
+                        nextVlans[vlanId] = { id: vlanId, name: `VLAN${vlanId}`, status: 'active', ports: [] };
+                        changed = true;
+                      }
+                    });
+
+                    removedVlans.forEach(vlanId => {
+                      if ([1, 1002, 1003, 1004, 1005].includes(vlanId)) return;
+                      if (nextVlans[vlanId]) {
+                        delete nextVlans[vlanId];
+                        changed = true;
+                      }
+                    });
+
+                    if (changed) {
+                      const nextPorts = { ...neighborState.ports };
+                      removedVlans.forEach(vlanId => {
+                        Object.values(nextPorts).forEach(port => {
+                          if (port.vlan === vlanId) {
+                            nextPorts[port.id] = { ...port, vlan: 1 };
+                          }
+                        });
+                      });
+                      next.set(neighborId, { ...neighborState, vlans: nextVlans, ports: nextPorts });
+                    }
+                  });
+                }
+              }
+            }
+
+            return next;
+          });
         }
 
         if (result.telnetTarget && topologyDevices) {
