@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { SwitchState } from '@/lib/network/types';
 import { Translations } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import { CornerDownLeft, Terminal as TerminalIcon, Trash2, Command, Info, History, ChevronRight, X } from 'lucide-react';
 import { QuickCommands } from './QuickCommands';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -74,7 +76,10 @@ export function Terminal({
 
   const terminalRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const isInputDisabled = isLoading || isConnectionError;
+  const passwordRef = useRef<HTMLInputElement>(null);
+  const isInputDisabled = isLoading || isConnectionError || state.awaitingPassword;
+  const [showPasswordPrompt, setShowPasswordPrompt] = useState(false);
+  const [passwordInput, setPasswordInput] = useState('');
 
   // Advanced Command Help Tree for Network
   const networkHelp: Record<string, Record<string, string[]>> = {
@@ -127,6 +132,17 @@ export function Terminal({
     inputRef.current?.focus();
   }, []);
 
+  useEffect(() => {
+    if (state.awaitingPassword) {
+      setShowPasswordPrompt(true);
+      setPasswordInput('');
+      setTimeout(() => passwordRef.current?.focus(), 0);
+    } else {
+      setShowPasswordPrompt(false);
+      setPasswordInput('');
+    }
+  }, [state.awaitingPassword]);
+
   const handleSubmit = async (cmdToExecute?: string) => {
     const command = (cmdToExecute || input).trim();
     if (!command || isInputDisabled) return;
@@ -144,6 +160,14 @@ export function Terminal({
 
     setInput('');
     await onCommand(command);
+  };
+
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const value = passwordInput.trim();
+    if (!value) return;
+    await onCommand(value);
+    setPasswordInput('');
   };
 
   const handleTabComplete = useCallback(() => {
@@ -236,6 +260,35 @@ export function Terminal({
 
   return (
     <TooltipProvider>
+      <Dialog
+        open={showPasswordPrompt}
+        onOpenChange={(open) => {
+          if (!open && state.awaitingPassword) return;
+          setShowPasswordPrompt(open);
+        }}
+      >
+        <DialogContent showCloseButton={false} className={`${isDark ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white'} sm:max-w-sm`}>
+          <DialogHeader>
+            <DialogTitle>{language === 'tr' ? 'Parola Gerekli' : 'Password Required'}</DialogTitle>
+            <DialogDescription className={isDark ? 'text-slate-400' : 'text-slate-500'}>
+              {language === 'tr' ? 'Lütfen devam etmek için parolayı girin.' : 'Enter the password to continue.'}
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handlePasswordSubmit} className="flex flex-col gap-3">
+            <Input
+              ref={passwordRef}
+              type="password"
+              value={passwordInput}
+              onChange={(e) => setPasswordInput(e.target.value)}
+              placeholder={language === 'tr' ? 'Parola' : 'Password'}
+              autoComplete="current-password"
+            />
+            <Button type="submit" disabled={!passwordInput.trim()} className="w-full bg-cyan-600 hover:bg-cyan-500 text-white">
+              {language === 'tr' ? 'Gönder' : 'Submit'}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
       <div className="flex flex-col flex-1 gap-4 overflow-hidden h-full">
         <Card className={`${cardBg} shadow-xl border-t-4 border-t-cyan-500 rounded-xl overflow-hidden flex flex-col flex-1 min-h-0`}>
           <CardHeader className={`py-3 px-5 border-b ${isDark ? 'border-slate-800/50 bg-slate-800/20' : 'border-slate-200 bg-slate-50'}`}>

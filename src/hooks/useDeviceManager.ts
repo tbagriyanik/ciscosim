@@ -115,6 +115,21 @@ export function useDeviceManager(language: 'tr' | 'en') {
       const devicePrompt = getPrompt(deviceState);
       const { requiresConfirmation, confirmationMessage, confirmationAction, success, newState, error, ...result } = executeCommand(deviceState, command, language, topologyDevices ?? undefined, topologyConnections ?? undefined, deviceStates);
 
+      const trimmedCommand = command.trim().toLowerCase();
+      if (!requiresConfirmation && !skipConfirm && trimmedCommand.startsWith('reload')) {
+        setIsLoading(false);
+        setConfirmDialog({
+          show: true,
+          message: confirmationMessage || 'Proceed with reload? [confirm]',
+          action: confirmationAction || 'reload',
+          onConfirm: () => {
+            setConfirmDialog(null);
+            handleCommandForDevice(deviceId, command, topologyDevices, setActiveDeviceId, setActiveDeviceType, topologyConnections, true);
+          }
+        });
+        return;
+      }
+
       if (requiresConfirmation && !skipConfirm) {
         setIsLoading(false);
         setConfirmDialog({

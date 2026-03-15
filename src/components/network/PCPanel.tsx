@@ -8,6 +8,8 @@ import { useTheme } from '@/contexts/ThemeContext';
 import type { TerminalOutput } from './Terminal';
 import { checkConnectivity } from '@/lib/network/connectivity';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import { Laptop, Monitor, Terminal as TerminalIcon, X, CornerDownLeft, Command, Globe, Network, ShieldCheck, History, ChevronUp, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 
 // PC Icon component matching the main screen
@@ -280,7 +282,22 @@ export function PCPanel({
 
   const isConsoleTargetPoweredOff = isConsoleConnected && !!connectedConsoleDevice && connectedConsoleDevice.status === 'offline';
   const isCmdInputDisabled = isPcPoweredOff;
-  const isConsoleInputDisabled = isPcPoweredOff || !isConsoleConnected || isConsoleTargetPoweredOff;
+  const consoleAwaitingPassword = !!(connectedDeviceId && deviceStates?.get(connectedDeviceId)?.awaitingPassword);
+  const isConsoleInputDisabled = isPcPoweredOff || !isConsoleConnected || isConsoleTargetPoweredOff || consoleAwaitingPassword;
+  const [showConsolePasswordPrompt, setShowConsolePasswordPrompt] = useState(false);
+  const [consolePasswordInput, setConsolePasswordInput] = useState('');
+  const consolePasswordRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (activeTab === 'terminal' && consoleAwaitingPassword) {
+      setShowConsolePasswordPrompt(true);
+      setConsolePasswordInput('');
+      setTimeout(() => consolePasswordRef.current?.focus(), 0);
+    } else {
+      setShowConsolePasswordPrompt(false);
+      setConsolePasswordInput('');
+    }
+  }, [activeTab, consoleAwaitingPassword]);
 
   const connectionErrorText = useMemo(() => {
     if (!isPcPoweredOff && !isConsoleTargetPoweredOff) return '';
@@ -497,6 +514,14 @@ export function PCPanel({
     }
   };
 
+  const handleConsolePasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const value = consolePasswordInput.trim();
+    if (!value || !connectedDeviceId || !onExecuteDeviceCommand) return;
+    await onExecuteDeviceCommand(connectedDeviceId, value);
+    setConsolePasswordInput('');
+  };
+
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       executeCommand();
@@ -609,6 +634,35 @@ export function PCPanel({
 
   return (
     <div className={`w-full h-full flex flex-col flex-1 overflow-hidden h-full min-h-0`}>
+      <Dialog
+        open={showConsolePasswordPrompt}
+        onOpenChange={(open) => {
+          if (!open && consoleAwaitingPassword) return;
+          setShowConsolePasswordPrompt(open);
+        }}
+      >
+        <DialogContent showCloseButton={false} className={`${isDark ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white'} sm:max-w-sm`}>
+          <DialogHeader>
+            <DialogTitle>{language === 'tr' ? 'Parola Gerekli' : 'Password Required'}</DialogTitle>
+            <DialogDescription className={isDark ? 'text-slate-400' : 'text-slate-500'}>
+              {language === 'tr' ? 'Konsol erişimi için parolayı girin.' : 'Enter the console password to continue.'}
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleConsolePasswordSubmit} className="flex flex-col gap-3">
+            <Input
+              ref={consolePasswordRef}
+              type="password"
+              value={consolePasswordInput}
+              onChange={(e) => setConsolePasswordInput(e.target.value)}
+              placeholder={language === 'tr' ? 'Parola' : 'Password'}
+              autoComplete="current-password"
+            />
+            <Button type="submit" disabled={!consolePasswordInput.trim()} className="w-full bg-blue-600 hover:bg-blue-500 text-white">
+              {language === 'tr' ? 'Gönder' : 'Submit'}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
