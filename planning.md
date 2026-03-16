@@ -63,6 +63,7 @@ This document tracks the implementation status of features and planned enhanceme
 - [x] **Task Engine** - Dynamic task validation based on device state
 - [x] **Visual Progress** - Real-time task cards and progress bars
 - [x] **Categorized Labs** - Topology, Port, VLAN, and Security groups
+- [x] **UX/UI Polish (Q1 2026)** - Project menu simplification, save status indicator, tab tooltips, mobile labels, task badges, toasts, onboarding tour
 - [ ] **Scenario Creator** - Tool to create custom labs without coding
 - [ ] **Certification Tracks** - Pre-defined CCNA-style lab sequences
 
@@ -70,4 +71,5 @@ This document tracks the implementation status of features and planned enhanceme
 - [ ] **Multi-user Collaboration** - Real-time shared labs via WebSockets
 - [ ] **Packet Inspection** - "Wireshark-lite" view for data flow analysis
 - [x] **Mobile Optimization** - Improved touch gestures, compact modals, and back button support
+- [ ] **Terminal UX Enhancements** - Search/highlight, copy output, and PC console parity (in progress)
 - [ ] **Performance Benchmarks** - Optimizing large topology rendering (100+ devices)

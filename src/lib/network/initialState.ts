@@ -14,11 +14,15 @@ function createInitialPorts(): Record<string, Port> {
       status: 'notconnect',
       vlan: 1,
       mode: 'access',
+      voiceVlan: 'none',
       duplex: 'auto',
       speed: 'auto',
       shutdown: false, // BAŞLANGIÇTA AÇIK
       type: 'fastethernet',
-      allowedVlans: 'all'
+      allowedVlans: 'all',
+      channelGroup: undefined,
+      channelMode: undefined,
+      channelProtocol: undefined
     };
   }
   
@@ -31,11 +35,15 @@ function createInitialPorts(): Record<string, Port> {
       status: 'notconnect',
       vlan: 1,
       mode: 'access',
+      voiceVlan: 'none',
       duplex: 'auto',
       speed: 'auto',
       shutdown: false, // BAŞLANGIÇTA AÇIK
       type: 'gigabitethernet',
-      allowedVlans: 'all'
+      allowedVlans: 'all',
+      channelGroup: undefined,
+      channelMode: undefined,
+      channelProtocol: undefined
     };
   }
 
@@ -158,6 +166,7 @@ export function createInitialState(): SwitchState {
       uptime: '2 weeks, 3 days, 5 hours'
     },
     macAddressTable: createInitialMacTable(),
+    vtpRevision: 0,
     ipRouting: false
   };
 }
@@ -175,11 +184,15 @@ function createInitialRouterPorts(): Record<string, Port> {
       status: 'notconnect', // HEPSİ BAŞLANGIÇTA BAĞLI DEĞİL
       vlan: 1,
       mode: 'access',
+      voiceVlan: 'none',
       duplex: 'auto',
       speed: 'auto',
       shutdown: false,
       type: 'gigabitethernet',
-      allowedVlans: 'all'
+      allowedVlans: 'all',
+      channelGroup: undefined,
+      channelMode: undefined,
+      channelProtocol: undefined
     };
   }
   
@@ -223,6 +236,7 @@ export function createInitialRouterState(): SwitchState {
       uptime: '1 week, 2 days, 4 hours'
     },
     macAddressTable: [],
+    vtpRevision: 0,
     ipRouting: false
   };
 }
@@ -263,11 +277,15 @@ export function applyStartupConfig(baseState: SwitchState, startup: StartupConfi
       name: savedPort.name,
       vlan: savedPort.vlan,
       mode: savedPort.mode,
+      voiceVlan: (savedPort as any).voiceVlan ?? (basePort as any).voiceVlan ?? 'none',
       duplex: savedPort.duplex,
       speed: savedPort.speed,
       shutdown: savedPort.shutdown,
       type: savedPort.type,
       allowedVlans: savedPort.allowedVlans,
+      channelGroup: (savedPort as any).channelGroup,
+      channelMode: (savedPort as any).channelMode,
+      channelProtocol: (savedPort as any).channelProtocol,
       portSecurity: savedPort.portSecurity,
       ipAddress: savedPort.ipAddress,
       subnetMask: savedPort.subnetMask,
@@ -291,6 +309,8 @@ export function applyStartupConfig(baseState: SwitchState, startup: StartupConfi
     spanningTreeMode: startup.spanningTreeMode,
     vtpMode: startup.vtpMode,
     vtpDomain: startup.vtpDomain,
+    vtpPassword: (startup as any).vtpPassword,
+    vtpRevision: (startup as any).vtpRevision ?? baseState.vtpRevision ?? 0,
     mlsQosEnabled: startup.mlsQosEnabled,
     dhcpSnoopingEnabled: startup.dhcpSnoopingEnabled,
     ntpServers: startup.ntpServers ? [...startup.ntpServers] : undefined,

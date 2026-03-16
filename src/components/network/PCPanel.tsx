@@ -10,7 +10,8 @@ import { checkConnectivity } from '@/lib/network/connectivity';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Laptop, Monitor, Terminal as TerminalIcon, X, CornerDownLeft, Command, Globe, Network, ShieldCheck, History, ChevronUp, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Laptop, Monitor, Terminal as TerminalIcon, X, CornerDownLeft, Command, Globe, Network, ShieldCheck, History, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Search, Copy } from 'lucide-react';
+import { toast } from "@/hooks/use-toast";
 
 // PC Icon component matching the main screen
 const PCIcon = ({ className = "w-5 h-5" }: { className?: string }) => (
@@ -103,6 +104,8 @@ export function PCPanel({
 
   const [activeTab, setActiveTab] = useState<PCActiveTab>('desktop');
   const [input, setInput] = useState('');
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // History State
   const [history, setHistory] = useState<string[]>(() => {
@@ -156,6 +159,31 @@ export function PCPanel({
 
   const outputRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const highlightText = useCallback((text: string) => {
+    const q = searchQuery.trim();
+    if (!q) return text;
+    const safe = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const re = new RegExp(safe, 'gi');
+    const parts = text.split(re);
+    const matches = text.match(re);
+    if (!matches) return text;
+    const out: React.ReactNode[] = [];
+    for (let i = 0; i < parts.length; i++) {
+      if (parts[i]) out.push(<span key={`p-${i}`}>{parts[i]}</span>);
+      if (matches[i]) {
+        out.push(
+          <mark
+            key={`m-${i}`}
+            className={`px-0.5 rounded ${isDark ? 'bg-cyan-500/20 text-cyan-200' : 'bg-cyan-200 text-slate-900'}`}
+          >
+            {matches[i]}
+          </mark>
+        );
+      }
+    }
+    return <>{out}</>;
+  }, [searchQuery, isDark]);
 
   // Find connected console device
   const getConsoleDevice = useCallback(() => {
@@ -274,6 +302,26 @@ export function PCPanel({
     if (!isConsoleConnected || !connectedDeviceId || !deviceOutputs) return [];
     return deviceOutputs.get(connectedDeviceId) || [];
   }, [isConsoleConnected, connectedDeviceId, deviceOutputs]);
+
+  const handleCopyAll = useCallback(async () => {
+    try {
+      const lines = (activeTab === 'desktop' ? pcOutput : activeConsoleOutput).map((line: any) => {
+        if (line.type === 'command') return `${activeTab === 'desktop' ? 'C:\\>' : (line.prompt || '>')}${line.content}`;
+        return line.content;
+      });
+      await navigator.clipboard.writeText(lines.join('\n'));
+      toast({
+        title: language === 'tr' ? 'Kopyalandı' : 'Copied',
+        description: language === 'tr' ? 'Çıktı panoya kopyalandı.' : 'Output copied to clipboard.',
+      });
+    } catch {
+      toast({
+        title: language === 'tr' ? 'Kopyalama başarısız' : 'Copy failed',
+        description: language === 'tr' ? 'Panoya erişilemedi.' : 'Clipboard access was blocked.',
+        variant: "destructive",
+      });
+    }
+  }, [activeTab, pcOutput, activeConsoleOutput, language]);
 
   const connectedConsoleDevice = useMemo(() => {
     if (!connectedDeviceId) return null;
@@ -634,6 +682,30 @@ export function PCPanel({
 
   return (
     <div className={`w-full h-full flex flex-col flex-1 overflow-hidden h-full min-h-0`}>
+      <Dialog open={searchOpen} onOpenChange={setSearchOpen}>
+        <DialogContent className={`${isDark ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white'} sm:max-w-md`}>
+          <DialogHeader>
+            <DialogTitle>{language === 'tr' ? 'Çıktıda ara' : 'Search output'}</DialogTitle>
+            <DialogDescription className={isDark ? 'text-slate-400' : 'text-slate-600'}>
+              {language === 'tr' ? 'Eşleşmeler çıktı alanında vurgulanır.' : 'Matches will be highlighted in the output.'}
+            </DialogDescription>
+          </DialogHeader>
+          <Input
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder={language === 'tr' ? 'Arama...' : 'Search...'}
+            autoFocus
+          />
+          <div className="flex justify-end gap-2 pt-1">
+            <Button variant="outline" onClick={() => setSearchQuery('')} className="text-xs font-semibold" disabled={!searchQuery.trim()}>
+              {language === 'tr' ? 'Temizle' : 'Clear'}
+            </Button>
+            <Button onClick={() => setSearchOpen(false)} className="text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white">
+              {language === 'tr' ? 'Kapat' : 'Close'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
       <Dialog
         open={showConsolePasswordPrompt}
         onOpenChange={(open) => {
@@ -681,6 +753,26 @@ export function PCPanel({
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setSearchOpen(true)}
+              className="h-8 w-8 rounded-lg text-slate-500 hover:text-cyan-400 transition-colors"
+              title={language === 'tr' ? 'Ara' : 'Search'}
+              aria-label={language === 'tr' ? 'Ara' : 'Search'}
+            >
+              <Search className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleCopyAll}
+              className="h-8 w-8 rounded-lg text-slate-500 hover:text-cyan-400 transition-colors"
+              title={language === 'tr' ? 'Kopyala' : 'Copy'}
+              aria-label={language === 'tr' ? 'Kopyala' : 'Copy'}
+            >
+              <Copy className="w-4 h-4" />
+            </Button>
             <Button
               variant="ghost"
               size="icon"
@@ -777,7 +869,7 @@ export function PCPanel({
                     <span className="text-emerald-500 shrink-0 font-black opacity-50 select-none">
                       {activeTab === 'desktop' ? 'C:\\>' : (line.prompt || '>')}
                     </span>
-                    <span className={cmdColor}>{line.content}</span>
+                    <span className={cmdColor}>{highlightText(line.content)}</span>
                   </div>
                 )}
                 {line.type === 'prompt' && (
@@ -785,9 +877,9 @@ export function PCPanel({
                     <span className="text-emerald-500 shrink-0 font-black">{line.prompt}</span>
                   </div>
                 )}
-                {line.type === 'output' && <span className={`${textColor} whitespace-pre-wrap`}>{line.content}</span>}
-                {line.type === 'error' && <span className="text-rose-500 font-bold italic">{line.content}</span>}
-                {line.type === 'success' && <span className="text-cyan-500 font-bold uppercase text-xs tracking-widest opacity-80">{line.content}</span>}
+                {line.type === 'output' && <span className={`${textColor} whitespace-pre-wrap`}>{highlightText(line.content)}</span>}
+                {line.type === 'error' && <span className="text-rose-500 font-bold italic">{highlightText(line.content)}</span>}
+                {line.type === 'success' && <span className="text-cyan-500 font-bold uppercase text-xs tracking-widest opacity-80">{highlightText(line.content)}</span>}
               </div>
             ))}
           </div>

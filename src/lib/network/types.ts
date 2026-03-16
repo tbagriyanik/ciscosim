@@ -12,6 +12,9 @@ export type PortStatus = 'connected' | 'notconnect' | 'disabled' | 'blocked';
 export type PortMode = 'access' | 'trunk';
 export type DuplexMode = 'half' | 'full' | 'auto';
 export type SpeedMode = '10' | '100' | '1000' | 'auto';
+export type VoiceVlanMode = number | 'dot1p' | 'none' | 'untagged';
+export type EtherChannelProtocol = 'lacp' | 'pagp';
+export type EtherChannelMode = 'on' | 'active' | 'passive' | 'desirable' | 'auto';
 
 export interface Port {
   id: string;              // fa0/1, gi0/1 etc.
@@ -19,6 +22,7 @@ export interface Port {
   status: PortStatus;
   vlan: number;
   mode: PortMode;
+  voiceVlan?: VoiceVlanMode;
   duplex: DuplexMode;
   speed: SpeedMode;
   shutdown: boolean;
@@ -27,6 +31,9 @@ export interface Port {
   ipAddress?: string;           // For L3 ports or SVI
   subnetMask?: string;
   allowedVlans?: number[] | 'all'; // For trunk ports
+  channelGroup?: number; // Port-channel group id
+  channelMode?: EtherChannelMode;
+  channelProtocol?: EtherChannelProtocol;
   portSecurity?: {
     enabled: boolean;
     maxMac: number;
@@ -95,6 +102,8 @@ export interface SwitchState {
   spanningTreeMode?: 'pvst' | 'rapid-pvst' | 'mst';
   vtpMode?: 'server' | 'client' | 'transparent' | 'off';
   vtpDomain?: string;
+  vtpPassword?: string;
+  vtpRevision?: number;
   mlsQosEnabled?: boolean;
   dhcpSnoopingEnabled?: boolean;
   ntpServers?: string[];

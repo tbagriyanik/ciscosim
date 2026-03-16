@@ -919,6 +919,8 @@ function executeSpecificCommand(
       return cmdVtpMode(state, input);
     case 'vtp domain':
       return cmdVtpDomain(state, input);
+    case 'vtp password':
+      return cmdVtpPassword(state, input);
     case 'mls qos':
       return cmdMlsQos(state);
     case 'no mls qos':
@@ -973,12 +975,16 @@ function executeSpecificCommand(
       return cmdSwitchportPortSecuritySticky(state);
     case 'switchport voice vlan':
       return cmdSwitchportVoiceVlan(state, input);
+    case 'channel-protocol':
+      return cmdChannelProtocol(state, input);
     case 'cdp enable':
       return cmdCdpEnable(state);
     case 'no cdp enable':
       return cmdNoCdpEnable(state);
     case 'channel-group':
       return cmdChannelGroup(state, input);
+    case 'no channel-group':
+      return cmdNoChannelGroup(state, input);
     case 'spanning-tree portfast':
       return cmdSpanningTreePortfast(state, input);
     case 'spanning-tree bpduguard':
@@ -1363,7 +1369,8 @@ function cmdVlan(state: SwitchState, input: string): CommandResult {
     newState: {
       vlans: newVlans,
       currentMode: 'vlan',
-      currentVlan: vlanId
+      currentVlan: vlanId,
+      vtpRevision: (state.vtpRevision ?? 0) + 1
     }
   };
 }
@@ -1392,7 +1399,7 @@ function cmdNoVlan(state: SwitchState, input: string): CommandResult {
   
   return {
     success: true,
-    newState: { vlans: newVlans, ports: newPorts }
+    newState: { vlans: newVlans, ports: newPorts, vtpRevision: (state.vtpRevision ?? 0) + 1 }
   };
 }
 
@@ -2179,6 +2186,12 @@ function generateRunningConfig(state: SwitchState): string {
     } else if (port.vlan !== 1) {
       config += ` switchport access vlan ${port.vlan}\n`;
     }
+    if (port.voiceVlan && port.voiceVlan !== 'none' && port.mode === 'access') {
+      config += ` switchport voice vlan ${port.voiceVlan}\n`;
+    }
+    if (typeof (port as any).channelGroup === 'number') {
+      config += ` channel-group ${(port as any).channelGroup} mode ${(port as any).channelMode || 'on'}\n`;
+    }
     if (port.speed !== 'auto') {
       config += ` speed ${port.speed}\n`;
     }
@@ -2187,6 +2200,20 @@ function generateRunningConfig(state: SwitchState): string {
     }
     config += '!\n';
   });
+
+  // VTP (minimal)
+  if (state.vtpMode) {
+    config += `vtp mode ${state.vtpMode}\n`;
+  }
+  if (state.vtpDomain) {
+    config += `vtp domain ${state.vtpDomain}\n`;
+  }
+  if ((state as any).vtpPassword) {
+    config += `vtp password ${(state as any).vtpPassword}\n`;
+  }
+  if (state.vtpMode || state.vtpDomain || (state as any).vtpPassword) {
+    config += '!\n';
+  }
   
   // VLANs
   Object.values(state.vlans).forEach(vlan => {
@@ -2339,6 +2366,14 @@ function cmdVtpDomain(state: SwitchState, input: string): CommandResult {
     success: true,
     newState: { vtpDomain: match[1].trim() }
   };
+}
+
+// VTP Password (simulated)
+function cmdVtpPassword(state: SwitchState, input: string): CommandResult {
+  const match = input.match(/^vtp\s+password\s+(.+)$/i);
+  if (!match) return { success: false, error: '% Invalid VTP password' };
+  const pw = match[1].trim();
+  return { success: true, newState: { vtpPassword: pw } };
 }
 
 // MLS QoS
@@ -2561,8 +2596,42 @@ function cmdSwitchportPortSecuritySticky(state: SwitchState): CommandResult {
 
 // Switchport Voice VLAN
 function cmdSwitchportVoiceVlan(state: SwitchState, input: string): CommandResult {
-  if (!state.currentInterface) return { success: false, error: '% No interface selected' };
-  return { success: true };
+  const interfaces = state.selectedInterfaces || (state.currentInterface ? [state.currentInterface] : []);
+  if (interfaces.length === 0) return { success: false, error: '% No interface selected' };
+
+  const match = input.match(/^switchport\s+voice\s+vlan\s+(\d+|dot1p|none|untagged)$/i);
+  if (!match) return { success: false, error: '% Invalid voice VLAN value' };
+
+  const valueRaw = match[1].toLowerCase();
+  const voiceVlan = /^\d+$/.test(valueRaw) ? parseInt(valueRaw, 10) : (valueRaw as any);
+  if (typeof voiceVlan === 'number' && (voiceVlan < 1 || voiceVlan > 4094)) {
+    return { success: false, error: '% Invalid VLAN ID (1-4094)' };
+  }
+
+  const newPorts = { ...state.ports };
+  for (const portId of interfaces) {
+    if (!newPorts[portId]) continue;
+    newPorts[portId] = { ...newPorts[portId], voiceVlan };
+  }
+
+  return { success: true, newState: { ports: newPorts } };
+}
+
+// Channel-Protocol (LACP/PAgP)
+function cmdChannelProtocol(state: SwitchState, input: string): CommandResult {
+  const interfaces = state.selectedInterfaces || (state.currentInterface ? [state.currentInterface] : []);
+  if (interfaces.length === 0) return { success: false, error: '% No interface selected' };
+
+  const match = input.match(/^channel-protocol\s+(lacp|pagp)$/i);
+  if (!match) return { success: false, error: '% Invalid channel protocol' };
+
+  const protocol = match[1].toLowerCase() as 'lacp' | 'pagp';
+  const newPorts = { ...state.ports };
+  for (const portId of interfaces) {
+    if (!newPorts[portId]) continue;
+    newPorts[portId] = { ...newPorts[portId], channelProtocol: protocol };
+  }
+  return { success: true, newState: { ports: newPorts } };
 }
 
 // CDP Enable (Interface)
@@ -2579,8 +2648,78 @@ function cmdNoCdpEnable(state: SwitchState): CommandResult {
 
 // Channel-Group
 function cmdChannelGroup(state: SwitchState, input: string): CommandResult {
-  if (!state.currentInterface) return { success: false, error: '% No interface selected' };
-  return { success: true };
+  const interfaces = state.selectedInterfaces || (state.currentInterface ? [state.currentInterface] : []);
+  if (interfaces.length === 0) return { success: false, error: '% No interface selected' };
+
+  const match = input.match(/^channel-group\s+(\d+)(?:\s+mode\s+(on|active|passive|desirable|auto))?$/i);
+  if (!match) return { success: false, error: '% Invalid channel-group command' };
+
+  const groupId = parseInt(match[1], 10);
+  const mode = ((match[2] || 'on').toLowerCase() as any);
+  if (groupId < 1 || groupId > 64) return { success: false, error: '% Invalid channel-group id (1-64)' };
+
+  const inferredProtocol =
+    mode === 'active' || mode === 'passive' ? 'lacp' :
+    mode === 'desirable' || mode === 'auto' ? 'pagp' :
+    undefined;
+
+  const newPorts = { ...state.ports };
+  for (const portId of interfaces) {
+    if (!newPorts[portId]) continue;
+    if (portId.toLowerCase().startsWith('po') || portId.toLowerCase().startsWith('port-channel')) {
+      return { success: false, error: '% Cannot add Port-channel interface as a member' };
+    }
+    const current = newPorts[portId];
+    newPorts[portId] = {
+      ...current,
+      channelGroup: groupId,
+      channelMode: mode,
+      channelProtocol: current.channelProtocol || inferredProtocol
+    };
+  }
+
+  // Create/update logical Port-channel interface in state.ports
+  const poId = `po${groupId}`;
+  if (!newPorts[poId]) {
+    newPorts[poId] = {
+      id: poId,
+      name: `Port-channel${groupId}`,
+      status: 'notconnect',
+      vlan: 1,
+      mode: 'trunk',
+      voiceVlan: 'none',
+      duplex: 'auto',
+      speed: 'auto',
+      shutdown: false,
+      type: 'gigabitethernet',
+      allowedVlans: 'all'
+    };
+  }
+
+  return { success: true, newState: { ports: newPorts } };
+}
+
+function cmdNoChannelGroup(state: SwitchState, input: string): CommandResult {
+  const interfaces = state.selectedInterfaces || (state.currentInterface ? [state.currentInterface] : []);
+  if (interfaces.length === 0) return { success: false, error: '% No interface selected' };
+
+  const match = input.match(/^no\s+channel-group\s+(\d+)$/i);
+  if (!match) return { success: false, error: '% Invalid no channel-group command' };
+  const groupId = parseInt(match[1], 10);
+
+  const newPorts = { ...state.ports };
+  for (const portId of interfaces) {
+    const p = newPorts[portId];
+    if (!p) continue;
+    if (p.channelGroup !== groupId) continue;
+    newPorts[portId] = {
+      ...p,
+      channelGroup: undefined,
+      channelMode: undefined,
+      channelProtocol: undefined
+    };
+  }
+  return { success: true, newState: { ports: newPorts } };
 }
 
 // Spanning-Tree PortFast
@@ -3012,17 +3151,71 @@ function cmdShowPortSecurity(state: SwitchState): CommandResult {
 
 // Show EtherChannel
 function cmdShowEtherchannel(state: SwitchState): CommandResult {
-  return {
-    success: true,
-    output: '\nChannel-group listing:\n-----------------------\n\nNo EtherChannels configured\n'
+  const memberPorts = Object.values(state.ports).filter(
+    (p) => typeof (p as any).channelGroup === 'number' && !p.id.toLowerCase().startsWith('po')
+  );
+  if (memberPorts.length === 0) {
+    return { success: true, output: '\nChannel-group listing:\n-----------------------\n\nNo EtherChannels configured\n' };
+  }
+
+  const byGroup = new Map<number, typeof memberPorts>();
+  for (const p of memberPorts) {
+    const gid = (p as any).channelGroup as number;
+    const arr = byGroup.get(gid) || [];
+    arr.push(p);
+    byGroup.set(gid, arr);
+  }
+
+  const bundleStatus = (p: any) => {
+    const mode = p.channelMode || 'on';
+    const proto =
+      p.channelProtocol ||
+      (mode === 'active' || mode === 'passive' ? 'lacp' : mode === 'desirable' || mode === 'auto' ? 'pagp' : undefined);
+    if (mode === 'on') return true;
+    if (proto === 'lacp') return mode === 'active';
+    if (proto === 'pagp') return mode === 'desirable';
+    return false;
   };
+
+  let output = '\nGroup  Port-channel  Protocol    Ports\n';
+  output += '-----  -----------  --------    -----------------------------------------------\n';
+
+  Array.from(byGroup.entries())
+    .sort((a, b) => a[0] - b[0])
+    .forEach(([gid, ports]) => {
+      const poName = `Po${gid}`;
+      const protocol = (() => {
+        const protos = new Set((ports as any[]).map((p) => p.channelProtocol).filter(Boolean));
+        if (protos.size === 1) return Array.from(protos)[0];
+        if (protos.size > 1) return 'mixed';
+        const modes = new Set((ports as any[]).map((p) => p.channelMode).filter(Boolean));
+        if (modes.has('active') || modes.has('passive')) return 'lacp';
+        if (modes.has('desirable') || modes.has('auto')) return 'pagp';
+        return '-';
+      })();
+
+      const portList = (ports as any[])
+        .sort((a, b) => a.id.localeCompare(b.id))
+        .map((p) => {
+          const up = bundleStatus(p) && !p.shutdown ? 'P' : 'I';
+          return `${p.id.toUpperCase()}(${up})`;
+        })
+        .join(' ');
+
+      output += `${String(gid).padEnd(5)} ${poName.padEnd(12)} ${String(protocol).padEnd(11)} ${portList}\n`;
+    });
+
+  output += '\nLegend: P - bundled in port-channel, I - stand-alone\n';
+  return { success: true, output };
 }
 
 // Show VTP Status
 function cmdShowVtpStatus(state: SwitchState): CommandResult {
   let output = '\nVTP Version capable             : 1 to 3\n';
   output += 'VTP version running             : 1\n';
+  output += 'VTP Operating Mode              : ' + (state.vtpMode || 'server') + '\n';
   output += 'VTP Domain Name                 : ' + (state.vtpDomain || 'not set') + '\n';
+  output += 'VTP Configuration Revision      : ' + String((state as any).vtpRevision ?? 0) + '\n';
   output += 'VTP Pruning Mode                : Disabled\n';
   output += 'VTP Traps Generation            : Disabled\n';
   output += 'Device ID                       : 0011.2233.4400\n';

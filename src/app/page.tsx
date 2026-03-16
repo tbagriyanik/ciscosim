@@ -58,6 +58,7 @@ import { ChevronDown, Menu, Plus, Save, FolderOpen, Languages, Sun, Moon, Networ
 import { Button } from '@/components/ui/button';
 import { useLanguage, Translations } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { toast } from "@/hooks/use-toast";
 import { AboutModal } from '@/components/network/AboutModal';
 import {
   topologyTasks,
@@ -65,7 +66,8 @@ import {
   vlanTasks,
   securityTasks,
   calculateTaskScore,
-  TaskContext
+  TaskContext,
+  getTaskStatus
 } from '@/lib/network/taskDefinitions';
 import { exampleProjects } from '@/lib/network/exampleProjects';
 
@@ -396,12 +398,18 @@ export default function Home() {
   // Calculate max possible score
   const maxScore = [...topologyTasks, ...portTasks, ...vlanTasks, ...securityTasks].reduce((acc, task) => acc + task.weight, 0);
 
+  // Per-tab task completion counts for badges
+  const completedPortTasks = portTasks.filter(task => getTaskStatus(task, state, taskContext)).length;
+  const completedVlanTasks = vlanTasks.filter(task => getTaskStatus(task, state, taskContext)).length;
+  const completedSecurityTasks = securityTasks.filter(task => getTaskStatus(task, state, taskContext)).length;
+
   const [selectedDevice, setSelectedDevice] = useState<'pc' | 'switch' | 'router' | null>(null);
   const [showPCPanel, setShowPCPanel] = useState(false);
   const [showPCDeviceId, setShowPCDeviceId] = useState<string>('pc-1');
 
   // Unsaved changes tracking
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [lastSaveTime, setLastSaveTime] = useState<string | null>(null);
   const [saveDialog, setSaveDialog] = useState<{
     show: boolean;
     message: string;
@@ -412,6 +420,8 @@ export default function Home() {
   const [showAboutModal, setShowAboutModal] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showProjectPicker, setShowProjectPicker] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [onboardingStep, setOnboardingStep] = useState(0);
   const autosaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const modalHistoryPushedRef = useRef(false);
 
@@ -423,7 +433,7 @@ export default function Home() {
       clearTimeout(autosaveTimerRef.current);
     }
 
-    autosaveTimerRef.current = setTimeout(() => {
+      autosaveTimerRef.current = setTimeout(() => {
       const projectData = {
         version: '1.0',
         timestamp: new Date().toISOString(),
@@ -443,6 +453,7 @@ export default function Home() {
 
       localStorage.setItem('netsim_autosave', JSON.stringify(projectData));
       autosaveTimerRef.current = null;
+      setLastSaveTime(new Date().toLocaleTimeString());
     }, 800);
 
     return () => {
@@ -565,11 +576,25 @@ export default function Home() {
       try {
         const projectData = JSON.parse(savedData);
         loadProjectData(projectData);
+        setLastSaveTime(new Date().toLocaleTimeString());
       } catch (e) {
         console.error("Failed to load autosave", e);
       }
     }
   }, [loadProjectData]);
+
+  // Onboarding: show once per browser
+  useEffect(() => {
+    try {
+      const seen = localStorage.getItem('netsim_onboarding_seen');
+      if (!seen) {
+        setShowOnboarding(true);
+        setOnboardingStep(0);
+      }
+    } catch {
+      // ignore storage failures
+    }
+  }, []);
 
   // Sync active tab when device type changes
   useEffect(() => {
@@ -1022,7 +1047,12 @@ export default function Home() {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     setHasUnsavedChanges(false);
-  }, [deviceStates, deviceOutputs, pcOutputs, pcHistories, topologyDevices, topologyConnections, topologyNotes, cableInfo, activeDeviceId, activeDeviceType, setHasUnsavedChanges]);
+    setLastSaveTime(new Date().toLocaleTimeString());
+    toast({
+      title: language === 'tr' ? 'Proje kaydedildi' : 'Project saved',
+      description: language === 'tr' ? 'JSON dosyası indirildi.' : 'JSON file downloaded.',
+    });
+  }, [deviceStates, deviceOutputs, pcOutputs, pcHistories, topologyDevices, topologyConnections, topologyNotes, cableInfo, activeDeviceId, activeDeviceType, setHasUnsavedChanges, setLastSaveTime, language]);
 
   // Handle Project Saving (Wrapper)
   function handleSaveProject() {
@@ -1224,15 +1254,16 @@ export default function Home() {
       setSaveDialog(null);
       setShowPCPanel(false);
       setShowProjectPicker(false);
+      setShowOnboarding(false);
       window.dispatchEvent(new CustomEvent('close-menus-broadcast', { detail: { source: 'back' } }));
     };
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, [setShowMobileMenu, setConfirmDialog, setSaveDialog, setShowPCPanel, setShowProjectPicker]);
+  }, [setShowMobileMenu, setConfirmDialog, setSaveDialog, setShowPCPanel, setShowProjectPicker, setShowOnboarding]);
 
   // History pushState for back button tracking
   useEffect(() => {
-    const anyModalOpen = showMobileMenu || !!confirmDialog || !!saveDialog || showPCPanel || showProjectPicker;
+    const anyModalOpen = showMobileMenu || !!confirmDialog || !!saveDialog || showPCPanel || showProjectPicker || showOnboarding;
     if (anyModalOpen && !modalHistoryPushedRef.current) {
       window.history.pushState({ modal: true }, '');
       modalHistoryPushedRef.current = true;
@@ -1240,9 +1271,97 @@ export default function Home() {
     if (!anyModalOpen) {
       modalHistoryPushedRef.current = false;
     }
-  }, [showMobileMenu, confirmDialog, saveDialog, showPCPanel, showProjectPicker]);
+  }, [showMobileMenu, confirmDialog, saveDialog, showPCPanel, showProjectPicker, showOnboarding]);
 
   const [isTopologyFullscreen, setIsTopologyFullscreen] = useState(false);
+
+  // Helper: tab açıklamaları (tooltip için)
+  const getTabDescription = useCallback((tabId: TabType): string => {
+    if (language === 'tr') {
+      switch (tabId) {
+        case 'topology':
+          return 'Cihazları sürükleyip bırakarak ağ topolojisini tasarla.';
+        case 'cmd':
+          return 'PC komut satırı ile ping, ipconfig vb. komutları çalıştır.';
+        case 'terminal':
+          return 'Switch / router CLI üzerinden yapılandırma komutlarını çalıştır.';
+        case 'ports':
+          return 'Port durumlarını ve bağlantıları incele, fiziksel katmanı gör.';
+        case 'vlan':
+          return 'VLAN ekle, ata ve VLAN yapılandırmasını yönet.';
+        case 'security':
+          return 'Şifreler, güvenlik özellikleri ve erişim kontrollerini yönet.';
+      }
+    } else {
+      switch (tabId) {
+        case 'topology':
+          return 'Design your network by dragging and connecting devices.';
+        case 'cmd':
+          return 'Use the PC command line to run ping, ipconfig and more.';
+        case 'terminal':
+          return 'Configure switches/routers using the CLI terminal.';
+        case 'ports':
+          return 'Inspect port status and physical layer connections.';
+        case 'vlan':
+          return 'Create and assign VLANs, manage VLAN configuration.';
+        case 'security':
+          return 'Manage passwords, security features and access control.';
+      }
+    }
+  }, [language]);
+
+  // Onboarding content + controls
+  const onboardingSteps = [
+    {
+      title: language === 'tr' ? 'Hoş geldin' : 'Welcome',
+      description:
+        language === 'tr'
+          ? 'Bu kısa turla temel kontrolleri 30 saniyede öğren.'
+          : 'This quick tour shows the essentials in ~30 seconds.',
+    },
+    {
+      title: language === 'tr' ? 'Topoloji' : 'Topology',
+      description:
+        language === 'tr'
+          ? 'Cihazları ekle, bağla ve sürükleyerek konumlandır. Çift tıkla: PC için CMD, Switch/Router için CLI.'
+          : 'Add/connect devices and drag to position. Double-click: CMD for PC, CLI for Switch/Router.',
+    },
+    {
+      title: language === 'tr' ? 'Cihaz seçimi' : 'Device selection',
+      description:
+        language === 'tr'
+          ? 'Üstteki cihaz menüsünden aktif cihazı seç. Nokta rengi cihazın online/offline durumunu gösterir.'
+          : 'Use the device menu in the header. The colored dot shows online/offline status.',
+    },
+    {
+      title: language === 'tr' ? 'Görev ilerlemesi' : 'Task progress',
+      description:
+        language === 'tr'
+          ? 'Sekmelerdeki rozetler (ör. 2/6) o alandaki görev ilerlemeni gösterir.'
+          : 'Badges on tabs (e.g., 2/6) show your progress for that area.',
+    },
+  ];
+
+  const closeOnboardingForever = useCallback(() => {
+    try {
+      localStorage.setItem('netsim_onboarding_seen', '1');
+    } catch {
+      // ignore
+    }
+    setShowOnboarding(false);
+  }, [setShowOnboarding]);
+
+  const nextOnboarding = useCallback(() => {
+    if (onboardingStep >= onboardingSteps.length - 1) {
+      closeOnboardingForever();
+      return;
+    }
+    setOnboardingStep((s) => Math.min(s + 1, onboardingSteps.length - 1));
+  }, [onboardingStep, onboardingSteps.length, closeOnboardingForever, setOnboardingStep]);
+
+  const prevOnboarding = useCallback(() => {
+    setOnboardingStep((s) => Math.max(0, s - 1));
+  }, [setOnboardingStep]);
 
   // Derive visible tabs based on current state
   const tabs = ALL_TABS.filter(tab => {
@@ -1265,6 +1384,7 @@ export default function Home() {
         setSaveDialog(null);
         setShowPCPanel(false);
         setShowProjectPicker(false);
+        setShowOnboarding(false);
         window.dispatchEvent(new CustomEvent('close-menus-broadcast', { detail: { source: 'escape' } }));
       }
       
@@ -1342,17 +1462,29 @@ export default function Home() {
         const projectData = JSON.parse(e.target?.result as string);
         if (loadProjectData(projectData)) {
           setHasUnsavedChanges(false);
+          toast({
+            title: language === 'tr' ? 'Proje yüklendi' : 'Project loaded',
+            description: language === 'tr' ? 'Dosya başarıyla içe aktarıldı.' : 'File imported successfully.',
+          });
         } else {
-          alert(t.invalidProjectFile);
+          toast({
+            title: language === 'tr' ? 'Geçersiz proje dosyası' : 'Invalid project file',
+            description: t.invalidProjectFile,
+            variant: "destructive",
+          });
         }
       } catch (error) {
-        alert(t.failedLoadProject);
+        toast({
+          title: language === 'tr' ? 'Yükleme başarısız' : 'Load failed',
+          description: t.failedLoadProject,
+          variant: "destructive",
+        });
       }
     };
     reader.readAsText(file);
     // Reset input
     event.target.value = '';
-  }, [loadProjectData, setHasUnsavedChanges, t.invalidProjectFile, t.failedLoadProject]);
+  }, [loadProjectData, setHasUnsavedChanges, t.invalidProjectFile, t.failedLoadProject, language]);
 
   const applyExampleProject = useCallback((projectData: any) => {
     loadProjectData(projectData);
@@ -1475,31 +1607,76 @@ export default function Home() {
 
             {/* Right Controls */}
             <div className="flex items-center gap-1">
-              {/* Project Group */}
-              <div className={`hidden md:flex items-center px-2 py-1.5 rounded-lg border ${isDark ? 'bg-slate-800/40 border-slate-800' : 'bg-slate-100 border-slate-200'}`}>
+              {/* Project Group - compact menu */}
+              <div className="hidden md:flex items-center gap-2">
                 {activeTab === 'topology' && (
-                  <>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 mx-1.5" onClick={handleUndo} disabled={!canUndo} title={t.undo}>
+                  <div className={`flex items-center px-2 py-1.5 rounded-lg border ${isDark ? 'bg-slate-800/40 border-slate-800' : 'bg-slate-100 border-slate-200'}`}>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 mx-0.5" onClick={handleUndo} disabled={!canUndo} title={t.undo}>
                       <Undo2 className={`w-4 h-4 ${!canUndo ? 'opacity-30' : ''}`} />
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 mx-1.5" onClick={handleRedo} disabled={!canRedo} title={t.redo}>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 mx-0.5" onClick={handleRedo} disabled={!canRedo} title={t.redo}>
                       <Redo2 className={`w-4 h-4 ${!canRedo ? 'opacity-30' : ''}`} />
                     </Button>
-                    <div className={`w-px h-4 mx-1 ${isDark ? 'bg-slate-700' : 'bg-slate-300'}`} />
-                  </>
+                  </div>
                 )}
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleNewProject} title={`${t.newProject} (Shift+N)`}>
-                <File className="w-4 h-4" />
-              </Button>
-                <div className={`w-px h-4 mx-1 ${isDark ? 'bg-slate-700' : 'bg-slate-300'}`} />
-                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleSaveProject} title={`${t.saveProject} (Ctrl+S)`}>
-                  <Save className="w-4 h-4" />
-                </Button>
-                <div className={`w-px h-4 mx-1 ${isDark ? 'bg-slate-700' : 'bg-slate-300'}`} />
-                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => fileInputRef.current?.click()} title={`${t.loadProject} (Ctrl+O)`}>
-                  <FolderOpen className="w-4 h-4" />
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 px-3 text-xs font-semibold flex items-center gap-2"
+                    >
+                      <File className="w-3.5 h-3.5" />
+                      <span>{t.project}</span>
+                      <ChevronDown className="w-3 h-3 opacity-60" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className={isDark ? 'bg-slate-900 border-slate-800' : 'bg-white'}>
+                    <DropdownMenuLabel className="text-[11px] font-bold uppercase tracking-widest text-slate-500 py-1.5">
+                      {t.project}
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      className="text-xs font-medium cursor-pointer"
+                      onClick={handleNewProject}
+                    >
+                      <File className="w-3.5 h-3.5 mr-2" />
+                      {t.newProject}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="text-xs font-medium cursor-pointer"
+                      onClick={handleSaveProject}
+                    >
+                      <Save className="w-3.5 h-3.5 mr-2" />
+                      {t.saveProject}
+                      <span className="ml-auto text-[10px] opacity-60">Ctrl+S</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="text-xs font-medium cursor-pointer"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <FolderOpen className="w-3.5 h-3.5 mr-2" />
+                      {t.loadProject}
+                      <span className="ml-auto text-[10px] opacity-60">Ctrl+O</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
                 <input ref={fileInputRef} type="file" accept=".json" onChange={handleLoadProject} className="hidden" />
+                {(
+                  <div className="flex flex-col items-end ml-1">
+                    <span className={`flex items-center gap-1 text-[10px] font-semibold ${hasUnsavedChanges ? 'text-amber-400' : 'text-emerald-400'}`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${hasUnsavedChanges ? 'bg-amber-400 animate-pulse' : 'bg-emerald-400'}`} />
+                      {hasUnsavedChanges
+                        ? (language === 'tr' ? 'Kaydedilmemiş değişiklikler' : 'Unsaved changes')
+                        : (language === 'tr' ? 'Tüm değişiklikler kaydedildi' : 'All changes saved')}
+                    </span>
+                    {lastSaveTime && (
+                      <span className={`text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>
+                        {(language === 'tr' ? 'Son kayıt: ' : 'Last save: ') + lastSaveTime}
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Info & Settings Group */}
@@ -1541,8 +1718,46 @@ export default function Home() {
                     <SheetDescription className="sr-only">
                       Main navigation and project controls
                     </SheetDescription>
-                  </SheetHeader>                  <ScrollArea className="h-[calc(100vh-4rem)]">
+                  </SheetHeader>
+                  <ScrollArea className="h-[calc(100vh-4rem)]">
                     <div className="p-3 space-y-4">
+                      {/* Quick actions (primary) */}
+                      <div className={`p-3 rounded-xl border ${isDark ? 'bg-slate-800/30 border-slate-800/50' : 'bg-slate-50 border-slate-200'}`}>
+                        <p className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-2 px-1">
+                          {language === 'tr' ? 'Hızlı işlemler' : 'Quick actions'}
+                        </p>
+                        <div className="grid grid-cols-2 gap-2">
+                          <Button
+                            variant="secondary"
+                            className="justify-start gap-2 h-9 text-xs font-bold"
+                            onClick={() => { handleNewProject(); setShowMobileMenu(false); }}
+                          >
+                            <File className="w-3.5 h-3.5" /> {language === 'tr' ? 'Yeni' : 'New'}
+                          </Button>
+                          <Button
+                            variant="secondary"
+                            className="justify-start gap-2 h-9 text-xs font-bold"
+                            onClick={() => { handleSaveProject(); setShowMobileMenu(false); }}
+                          >
+                            <Save className="w-3.5 h-3.5" /> {language === 'tr' ? 'Kaydet' : 'Save'}
+                          </Button>
+                          <Button
+                            variant="secondary"
+                            className="justify-start gap-2 h-9 text-xs font-bold"
+                            onClick={() => { fileInputRef.current?.click(); setShowMobileMenu(false); }}
+                          >
+                            <FolderOpen className="w-3.5 h-3.5" /> {language === 'tr' ? 'Yükle' : 'Load'}
+                          </Button>
+                          <Button
+                            variant="secondary"
+                            className="justify-start gap-2 h-9 text-xs font-bold"
+                            onClick={() => { setShowOnboarding(true); setOnboardingStep(0); setShowMobileMenu(false); }}
+                          >
+                            <Info className="w-3.5 h-3.5" /> {language === 'tr' ? 'Tur' : 'Tour'}
+                          </Button>
+                        </div>
+                      </div>
+
                       {/* Navigation Sections */}
                       <div className="space-y-1">
                         <p className="text-xs font-bold uppercase tracking-widest text-slate-500 px-2 mb-1">{t.navigation}</p>
@@ -1575,27 +1790,9 @@ export default function Home() {
 
                       <Separator className="bg-slate-800/30" />
 
-                      {/* Project Controls */}
-                      <div className="space-y-1">
-                        <p className="text-xs font-bold uppercase tracking-widest text-slate-500 px-2 mb-1">{t.project}</p>
-                        <div className="grid gap-0.5">
-                          <Button variant="ghost" className="w-full justify-start gap-3 h-9 px-3 text-xs font-bold text-slate-400" onClick={() => { handleNewProject(); setShowMobileMenu(false); }}>
-                            <File className="w-3.5 h-3.5" /> {t.newProject}
-                          </Button>
-                          <Button variant="ghost" className="w-full justify-start gap-3 h-9 px-3 text-xs font-bold text-slate-400" onClick={() => { handleSaveProject(); setShowMobileMenu(false); }}>
-                            <Save className="w-3.5 h-3.5" /> {t.saveProject}
-                          </Button>
-                          <Button variant="ghost" className="w-full justify-start gap-3 h-9 px-3 text-xs font-bold text-slate-400" onClick={() => { fileInputRef.current?.click(); setShowMobileMenu(false); }}>
-                            <FolderOpen className="w-3.5 h-3.5" /> {t.loadProject}
-                          </Button>
-                        </div>
-                      </div>
-
-                      <Separator className="bg-slate-800/30" />
-
                       {/* Lab Progress Mobile */}
                       <div className={`p-3 rounded-xl ${isDark ? 'bg-slate-800/30' : 'bg-slate-50'} border ${isDark ? 'border-slate-800/50' : 'border-slate-200'}`}>
-                         <div className="flex items-center justify-between mb-1.5">
+                        <div className="flex items-center justify-between mb-1.5">
                           <span className="text-xs font-bold uppercase tracking-[0.15em] text-slate-500">{t.labProgress}</span>
                           <span className="text-xs font-bold text-cyan-400">{Math.round((totalScore / maxScore) * 100)}%</span>
                         </div>
@@ -1667,6 +1864,36 @@ export default function Home() {
                   <div className="flex items-center gap-2">
                     {activeDeviceId && (topologyDevices.some(d => d.id === activeDeviceId)) ? (
                       <>
+                        {(() => {
+                          const activeTopologyDevice = topologyDevices.find(d => d.id === activeDeviceId);
+                          const status = activeTopologyDevice?.status || 'online';
+                          const statusColor =
+                            status === 'offline'
+                              ? 'bg-rose-500'
+                              : status === 'online'
+                                ? 'bg-emerald-400'
+                                : 'bg-amber-400';
+                          const statusLabel =
+                            language === 'tr'
+                              ? status === 'offline'
+                                ? 'Kapalı'
+                                : status === 'online'
+                                  ? 'Çevrimiçi'
+                                  : 'Bilinmeyen'
+                              : status === 'offline'
+                                ? 'Offline'
+                                : status === 'online'
+                                  ? 'Online'
+                                  : 'Unknown';
+                          return (
+                            <span
+                              className="w-2 h-2 rounded-full mr-0.5"
+                              title={statusLabel}
+                            >
+                              <span className={`block w-2 h-2 rounded-full ${statusColor} shadow-[0_0_6px_rgba(45,212,191,0.8)]`} />
+                            </span>
+                          );
+                        })()}
                         <DeviceIcon
                           type={activeDeviceType}
                           className={`${activeDeviceType === 'pc' ? 'text-blue-500' : activeDeviceType === 'router' ? 'text-purple-500' : 'text-emerald-500'} w-5 h-5`}
@@ -1697,6 +1924,13 @@ export default function Home() {
                     topologyDevices.map((device) => {
                       const currentDeviceState = deviceStates.get(device.id);
                       const displayName = currentDeviceState?.hostname || device.name;
+                      const status = device.status || 'online';
+                      const statusColor =
+                        status === 'offline'
+                          ? 'bg-rose-500'
+                          : status === 'online'
+                            ? 'bg-emerald-400'
+                            : 'bg-amber-400';
                       
                       return (
                         <DropdownMenuItem 
@@ -1705,6 +1939,7 @@ export default function Home() {
                           onClick={() => handleDeviceSelectFromMenu(device.type, device.id)}
                         >
                           <div className="flex items-center gap-2 cursor-pointer">
+                            <span className={`w-1.5 h-1.5 rounded-full ${statusColor}`} />
                             <DeviceIcon
                               type={device.type}
                               className={`${device.type === 'pc' ? 'text-blue-500' : device.type === 'router' ? 'text-purple-500' : 'text-emerald-500'} w-5 h-5`}
@@ -1734,7 +1969,7 @@ export default function Home() {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    title={`${tab.label} (Ctrl+${index + 1})`}
+                    title={`${tab.label} (Ctrl+${index + 1}) — ${getTabDescription(tab.id)}`}
                     className={`flex items-center gap-2 px-3 lg:px-5 py-3 rounded-t-xl text-sm font-semibold transition-all border-x border-t min-w-[50px] lg:min-w-[120px] justify-center ${
                       isActive
                         ? isDark ? 'bg-slate-950 border-slate-800 text-cyan-400 shadow-[0_-4px_0_0_#22d3ee]' : 'bg-slate-100 border-slate-300 text-slate-900 shadow-[0_-4px_0_0_#06b6d4]'
@@ -1748,7 +1983,24 @@ export default function Home() {
                        tab.id === 'vlan' ? <Layers className="w-4 h-4" /> :
                        <ShieldCheck className="w-4 h-4" />}
                     </span>
-                    <span className="hidden lg:inline">{tab.label}</span>
+                    <span className="hidden lg:inline flex items-center gap-1.5">
+                      {tab.label}
+                      {tab.id === 'ports' && (
+                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-400">
+                          {completedPortTasks}/{portTasks.length}
+                        </span>
+                      )}
+                      {tab.id === 'vlan' && (
+                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-purple-500/10 text-purple-300">
+                          {completedVlanTasks}/{vlanTasks.length}
+                        </span>
+                      )}
+                      {tab.id === 'security' && (
+                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-rose-500/10 text-rose-300">
+                          {completedSecurityTasks}/{securityTasks.length}
+                        </span>
+                      )}
+                    </span>
                   </button>
                 );
               })}
@@ -1785,6 +2037,9 @@ export default function Home() {
                  tab.id === 'vlan' ? <Layers className="w-5 h-5" /> :
                  <ShieldCheck className="w-5 h-5" />}
               </div>
+              <span className="mt-0.5 text-[10px] font-semibold leading-tight">
+                {tab.label}
+              </span>
             </button>
           );
         })}
@@ -1823,6 +2078,49 @@ export default function Home() {
                 )}
               </Button>
             ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={showOnboarding}
+        onOpenChange={(open) => {
+          if (!open) closeOnboardingForever();
+          else setShowOnboarding(true);
+        }}
+      >
+        <DialogContent className={`${isDark ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white'} sm:max-w-lg`}>
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-between gap-3">
+              <span>{onboardingSteps[onboardingStep]?.title}</span>
+              <span className={`text-[11px] font-bold px-2 py-1 rounded-full ${isDark ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>
+                {onboardingStep + 1}/{onboardingSteps.length}
+              </span>
+            </DialogTitle>
+            <DialogDescription className={isDark ? 'text-slate-400' : 'text-slate-600'}>
+              {onboardingSteps[onboardingStep]?.description}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex items-center justify-between gap-2 pt-2">
+            <Button variant="ghost" onClick={closeOnboardingForever} className="text-xs font-semibold">
+              {language === 'tr' ? 'Geç' : 'Skip'}
+            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                onClick={prevOnboarding}
+                disabled={onboardingStep === 0}
+                className="text-xs font-semibold"
+              >
+                {language === 'tr' ? 'Geri' : 'Back'}
+              </Button>
+              <Button onClick={nextOnboarding} className="text-xs font-semibold bg-cyan-600 hover:bg-cyan-700 text-white">
+                {onboardingStep >= onboardingSteps.length - 1
+                  ? (language === 'tr' ? 'Bitir' : 'Finish')
+                  : (language === 'tr' ? 'İleri' : 'Next')}
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>

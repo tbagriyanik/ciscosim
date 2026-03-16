@@ -8,10 +8,11 @@ import { Translations } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { CornerDownLeft, Terminal as TerminalIcon, Trash2, Command, Info, History, ChevronRight, X } from 'lucide-react';
+import { CornerDownLeft, Terminal as TerminalIcon, Trash2, Command, Info, History, ChevronRight, X, Copy, Search } from 'lucide-react';
 import { QuickCommands } from './QuickCommands';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { toast } from "@/hooks/use-toast";
 
 export interface TerminalOutput {
   id: string;
@@ -62,6 +63,8 @@ export function Terminal({
   const [input, setInput] = useState('');
   const [history, setHistory] = useState<string[]>(() => state.commandHistory || []);
   const [historyIndex, setHistoryIndex] = useState(-1);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Sync with global history if it changes externally
   useEffect(() => {
@@ -258,8 +261,85 @@ export function Terminal({
   // Last 10 unique commands for mobile
   const recentCommands = history.slice(0, 10);
 
+  const highlightText = useCallback((text: string) => {
+    const q = searchQuery.trim();
+    if (!q) return text;
+    const safe = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const re = new RegExp(safe, 'gi');
+    const parts = text.split(re);
+    const matches = text.match(re);
+    if (!matches) return text;
+    const out: React.ReactNode[] = [];
+    for (let i = 0; i < parts.length; i++) {
+      if (parts[i]) out.push(<span key={`p-${i}`}>{parts[i]}</span>);
+      if (matches[i]) {
+        out.push(
+          <mark
+            key={`m-${i}`}
+            className={`px-0.5 rounded ${isDark ? 'bg-cyan-500/20 text-cyan-200' : 'bg-cyan-200 text-slate-900'}`}
+          >
+            {matches[i]}
+          </mark>
+        );
+      }
+    }
+    return <>{out}</>;
+  }, [searchQuery, isDark]);
+
+  const handleCopyAll = useCallback(async () => {
+    try {
+      const allText = output.map((line) => {
+        if (line.type === 'command') return `${line.prompt || prompt}${line.content}`;
+        return line.content;
+      }).join('\n');
+      await navigator.clipboard.writeText(allText);
+      toast({
+        title: language === 'tr' ? 'Kopyalandı' : 'Copied',
+        description: language === 'tr' ? 'Terminal çıktısı panoya kopyalandı.' : 'Terminal output copied to clipboard.',
+      });
+    } catch {
+      toast({
+        title: language === 'tr' ? 'Kopyalama başarısız' : 'Copy failed',
+        description: language === 'tr' ? 'Panoya erişilemedi.' : 'Clipboard access was blocked.',
+        variant: "destructive",
+      });
+    }
+  }, [output, prompt, language]);
+
   return (
     <TooltipProvider>
+      <Dialog open={searchOpen} onOpenChange={setSearchOpen}>
+        <DialogContent className={`${isDark ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white'} sm:max-w-md`}>
+          <DialogHeader>
+            <DialogTitle>{language === 'tr' ? 'Terminalde ara' : 'Search terminal'}</DialogTitle>
+            <DialogDescription className={isDark ? 'text-slate-400' : 'text-slate-600'}>
+              {language === 'tr' ? 'Eşleşmeler terminal içinde vurgulanır.' : 'Matches will be highlighted in the terminal.'}
+            </DialogDescription>
+          </DialogHeader>
+          <Input
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder={language === 'tr' ? 'Arama...' : 'Search...'}
+            autoFocus
+          />
+          <div className="flex justify-end gap-2 pt-1">
+            <Button
+              variant="outline"
+              onClick={() => setSearchQuery('')}
+              className="text-xs font-semibold"
+              disabled={!searchQuery.trim()}
+            >
+              {language === 'tr' ? 'Temizle' : 'Clear'}
+            </Button>
+            <Button
+              onClick={() => setSearchOpen(false)}
+              className="text-xs font-semibold bg-cyan-600 hover:bg-cyan-700 text-white"
+            >
+              {language === 'tr' ? 'Kapat' : 'Close'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
       <Dialog
         open={showPasswordPrompt}
         onOpenChange={(open) => {
@@ -303,6 +383,40 @@ export function Terminal({
                 </CardTitle>
               </div>
               <div className="flex items-center gap-2">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setSearchOpen(true)}
+                      className="h-8 w-8 rounded-lg text-slate-500 hover:text-cyan-400 transition-colors"
+                      aria-label={language === 'tr' ? 'Ara' : 'Search'}
+                      title={language === 'tr' ? 'Ara' : 'Search'}
+                    >
+                      <Search className="w-4 h-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent hideArrow side="bottom" className={`${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'} ${isDark ? 'text-white' : 'text-slate-900'} p-2 text-xs`}>
+                    {language === 'tr' ? 'Ara' : 'Search'}
+                  </TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={handleCopyAll}
+                      className="h-8 w-8 rounded-lg text-slate-500 hover:text-cyan-400 transition-colors"
+                      aria-label={language === 'tr' ? 'Kopyala' : 'Copy'}
+                      title={language === 'tr' ? 'Kopyala' : 'Copy'}
+                    >
+                      <Copy className="w-4 h-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent hideArrow side="bottom" className={`${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'} ${isDark ? 'text-white' : 'text-slate-900'} p-2 text-xs`}>
+                    {language === 'tr' ? 'Çıktıyı kopyala' : 'Copy output'}
+                  </TooltipContent>
+                </Tooltip>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
@@ -360,14 +474,14 @@ export function Terminal({
                     {line.type === 'command' ? (
                       <div className="flex gap-2.5 text-cyan-500 font-bold group">
                         <span className="shrink-0 opacity-50 select-none">{line.prompt || prompt}</span>
-                        <span className={cmdColor}>{line.content}</span>
+                        <span className={cmdColor}>{highlightText(line.content)}</span>
                       </div>
                     ) : (
                       <div className={`whitespace-pre-wrap ${line.type === 'error' ? 'text-rose-500 font-medium' :
                           line.type === 'success' ? 'text-emerald-600' :
                             textColor
                         }`}>
-                        {line.content}
+                        {highlightText(line.content)}
                       </div>
                     )}
                   </div>
