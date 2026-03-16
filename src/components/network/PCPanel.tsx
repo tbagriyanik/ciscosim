@@ -917,7 +917,7 @@ export function PCPanel({
                 {connectionErrorText || (language === 'tr' ? 'Bağlantı hatası' : 'Connection error')}
               </div>
             )}
-            <div className="flex items-center gap-3 max-w-full">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 max-w-full">
               <div className={`flex items-center gap-3 px-4 py-2.5 ${inputBg} rounded-xl border ${inputBorder} flex-1 focus-within:border-blue-500/50 transition-all group`}>
                 <span className="text-emerald-500 font-black text-xs select-none shrink-0 opacity-50 group-focus-within:opacity-100 transition-opacity">
                   {activeTab === 'desktop'
@@ -946,7 +946,7 @@ export function PCPanel({
                 onClick={() => executeCommand()}
                 disabled={(activeTab === 'desktop' ? isCmdInputDisabled : isConsoleInputDisabled) || !input.trim()}
                 size="icon"
-                className={`shrink-0 h-11 w-11 rounded-xl transition-all shadow-lg ${input.trim()
+                className={`shrink-0 h-11 w-full sm:w-11 rounded-xl transition-all shadow-lg ${input.trim()
                     ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-500/20 active:scale-95'
                     : isDark ? 'bg-slate-800 text-slate-700' : 'bg-slate-200 text-slate-400'
                   } cursor-not-allowed opacity-50`}

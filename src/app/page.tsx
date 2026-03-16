@@ -2218,7 +2218,7 @@ export default function Home() {
 
         {/* CMD Terminal Sekmesi */}
         {activeTab === 'cmd' && (
-          <div className="w-full h-full overflow-hidden flex flex-col min-h-[450px]">
+          <div className="w-full h-full overflow-hidden flex flex-col min-h-[calc(100vh-8rem)] sm:min-h-[450px]">
             <PCPanel
               deviceId={activeDeviceId}
               cableInfo={cableInfo}
