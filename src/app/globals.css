@@ -91,10 +91,18 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+    -webkit-tap-highlight-color: transparent;
+  }
+  html {
+    overscroll-behavior: none;
   }
   body {
     @apply bg-background text-foreground font-sans;
     letter-spacing: -0.011em;
+    overscroll-behavior: none;
+  }
+  button, a, [role="button"] {
+    touch-action: manipulation;
   }
   :focus-visible {
     @apply outline-none ring-2 ring-cyan-500/60 ring-offset-2 ring-offset-background;
@@ -269,4 +277,53 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* Safe area inset utilities for mobile (notch / home indicator) */
+.safe-area-pb {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.safe-area-pt {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+/* SVG canvas performance */
+.topology-canvas {
+  will-change: transform;
+  contain: strict;
+}
+
+/* Topology canvas group GPU compositing */
+.topology-transform-group {
+  will-change: transform;
+}
+
+/* Prevent text selection during canvas interactions */
+.canvas-no-select {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* Larger touch targets for mobile */
+@media (max-width: 640px) {
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* Mobile bottom nav safe area */
+.mobile-bottom-nav {
+  padding-bottom: max(env(safe-area-inset-bottom, 0px), 8px);
+}
+
+/* Smooth SVG rendering */
+svg text {
+  font-feature-settings: "kern" 1;
+}
+
+/* Connection line hover optimization */
+.connection-line {
+  vector-effect: non-scaling-stroke;
 }

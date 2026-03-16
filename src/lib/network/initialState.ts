@@ -118,10 +118,10 @@ function generateMacAddress(): string {
 }
 
 // Ana başlangıç durumu
-export function createInitialState(): SwitchState {
+export function createInitialState(mac?: string): SwitchState {
   const ports = createInitialPorts();
   const vlans = createInitialVlans();
-  const macAddress = generateMacAddress();
+  const macAddress = mac || '0011.2233.4401';
   
   // VLAN'lara portları ata
   Object.values(ports).forEach(port => {
@@ -200,10 +200,10 @@ function createInitialRouterPorts(): Record<string, Port> {
 }
 
 // Router için başlangıç durumu
-export function createInitialRouterState(): SwitchState {
+export function createInitialRouterState(mac?: string): SwitchState {
   const ports = createInitialRouterPorts();
   const vlans = createInitialVlans();
-  const macAddress = generateMacAddress();
+  const macAddress = mac || '00D0.D3A2.810B';
   
   return {
     hostname: 'Router',

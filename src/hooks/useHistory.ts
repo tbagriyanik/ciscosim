@@ -16,6 +16,7 @@ export interface ProjectState {
   activeDeviceType: 'pc' | 'switch' | 'router';
   zoom: number;
   pan: { x: number; y: number };
+  activeTab?: string;
 }
 
 interface HistoryState {

@@ -194,20 +194,20 @@ export function NetworkTopology({
   // Sync internal state with props (e.g. from undo/redo or tab switching)
   // We use a ref to track what was already reported back to avoid loops
   const lastStateReportedRef = useRef<string>('');
+  const changeVersionRef = useRef(0);
+  const lastReportedVersionRef = useRef(0);
 
   useEffect(() => {
-    // Only trigger if onTopologyChange is provided and there are actual changes
     if (onTopologyChange) {
-      const currentState = JSON.stringify({ devices, connections, notes });
-      if (currentState !== lastStateReportedRef.current) {
-        lastStateReportedRef.current = currentState;
-        // Debounce to avoid excessive calls during rapid changes (e.g., dragging)
-        const handler = setTimeout(() => {
+      changeVersionRef.current += 1;
+      const version = changeVersionRef.current;
+      const handler = setTimeout(() => {
+        if (version === changeVersionRef.current && version !== lastReportedVersionRef.current) {
+          lastReportedVersionRef.current = version;
           onTopologyChange(devices, connections, notes);
-        }, 100);
-
-        return () => clearTimeout(handler);
-      }
+        }
+      }, 100);
+      return () => clearTimeout(handler);
     }
   }, [devices, connections, notes, onTopologyChange]);
 
@@ -218,17 +218,17 @@ export function NetworkTopology({
     let nextConnections = connections;
     let nextNotes = notes;
 
-    if (initialDevices && JSON.stringify(initialDevices) !== JSON.stringify(devices)) {
+    if (initialDevices && initialDevices !== devices && JSON.stringify(initialDevices) !== JSON.stringify(devices)) {
       nextDevices = initialDevices;
       changed = true;
     }
 
-    if (initialConnections && JSON.stringify(initialConnections) !== JSON.stringify(connections)) {
+    if (initialConnections && initialConnections !== connections && JSON.stringify(initialConnections) !== JSON.stringify(connections)) {
       nextConnections = initialConnections;
       changed = true;
     }
 
-    if (initialNotes && JSON.stringify(initialNotes) !== JSON.stringify(notes)) {
+    if (initialNotes && initialNotes !== notes && JSON.stringify(initialNotes) !== JSON.stringify(notes)) {
       nextNotes = initialNotes.map(n => ({
         ...n,
         width: n.width || NOTE_DEFAULT_WIDTH,
@@ -246,12 +246,8 @@ export function NetworkTopology({
       if (nextConnections !== connections) setConnections(nextConnections);
       if (nextNotes !== notes) setNotes(nextNotes);
 
-      // Update the reported ref to match EXACTLY what we just set to prevent outgoing sync loop
-      lastStateReportedRef.current = JSON.stringify({
-        devices: nextDevices,
-        connections: nextConnections,
-        notes: nextNotes
-      });
+      // Reset the version counter so the outgoing sync doesn't fire for this undo/redo import
+      lastReportedVersionRef.current = changeVersionRef.current;
     }
   }, [initialDevices, initialConnections, initialNotes, noteFonts]);
 
@@ -699,12 +695,14 @@ export function NetworkTopology({
     };
   }, [pan, zoom]);
 
-  const getCanvasDimensions = useCallback(() => {
+  const canvasDimensions = useMemo(() => {
     if (typeof window === 'undefined') return { width: VIRTUAL_CANVAS_WIDTH_DESKTOP, height: VIRTUAL_CANVAS_HEIGHT_DESKTOP };
     return isMobile
       ? { width: VIRTUAL_CANVAS_WIDTH_MOBILE, height: VIRTUAL_CANVAS_HEIGHT_MOBILE }
       : { width: VIRTUAL_CANVAS_WIDTH_DESKTOP, height: VIRTUAL_CANVAS_HEIGHT_DESKTOP };
   }, [isMobile]);
+
+  const getCanvasDimensions = useCallback(() => canvasDimensions, [canvasDimensions]);
 
 
   // Close context menu when clicking outside
@@ -3508,6 +3506,38 @@ export function NetworkTopology({
     };
   }, [setZoom, setShowPortSelector, setPortSelectorStep, setSelectedSourcePort]);
 
+  // Precompute connection groups to avoid O(n²) filter inside render
+  const connectionGroups = useMemo(() => {
+    const map = new Map<string, { conns: CanvasConnection[]; indexById: Map<string, number> }>();
+    connections.forEach(conn => {
+      const keyA = `${conn.sourceDeviceId}||${conn.targetDeviceId}`;
+      const keyB = `${conn.targetDeviceId}||${conn.sourceDeviceId}`;
+      const canonKey = keyA < keyB ? keyA : keyB;
+      if (!map.has(canonKey)) {
+        map.set(canonKey, { conns: [], indexById: new Map() });
+      }
+      const group = map.get(canonKey)!;
+      group.indexById.set(conn.id, group.conns.length);
+      group.conns.push(conn);
+    });
+    return map;
+  }, [connections]);
+
+  const getConnectionGroup = useCallback((conn: CanvasConnection) => {
+    const keyA = `${conn.sourceDeviceId}||${conn.targetDeviceId}`;
+    const keyB = `${conn.targetDeviceId}||${conn.sourceDeviceId}`;
+    const canonKey = keyA < keyB ? keyA : keyB;
+    const group = connectionGroups.get(canonKey);
+    if (!group) return { totalSameConns: 1, sameConnIndex: 0 };
+    return {
+      totalSameConns: group.conns.length,
+      sameConnIndex: group.indexById.get(conn.id) ?? 0,
+    };
+  }, [connectionGroups]);
+
+  // Precompute device lookup map for O(1) access in render
+  const deviceById = useMemo(() => new Map(devices.map(d => [d.id, d])), [devices]);
+
   return (
     <div
       onContextMenu={(e) => e.preventDefault()}
@@ -3867,16 +3897,11 @@ export function NetworkTopology({
 
                   {/* Visual Connection Lines (Behind devices) */}
                   {connections.map((conn, index) => {
-                    const sourceDevice = devices.find((d) => d.id === conn.sourceDeviceId);
-                    const targetDevice = devices.find((d) => d.id === conn.targetDeviceId);
+                    const sourceDevice = deviceById.get(conn.sourceDeviceId);
+                    const targetDevice = deviceById.get(conn.targetDeviceId);
                     if (!sourceDevice || !targetDevice) return null;
 
-                    const sameDeviceConnections = connections.filter(
-                      c => (c.sourceDeviceId === conn.sourceDeviceId && c.targetDeviceId === conn.targetDeviceId) ||
-                        (c.sourceDeviceId === conn.targetDeviceId && c.targetDeviceId === conn.sourceDeviceId)
-                    );
-                    const sameConnIndex = sameDeviceConnections.findIndex(c => c.id === conn.id);
-                    const totalSameConns = sameDeviceConnections.length;
+                    const { totalSameConns, sameConnIndex } = getConnectionGroup(conn);
 
                     return (
                       <g key={`line-${conn.id}`}>

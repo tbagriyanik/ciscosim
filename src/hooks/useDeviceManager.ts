@@ -12,34 +12,23 @@ interface PCOutputLine {
 }
 
 export function useDeviceManager(language: 'tr' | 'en') {
-  const [deviceStates, setDeviceStates] = useState<Map<string, SwitchState>>(() => {
-    const initialMap = new Map<string, SwitchState>();
-    initialMap.set('switch-1', createInitialState());
-    return initialMap;
-  });
+  const [deviceStates, setDeviceStates] = useState<Map<string, SwitchState>>(new Map());
 
   const [deviceOutputs, setDeviceOutputs] = useState<Map<string, TerminalOutput[]>>(() => new Map());
 
-  const [pcOutputs, setPcOutputs] = useState<Map<string, PCOutputLine[]>>(() => {
-    const initialMap = new Map<string, PCOutputLine[]>();
-    initialMap.set('pc-1', [
-      { id: '0', type: 'output', content: 'OS Windows [Version 10.0.19045.3803]\n(c) OS Corporation. All rights reserved.\n' },
-      { id: '1', type: 'output', content: '\nEthernet adapter Ethernet connection:\n' }
-    ]);
-    return initialMap;
-  });
+  const [pcOutputs, setPcOutputs] = useState<Map<string, PCOutputLine[]>>(new Map());
 
   const [pcHistories, setPcHistories] = useState<Map<string, string[]>>(() => new Map());
 
   const [isLoading, setIsLoading] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState<{ show: boolean; message: string; action: string; onConfirm: () => void; } | null>(null);
 
-  const getOrCreateDeviceState = useCallback((deviceId: string, deviceType: 'pc' | 'switch' | 'router', initialHostname?: string): SwitchState => {
+  const getOrCreateDeviceState = useCallback((deviceId: string, deviceType: 'pc' | 'switch' | 'router', initialHostname?: string, initialMac?: string): SwitchState => {
     let deviceState = deviceStates.get(deviceId);
     const defaultName = deviceType === 'router' ? 'Router' : 'Switch';
 
     if (!deviceState) {
-      deviceState = deviceType === 'router' ? createInitialRouterState() : createInitialState();
+      deviceState = deviceType === 'router' ? createInitialRouterState(initialMac) : createInitialState(initialMac);
       const hostname = initialHostname || defaultName;
       deviceState = { ...deviceState, hostname };
 
@@ -68,14 +57,14 @@ export function useDeviceManager(language: 'tr' | 'en') {
       const state = deviceStates.get(deviceId);
       const isRouter = deviceId.includes('router');
       outputs = [
-        { id: `boot-1-${Date.now()}`, type: 'output', content: isRouter ? '\n\nSystem Bootstrap, Version 15.1(4)M4, RELEASE SOFTWARE (fc1)\nTechnical Support: http://yunus.sf.net\nCopyright (c) 1986-2026 by Systems, Inc.\n' : '\n\nSystem Bootstrap, Version 12.1(11r)EA1, RELEASE SOFTWARE (fc1)\nTechnical Support: http://yunus.sf.net\nCopyright (c) 1986-2026 by Systems, Inc.\n' },
-        { id: `boot-2-${Date.now()}`, type: 'output', content: isRouter ? 'C1900 platform with 524288K bytes of main memory\nMain memory configured to 64 bit mode with ECC disabled\n' : 'C2960 platform with 262144K bytes of main memory\nMain memory configured to 32 bit mode with ECC enabled\n' },
-        { id: `boot-3-${Date.now()}`, type: 'output', content: '\nLoading the runtime image: ######################################## [OK]\n' }
+        { id: `boot-1`, type: 'output', content: isRouter ? '\n\nSystem Bootstrap, Version 15.1(4)M4, RELEASE SOFTWARE (fc1)\nTechnical Support: http://yunus.sf.net\nCopyright (c) 1986-2026 by Systems, Inc.\n' : '\n\nSystem Bootstrap, Version 12.1(11r)EA1, RELEASE SOFTWARE (fc1)\nTechnical Support: http://yunus.sf.net\nCopyright (c) 1986-2026 by Systems, Inc.\n' },
+        { id: `boot-2`, type: 'output', content: isRouter ? 'C1900 platform with 524288K bytes of main memory\nMain memory configured to 64 bit mode with ECC disabled\n' : 'C2960 platform with 262144K bytes of main memory\nMain memory configured to 32 bit mode with ECC enabled\n' },
+        { id: `boot-3`, type: 'output', content: '\nLoading the runtime image: ######################################## [OK]\n' }
       ];
       if (state?.bannerMOTD) {
-        outputs.push({ id: `banner-${Date.now()}`, type: 'output', content: `\n${state.bannerMOTD}\n` });
+        outputs.push({ id: `banner-initial`, type: 'output', content: `\n${state.bannerMOTD}\n` });
       }
-      outputs.push({ id: `boot-ready-${Date.now()}`, type: 'output', content: '\nPress RETURN to get started!\n' });
+      outputs.push({ id: `boot-ready`, type: 'output', content: '\nPress RETURN to get started!\n' });
       setDeviceOutputs(prev => new Map(prev).set(deviceId, outputs!));
     }
     return outputs;
@@ -256,7 +245,7 @@ export function useDeviceManager(language: 'tr' | 'en') {
           const reloadedState = {
             ...appliedState,
             startupConfig: deviceState.startupConfig,
-            currentMode: 'user',
+            currentMode: 'user' as const,
             currentInterface: undefined,
             selectedInterfaces: undefined,
             currentLine: undefined,
@@ -268,11 +257,11 @@ export function useDeviceManager(language: 'tr' | 'en') {
           setDeviceStates(prev => new Map(prev).set(deviceId, reloadedState));
           const isRouter = deviceId.includes('router');
           const bootOutputs: TerminalOutput[] = [
-            { id: `boot-1-${Date.now()}`, type: 'output', content: isRouter ? '\n\nSystem Bootstrap, Version 15.1(4)M4, RELEASE SOFTWARE (fc1)\nTechnical Support: http://yunus.sf.net\nCopyright (c) 1986-2026 by Systems, Inc.\n' : '\n\nSystem Bootstrap, Version 12.1(11r)EA1, RELEASE SOFTWARE (fc1)\nTechnical Support: http://yunus.sf.net\nCopyright (c) 1986-2026 by Systems, Inc.\n' },
-            { id: `boot-2-${Date.now()}`, type: 'output', content: isRouter ? 'C1900 platform with 524288K bytes of main memory\nMain memory configured to 64 bit mode with ECC disabled\n' : 'C2960 platform with 262144K bytes of main memory\nMain memory configured to 32 bit mode with ECC enabled\n' },
-            { id: `boot-3-${Date.now()}`, type: 'output', content: '\nLoading the runtime image: ######################################## [OK]\n' },
-            { id: `boot-beep-${Date.now()}`, type: 'output', content: '\n*BEEP* System is powering on...\n' },
-            { id: `boot-ready-${Date.now()}`, type: 'output', content: '\nPress RETURN to get started!\n' }
+            { id: `boot-1-${reloadedState.macAddress}`, type: 'output', content: isRouter ? '\n\nSystem Bootstrap, Version 15.1(4)M4, RELEASE SOFTWARE (fc1)\nTechnical Support: http://yunus.sf.net\nCopyright (c) 1986-2026 by Systems, Inc.\n' : '\n\nSystem Bootstrap, Version 12.1(11r)EA1, RELEASE SOFTWARE (fc1)\nTechnical Support: http://yunus.sf.net\nCopyright (c) 1986-2026 by Systems, Inc.\n' },
+            { id: `boot-2-${reloadedState.macAddress}`, type: 'output', content: isRouter ? 'C1900 platform with 524288K bytes of main memory\nMain memory configured to 64 bit mode with ECC disabled\n' : 'C2960 platform with 262144K bytes of main memory\nMain memory configured to 32 bit mode with ECC enabled\n' },
+            { id: `boot-3-${reloadedState.macAddress}`, type: 'output', content: '\nLoading the runtime image: ######################################## [OK]\n' },
+            { id: `boot-beep-${reloadedState.macAddress}`, type: 'output', content: '\n*BEEP* System is powering on...\n' },
+            { id: `boot-ready-${reloadedState.macAddress}`, type: 'output', content: '\nPress RETURN to get started!\n' }
           ];
           setDeviceOutputs(prev => new Map(prev).set(deviceId, bootOutputs));
         }

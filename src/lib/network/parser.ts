@@ -1735,7 +1735,8 @@ function getModeError(command: string, currentMode: CommandMode): string {
     config: 'Global Configuration',
     interface: 'Interface Configuration',
     line: 'Line Configuration',
-    vlan: 'VLAN Configuration'
+    vlan: 'VLAN Configuration',
+    'router-config': 'Router Configuration',
   };
   
   return `          ^
@@ -1913,6 +1914,16 @@ Mevcut komutlar:
 
 Hızlı yazım:
   n         = name
+`,
+    'router-config': `
+Mevcut komutlar:
+  network <ip> <wildcard> area <area> - OSPF/ağ bildirimi
+  neighbor <ip>               - BGP komşu
+  version <1|2>               - RIP versiyonu
+  no auto-summary             - Otomatik özetlemeyi kapat
+  redistribute <protocol>     - Rota yeniden dağıt
+  exit                        - Config mode'a dön
+  end                         - Privileged mode'a dön
 `
   };
 
@@ -2070,6 +2081,16 @@ Available commands:
 
 Shortcuts:
   n         = name
+`,
+    'router-config': `
+Available commands:
+  network <ip> <wildcard> area <area> - OSPF/network announcement
+  neighbor <ip>               - BGP neighbor
+  version <1|2>               - RIP version
+  no auto-summary             - Disable auto-summary
+  redistribute <protocol>     - Redistribute routes
+  exit                        - Return to config mode
+  end                         - Return to privileged mode
 `
   };
   

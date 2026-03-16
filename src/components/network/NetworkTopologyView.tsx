@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { ConnectionLine } from './ConnectionLine';
 import { DeviceNode } from './DeviceNode';
 import { PingAnimationOverlay } from './PingAnimationOverlay';
@@ -105,6 +105,30 @@ export function NetworkTopologyView(props: NetworkTopologyViewProps) {
     pingAnimation,
   } = props;
 
+  // Pre-compute canvas dimensions once per render (avoid 6 repeated calls)
+  const canvasDimensions = useMemo(() => getCanvasDimensions(), [getCanvasDimensions]);
+
+  // Pre-compute device lookup map for O(1) access
+  const deviceById = useMemo<Map<string, any>>(
+    () => new Map(devices.map((d: any) => [d.id, d] as [string, any])),
+    [devices]
+  );
+
+  // Pre-compute connection groups for O(1) curve offset lookup
+  const connectionGroupMap = useMemo(() => {
+    const map = new Map<string, { conns: any[]; indexById: Map<string, number> }>();
+    connections.forEach((conn: any) => {
+      const keyA = `${conn.sourceDeviceId}||${conn.targetDeviceId}`;
+      const keyB = `${conn.targetDeviceId}||${conn.sourceDeviceId}`;
+      const canonKey = keyA < keyB ? keyA : keyB;
+      if (!map.has(canonKey)) map.set(canonKey, { conns: [], indexById: new Map() });
+      const group = map.get(canonKey)!;
+      group.indexById.set(conn.id, group.conns.length);
+      group.conns.push(conn);
+    });
+    return map;
+  }, [connections]);
+
   return (
     <div className="relative w-full h-full">
       {/* Header with Tools */}
@@ -129,7 +153,7 @@ export function NetworkTopologyView(props: NetworkTopologyViewProps) {
         }}
         onContextMenu={(e) => handleContextMenu(e)}
       >
-        <svg width="100%" height="100%" className="select-none">
+        <svg width="100%" height="100%" className="select-none canvas-no-select">
           <g
             style={{
               transform: `translate3d(${pan.x}px, ${pan.y}px, 0) scale(${zoom})`,
@@ -139,7 +163,7 @@ export function NetworkTopologyView(props: NetworkTopologyViewProps) {
           >
             <defs>
               <clipPath id="canvasClip">
-                <rect x="0" y="0" width={getCanvasDimensions().width} height={getCanvasDimensions().height} />
+                <rect x="0" y="0" width={canvasDimensions.width} height={canvasDimensions.height} />
               </clipPath>
               <pattern id="gridPattern" width="20" height="20" patternUnits="userSpaceOnUse">
                 <circle cx="10" cy="10" r="1" fill={isDark ? '#334155' : '#94a3b8'} />
@@ -150,30 +174,29 @@ export function NetworkTopologyView(props: NetworkTopologyViewProps) {
               <rect
                 x="0"
                 y="0"
-                width={getCanvasDimensions().width}
-                height={getCanvasDimensions().height}
+                width={canvasDimensions.width}
+                height={canvasDimensions.height}
                 fill={isDark ? '#1e293b' : '#f8fafc'}
               />
               <rect
                 x="0"
                 y="0"
-                width={getCanvasDimensions().width}
-                height={getCanvasDimensions().height}
+                width={canvasDimensions.width}
+                height={canvasDimensions.height}
                 fill="url(#gridPattern)"
               />
 
-              {connections.map((conn: any, index: number) => {
-                const sourceDevice = devices.find((d: any) => d.id === conn.sourceDeviceId);
-                const targetDevice = devices.find((d: any) => d.id === conn.targetDeviceId);
+              {connections.map((conn: any) => {
+                const sourceDevice = deviceById.get(conn.sourceDeviceId);
+                const targetDevice = deviceById.get(conn.targetDeviceId);
                 if (!sourceDevice || !targetDevice) return null;
 
-                const sameDeviceConnections = connections.filter(
-                  (c: any) =>
-                    (c.sourceDeviceId === conn.sourceDeviceId && c.targetDeviceId === conn.targetDeviceId) ||
-                    (c.sourceDeviceId === conn.targetDeviceId && c.targetDeviceId === conn.sourceDeviceId)
-                );
-                const sameConnIndex = sameDeviceConnections.findIndex((c: any) => c.id === conn.id);
-                const totalSameConns = sameDeviceConnections.length;
+                const keyA = `${conn.sourceDeviceId}||${conn.targetDeviceId}`;
+                const keyB = `${conn.targetDeviceId}||${conn.sourceDeviceId}`;
+                const canonKey = keyA < keyB ? keyA : keyB;
+                const group = connectionGroupMap.get(canonKey);
+                const totalSameConns = group?.conns.length ?? 1;
+                const sameConnIndex = group?.indexById.get(conn.id) ?? 0;
 
                 return (
                   <g key={`line-${conn.id}`}>
@@ -312,8 +335,8 @@ export function NetworkTopologyView(props: NetworkTopologyViewProps) {
             <rect
               x="0"
               y="0"
-              width={getCanvasDimensions().width}
-              height={getCanvasDimensions().height}
+              width={canvasDimensions.width}
+              height={canvasDimensions.height}
               fill="none"
               stroke={isDark ? '#3b82f6' : '#2563eb'}
               strokeWidth={2 / zoom}
@@ -321,21 +344,21 @@ export function NetworkTopologyView(props: NetworkTopologyViewProps) {
               opacity={0.7}
             />
             <text
-              x={getCanvasDimensions().width - 80}
-              y={getCanvasDimensions().height - 10}
+              x={canvasDimensions.width - 80}
+              y={canvasDimensions.height - 10}
               fill={isDark ? '#64748b' : '#64748b'}
               fontSize={12 / zoom}
               fontFamily="monospace"
             >
-              {getCanvasDimensions().width} X {getCanvasDimensions().height}
+              {canvasDimensions.width} X {canvasDimensions.height}
             </text>
           </g>
         </svg>
       </div>
 
-      {/* Zoom Controls - Desktop Only - Top Right */}
+      {/* Zoom Controls - All screen sizes */}
       <div
-        className={`hidden md:flex absolute top-2 right-2 items-center gap-1 px-2 py-1 rounded-lg ${isDark ? 'bg-slate-800/90' : 'bg-white/90'
+        className={`absolute top-2 right-2 flex items-center gap-1 px-2 py-1 rounded-lg ${isDark ? 'bg-slate-800/90' : 'bg-white/90'
           } shadow-lg`}
       >
         <button
@@ -351,8 +374,9 @@ export function NetworkTopologyView(props: NetworkTopologyViewProps) {
             }));
             return newZoom;
           })}
-          className={`w-7 h-7 flex items-center justify-center rounded ${isDark ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-slate-100 text-slate-600'
+          className={`w-8 h-8 flex items-center justify-center rounded text-lg font-bold touch-target ${isDark ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-slate-100 text-slate-600'
             }`}
+          aria-label="Zoom out"
         >
           -
         </button>
@@ -372,15 +396,16 @@ export function NetworkTopologyView(props: NetworkTopologyViewProps) {
             }));
             return newZoom;
           })}
-          className={`w-7 h-7 flex items-center justify-center rounded ${isDark ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-slate-100 text-slate-600'
+          className={`w-8 h-8 flex items-center justify-center rounded text-lg font-bold touch-target ${isDark ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-slate-100 text-slate-600'
             }`}
+          aria-label="Zoom in"
         >
           +
         </button>
-        <div className={`w-px h-5 ${isDark ? 'bg-slate-600' : 'bg-slate-300'} mx-1`} />
+        <div className={`w-px h-5 ${isDark ? 'bg-slate-600' : 'bg-slate-300'} mx-0.5 hidden md:block`} />
         <button
           onClick={resetView}
-          className={`px-2 py-1 text-xs rounded ${isDark
+          className={`hidden md:block px-2 py-1 text-xs rounded ${isDark
             ? 'hover:bg-slate-700 text-slate-300'
             : 'hover:bg-slate-100 text-slate-600'
             }`}
@@ -389,7 +414,7 @@ export function NetworkTopologyView(props: NetworkTopologyViewProps) {
         </button>
         <button
           onClick={toggleFullscreen}
-          className={`px-2 py-1 text-xs rounded flex items-center gap-1 ${isDark
+          className={`hidden md:flex px-2 py-1 text-xs rounded items-center gap-1 ${isDark
             ? 'hover:bg-slate-700 text-slate-300'
             : 'hover:bg-slate-100 text-slate-600'
             }`}

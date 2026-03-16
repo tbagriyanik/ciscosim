@@ -151,45 +151,56 @@ export default function Home() {
   const [isAppLoading, setIsLoading] = useState(true);
   const [showContent, setShowContent] = useState(false);
 
+  // Define tab state first to avoid temporal deadzone errors in callbacks
+  const [activeTab, setActiveTab] = useState<TabType>('topology');
+
   // Currently active device in terminal
   const [activeDeviceId, setActiveDeviceId] = useState<string>('switch-1');
   const [activeDeviceType, setActiveDeviceType] = useState<'pc' | 'switch' | 'router'>('switch');
 
   // Topology state - managed in page.tsx for save/load functionality
-  const [topologyDevices, setTopologyDevices] = useState<CanvasDevice[]>([
-    {
-      id: 'pc-1',
-      type: 'pc',
-      name: 'PC-1',
-      x: 50,
-      y: 50,
-      ip: '192.168.1.10',
-      macAddress: '00e0.f701.a1b1',
-      status: 'online',
-      ports: [
-        { id: 'eth0', label: 'Eth0', status: 'disconnected' as const },
-        { id: 'com1', label: 'COM1', status: 'disconnected' as const }
-      ]
-    },
-    {
-      id: 'switch-1',
-      type: 'switch',
-      name: 'SWITCH-1',
-      x: 200,
-      y: 50,
-      macAddress: '0011.2233.4401',
-      ip: '',
-      status: 'online',
-      ports: [
-        { id: 'console', label: 'Console', status: 'disconnected' as const },
-        ...Array.from({ length: 24 }, (_, i) => ({ id: `fa0/${i + 1}`, label: `Fa0/${i + 1}`, status: 'disconnected' as const })),
-        { id: 'gi0/1', label: 'Gi0/1', status: 'disconnected' as const },
-        { id: 'gi0/2', label: 'Gi0/2', status: 'disconnected' as const }
-      ]
-    }
-  ]);
+  const [topologyDevices, setTopologyDevices] = useState<CanvasDevice[]>([]);
   const [topologyConnections, setTopologyConnections] = useState<CanvasConnection[]>([]);
   const [topologyNotes, setTopologyNotes] = useState<CanvasNote[]>([]);
+
+  // Initialize defaults on mount to avoid hydration mismatch
+  useEffect(() => {
+    const savedData = localStorage.getItem('netsim_autosave');
+    if (!savedData) {
+      setTopologyDevices([
+        {
+          id: 'pc-1',
+          type: 'pc',
+          name: 'PC-1',
+          x: 50,
+          y: 50,
+          ip: '192.168.1.10',
+          macAddress: '00E0.F701.A1B1',
+          status: 'online',
+          ports: [
+            { id: 'eth0', label: 'Eth0', status: 'disconnected' as const },
+            { id: 'com1', label: 'COM1', status: 'disconnected' as const }
+          ]
+        },
+        {
+          id: 'switch-1',
+          type: 'switch',
+          name: 'SWITCH-1',
+          x: 200,
+          y: 50,
+          macAddress: '0011.2233.4401',
+          ip: '',
+          status: 'online',
+          ports: [
+            { id: 'console', label: 'Console', status: 'disconnected' as const },
+            ...Array.from({ length: 24 }, (_, i) => ({ id: `fa0/${i + 1}`, label: `Fa0/${i + 1}`, status: 'disconnected' as const })),
+            { id: 'gi0/1', label: 'Gi0/1', status: 'disconnected' as const },
+            { id: 'gi0/2', label: 'Gi0/2', status: 'disconnected' as const }
+          ]
+        }
+      ]);
+    }
+  }, []);
   const [zoom, setZoom] = useState(1.0);
   const [pan, setPan] = useState({ x: 0, y: 0 });
 
@@ -261,8 +272,9 @@ export default function Home() {
     activeDeviceId: activeDeviceId || '',
     activeDeviceType: activeDeviceType || 'switch',
     zoom,
-    pan: { ...pan }
-  }), [topologyDevices, topologyConnections, topologyNotes, deviceStates, deviceOutputs, pcOutputs, pcHistories, cableInfo, activeDeviceId, activeDeviceType, zoom, pan]);
+    pan: { ...pan },
+    activeTab
+  }), [topologyDevices, topologyConnections, topologyNotes, deviceStates, deviceOutputs, pcOutputs, pcHistories, cableInfo, activeDeviceId, activeDeviceType, zoom, pan, activeTab]);
 
   const { pushState, undo, redo, canUndo, canRedo, resetHistory } = useHistory(getCurrentState());
 
@@ -285,8 +297,11 @@ export default function Home() {
     setActiveDeviceType(state.activeDeviceType);
     setZoom(state.zoom);
     setPan(state.pan);
+    if (state.activeTab) {
+      setActiveTab(state.activeTab as TabType);
+    }
     // setTopologyKey(prev => prev + 1); // Only for resets
-  }, [setTopologyDevices, setTopologyConnections, setTopologyNotes, setDeviceStates, setDeviceOutputs, setPcOutputs, setPcHistories, setCableInfo, setActiveDeviceId, setActiveDeviceType, setZoom, setPan]);
+  }, [setTopologyDevices, setTopologyConnections, setTopologyNotes, setDeviceStates, setDeviceOutputs, setPcOutputs, setPcHistories, setCableInfo, setActiveDeviceId, setActiveDeviceType, setZoom, setPan, setActiveTab]);
 
   const isApplyingHistoryRef = useRef(false);
 
@@ -316,7 +331,8 @@ export default function Home() {
       c: initialState.topologyConnections,
       n: initialState.topologyNotes,
       s: Array.from(initialState.deviceStates.keys()),
-      id: initialState.activeDeviceId
+      id: initialState.activeDeviceId,
+      tab: initialState.activeTab
     });
   }, []); // Run once on mount
 
@@ -329,7 +345,8 @@ export default function Home() {
       c: currentState.topologyConnections,
       n: currentState.topologyNotes,
       s: Array.from(currentState.deviceStates.keys()),
-      id: currentState.activeDeviceId
+      id: currentState.activeDeviceId,
+      tab: currentState.activeTab
     });
 
     if (stateString !== lastPushedStateRef.current) {
@@ -375,11 +392,11 @@ export default function Home() {
   // MOVED AFTER topologyDevices initialization
   const state = (() => {
     const activeDevice = topologyDevices?.find(d => d.id === activeDeviceId);
-    return getOrCreateDeviceState(activeDeviceId, activeDeviceType, activeDevice?.name);
+    return getOrCreateDeviceState(activeDeviceId, activeDeviceType, activeDevice?.name, activeDevice?.macAddress);
   })();
-  const output = getOrCreateDeviceOutputs(activeDeviceId);
+  const output = activeTab === 'topology' ? [] : getOrCreateDeviceOutputs(activeDeviceId);
 
-  const [activeTab, setActiveTab] = useState<TabType>('topology');
+  // Redundant declaration of activeTab removed (moved higher)
   useEffect(() => {
     activeTabRef.current = activeTab;
   }, [activeTab]);
@@ -486,7 +503,7 @@ export default function Home() {
           if (stateItem?.state?.bannerMOTD && !outputs.some(o => o.content?.includes(stateItem.state.bannerMOTD))) {
             outputs = [
               {
-                id: 'banner-load-' + Date.now(),
+                id: 'banner-load-static',
                 type: 'output',
                 content: stateItem.state.bannerMOTD + '\n'
               },
@@ -559,7 +576,8 @@ export default function Home() {
         activeDeviceId: projectData.activeDeviceId || 'switch-1',
         activeDeviceType: projectData.activeDeviceType || 'switch',
         zoom: projectData.zoom || 1.0,
-        pan: projectData.pan || { x: 0, y: 0 }
+        pan: projectData.pan || { x: 0, y: 0 },
+        activeTab: projectData.activeTab || 'topology'
       });
 
       return true;
@@ -678,7 +696,7 @@ export default function Home() {
 
     if (actualDeviceType !== 'pc') {
       const deviceObj = topologyDevices?.find(d => d.id === deviceId);
-      getOrCreateDeviceState(deviceId, actualDeviceType, deviceObj?.name);
+      getOrCreateDeviceState(deviceId, actualDeviceType, deviceObj?.name, deviceObj?.macAddress);
       getOrCreateDeviceOutputs(deviceId);
     }
   }, [getOrCreateDeviceState, getOrCreateDeviceOutputs, topologyDevices, setSelectedDevice, setActiveDeviceId, setActiveDeviceType]);
@@ -785,7 +803,7 @@ export default function Home() {
       setActiveDeviceType(actualType);
       
       const deviceObj = topologyDevices?.find(d => d.id === deviceId);
-      getOrCreateDeviceState(deviceId, actualType, deviceObj?.name);
+      getOrCreateDeviceState(deviceId, actualType, deviceObj?.name, deviceObj?.macAddress);
       getOrCreateDeviceOutputs(deviceId);
       setActiveTab('terminal');
     }
@@ -1073,7 +1091,7 @@ export default function Home() {
           x: 50,
           y: 50,
           ip: '192.168.1.10',
-          macAddress: '00e0.f701.a1b1',
+          macAddress: '00E0.F701.A1B1',
           status: 'online',
           ports: [
             { id: 'eth0', label: 'Eth0', status: 'disconnected' as const },
@@ -1123,7 +1141,7 @@ export default function Home() {
             x: 50,
             y: 50,
             ip: '192.168.1.10',
-            macAddress: '00e0.f701.a1b1',
+            macAddress: '00E0.F701.A1B1',
             status: 'online',
             ports: [
               { id: 'eth0', label: 'Eth0', status: 'disconnected' as const },
@@ -1157,7 +1175,8 @@ export default function Home() {
         activeDeviceId: 'switch-1',
         activeDeviceType: 'switch',
         zoom: 1.0,
-        pan: { x: 0, y: 0 }
+        pan: { x: 0, y: 0 },
+        activeTab: 'topology'
       });
   }, [resetHistory, setDeviceStates, setDeviceOutputs, setPcOutputs, setPcHistories, setTopologyDevices, setTopologyConnections, setTopologyNotes, setActiveDeviceId, setActiveDeviceType, setSelectedDevice, setShowPCPanel, setActiveTab, setHasUnsavedChanges, setTopologyKey]);
 
@@ -1715,7 +1734,7 @@ export default function Home() {
                         <div className="grid grid-cols-2 gap-2">
                           <Button
                             variant="secondary"
-                            className="justify-start gap-2 h-9 text-xs font-bold"
+                            className="justify-start gap-2 h-9 text-xs font-bold hidden md:flex"
                             onClick={() => { handleNewProject(); setShowMobileMenu(false); }}
                           >
                             <File className="w-3.5 h-3.5" /> {language === 'tr' ? 'Yeni' : 'New'}
@@ -1996,8 +2015,8 @@ export default function Home() {
       </header>
       
       {/* Mobile Bottom Tab Bar (Icons Only) */}
-      <div className={`sm:hidden fixed bottom-0 left-0 right-0 z-[100] border-t backdrop-blur-xl flex items-center justify-around px-2 py-2 safe-area-inset-bottom ${
-        isDark ? 'bg-slate-900/90 border-slate-800 text-slate-400' : 'bg-white/90 border-slate-200 text-slate-500'
+      <div className={`sm:hidden fixed bottom-0 left-0 right-0 z-[100] border-t backdrop-blur-xl flex items-center justify-around px-2 mobile-bottom-nav ${
+        isDark ? 'bg-slate-900/95 border-slate-800 text-slate-400' : 'bg-white/95 border-slate-200 text-slate-500'
       } ${showProjectPicker || showOnboarding ? 'hidden' : ''}`}>
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id;
@@ -2005,7 +2024,7 @@ export default function Home() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex flex-col items-center justify-center p-2.5 rounded-xl transition-all relative ${
+              className={`flex flex-col items-center justify-center min-h-[44px] min-w-[44px] px-3 py-2 rounded-xl transition-all relative ${
                 isActive ? 'text-cyan-400' : 'active:scale-95'
               }`}
             >
@@ -2013,17 +2032,17 @@ export default function Home() {
                 <motion.div 
                   layoutId="mobileTabActive"
                   className="absolute inset-0 bg-cyan-500/10 rounded-xl"
-                  transition={{ type: "spring", duration: 0.5 }}
+                  transition={{ type: "spring", duration: 0.4, bounce: 0.2 }}
                 />
               )}
-              <div className={`relative z-10 transition-transform ${isActive ? 'scale-110' : ''}`}>
+              <div className={`relative z-10 transition-transform duration-200 ${isActive ? 'scale-110' : ''}`}>
                 {tab.id === 'topology' ? <Network className="w-5 h-5" /> : 
                  (tab.id === 'cmd' || tab.id === 'terminal') ? <TerminalIcon className="w-5 h-5" /> :
                  tab.id === 'ports' ? <Database className="w-5 h-5" /> :
                  tab.id === 'vlan' ? <Layers className="w-5 h-5" /> :
                  <ShieldCheck className="w-5 h-5" />}
               </div>
-              <span className="mt-0.5 text-[10px] font-semibold leading-tight">
+              <span className="mt-0.5 text-[10px] font-semibold leading-tight relative z-10">
                 {tab.label}
               </span>
             </button>
@@ -2031,7 +2050,7 @@ export default function Home() {
         })}
       </div>
       <Dialog open={showProjectPicker} onOpenChange={setShowProjectPicker}>
-        <DialogContent className={`${isDark ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white'} w-screen h-screen max-w-none m-0 rounded-none`}>
+        <DialogContent className={`${isDark ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white'} w-screen h-screen max-w-none m-0 rounded-none hidden md:block`}>
           <DialogHeader>
             <DialogTitle>{language === 'tr' ? 'Yeni Proje' : 'New Project'}</DialogTitle>
             <DialogDescription className={isDark ? 'text-slate-400' : 'text-slate-500'}>
@@ -2203,32 +2222,33 @@ export default function Home() {
         )}
 
         {/* CMD Terminal Sekmesi */}
-        {activeTab === 'cmd' && (
-          <div className="w-full h-full overflow-hidden flex flex-col min-h-[calc(100vh-8rem)] sm:min-h-[450px]">
+        {/* CMD Terminal Sekmesi - Always mounted, hidden via CSS */}
+        <div className={`w-full h-full overflow-hidden flex flex-col min-h-[calc(100vh-8rem)] sm:min-h-[450px] ${activeTab === 'cmd' ? 'block' : 'hidden'}`}>
             <PCPanel
+              key="pc-panel"
               deviceId={activeDeviceId}
               cableInfo={cableInfo}
-              isVisible={true}
+              isVisible={activeTab === 'cmd'}
               onClose={() => setActiveTab('topology')}
               onTogglePower={toggleDevicePower}
               topologyDevices={topologyDevices || undefined}
               topologyConnections={topologyConnections || undefined}
               deviceStates={deviceStates}
               deviceOutputs={deviceOutputs}
+              pcOutputs={pcOutputs}
               pcHistories={pcHistories}
               onUpdatePCHistory={handleUpdatePCHistory}
               onExecuteDeviceCommand={handleExecuteCommand}
             />
-          </div>
-        )}
+        </div>
 
-        {/* Terminal Sekmesi - Fixed Layout with Footer at Bottom */}
-        {activeTab === 'terminal' && (
-          <div className="flex-1 flex flex-col gap-4 overflow-hidden min-h-[450px]">
-            <div className="grid lg:grid-cols-4 gap-4 flex-1 overflow-hidden">
-              <div className="lg:col-span-3 flex flex-col gap-4 overflow-hidden">
-                <Terminal
-                  deviceId={activeDeviceId}
+        {/* Terminal Sekmesi - Always mounted, hidden via CSS */}
+        <div className={`flex-1 flex flex-col gap-4 overflow-hidden min-h-[450px] ${activeTab === 'terminal' ? 'flex' : 'hidden'}`}>
+          <div className="grid lg:grid-cols-4 gap-4 flex-1 overflow-hidden">
+            <div className="lg:col-span-3 flex flex-col gap-4 overflow-hidden">
+              <Terminal
+                key="terminal"
+                deviceId={activeDeviceId}
                   // use same display name as the dropdown (hostname or topology name)
                   deviceName={
                     (() => {
@@ -2272,7 +2292,6 @@ export default function Home() {
               </div>
             </div>
           </div>
-        )}
 
         {/* Portlar Sekmesi */}
         {activeTab === 'ports' && (

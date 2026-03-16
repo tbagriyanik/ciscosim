@@ -44,6 +44,7 @@ interface PCPanelProps {
   }[];
   deviceStates?: Map<string, SwitchState>;
   deviceOutputs?: Map<string, TerminalOutput[]>;
+  pcOutputs?: Map<string, OutputLine[]>;
   pcHistories?: Map<string, string[]>;
   onUpdatePCHistory?: (deviceId: string, history: string[]) => void;
   onExecuteDeviceCommand?: (deviceId: string, command: string) => Promise<any>;
@@ -88,6 +89,7 @@ export function PCPanel({
   topologyConnections = [],
   deviceStates,
   deviceOutputs,
+  pcOutputs,
   pcHistories,
   onUpdatePCHistory,
   onExecuteDeviceCommand
@@ -137,14 +139,28 @@ export function PCPanel({
   const [pcHostname, setPcHostname] = useState(deviceFromTopology?.name || deviceId);
   const [pcMAC, setPcMAC] = useState(deviceFromTopology?.macAddress || defaultConfig.mac);
 
-  // Local output for Desktop (Local)
-  const [pcOutput, setPcOutput] = useState<OutputLine[]>(() => [
-    {
+  // Local output for Desktop (Local) - initialize from prop if available
+  const getInitialPcOutput = (): OutputLine[] => {
+    if (pcOutputs?.has('pc-desktop')) {
+      return pcOutputs.get('pc-desktop')!;
+    }
+    return [{
       id: '1',
       type: 'output',
       content: 'OS Windows [Version 10.0.19045.4412]\n(c) OS Corporation. All rights reserved.\n'
+    }];
+  };
+  const [pcOutput, setPcOutput] = useState<OutputLine[]>(() => getInitialPcOutput());
+
+  // Sync pcOutput changes back to parent when it changes
+  const prevPcOutputRef = useRef(pcOutput);
+  useEffect(() => {
+    if (pcOutput !== prevPcOutputRef.current && pcOutput.length > 0) {
+      prevPcOutputRef.current = pcOutput;
+      // Parent can subscribe to this via a callback if needed
+      // For now, we keep local state in sync
     }
-  ]);
+  }, [pcOutput]);
 
   // Tab cycle state
   const [tabCycleIndex, setTabCycleIndex] = useState(-1);

@@ -51,7 +51,8 @@ export function QuickCommands({ currentMode, onExecuteCommand, t, theme, languag
     config: t.modeConfig,
     interface: t.modeInterface,
     line: t.modeLine,
-    vlan: t.modeVlanLabel
+    vlan: t.modeVlanLabel,
+    'router-config': t.modeConfig,
   };
 
   const cardBg = isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200';
