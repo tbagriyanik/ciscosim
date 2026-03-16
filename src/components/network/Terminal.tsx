@@ -244,6 +244,9 @@ export function Terminal({
     } else if (e.key === 'Tab') {
       e.preventDefault();
       handleTabComplete();
+    } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'l') {
+      e.preventDefault();
+      onClear();
     } else {
       // Reset tab cycle on any other key
       setTabCycleIndex(-1);

@@ -602,6 +602,14 @@ export function PCPanel({
     } else if (e.key === 'Tab') {
       e.preventDefault();
       handleTabComplete(e.currentTarget);
+    } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'l') {
+      e.preventDefault();
+      if (activeTab === 'desktop') {
+        setPcOutput([]);
+      } else if (activeTab === 'terminal' && connectedDeviceId && onExecuteDeviceCommand) {
+        // For terminal, execute 'clear' command to clear the output
+        onExecuteDeviceCommand(connectedDeviceId, 'clear');
+      }
     } else {
       // Reset tab cycle on any other key press
       setTabCycleIndex(-1);
