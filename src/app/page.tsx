@@ -1685,7 +1685,9 @@ export default function Home() {
                   </DropdownMenuContent>
                 </DropdownMenu>
                 <input ref={fileInputRef} type="file" accept=".json" onChange={handleLoadProject} className="hidden" />
-                <div className={`w-px h-4 mx-1 ${isDark ? 'bg-slate-700' : 'bg-slate-300'}`} />
+                {(activeTab === 'topology') && (
+                  <div className={`w-px h-4 mx-1 ${isDark ? 'bg-slate-700' : 'bg-slate-300'} hidden md:block`} />
+                )}
 
                 {/* Info & Settings */}
                 <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setShowAboutModal(true)} title={t.about}>
@@ -1734,8 +1736,8 @@ export default function Home() {
                         <div className="grid grid-cols-2 gap-2">
                           <Button
                             variant="secondary"
-                            className="justify-start gap-2 h-9 text-xs font-bold hidden md:flex"
-                            onClick={() => { handleNewProject(); setShowMobileMenu(false); }}
+                            className="justify-start gap-2 h-9 text-xs font-bold"
+                            onClick={() => { setShowProjectPicker(true); setShowMobileMenu(false); }}
                           >
                             <File className="w-3.5 h-3.5" /> {language === 'tr' ? 'Yeni' : 'New'}
                           </Button>
@@ -2024,7 +2026,7 @@ export default function Home() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex flex-col items-center justify-center min-h-[44px] min-w-[44px] px-3 py-2 rounded-xl transition-all relative ${
+              className={`flex flex-col items-center justify-center min-h-[44px] flex-1 px-3 py-2 rounded-xl transition-all relative ${
                 isActive ? 'text-cyan-400' : 'active:scale-95'
               }`}
             >
@@ -2050,7 +2052,7 @@ export default function Home() {
         })}
       </div>
       <Dialog open={showProjectPicker} onOpenChange={setShowProjectPicker}>
-        <DialogContent className={`${isDark ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white'} w-screen h-screen max-w-none m-0 rounded-none hidden md:block`}>
+        <DialogContent className={`${isDark ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white'} w-screen h-screen max-w-none m-0 rounded-none`}>
           <DialogHeader>
             <DialogTitle>{language === 'tr' ? 'Yeni Proje' : 'New Project'}</DialogTitle>
             <DialogDescription className={isDark ? 'text-slate-400' : 'text-slate-500'}>
