@@ -10,6 +10,7 @@ This document tracks the implementation status of features and planned enhanceme
 - [x] **State Management** - Per-device CLI state and topology persistence
 - [x] **Database Integration** - Prisma ORM configured
 - [x] **Offline Support** - localStorage-based PWA with Service Worker
+- [x] **Hydration Stability** - Resolved SSR/Client mismatches with static initial states
 - [ ] **App Hosting Deployment** - Cloud deployment for server-side Next.js app
 
 ## 🌐 Network Topology Canvas
@@ -18,10 +19,14 @@ This document tracks the implementation status of features and planned enhanceme
 - [x] **Cable Management** - Straight-through, Crossover, and Console cable logic
 - [x] **Connection Validation** - Intelligent cable compatibility checking
 - [x] **Visual Feedback** - Animated data packets and port link LEDs
-- [x] **Minimap** - Navigation overview for large topologies
+- [x] **Rendering Performance** - Optimized connection lookups (O(n²) → O(1)) using group Map
 - [x] **Save/Load Topology** - Persistent storage of canvas layouts to database / Local JSON
 - [x] **New Project Modal** - Full-screen modal with scroll support and example projects
-- [x] **Mobile Optimization** - Touch-friendly interface, responsive modals, 2-column layouts
+- [x] **Mobile Optimization**:
+    - [x] **Safe Area Insets** - Support for iPhone notch and home indicator
+    - [x] **Touch Target Optimization** - Standard 44px+ targets for all mobile controls
+    - [x] **Mobile Zoom Controls** - Visual zoom buttons for touch devices
+    - [x] **Canvas Interaction** - Optimized touch events and overscroll prevention
 - [ ] **Auto-layout** - Intelligent positioning of connected devices
 
 ## 💻 Network NOS Simulator (Switch Focus)
@@ -30,6 +35,7 @@ This document tracks the implementation status of features and planned enhanceme
 - [x] **Interactive Help** - Inline `?` help and Tab-completion
 - [x] **Ghost Text** - Intelligent inline command suggestions
 - [x] **Terminal UI** - Scrollback, command history, and per-device output
+- [x] **State Persistence** - Terminals stay mounted while switching tabs (no data loss)
 - [x] **Layer 2 Features**:
     - [x] **VLANs** - Creation, naming, and assignment
     - [x] **Trunking** - `switchport mode trunk` and allowed VLANs
@@ -37,7 +43,7 @@ This document tracks the implementation status of features and planned enhanceme
     - [x] **STP (Spanning Tree)** - Mode selection (PVST, Rapid-PVST) and status viewing
     - [x] **EtherChannel** - `channel-group` configuration
 - [x] **System Management**:
-    - [x] **Hostname** - Custom device names
+    - [x] **Hostname** - Custom device names (synced with topology)
     - [x] **Banner** - MOTD configuration
     - [x] **Passwords** - `enable secret`, line passwords, and encryption
     - [x] **NDP** - Network Discovery Protocol neighbor discovery
@@ -76,6 +82,7 @@ This document tracks the implementation status of features and planned enhanceme
 - [x] **Mobile Tab Management** - Bottom tab bar hidden in modals for better UX
 - [x] **Integrated Toolbar** - Unified toolbar with undo/redo, project controls, and settings
 - [x] **Footer Component** - Save status, quick hints, and lab progress in footer
+- [x] **Undo/Redo Enhancements** - History now captures active tab and panel state
 - [x] **Keyboard Shortcuts** - Ctrl+Y for redo, Ctrl+Z for undo, Ctrl+S for save
 - [ ] **Scenario Creator** - Tool to create custom labs without coding
 - [ ] **Certification Tracks** - Pre-defined CCNA-style lab sequences
@@ -84,8 +91,8 @@ This document tracks the implementation status of features and planned enhanceme
 - [ ] **Multi-user Collaboration** - Real-time shared labs via WebSockets
 - [ ] **Packet Inspection** - "Wireshark-lite" view for data flow analysis
 - [x] **Mobile Optimization** - Improved touch gestures, compact modals, and back button support
-- [ ] **Terminal UX Enhancements** - Search/highlight, copy output, and PC console parity (in progress)
-- [ ] **Performance Benchmarks** - Optimizing large topology rendering (100+ devices)
+- [x] **Terminal UX Enhancements** - Search/highlight, copy output, and terminal state persistence
+- [x] **Performance Benchmarks** - Optimized large topology rendering via O(1) connection group mapping
 
 ## 📚 Example Projects (Templates)
 
@@ -103,69 +110,11 @@ This document tracks the implementation status of features and planned enhanceme
 - [x] **STP Redundant Links** - Spanning Tree with redundant paths
 - [x] **Campus Network** - Core router with access switches
 
-### 🏭 Advanced Labs
+###  Advanced Labs
 - [ ] **OSPF Multi-Area** - Dynamic routing with OSPF areas
 - [ ] **Enterprise Network** - Full campus network with Core/Distribution/Access
 - [ ] **WAN Simulation** - Multiple sites with WAN connections
 - [ ] **Network Security** - ACLs, port security, and DHCP snooping combined
-
-### 📋 Example Project Details
-
-#### 1. Basic VLAN Lab (Beginner)
-```
-Devices: 1 Switch, 2 PCs
-Concepts: VLAN creation, access ports, inter-VLAN ping
-Commands: vlan, switchport mode access, switchport access vlan
-```
-
-#### 2. Inter-VLAN Routing Lab (Intermediate)
-```
-Devices: 1 L3 Switch, 4 PCs
-Concepts: VLANs, SVI, ip routing, inter-VLAN communication
-Commands: ip routing, interface vlan, ip address
-```
-
-#### 3. Static Routing Lab (Intermediate)
-```
-Devices: 2 Routers, 2 Switches, 4 PCs
-Concepts: Static routes, next-hop, routing table
-Commands: ip route, show ip route
-```
-
-#### 4. Enterprise Network (Advanced)
-```
-Devices: 2 Core Switches, 4 Distribution Switches, 8 Access Switches, 16 PCs
-Concepts: Hierarchical design, redundancy, EtherChannel, routing
-Commands: Full range of switching and routing commands
-```
-
-#### 5. Router-on-a-Stick Lab (Intermediate)
-```
-Devices: 1 Router, 1 Switch, 4 PCs (2 VLANs)
-Concepts: Subinterfaces, 802.1Q encapsulation, inter-VLAN routing
-Commands: interface gi0/0.10, encapsulation dot1q 10
-```
-
-#### 6. Port Security Lab (Intermediate)
-```
-Devices: 1 Switch, 2 PCs
-Concepts: Sticky MAC, violation modes, secure ports
-Commands: switchport port-security, switchport port-security mac-address sticky
-```
-
-#### 7. Basic Campus Network (Advanced)
-```
-Devices: 1 Core Router, 2 Distribution Switches, 4 Access Switches, 8 PCs
-Concepts: Layer 3 at core, VLANs, trunking, routing
-Commands: Full switch and router configuration
-```
-
-#### 8. Redundant Links Lab (Intermediate)
-```
-Devices: 2 Switches, 4 PCs
-Concepts: STP, redundant paths, root bridge election
-Commands: spanning-tree mode rapid-pvst, spanning-tree priority
-```
 
 ### 🎯 Learning Paths
 
