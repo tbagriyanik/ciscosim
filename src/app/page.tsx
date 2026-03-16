@@ -1605,26 +1605,30 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Right Controls */}
-            <div className="flex items-center gap-1">
-              {/* Project Group - compact menu */}
-              <div className="hidden md:flex items-center gap-2">
+            {/* Right Controls - Integrated Toolbar */}
+            <div className="flex items-center gap-2">
+              {/* Unified Toolbar */}
+              <div className={`flex items-center gap-1 px-2 py-1.5 rounded-xl border ${isDark ? 'bg-slate-800/40 border-slate-800' : 'bg-slate-100 border-slate-200'}`}>
+                {/* Undo/Redo Group */}
                 {activeTab === 'topology' && (
-                  <div className={`flex items-center px-2 py-1.5 rounded-lg border ${isDark ? 'bg-slate-800/40 border-slate-800' : 'bg-slate-100 border-slate-200'}`}>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 mx-0.5" onClick={handleUndo} disabled={!canUndo} title={t.undo}>
+                  <>
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleUndo} disabled={!canUndo} title={t.undo}>
                       <Undo2 className={`w-4 h-4 ${!canUndo ? 'opacity-30' : ''}`} />
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 mx-0.5" onClick={handleRedo} disabled={!canRedo} title={t.redo}>
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleRedo} disabled={!canRedo} title={t.redo}>
                       <Redo2 className={`w-4 h-4 ${!canRedo ? 'opacity-30' : ''}`} />
                     </Button>
-                  </div>
+                    <div className={`w-px h-4 mx-1 ${isDark ? 'bg-slate-700' : 'bg-slate-300'}`} />
+                  </>
                 )}
+
+                {/* Project Controls */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
-                      variant="outline"
+                      variant="ghost"
                       size="sm"
-                      className="h-8 px-3 text-xs font-semibold flex items-center gap-2"
+                      className="h-8 px-2.5 text-xs font-semibold flex items-center gap-2"
                     >
                       <File className="w-3.5 h-3.5" />
                       <span>{t.project}</span>
@@ -1662,45 +1666,27 @@ export default function Home() {
                   </DropdownMenuContent>
                 </DropdownMenu>
                 <input ref={fileInputRef} type="file" accept=".json" onChange={handleLoadProject} className="hidden" />
-                {(
-                  <div className="flex flex-col items-end ml-1">
-                    <span className={`flex items-center gap-1 text-[10px] font-semibold ${hasUnsavedChanges ? 'text-amber-400' : 'text-emerald-400'}`}>
-                      <span className={`text-center w-1.5 h-1.5 rounded-full ${hasUnsavedChanges ? 'bg-amber-400 animate-pulse' : 'bg-emerald-400'}`} />
-                      {hasUnsavedChanges
-                        ? (language === 'tr' ? 'Kaydedilmedi' : 'Unsaved')
-                        : (language === 'tr' ? 'Kaydedildi' : 'Saved')}
-                    </span>
-                    {lastSaveTime && (
-                      <span className={`text-center text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>
-                        {(language === 'tr' ? 'Son kayıt: ' : 'Last save: ') + lastSaveTime}
-                      </span>
-                    )}
-                  </div>
-                )}
-              </div>
+                <div className={`w-px h-4 mx-1 ${isDark ? 'bg-slate-700' : 'bg-slate-300'}`} />
 
-              {/* Info & Settings Group */}
-              <div className={`flex items-center px-2 py-1.5 rounded-lg border ${isDark ? 'bg-slate-800/40 border-slate-800' : 'bg-slate-100 border-slate-200'} ml-1`}>
+                {/* Info & Settings */}
                 <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setShowAboutModal(true)} title={t.about}>
                   <Info className="w-4 h-4" />
                 </Button>
-                <div className={`w-px h-4 mx-1 ${isDark ? 'bg-slate-700' : 'bg-slate-300'}`} />
                 <Button 
                   variant="ghost" 
                   size="sm" 
                   onClick={() => setLanguage(language === 'tr' ? 'en' : 'tr')}
-                  className="text-xs font-bold h-8 px-2.5"
+                  className="text-xs font-bold h-8 px-2"
                 >
                   <Languages className="w-4 h-4 mr-1" />
                   {language.toUpperCase()}
                 </Button>
-                <div className={`w-px h-4 mx-1 ${isDark ? 'bg-slate-700' : 'bg-slate-300'}`} />
                 <Button variant="ghost" size="icon" className="h-8 w-8" onClick={toggleTheme}>
                   {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
                 </Button>
               </div>
 
-              {/* Mobile Menu (Standard Sheet) */}
+              {/* Mobile Menu */}
               <Sheet open={showMobileMenu} onOpenChange={setShowMobileMenu}>
                 <SheetTrigger asChild>
                   <Button variant="outline" size="icon" className="md:hidden">
@@ -2373,6 +2359,106 @@ export default function Home() {
         )}
         </div>
       </main>
+
+      {/* Footer - Save Status & Hints */}
+      <footer className={`fixed bottom-0 left-0 right-0 z-50 border-t backdrop-blur-xl transition-all ${
+        isDark ? 'bg-slate-900/95 border-slate-800' : 'bg-white/95 border-slate-200'
+      } ${showProjectPicker || showOnboarding ? 'hidden' : ''}`}>
+        <div className="max-w-7xl mx-auto px-4 py-2">
+          <div className="flex items-center justify-between gap-4">
+            {/* Save Status */}
+            <div className="flex items-center gap-3">
+              <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border ${
+                isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-100 border-slate-200'
+              }`}>
+                <span className={`flex items-center gap-1.5 text-xs font-semibold ${
+                  hasUnsavedChanges ? 'text-amber-400' : 'text-emerald-400'
+                }`}>
+                  <span className={`w-2 h-2 rounded-full ${
+                    hasUnsavedChanges ? 'bg-amber-400 animate-pulse' : 'bg-emerald-400'
+                  }`} />
+                  {hasUnsavedChanges
+                    ? (language === 'tr' ? 'Kaydedilmedi' : 'Unsaved')
+                    : (language === 'tr' ? 'Kaydedildi' : 'Saved')}
+                </span>
+                {lastSaveTime && (
+                  <span className={`text-[11px] ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>
+                    {(language === 'tr' ? 'Son: ' : 'Last: ') + lastSaveTime}
+                  </span>
+                )}
+              </div>
+
+              {/* Quick Hints */}
+              <div className={`hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg border ${
+                isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-100 border-slate-200'
+              }`}>
+                <span className={`text-[11px] font-medium ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+                  {language === 'tr' ? 'İpuçları:' : 'Tips:'}
+                </span>
+                <span className={`text-[11px] ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                  {activeTab === 'topology' && (
+                    <>
+                      <kbd className={`px-1.5 py-0.5 rounded text-[10px] font-mono ${
+                        isDark ? 'bg-slate-700 text-slate-300' : 'bg-slate-200 text-slate-700'
+                      }`}>Ctrl+Z</kbd>
+                      <span className="mx-1">{language === 'tr' ? 'Geri' : 'Undo'}</span>
+                      <kbd className={`px-1.5 py-0.5 rounded text-[10px] font-mono ${
+                        isDark ? 'bg-slate-700 text-slate-300' : 'bg-slate-200 text-slate-700'
+                      }`}>Ctrl+Y</kbd>
+                      <span className="mx-1">{language === 'tr' ? 'İleri' : 'Redo'}</span>
+                      <kbd className={`px-1.5 py-0.5 rounded text-[10px] font-mono ${
+                        isDark ? 'bg-slate-700 text-slate-300' : 'bg-slate-200 text-slate-700'
+                      }`}>Ctrl+S</kbd>
+                      <span className="mx-1">{language === 'tr' ? 'Kaydet' : 'Save'}</span>
+                    </>
+                  )}
+                  {(activeTab === 'cmd' || activeTab === 'terminal') && (
+                    <>
+                      <kbd className={`px-1.5 py-0.5 rounded text-[10px] font-mono ${
+                        isDark ? 'bg-slate-700 text-slate-300' : 'bg-slate-200 text-slate-700'
+                      }`}>Ctrl+L</kbd>
+                      <span className="mx-1">{language === 'tr' ? 'Temizle' : 'Clear'}</span>
+                      <kbd className={`px-1.5 py-0.5 rounded text-[10px] font-mono ${
+                        isDark ? 'bg-slate-700 text-slate-300' : 'bg-slate-200 text-slate-700'
+                      }`}>↑↓</kbd>
+                      <span className="mx-1">{language === 'tr' ? 'Geçmiş' : 'History'}</span>
+                    </>
+                  )}
+                  {activeTab !== 'topology' && activeTab !== 'cmd' && activeTab !== 'terminal' && (
+                    <>
+                      <kbd className={`px-1.5 py-0.5 rounded text-[10px] font-mono ${
+                        isDark ? 'bg-slate-700 text-slate-300' : 'bg-slate-200 text-slate-700'
+                      }`}>Ctrl+1-5</kbd>
+                      <span className="mx-1">{language === 'tr' ? 'Sekmeler' : 'Tabs'}</span>
+                    </>
+                  )}
+                </span>
+              </div>
+            </div>
+
+            {/* Lab Progress */}
+            {totalScore > 0 && (
+              <div className={`hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg border ${
+                isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-100 border-slate-200'
+              }`}>
+                <span className={`text-[11px] font-bold uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-600'}`}>
+                  {t.labProgress}
+                </span>
+                <div className={`w-20 h-1.5 rounded-full ${isDark ? 'bg-slate-700' : 'bg-slate-200'} overflow-hidden`}>
+                  <div 
+                    className="h-full bg-cyan-500 shadow-[0_0_6px_rgba(6,182,212,0.5)] transition-all duration-300" 
+                    style={{ width: `${(totalScore / maxScore) * 100}%` }}
+                  />
+                </div>
+                <span className={`text-[11px] font-bold ${isDark ? 'text-cyan-400' : 'text-cyan-600'}`}>
+                  {Math.round((totalScore / maxScore) * 100)}%
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+      </footer>
+
       <AboutModal isOpen={showAboutModal} onClose={() => setShowAboutModal(false)} />
       </motion.div>
     </div>
