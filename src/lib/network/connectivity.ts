@@ -195,11 +195,27 @@ export function checkConnectivity(
 
       const state = deviceStates.get(deviceId);
       if (!state) return null;
-      if (state.ports['vlan1']?.ipAddress === ip) return 1;
+      
+      // Check all VLAN SVIs first (vlan1, vlan10, vlan20, etc.)
+      for (const [portId, port] of Object.entries(state.ports)) {
+        if (portId.startsWith('vlan') && port.ipAddress === ip) {
+          // Extract VLAN number from port ID (e.g., vlan10 -> 10, vlan1 -> 1)
+          const vlanMatch = portId.match(/vlan(\d+)/);
+          if (vlanMatch) {
+            return parseInt(vlanMatch[1]);
+          }
+          return 1; // Default to VLAN 1 if can't parse
+        }
+      }
 
-      // If IP is on a routed physical interface, treat as L3 (skip VLAN enforcement here)
-      const onPhysical = Object.values(state.ports).some(p => p.ipAddress === ip);
-      return onPhysical ? null : 1;
+      // Check routed physical interfaces (L3)
+      const onPhysical = Object.values(state.ports).some(p => p.ipAddress === ip && p.mode === 'routed');
+      if (onPhysical) return null; // L3 device, skip VLAN enforcement
+
+      // Default to VLAN 1 for management IP
+      if (state.ports['vlan1']?.ipAddress === ip) return 1;
+      
+      return 1;
     };
 
     const sourceDevice = devices.find(d => d.id === sourceId);
@@ -211,8 +227,18 @@ export function checkConnectivity(
     const isSourceL3 = sourceVlan === null;
     const isTargetL3 = targetVlan === null;
     
-    // Only enforce VLAN check if both are L2 devices
-    if (!isSourceL3 && !isTargetL3 && sourceVlan !== null && targetVlan !== null && sourceVlan !== targetVlan) {
+    // Allow same-VLAN communication
+    // Only block if both are L2 devices AND in different VLANs
+    if (!isSourceL3 && !isTargetL3 && sourceVlan !== null && targetVlan !== null) {
+      // Same VLAN: allow communication
+      if (sourceVlan === targetVlan) {
+        // PCs in same VLAN can ping each other
+        return { 
+          success: true, 
+          hops: path.map(id => devices.find(d => d.id === id)?.name || id) 
+        };
+      }
+      // Different VLANs: block (unless L3 routing handles it)
       return {
         success: false,
         hops: path.map(id => devices.find(d => d.id === id)?.name || id),
