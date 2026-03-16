@@ -125,6 +125,7 @@ export function checkConnectivity(
         const swVlan = swPort?.vlan || 1;
         const pcVlan = pc.vlan || 1;
 
+        // Allow ping if switch port is trunk OR if VLANs match
         if (swPort?.mode !== 'trunk' && swVlan !== pcVlan) {
           return {
             success: false,
@@ -204,7 +205,13 @@ export function checkConnectivity(
     const sourceIp = sourceDevice?.ip || deviceStates.get(sourceId)?.ports['vlan1']?.ipAddress || '';
     const sourceVlan = sourceIp ? getDeviceVlanForIp(sourceId, sourceIp) : null;
     const targetVlan = getDeviceVlanForIp(targetDevice.id, targetIp);
-    if (sourceVlan !== null && targetVlan !== null && sourceVlan !== targetVlan) {
+    
+    // Skip VLAN enforcement for L3 routing scenarios
+    const isSourceL3 = sourceVlan === null;
+    const isTargetL3 = targetVlan === null;
+    
+    // Only enforce VLAN check if both are L2 devices
+    if (!isSourceL3 && !isTargetL3 && sourceVlan !== null && targetVlan !== null && sourceVlan !== targetVlan) {
       return {
         success: false,
         hops: path.map(id => devices.find(d => d.id === id)?.name || id),
