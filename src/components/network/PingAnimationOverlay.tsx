@@ -1,4 +1,4 @@
-import React, { memo } from 'react';
+import React from 'react';
 import { CanvasDevice, CanvasConnection } from './networkTopology.types';
 
 interface PingAnimationOverlayProps {
@@ -6,6 +6,7 @@ interface PingAnimationOverlayProps {
     path: string[];
     currentHopIndex: number;
     progress: number;
+    frame: number;
     success: boolean | null;
     sourceId: string;
     targetId: string;
@@ -17,7 +18,7 @@ interface PingAnimationOverlayProps {
   language: 'tr' | 'en';
 }
 
-export const PingAnimationOverlay = memo(function PingAnimationOverlay({
+export function PingAnimationOverlay({
   pingAnimation,
   devices,
   connections,
@@ -27,7 +28,7 @@ export const PingAnimationOverlay = memo(function PingAnimationOverlay({
 }: PingAnimationOverlayProps) {
   if (!pingAnimation) return null;
   
-  const { path, currentHopIndex, progress, success } = pingAnimation;
+  const { path, currentHopIndex, progress, success, frame } = pingAnimation;
   if (!path || path.length < 2 || success !== null) return null;
 
   // Get current hop devices
@@ -100,8 +101,10 @@ export const PingAnimationOverlay = memo(function PingAnimationOverlay({
   const envelopeOffsetX = Math.sin(angle) * 20;
   const envelopeOffsetY = -Math.cos(angle) * 20;
 
+  const progressKey = `${currentHopIndex}-${frame}`;
+
   return (
-    <g key={`ping-${currentHopIndex}`}>
+    <g key={`ping-${progressKey}`}>
       <g transform={`translate(${bezierX + envelopeOffsetX}, ${bezierY + envelopeOffsetY})`}>
         {/* Glow effect */}
         <circle r="10" fill="#06b6d4" opacity={0.2} className="animate-ping" />

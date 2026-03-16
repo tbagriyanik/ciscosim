@@ -456,6 +456,7 @@ export function NetworkTopology({
     path: string[];
     currentHopIndex: number;
     progress: number;
+    frame: number;
     success: boolean | null;
   } | null>(null);
 
@@ -2521,6 +2522,43 @@ export function NetworkTopology({
     return null; // No path found
   }, [connections, devices]);
 
+  const getDeviceWidth = useCallback((device: CanvasDevice) => {
+    if (device.type === 'pc') return 85;
+    if (device.type === 'switch') return 125; // switch width -5px per request
+    return 130; // router
+  }, []);
+
+  const getDeviceCenter = useCallback((device: CanvasDevice) => {
+    const deviceWidth = getDeviceWidth(device);
+    const portsPerRow = 8;
+    const numRows = Math.ceil(device.ports.length / portsPerRow);
+    const deviceHeight = device.type === 'pc' ? 100 : 100 + numRows * 14 + 5;
+    return { x: device.x + deviceWidth / 2, y: device.y + deviceHeight / 2 };
+  }, [getDeviceWidth]);
+
+  const getPortPosition = useCallback((device: CanvasDevice, portId: string) => {
+    const portIndex = device.ports.findIndex(p => p.id === portId);
+    if (portIndex === -1) return getDeviceCenter(device);
+
+    const deviceWidth = getDeviceWidth(device);
+    const portsPerRow = device.type === 'pc' ? 2 : 8;
+    const col = portIndex % portsPerRow;
+    const row = Math.floor(portIndex / portsPerRow);
+    const portSpacing = device.type === 'pc' ? 18 : 14;
+    const rowSpacing = 14;
+    const startX = device.type === 'pc'
+      ? deviceWidth / 2 - (device.ports.length > 1 ? portSpacing / 2 : 0)
+      : (device.type === 'router'
+        ? (deviceWidth - (portsPerRow - 1) * portSpacing) / 2
+        : 14);
+    const startY = device.type === 'pc' ? 80 : 80;
+
+    return {
+      x: device.x + startX + col * portSpacing,
+      y: device.y + startY + row * rowSpacing
+    };
+  }, [getDeviceCenter, getDeviceWidth]);
+
   // Ping animation between devices with multi-hop support
   const startPingAnimation = useCallback((sourceId: string, targetId: string) => {
     // Cancel any existing animation
@@ -2537,6 +2575,7 @@ export function NetworkTopology({
         path: [sourceId, targetId],
         currentHopIndex: 0,
         progress: 1,
+        frame: 0,
         success: false
       });
       setTimeout(() => setPingAnimation(null), 2500);
@@ -2554,6 +2593,7 @@ export function NetworkTopology({
         path: [sourceId, targetId],
         currentHopIndex: 0,
         progress: 1,
+        frame: 0,
         success: false
       });
       setTimeout(() => setPingAnimation(null), 2500);
@@ -2571,6 +2611,7 @@ export function NetworkTopology({
         path: [sourceId, targetId],
         currentHopIndex: 0,
         progress: 1,
+        frame: 0,
         success: false
       });
       setTimeout(() => setPingAnimation(null), 2500);
@@ -2584,21 +2625,51 @@ export function NetworkTopology({
       path,
       currentHopIndex: 0,
       progress: 0,
+      frame: 0,
       success: null
     });
 
-    // Animate ping - each hop takes 1000ms
-    const hopDuration = 1000;
+    // Animate ping - move 40px every 100ms (0.4px/ms)
+    const SPEED_PX_PER_MS = 0.5;
     let startTime = Date.now();
     let currentHop = 0;
 
+    const getHopDuration = (hopIndex: number) => {
+      const fromDevice = devices.find(d => d.id === path[hopIndex]);
+      const toDevice = devices.find(d => d.id === path[hopIndex + 1]);
+      if (!fromDevice || !toDevice) return 1000;
+
+      const conn = connections.find(
+        c => (c.sourceDeviceId === fromDevice.id && c.targetDeviceId === toDevice.id) ||
+          (c.sourceDeviceId === toDevice.id && c.targetDeviceId === fromDevice.id)
+      );
+
+      let source: { x: number; y: number };
+      let target: { x: number; y: number };
+
+      if (conn) {
+        source = getPortPosition(fromDevice, conn.sourceDeviceId === fromDevice.id ? conn.sourcePort : conn.targetPort);
+        target = getPortPosition(toDevice, conn.sourceDeviceId === toDevice.id ? conn.sourcePort : conn.targetPort);
+      } else {
+        source = getDeviceCenter(fromDevice);
+        target = getDeviceCenter(toDevice);
+      }
+
+      const dx = target.x - source.x;
+      const dy = target.y - source.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      return Math.max(distance / SPEED_PX_PER_MS, 1);
+    };
+
+    let currentHopDuration = getHopDuration(0);
+
     const animate = () => {
       const elapsed = Date.now() - startTime;
-      const progress = Math.min(elapsed / hopDuration, 1);
+      const progress = Math.min(elapsed / currentHopDuration, 1);
 
       setPingAnimation(prev => {
         if (!prev) return null;
-        return { ...prev, currentHopIndex: currentHop, progress };
+        return { ...prev, currentHopIndex: currentHop, progress, frame: prev.frame + 1 };
       });
 
       if (progress < 1) {
@@ -2608,6 +2679,7 @@ export function NetworkTopology({
         currentHop++;
         if (currentHop < path.length - 1) {
           startTime = Date.now();
+          currentHopDuration = getHopDuration(currentHop);
           pingAnimationRef.current = requestAnimationFrame(animate);
         } else {
           // Animation complete - show success
@@ -2618,7 +2690,7 @@ export function NetworkTopology({
     };
 
     pingAnimationRef.current = requestAnimationFrame(animate);
-  }, [connections, findPath]);
+  }, [connections, devices, findPath, getDeviceCenter, getPortPosition]);
 
   // Toast notification state
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
@@ -2637,46 +2709,6 @@ export function NetworkTopology({
     const nearest = Math.round((value - GRID_OFFSET) / GRID_SPACING) * GRID_SPACING + GRID_OFFSET;
     return Math.abs(value - nearest) <= SNAP_THRESHOLD ? nearest : value;
   }, []);
-
-  const getDeviceWidth = useCallback((device: CanvasDevice) => {
-    if (device.type === 'pc') return 85;
-    if (device.type === 'switch') return 125; // switch width -5px per request
-    return 130; // router
-  }, []);
-
-  // Get device position (center based on device type)
-  const getDeviceCenter = useCallback((device: CanvasDevice) => {
-    const deviceWidth = getDeviceWidth(device);
-    const portsPerRow = 8;
-    const numRows = Math.ceil(device.ports.length / portsPerRow);
-    const deviceHeight = device.type === 'pc' ? 100 : 100 + numRows * 14 + 5;
-    return { x: device.x + deviceWidth / 2, y: device.y + deviceHeight / 2 };
-  }, [getDeviceWidth]);
-
-  // Get port position on device
-  const getPortPosition = useCallback((device: CanvasDevice, portId: string) => {
-    const portIndex = device.ports.findIndex(p => p.id === portId);
-    if (portIndex === -1) return getDeviceCenter(device);
-
-    const deviceWidth = getDeviceWidth(device);
-    const portsPerRow = device.type === 'pc' ? 2 : 8;
-    const col = portIndex % portsPerRow;
-    const row = Math.floor(portIndex / portsPerRow);
-    const portSpacing = device.type === 'pc' ? 18 : 14;
-    const rowSpacing = 14;
-    // Keep existing switch layout; center router ports.
-    const startX = device.type === 'pc'
-      ? deviceWidth / 2 - (device.ports.length > 1 ? portSpacing / 2 : 0)
-      : (device.type === 'router'
-        ? (deviceWidth - (portsPerRow - 1) * portSpacing) / 2
-        : 14);
-    const startY = device.type === 'pc' ? 80 : 80;
-
-    return {
-      x: device.x + startX + col * portSpacing,
-      y: device.y + startY + row * rowSpacing
-    };
-  }, [getDeviceCenter, getDeviceWidth]);
 
   // Render connection SVG (Visual line only)
   const renderConnectionLine = (conn: CanvasConnection, connIndex: number) => {
@@ -3965,8 +3997,8 @@ export function NetworkTopology({
                     >
                       <div
                         className={`pointer-events-auto relative flex flex-col w-full h-full rounded-br-3xl shadow-xl text-white transition-all duration-300 ${selectedNoteIds.includes(note.id)
-                            ? 'ring-2 ring-emerald-400 shadow-[0_0_20px_rgba(52,211,153,0.5)] animate-pulse scale-[1.01]'
-                            : 'hover:shadow-2xl hover:scale-[1.005]'
+                          ? 'ring-2 ring-emerald-400 shadow-[0_0_20px_rgba(52,211,153,0.5)] animate-pulse scale-[1.01]'
+                          : 'hover:shadow-2xl hover:scale-[1.005]'
                           }`}
                         data-note-id={note.id}
                         style={{
@@ -4014,7 +4046,7 @@ export function NetworkTopology({
                               deleteNote(note.id);
                             }}
                             className="px-1.5 py-0.5 rounded hover:bg-black/10 text-white/70 hover:text-white"
-                      title={t.delete}
+                            title={t.delete}
                           >
                             <Trash2 className="w-3 h-3" />
                           </button>
