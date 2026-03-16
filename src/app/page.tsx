@@ -1637,17 +1637,17 @@ export default function Home() {
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleRedo} disabled={!canRedo} title={t.redo}>
                       <Redo2 className={`w-4 h-4 ${!canRedo ? 'opacity-30' : ''}`} />
                     </Button>
-                    <div className={`w-px h-4 mx-1 ${isDark ? 'bg-slate-700' : 'bg-slate-300'}`} />
+                    <div className={`w-px h-4 mx-1 ${isDark ? 'bg-slate-700' : 'bg-slate-300'} hidden md:block`} />
                   </>
                 )}
 
-                {/* Project Controls */}
+                {/* Project Controls - Desktop only */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-8 px-2.5 text-xs font-semibold flex items-center gap-2"
+                      className="h-8 px-2.5 text-xs font-semibold flex items-center gap-2 hidden md:flex"
                     >
                       <File className="w-3.5 h-3.5" />
                       <span>{t.project}</span>
