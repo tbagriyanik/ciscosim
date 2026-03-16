@@ -1250,18 +1250,7 @@ export function NetworkTopology({
     setSelectedNoteIds([]);
     // Notify parent component - select device, don't open terminal
     onDeviceSelect(device.type, device.id);
-    
-    // Center canvas on selected device
-    const canvasRect = canvasRef.current?.getBoundingClientRect();
-    if (canvasRect) {
-      const centerX = canvasRect.width / 2;
-      const centerY = canvasRect.height / 2;
-      updatePan({
-        x: centerX - device.x * zoom,
-        y: centerY - device.y * zoom
-      });
-    }
-  }, [onDeviceSelect, zoom, updatePan]);
+  }, [onDeviceSelect]);
 
   // Handle device double click - open terminal
   const handleDeviceDoubleClick = useCallback((device: CanvasDevice) => {
@@ -3120,9 +3109,9 @@ export function NetworkTopology({
         {device.type === 'pc' ? (
           // PC has Eth0 and COM1 ports, show side by side
           device.ports.map((port, idx) => {
-            // \u0130ki portu yan yana g\u00f6ster
-            const portSpacing = 18;
-            const startX = deviceWidth / 2 - (device.ports.length > 1 ? portSpacing / 2 : 0);
+            // İki portu yan yana göster - eşit kenar boşluğu ile
+            const portSpacing = 14;
+            const startX = (deviceWidth - (device.ports.length - 1) * portSpacing) / 2;
             const portX = startX + idx * portSpacing;
             const portY = 80;
             const isConnected = port.status === 'connected';
@@ -3158,12 +3147,12 @@ export function NetworkTopology({
                 onMouseLeave={handlePortMouseLeave}
               >
                 <circle
-                  r={7}
+                  r={6}
                   fill={portColor}
-                  stroke={forceGrayFrame ? '#6b7280' : (isShutdown ? '#991b1b' : isConnected ? '#22c55e' : '#4b5563')}
+                  stroke={forceGrayFrame ? '#4b5563' : (isShutdown ? '#991b1b' : isConnected ? '#4ade80' : '#1e293b')}
                   strokeWidth={isShutdown || isConnected ? 2 : 1}
                 />
-                <text y={1} fill="#fff" fontSize="7" textAnchor="middle" dominantBaseline="middle" className="select-none pointer-events-none">
+                <text y={1} fill="#fff" fontSize="6" fontWeight="bold" textAnchor="middle" dominantBaseline="middle" className="select-none pointer-events-none">
                   {portLabel}
                 </text>
               </g>
@@ -3175,12 +3164,11 @@ export function NetworkTopology({
             const portsPerRow = 8;
             const col = idx % portsPerRow;
             const row = Math.floor(idx / portsPerRow);
-            // Adjust port spacing for wider device (130px)
+            // Port spacing - eşit kenar boşluğu için
             const portSpacing = 14;
             const rowSpacing = 14;
-            const startX = device.type === 'router'
-              ? (deviceWidth - (portsPerRow - 1) * portSpacing) / 2
-              : 14;
+            // Eşit kenar boşluğu ile başlangıç pozisyonu
+            const startX = (deviceWidth - (portsPerRow - 1) * portSpacing) / 2;
             const startY = 80;
             const portX = startX + col * portSpacing;
             const portY = startY + row * rowSpacing;
@@ -3212,22 +3200,22 @@ export function NetworkTopology({
             // If the device/peer is powered off, force the port to appear offline (gray).
             if (forceGrayFrame) {
               portFill = '#6b7280';
-              portStroke = '#6b7280';
+              portStroke = '#4b5563';
             } else if (isDownOrBlocked) {
-              portFill = isShutdown ? '#ef4444' : '#f97316'; // Red for shutdown, Orange for blocked
+              portFill = isShutdown ? '#ef4444' : '#fb923c'; // Red for shutdown, lighter orange for blocked
               portStroke = '#ff0000'; // Explicit RED border
             } else if (isConsole) {
-              portFill = isConnected ? '#06b6d4' : '#0891b2'; // Turquoise
-              portStroke = isConnected ? '#22c55e' : '#0891b2';
+              portFill = isConnected ? '#22d3ee' : '#0ea5e9'; // Vibrant Turquoise
+              portStroke = isConnected ? '#4ade80' : '#0ea5e9';
             } else if (isGigabit) {
-              portFill = isConnected ? '#f97316' : '#c2410c'; // Orange
-              portStroke = isConnected ? '#22c55e' : '#c2410c';
+              portFill = isConnected ? '#fb923c' : '#f97316'; // Vibrant Orange
+              portStroke = isConnected ? '#4ade80' : '#f97316';
             } else if (isFastEthernet) {
-              portFill = isConnected ? '#3b82f6' : '#1d4ed8'; // Blue
-              portStroke = isConnected ? '#22c55e' : '#1d4ed8';
+              portFill = isConnected ? '#60a5fa' : '#3b82f6'; // Vibrant Blue
+              portStroke = isConnected ? '#4ade80' : '#3b82f6';
             } else {
-              portFill = isConnected ? '#22c55e' : '#6b7280'; // Default green/gray
-              portStroke = isConnected ? '#22c55e' : '#4b5563';
+              portFill = isConnected ? '#4ade80' : '#94a3b8'; // Default green/gray
+              portStroke = isConnected ? '#4ade80' : '#4b5563';
             }
 
             return (
@@ -4026,7 +4014,7 @@ export function NetworkTopology({
                               deleteNote(note.id);
                             }}
                             className="px-1.5 py-0.5 rounded hover:bg-black/10 text-white/70 hover:text-white"
-                            title={language === 'tr' ? 'Sil' : 'Delete'}
+                      title={t.delete}
                           >
                             <Trash2 className="w-3 h-3" />
                           </button>
@@ -4052,7 +4040,7 @@ export function NetworkTopology({
                           <div
                             className="absolute right-1 bottom-1 w-4 h-4 cursor-se-resize"
                             onMouseDown={(e) => handleNoteResizeStart(e as unknown as ReactMouseEvent, note.id)}
-                            title={language === 'tr' ? 'Boyutu Değiştir' : 'Resize'}
+                            title={t.resize}
                           >
                             <svg viewBox="0 0 12 12" className="w-full h-full text-black/50">
                               <path d="M4 12 L12 4" stroke="currentColor" strokeWidth="1" />

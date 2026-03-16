@@ -393,8 +393,8 @@ export function Terminal({
                       size="icon"
                       onClick={() => setSearchOpen(true)}
                       className="h-8 w-8 rounded-lg text-slate-500 hover:text-cyan-400 transition-colors"
-                      aria-label={language === 'tr' ? 'Ara' : 'Search'}
-                      title={language === 'tr' ? 'Ara' : 'Search'}
+                      aria-label={t.search}
+                      title={t.search}
                     >
                       <Search className="w-4 h-4" />
                     </Button>
@@ -410,8 +410,8 @@ export function Terminal({
                       size="icon"
                       onClick={handleCopyAll}
                       className="h-8 w-8 rounded-lg text-slate-500 hover:text-cyan-400 transition-colors"
-                      aria-label={language === 'tr' ? 'Kopyala' : 'Copy'}
-                      title={language === 'tr' ? 'Kopyala' : 'Copy'}
+                      aria-label={t.copy}
+                      title={t.copy}
                     >
                       <Copy className="w-4 h-4" />
                     </Button>

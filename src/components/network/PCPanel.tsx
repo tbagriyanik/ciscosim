@@ -788,8 +788,8 @@ export function PCPanel({
               size="icon"
               onClick={() => setSearchOpen(true)}
               className="h-8 w-8 rounded-lg text-slate-500 hover:text-cyan-400 transition-colors"
-              title={language === 'tr' ? 'Ara' : 'Search'}
-              aria-label={language === 'tr' ? 'Ara' : 'Search'}
+              title={t.search}
+              aria-label={t.search}
             >
               <Search className="w-4 h-4" />
             </Button>
@@ -798,8 +798,8 @@ export function PCPanel({
               size="icon"
               onClick={handleCopyAll}
               className="h-8 w-8 rounded-lg text-slate-500 hover:text-cyan-400 transition-colors"
-              title={language === 'tr' ? 'Kopyala' : 'Copy'}
-              aria-label={language === 'tr' ? 'Kopyala' : 'Copy'}
+              title={t.copy}
+              aria-label={t.copy}
             >
               <Copy className="w-4 h-4" />
             </Button>
@@ -808,8 +808,8 @@ export function PCPanel({
               size="icon"
               onClick={() => onTogglePower?.(deviceId)}
               className={`h-8 w-8 rounded-lg transition-all ${isPcPoweredOff ? 'text-rose-500 hover:bg-rose-500/10' : 'text-emerald-500 hover:bg-emerald-500/10'}`}
-              title={language === 'tr' ? 'Güç' : 'Power'}
-              aria-label={language === 'tr' ? 'Güç' : 'Power'}
+              title={t.power}
+              aria-label={t.power}
               disabled={!onTogglePower}
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

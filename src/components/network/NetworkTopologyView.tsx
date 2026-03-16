@@ -286,7 +286,7 @@ export function NetworkTopologyView(props: NetworkTopologyViewProps) {
                           deleteNote(note.id);
                         }}
                         className="px-1.5 py-0.5 rounded hover:bg-black/10"
-                        title={language === 'tr' ? 'Sil' : 'Delete'}
+                        title={t.delete}
                       >
                         <props.Trash2 className="w-3 h-3" />
                       </button>
@@ -308,7 +308,7 @@ export function NetworkTopologyView(props: NetworkTopologyViewProps) {
                       <div
                         className="absolute right-1 bottom-1 w-4 h-4 cursor-se-resize"
                         onMouseDown={(e) => handleNoteResizeStart(e, note.id)}
-                        title={language === 'tr' ? 'Boyutu Değiştir' : 'Resize'}
+                        title={t.resize}
                       >
                         <svg viewBox="0 0 12 12" className="w-full h-full text-black/50">
                           <path d="M4 12 L12 4" stroke="currentColor" strokeWidth="1" />

@@ -34,7 +34,6 @@ export interface Translations {
   vlanId: string;
   vlanName: string;
   create: string;
-  delete: string;
   active: string;
   suspended: string;
   ports: string;
@@ -249,6 +248,12 @@ export interface Translations {
   step2: string;
   noFreePorts: string;
   noFreePortsMessage: string;
+  reloadPage: string;
+  delete: string;
+  resize: string;
+  search: string;
+  copy: string;
+  power: string;
 }
 
 const translations: Record<Language, Translations> = {
@@ -277,7 +282,6 @@ const translations: Record<Language, Translations> = {
     vlanId: 'ID (1-4094)',
     vlanName: 'İsim',
     create: 'Oluştur',
-    delete: 'Sil',
     active: 'Aktif',
     suspended: 'Askıda',
     ports: 'Portlar',
@@ -464,6 +468,12 @@ const translations: Record<Language, Translations> = {
     step2: 'Adım 2: Hedef',
     noFreePorts: 'Boş Port Yok',
     noFreePortsMessage: 'Lütfen önce bazı kabloları çıkarın.',
+    reloadPage: 'Sayfayı Yenile',
+    delete: 'Sil',
+    resize: 'Boyutlandır',
+    search: 'Ara',
+    copy: 'Kopyala',
+    power: 'Güç',
   },
   en: {
     title: 'Network Simulator 2026',
@@ -490,7 +500,6 @@ const translations: Record<Language, Translations> = {
     vlanId: 'ID (1-4094)',
     vlanName: 'Name',
     create: 'Create',
-    delete: 'Delete',
     active: 'Active',
     suspended: 'Suspended',
     ports: 'Ports',
@@ -677,6 +686,12 @@ const translations: Record<Language, Translations> = {
     step2: 'Step 2: Destination',
     noFreePorts: 'No Free Ports',
     noFreePortsMessage: 'Please disconnect some cables first.',
+    reloadPage: 'Reload page',
+    delete: 'Delete',
+    resize: 'Resize',
+    search: 'Search',
+    copy: 'Copy',
+    power: 'Power',
   }
 };
 

@@ -1566,7 +1566,7 @@ export default function Home() {
             <button
               onClick={() => window.location.reload()}
               className="flex items-center gap-3 hover:opacity-80 transition-opacity cursor-pointer"
-              title="Reload page"
+              title={t.reloadPage}
             >
               <div className="p-1 flex items-center justify-center">
                 <img src="/favicon.png" alt="Logo" className="w-7 h-7 object-contain" />
@@ -1580,17 +1580,17 @@ export default function Home() {
             </button>
 
             {/* Total Score - Desktop */}
-            <div className="hidden md:flex items-center gap-6">
-              <div className="flex flex-col items-end gap-1.5">
-                <div className="flex items-center gap-3">
-                   <span className={`text-xs font-black uppercase tracking-[0.2em] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+            <div className="hidden md:flex items-center gap-4">
+              <div className="flex flex-col items-end gap-1">
+                <div className="flex items-center gap-2">
+                   <span className={`text-[10px] font-black uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                     {t.labProgress}
                   </span>
                   <motion.span 
                     key={totalScore}
                     initial={{ opacity: 0.5, y: -2 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className={`text-xs font-black tabular-nums px-2 py-0.5 rounded-full ${
+                    className={`text-[10px] font-black tabular-nums px-1.5 py-0.5 rounded-full ${
                       totalScore >= maxScore * 0.7 ? 'bg-emerald-500/10 text-emerald-400' : 
                       totalScore >= maxScore * 0.4 ? 'bg-amber-500/10 text-amber-400' : 
                       'bg-rose-500/10 text-rose-400'
@@ -1599,13 +1599,13 @@ export default function Home() {
                     {Math.round((totalScore / maxScore) * 100)}%
                   </motion.span>
                 </div>
-                <div className="flex items-center gap-3">
-                  <div className={`h-2 w-40 rounded-full overflow-hidden p-[1px] ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`}>
+                <div className="flex items-center gap-2">
+                  <div className={`h-1.5 w-24 rounded-full overflow-hidden p-[px] ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`}>
                     <motion.div 
                       initial={{ width: 0 }}
                       animate={{ width: `${(totalScore / maxScore) * 100}%` }}
                       transition={{ type: "spring", stiffness: 50, damping: 15 }}
-                      className={`h-full rounded-full bg-gradient-to-r shadow-[0_0_12px_rgba(0,0,0,0.2)] ${
+                      className={`h-full rounded-full bg-gradient-to-r shadow-[0_0_8px_rgba(0,0,0,0.2)] ${
                         totalScore >= maxScore * 0.7 ? 'from-emerald-500 via-teal-400 to-emerald-400' : 
                         totalScore >= maxScore * 0.4 ? 'from-amber-500 via-orange-400 to-amber-400' : 
                         'from-rose-500 via-pink-500 to-rose-400'
@@ -1613,10 +1613,10 @@ export default function Home() {
                     />
                   </div>
                   <div className="flex items-baseline gap-0.5">
-                    <span className={`text-sm font-black tabular-nums ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                    <span className={`text-xs font-black tabular-nums ${isDark ? 'text-white' : 'text-slate-900'}`}>
                       {totalScore}
                     </span>
-                    <span className={`text-xs font-bold opacity-30 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                    <span className={`text-[10px] font-bold opacity-30 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                       /{maxScore}
                     </span>
                   </div>
@@ -1642,48 +1642,35 @@ export default function Home() {
                 )}
 
                 {/* Project Controls - Desktop only */}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 px-2.5 text-xs font-semibold flex items-center gap-2 hidden md:flex"
-                    >
-                      <File className="w-3.5 h-3.5" />
-                      <span>{t.project}</span>
-                      <ChevronDown className="w-3 h-3 opacity-60" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className={isDark ? 'bg-slate-900 border-slate-800' : 'bg-white'}>
-                    <DropdownMenuLabel className="text-[11px] font-bold uppercase tracking-widest text-slate-500 py-1.5">
-                      {t.project}
-                    </DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      className="text-xs font-medium cursor-pointer"
-                      onClick={handleNewProject}
-                    >
-                      <File className="w-3.5 h-3.5 mr-2" />
-                      {t.newProject}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      className="text-xs font-medium cursor-pointer"
-                      onClick={handleSaveProject}
-                    >
-                      <Save className="w-3.5 h-3.5 mr-2" />
-                      {t.saveProject}
-                      <span className="ml-auto text-[10px] opacity-60">Ctrl+S</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      className="text-xs font-medium cursor-pointer"
-                      onClick={() => fileInputRef.current?.click()}
-                    >
-                      <FolderOpen className="w-3.5 h-3.5 mr-2" />
-                      {t.loadProject}
-                      <span className="ml-auto text-[10px] opacity-60">Ctrl+O</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <div className="hidden md:flex items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={handleNewProject}
+                    title={t.newProject}
+                  >
+                    <File className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => fileInputRef.current?.click()}
+                    title={t.loadProject}
+                  >
+                    <FolderOpen className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={handleSaveProject}
+                    title={t.saveProject}
+                  >
+                    <Save className="w-4 h-4" />
+                  </Button>
+                </div>
                 <input ref={fileInputRef} type="file" accept=".json" onChange={handleLoadProject} className="hidden" />
                 {(activeTab === 'topology') && (
                   <div className={`w-px h-4 mx-1 ${isDark ? 'bg-slate-700' : 'bg-slate-300'} hidden md:block`} />
