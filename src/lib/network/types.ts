@@ -94,7 +94,8 @@ export interface SwitchState {
   macAddressTable: { mac: string; vlan: number; port: string; type: string }[];
   // Password prompt state
   awaitingPassword?: boolean;
-  passwordContext?: 'enable';
+  passwordContext?: 'enable' | 'console';
+  consoleAuthenticated?: boolean;
   // New optional properties for extended features
   domainName?: string;
   defaultGateway?: string;

@@ -35,14 +35,14 @@ const commandHelp: Record<string, Record<string, string[]>> = {
     'configure termi': ['terminal'],
     'configure termin': ['terminal'],
     'configure termina': ['terminal'],
-    
+
     'd': ['disable'],
     'di': ['disable'],
     'dis': ['disable'],
     'disa': ['disable'],
     'disab': ['disable'],
     'disabl': ['disable'],
-    
+
     's': ['show'],
     'sh': ['show'],
     'sho': ['show'],
@@ -74,38 +74,38 @@ const commandHelp: Record<string, Record<string, string[]>> = {
     'show ip r': ['route'],
     'show ip ro': ['route'],
     'show ip rou': ['route'],
-    
+
     'ip': ['route', 'default-gateway', 'domain-name', 'ssh'],
     'ip r': ['route'],
     'ip ro': ['route'],
     'ip rou': ['route'],
     'ip rout': ['route'],
-    
+
     'w': ['write'],
     'wr': ['write'],
     'wri': ['write'],
     'writ': ['write'],
     'write': ['memory'],
-    
+
     'p': ['ping'],
     'pi': ['ping'],
     'pin': ['ping'],
-    
+
     't': ['telnet', 'traceroute'],
     'te': ['telnet'],
     'tel': ['telnet'],
     'teln': ['telnet'],
     'telne': ['telnet'],
-    
+
     'r': ['reload'],
     're': ['reload'],
     'rel': ['reload'],
     'relo': ['reload'],
     'reloa': ['reload'],
-    
+
     'e': ['exit'],
     'ex': ['exit'],
-    
+
     'copy': ['running-config'],
     'copy r': ['running-config'],
     'copy ru': ['running-config'],
@@ -134,7 +134,7 @@ const commandHelp: Record<string, Record<string, string[]>> = {
     'copy running-config startup-con': ['startup-config'],
     'copy running-config startup-conf': ['startup-config'],
     'copy running-config startup-confi': ['startup-config'],
-    
+
     'erase': ['startup-config', 'nvram'],
     'erase s': ['startup-config'],
     'erase st': ['startup-config'],
@@ -163,7 +163,7 @@ const commandHelp: Record<string, Record<string, string[]>> = {
     'hostn': ['hostname'],
     'hostna': ['hostname'],
     'hostnam': ['hostname'],
-    
+
     'i': ['interface', 'ip'],
     'in': ['interface'],
     'int': ['interface'],
@@ -240,12 +240,12 @@ const commandHelp: Record<string, Record<string, string[]>> = {
     'interface range GigabitEthernet': ['0/'],
     'interface range GigabitEthernet0': ['0/'],
     'interface range GigabitEthernet0/': ['0-3', '1-2'],
-    
+
     'v': ['vlan'],
     'vl': ['vlan'],
     'vla': ['vlan'],
     'vlan': ['1', '10', '20', '30', '50', '100', '200'],
-    
+
     'e': ['enable', 'end', 'exit'],
     'en': ['enable', 'end'],
     'ena': ['enable'],
@@ -259,14 +259,14 @@ const commandHelp: Record<string, Record<string, string[]>> = {
     'enable pa': ['password'],
     'enable pas': ['password'],
     'enable pass': ['password'],
-    
+
     'se': ['service'],
     'ser': ['service'],
     'serv': ['service'],
     'servi': ['service'],
     'servic': ['service'],
     'service': ['password-encryption'],
-    
+
     'u': ['username'],
     'us': ['username'],
     'use': ['username'],
@@ -274,7 +274,7 @@ const commandHelp: Record<string, Record<string, string[]>> = {
     'usern': ['username'],
     'userna': ['username'],
     'usernam': ['username'],
-    
+
     'l': ['line'],
     'li': ['line'],
     'lin': ['line'],
@@ -292,7 +292,7 @@ const commandHelp: Record<string, Record<string, string[]>> = {
     'line vty': ['0'],
     'line vty 0': ['4'],
     'line vty 0 4': [''],
-    
+
     'b': ['banner'],
     'ba': ['banner'],
     'ban': ['banner'],
@@ -303,7 +303,7 @@ const commandHelp: Record<string, Record<string, string[]>> = {
     'banner mo': ['motd'],
     'banner mot': ['motd'],
     'banner motd': [''],
-    
+
     'ip': ['default-gateway', 'domain-name', 'ssh'],
     'ip d': ['default-gateway', 'domain-name'],
     'ip de': ['default-gateway'],
@@ -334,10 +334,10 @@ const commandHelp: Record<string, Record<string, string[]>> = {
     'ip ssh vers': ['version'],
     'ip ssh versi': ['version'],
     'ip ssh versio': ['version'],
-    
+
     'n': ['no'],
     'no': ['shutdown', 'vlan', 'cdp', 'service', 'spanning-tree'],
-    
+
     'sp': ['spanning-tree'],
     'spa': ['spanning-tree'],
     'span': ['spanning-tree'],
@@ -354,7 +354,7 @@ const commandHelp: Record<string, Record<string, string[]>> = {
     'spanning-tree mo': ['mode'],
     'spanning-tree mod': ['mode'],
     'spanning-tree mode': ['pvst', 'rapid-pvst', 'mst'],
-    
+
     'vt': ['vtp'],
     'vtp': ['mode', 'domain'],
     'vtp m': ['mode'],
@@ -366,17 +366,17 @@ const commandHelp: Record<string, Record<string, string[]>> = {
     'vtp dom': ['domain'],
     'vtp doma': ['domain'],
     'vtp domain': [''],
-    
+
     'cd': ['cdp'],
     'cdp': ['run'],
     'cdp r': ['run'],
     'cdp ru': ['run'],
-    
+
     'ex': ['exit'],
     'exi': ['exit'],
-    
+
     'end': [''],
-    
+
     'do': ['show', 'write', 'ping'],
     'do s': ['show'],
     'do sh': ['show'],
@@ -397,19 +397,19 @@ const commandHelp: Record<string, Record<string, string[]>> = {
     'shutd': ['shutdown'],
     'shutdo': ['shutdown'],
     'shutdow': ['shutdown'],
-    
+
     'sp': ['speed', 'spanning-tree'],
     'spe': ['speed'],
     'spee': ['speed'],
     'speed': ['10', '100', '1000', 'auto'],
-    
+
     'd': ['duplex', 'description'],
     'du': ['duplex'],
     'dup': ['duplex'],
     'dupl': ['duplex'],
     'duple': ['duplex'],
     'duplex': ['half', 'full', 'auto'],
-    
+
     'de': ['description'],
     'des': ['description'],
     'desc': ['description'],
@@ -419,7 +419,7 @@ const commandHelp: Record<string, Record<string, string[]>> = {
     'descript': ['description'],
     'descripti': ['description'],
     'descriptio': ['description'],
-    
+
     'n': ['no'],
     'no': ['shutdown', 'switchport', 'cdp', 'description', 'speed', 'duplex', 'spanning-tree'],
     'no s': ['shutdown', 'switchport', 'speed', 'spanning-tree'],
@@ -438,7 +438,7 @@ const commandHelp: Record<string, Record<string, string[]>> = {
     'no switchpo': ['switchport'],
     'no switchpor': ['switchport'],
     'no switchport': ['mode', 'access', 'port-security'],
-    
+
     'sw': ['switchport'],
     'swi': ['switchport'],
     'swit': ['switchport'],
@@ -518,7 +518,7 @@ const commandHelp: Record<string, Record<string, string[]>> = {
     'switchport port-security mac-address sti': ['sticky'],
     'switchport port-security mac-address stick': ['sticky'],
     'switchport port-security mac-address sticky': [''],
-    
+
     'cd': ['cdp'],
     'cdp': ['enable'],
     'cdp e': ['enable'],
@@ -526,7 +526,7 @@ const commandHelp: Record<string, Record<string, string[]>> = {
     'cdp ena': ['enable'],
     'cdp enab': ['enable'],
     'cdp enabl': ['enable'],
-    
+
     'spanning': ['spanning-tree'],
     'spanning-': ['spanning-tree'],
     'spanning-t': ['spanning-tree'],
@@ -550,7 +550,7 @@ const commandHelp: Record<string, Record<string, string[]>> = {
     'spanning-tree bpdugua': ['bpduguard'],
     'spanning-tree bpduguar': ['bpduguard'],
     'spanning-tree bpduguard': ['enable', 'disable'],
-    
+
     'ch': ['channel-group'],
     'cha': ['channel-group'],
     'chan': ['channel-group'],
@@ -568,12 +568,12 @@ const commandHelp: Record<string, Record<string, string[]>> = {
     'channel-group 1 mo': ['mode'],
     'channel-group 1 mod': ['mode'],
     'channel-group 1 mode': ['active', 'passive', 'on', 'desirable', 'auto'],
-    
+
     'ex': ['exit'],
     'exi': ['exit'],
-    
+
     'end': [''],
-    
+
     'do': ['show', 'write', 'ping'],
     'do s': ['show'],
     'do sh': ['show'],
@@ -589,7 +589,7 @@ const commandHelp: Record<string, Record<string, string[]>> = {
     'passw': ['password'],
     'passwo': ['password'],
     'passwor': ['password'],
-    
+
     'l': ['login', 'logging'],
     'lo': ['login', 'logging'],
     'log': ['login', 'logging'],
@@ -599,7 +599,7 @@ const commandHelp: Record<string, Record<string, string[]>> = {
     'login lo': ['local'],
     'login loc': ['local'],
     'login loca': ['local'],
-    
+
     'logg': ['logging'],
     'loggi': ['logging'],
     'loggin': ['logging'],
@@ -615,7 +615,7 @@ const commandHelp: Record<string, Record<string, string[]>> = {
     'logging synchrono': ['synchronous'],
     'logging synchronou': ['synchronous'],
     'logging synchronous': [''],
-    
+
     't': ['transport'],
     'tr': ['transport'],
     'tra': ['transport'],
@@ -630,7 +630,7 @@ const commandHelp: Record<string, Record<string, string[]>> = {
     'transport inp': ['input'],
     'transport inpu': ['input'],
     'transport input': ['ssh', 'telnet', 'all', 'none'],
-    
+
     'e': ['exec-timeout', 'exit', 'end'],
     'ex': ['exec-timeout', 'exit'],
     'exe': ['exec-timeout'],
@@ -643,7 +643,7 @@ const commandHelp: Record<string, Record<string, string[]>> = {
     'exec-timeo': ['exec-timeout'],
     'exec-timeou': ['exec-timeout'],
     'exec-timeout': ['<minutes>', '0'],
-    
+
     'h': ['history'],
     'hi': ['history'],
     'his': ['history'],
@@ -654,7 +654,7 @@ const commandHelp: Record<string, Record<string, string[]>> = {
     'history s': ['size'],
     'history si': ['size'],
     'history siz': ['size'],
-    
+
     'pr': ['privilege'],
     'pri': ['privilege'],
     'priv': ['privilege'],
@@ -669,10 +669,10 @@ const commandHelp: Record<string, Record<string, string[]>> = {
     'privilege lev': ['level'],
     'privilege leve': ['level'],
     'privilege level': ['0', '1', '15'],
-    
+
     'exit': [''],
     'end': [''],
-    
+
     'do': ['show'],
     'do s': ['show'],
     'do sh': ['show'],
@@ -685,12 +685,12 @@ const commandHelp: Record<string, Record<string, string[]>> = {
     'na': ['name'],
     'nam': ['name'],
     'name': [''],
-    
+
     'st': ['state'],
     'sta': ['state'],
     'stat': ['state'],
     'state': ['active', 'suspend'],
-    
+
     'exit': [''],
     'end': [''],
   },
@@ -700,10 +700,10 @@ const commandHelp: Record<string, Record<string, string[]>> = {
 function getInlineHelp(mode: CommandMode, partialInput: string, prompt: string): string {
   const modeCommands = commandHelp[mode] || commandHelp.user;
   const lower = partialInput.toLowerCase().trim();
-  
+
   // Komutları al
   let suggestions: string[] = [];
-  
+
   if (modeCommands[lower]) {
     suggestions = modeCommands[lower];
   } else {
@@ -720,12 +720,12 @@ function getInlineHelp(mode: CommandMode, partialInput: string, prompt: string):
       }
     }
   }
-  
+
   // Çıktıyı formatla (Network tarzı)
   const lines: string[] = [];
   lines.push(prompt + partialInput + '?');
   lines.push('');
-  
+
   if (suggestions.length === 0) {
     lines.push('% Ambiguous command:  "' + partialInput + '"');
   } else {
@@ -735,9 +735,9 @@ function getInlineHelp(mode: CommandMode, partialInput: string, prompt: string):
       }
     });
   }
-  
+
   lines.push('');
-  
+
   return lines.join('\n');
 }
 
@@ -750,15 +750,20 @@ export function executeCommand(
   connections?: any[],
   deviceStates?: Map<string, SwitchState>
 ): CommandResult {
+  // Internal session events (not real IOS commands)
+  if (input === '__CONSOLE_CONNECT__') {
+    return handleConsoleConnect(state, language);
+  }
+
   // Eğer şifre bekleniyorsa, şifre doğrulama yap
   if (state.awaitingPassword) {
     return handlePasswordInput(state, input, language);
   }
-  
+
   // Common Abbreviations for smoother CLI experience
   let cmdToProcess = input.trim();
   const lowerInput = cmdToProcess.toLowerCase();
-  
+
   if (state.currentMode === 'privileged') {
     if (lowerInput === 'conf t') cmdToProcess = 'configure terminal';
     if (lowerInput.startsWith('sh ip int br')) cmdToProcess = 'show ip interface brief';
@@ -783,22 +788,22 @@ export function executeCommand(
       output: helpOutput
     };
   }
-  
+
   const parsed = parseCommand(cmdToProcess, state.currentMode);
-  
+
   if (!parsed) {
     return { success: true, output: '' };
   }
-  
+
   const validation = validateCommand(parsed, state.currentMode);
-  
+
   if (!validation.valid) {
     return {
       success: false,
       error: validation.error || 'Unknown error'
     };
   }
-  
+
   const commandName = validation.matchedPattern;
   if (!commandName) {
     return {
@@ -806,12 +811,12 @@ export function executeCommand(
       error: '% Unknown command'
     };
   }
-  
+
   // Komut işleyicilerini çağır - use resolved input from parsed command
   return executeSpecificCommand(
-    state, 
-    commandName, 
-    parsed.resolvedInput || parsed.rawInput, 
+    state,
+    commandName,
+    parsed.resolvedInput || parsed.rawInput,
     language,
     devices,
     connections,
@@ -820,20 +825,67 @@ export function executeCommand(
 }
 
 // Şifre girişi işleme
+function handleConsoleConnect(state: SwitchState, language: 'tr' | 'en'): CommandResult {
+  const needsLogin = !!(state.security.consoleLine.login && state.security.consoleLine.password);
+
+  if (!needsLogin) {
+    return {
+      success: true,
+      newState: { consoleAuthenticated: true }
+    };
+  }
+
+  return {
+    success: true,
+    output: 'Password: ',
+    requiresPassword: true,
+    passwordPrompt: 'Password: ',
+    passwordContext: 'console',
+    newState: {
+      consoleAuthenticated: false,
+      awaitingPassword: true,
+      passwordContext: 'console'
+    }
+  };
+}
+
 function handlePasswordInput(state: SwitchState, password: string, language: 'tr' | 'en'): CommandResult {
   if (state.passwordContext === 'enable') {
-    // Enable secret önce kontrol edilir (öncelikli)
-    const validPassword = state.security.enableSecret 
+    const validPassword = state.security.enableSecret
       ? password === state.security.enableSecret
-      : state.security.enablePassword 
+      : state.security.enablePassword
         ? password === state.security.enablePassword
         : true;
-    
+
     if (validPassword) {
       return {
         success: true,
         newState: {
           currentMode: 'privileged',
+          awaitingPassword: false,
+          passwordContext: undefined
+        }
+      };
+    } else {
+      return {
+        success: false,
+        error: language === 'tr' ? '% Erişim reddedildi' : '% Access denied',
+        newState: {
+          consoleAuthenticated: false,
+          awaitingPassword: false,
+          passwordContext: undefined
+        }
+      };
+    }
+  }
+
+  if (state.passwordContext === 'console') {
+    const validPassword = password === state.security.consoleLine.password;
+    if (validPassword) {
+      return {
+        success: true,
+        newState: {
+          consoleAuthenticated: true,
           awaitingPassword: false,
           passwordContext: undefined
         }
@@ -849,8 +901,7 @@ function handlePasswordInput(state: SwitchState, password: string, language: 'tr
       };
     }
   }
-  
-  // Bilinmeyen şifre bağlamı
+
   return {
     success: false,
     error: '% Password error',
@@ -860,7 +911,6 @@ function handlePasswordInput(state: SwitchState, password: string, language: 'tr
     }
   };
 }
-
 // Komut işleyicileri
 function executeSpecificCommand(
   state: SwitchState,
@@ -871,7 +921,7 @@ function executeSpecificCommand(
   connections?: any[],
   deviceStates?: Map<string, SwitchState>
 ): CommandResult {
-  
+
   switch (commandName) {
     // Mode değiştirme
     case 'enable':
@@ -885,7 +935,7 @@ function executeSpecificCommand(
       return cmdExit(state);
     case 'end':
       return cmdEnd(state);
-    
+
     // Global config
     case 'hostname':
       return cmdHostname(state, input);
@@ -945,7 +995,7 @@ function executeSpecificCommand(
       return cmdSnmpServerCommunity(state, input);
     case 'ntp server':
       return cmdNtpServer(state, input);
-    
+
     // Interface
     case 'interface':
       return cmdInterface(state, input);
@@ -1027,7 +1077,7 @@ function executeSpecificCommand(
     case 'delay':
     case 'load-interval':
       return { success: true };
-    
+
     // VLAN config
     case 'name':
       return cmdVlanName(state, input);
@@ -1035,7 +1085,7 @@ function executeSpecificCommand(
       return cmdNoVlanName(state);
     case 'state':
       return cmdVlanState(state, input);
-    
+
     // Line
     case 'line console':
       return cmdLineConsole(state);
@@ -1059,7 +1109,7 @@ function executeSpecificCommand(
       return cmdHistorySize(state, input);
     case 'privilege level':
       return { success: true };
-    
+
     // Show
     case 'show running-config':
       return cmdShowRunningConfig(state, input);
@@ -1155,7 +1205,7 @@ function executeSpecificCommand(
       return cmdShowDiagnostic(state);
     case 'show debug':
       return cmdShowDebug(state);
-    
+
     // Kaydetme
     case 'write memory':
     case 'copy running-config startup-config':
@@ -1166,14 +1216,14 @@ function executeSpecificCommand(
     case 'erase nvram':
     case 'delete nvram':
       return cmdEraseStartupConfig(state);
-    
+
     // Do komutları
     case 'do show':
     case 'do write':
     case 'do ping':
     case 'do':
       return cmdDo(state, input);
-    
+
     // Ping & Trace
     case 'ping':
       return cmdPing(state, input, devices, connections, deviceStates);
@@ -1183,7 +1233,7 @@ function executeSpecificCommand(
       return cmdTelnet(state, input);
     case 'ssh':
       return cmdSsh(state, input);
-    
+
     // Terminal
     case 'terminal length':
     case 'terminal width':
@@ -1191,11 +1241,11 @@ function executeSpecificCommand(
     case 'terminal no monitor':
     case 'terminal':
       return { success: true };
-    
+
     // Reload
     case 'reload':
       return cmdReload(state, input);
-    
+
     // Clear
     case 'clear arp-cache':
       return cmdClearArpCache(state);
@@ -1205,7 +1255,7 @@ function executeSpecificCommand(
       return cmdClearCounters(state);
     case 'clear line':
       return cmdClearLine(state, input);
-    
+
     // Debug
     case 'debug':
       return cmdDebug(state, input);
@@ -1213,29 +1263,29 @@ function executeSpecificCommand(
     case 'undebug':
     case 'undebug all':
       return cmdNoDebug(state, input);
-    
+
     // Setup & Test
     case 'setup':
       return cmdSetup(state);
     case 'test':
       return { success: true };
-    
+
     // Disconnect
     case 'disconnect':
     case 'resume':
     case 'suspend':
       return { success: true };
-    
+
     // Monitor
     case 'monitor session':
       return cmdMonitorSession(state, input);
     case 'no monitor session':
       return cmdNoMonitorSession(state, input);
-    
+
     // Yardım
     case 'help':
       return cmdHelp(state, language);
-    
+
     default:
       // Tanınmayan ama parse edilen komutlar için success dön
       return { success: true };
@@ -1248,10 +1298,10 @@ function cmdEnable(state: SwitchState, language: 'tr' | 'en' = 'tr'): CommandRes
   if (state.currentMode === 'privileged') {
     return { success: true };
   }
-  
+
   // Eğer enable secret veya password ayarlıysa şifre iste
   const hasPassword = state.security.enableSecret || state.security.enablePassword;
-  
+
   if (hasPassword && !state.awaitingPassword) {
     return {
       success: true,
@@ -1265,7 +1315,7 @@ function cmdEnable(state: SwitchState, language: 'tr' | 'en' = 'tr'): CommandRes
       }
     };
   }
-  
+
   return {
     success: true,
     newState: { currentMode: 'privileged' }
@@ -1295,25 +1345,25 @@ function cmdConfigureTerminal(state: SwitchState): CommandResult {
 function cmdExit(state: SwitchState): CommandResult {
   switch (state.currentMode) {
     case 'privileged':
-      return { 
-        success: true, 
+      return {
+        success: true,
         output: state.bannerMOTD ? `\n${state.bannerMOTD}\n` : undefined,
-        newState: { currentMode: 'user' } 
+        newState: { currentMode: 'user' }
       };
     case 'config':
       return { success: true, newState: { currentMode: 'privileged' } };
     case 'interface':
     case 'line':
     case 'vlan':
-      return { 
-        success: true, 
-        newState: { 
-          currentMode: 'config', 
-          currentInterface: undefined, 
-          currentLine: undefined, 
+      return {
+        success: true,
+        newState: {
+          currentMode: 'config',
+          currentInterface: undefined,
+          currentLine: undefined,
           currentVlan: undefined,
           selectedInterfaces: undefined  // Range seçimini temizle
-        } 
+        }
       };
     case 'user':
       // From user mode, exit restarts the session (shows banner)
@@ -1323,7 +1373,7 @@ function cmdExit(state: SwitchState): CommandResult {
         newState: { currentMode: 'user' }
       };
     default:
-      return { 
+      return {
         success: true,
         newState: { currentMode: 'user' }
       };
@@ -1347,14 +1397,14 @@ function cmdEnd(state: SwitchState): CommandResult {
 function cmdHostname(state: SwitchState, input: string): CommandResult {
   const match = input.match(/^hostname\s+(.+)$/i);
   if (!match) return { success: false, error: '% Invalid hostname' };
-  
+
   let newHostname = match[1].trim();
   // Strip surrounding quotes if present
-  if ((newHostname.startsWith('"') && newHostname.endsWith('"')) || 
-      (newHostname.startsWith("'") && newHostname.endsWith("'"))) {
+  if ((newHostname.startsWith('"') && newHostname.endsWith('"')) ||
+    (newHostname.startsWith("'") && newHostname.endsWith("'"))) {
     newHostname = newHostname.substring(1, newHostname.length - 1);
   }
-  
+
   return {
     success: true,
     newState: { hostname: newHostname }
@@ -1364,12 +1414,12 @@ function cmdHostname(state: SwitchState, input: string): CommandResult {
 function cmdVlan(state: SwitchState, input: string): CommandResult {
   const match = input.match(/^vlan\s+(\d+)$/i);
   if (!match) return { success: false, error: '% Invalid VLAN ID' };
-  
+
   const vlanId = parseInt(match[1]);
   if (vlanId < 1 || vlanId > 4094) {
     return { success: false, error: '% Invalid VLAN ID (1-4094)' };
   }
-  
+
   const newVlans = { ...state.vlans };
   if (!newVlans[vlanId]) {
     newVlans[vlanId] = {
@@ -1379,7 +1429,7 @@ function cmdVlan(state: SwitchState, input: string): CommandResult {
       ports: []
     };
   }
-  
+
   return {
     success: true,
     newState: {
@@ -1394,17 +1444,17 @@ function cmdVlan(state: SwitchState, input: string): CommandResult {
 function cmdNoVlan(state: SwitchState, input: string): CommandResult {
   const match = input.match(/^no\s+vlan\s+(\d+)$/i);
   if (!match) return { success: false, error: '% Invalid VLAN ID' };
-  
+
   const vlanId = parseInt(match[1]);
-  
+
   // Varsayılan VLAN'lar silinemez
   if ([1, 1002, 1003, 1004, 1005].includes(vlanId)) {
     return { success: false, error: '% Cannot delete default VLAN' };
   }
-  
+
   const newVlans = { ...state.vlans };
   delete newVlans[vlanId];
-  
+
   // Portları VLAN 1'e taşı
   const newPorts = { ...state.ports };
   Object.values(newPorts).forEach(port => {
@@ -1412,7 +1462,7 @@ function cmdNoVlan(state: SwitchState, input: string): CommandResult {
       newPorts[port.id] = { ...port, vlan: 1 };
     }
   });
-  
+
   return {
     success: true,
     newState: { vlans: newVlans, ports: newPorts, vtpRevision: (state.vtpRevision ?? 0) + 1 }
@@ -1422,7 +1472,7 @@ function cmdNoVlan(state: SwitchState, input: string): CommandResult {
 function cmdEnableSecret(state: SwitchState, input: string): CommandResult {
   const match = input.match(/^enable\s+secret\s+(.+)$/i);
   if (!match) return { success: false, error: '% Invalid secret' };
-  
+
   const secret = match[1].trim();
   return {
     success: true,
@@ -1439,7 +1489,7 @@ function cmdEnableSecret(state: SwitchState, input: string): CommandResult {
 function cmdEnablePassword(state: SwitchState, input: string): CommandResult {
   const match = input.match(/^enable\s+password\s+(.+)$/i);
   if (!match) return { success: false, error: '% Invalid password' };
-  
+
   const password = match[1].trim();
   return {
     success: true,
@@ -1479,14 +1529,14 @@ function cmdNoServicePasswordEncryption(state: SwitchState): CommandResult {
 function cmdUsername(state: SwitchState, input: string): CommandResult {
   const match = input.match(/^username\s+(\S+)\s+(password|privilege)\s+(.+)$/i);
   if (!match) return { success: false, error: '% Invalid username command' };
-  
+
   const username = match[1];
   const type = match[2].toLowerCase();
   const value = match[3].trim();
-  
+
   const existingIndex = state.security.users.findIndex(u => u.username === username);
   const newUsers = [...state.security.users];
-  
+
   if (existingIndex >= 0) {
     if (type === 'password') {
       newUsers[existingIndex] = { ...newUsers[existingIndex], password: value };
@@ -1500,7 +1550,7 @@ function cmdUsername(state: SwitchState, input: string): CommandResult {
       privilege: type === 'privilege' ? parseInt(value) || 1 : 1
     });
   }
-  
+
   return {
     success: true,
     newState: {
@@ -1512,14 +1562,14 @@ function cmdUsername(state: SwitchState, input: string): CommandResult {
 function cmdBannerMotd(state: SwitchState, input: string): CommandResult {
   const match = input.match(/^banner\s+motd\s+(.+)$/i);
   if (!match) return { success: false, error: '% Invalid banner' };
-  
+
   let banner = match[1];
   // # işaretleri arasındaki metni al
   const delimMatch = banner.match(/^(\S)(.*?)\1$/);
   if (delimMatch) {
     banner = delimMatch[2];
   }
-  
+
   return {
     success: true,
     newState: { bannerMOTD: banner }
@@ -1537,14 +1587,14 @@ function cmdNoBannerMotd(state: SwitchState): CommandResult {
 function cmdInterface(state: SwitchState, input: string): CommandResult {
   const match = input.match(/^interface\s+(.+)$/i);
   if (!match) return { success: false, error: '% Invalid interface' };
-  
+
   const portInput = match[1].trim();
   const portId = normalizePortId(portInput);
-  
+
   if (!portId) {
     return { success: false, error: '% Invalid interface name' };
   }
-  
+
   // Port yoksa oluştur
   const newPorts = { ...state.ports };
   if (!newPorts[portId]) {
@@ -1561,7 +1611,7 @@ function cmdInterface(state: SwitchState, input: string): CommandResult {
       type: isGigabit ? 'gigabitethernet' : 'fastethernet'
     };
   }
-  
+
   return {
     success: true,
     newState: {
@@ -1576,19 +1626,19 @@ function cmdInterface(state: SwitchState, input: string): CommandResult {
 function cmdNoShutdown(state: SwitchState): CommandResult {
   // Interface range ile çoklu port seçimi
   const interfaces = state.selectedInterfaces || (state.currentInterface ? [state.currentInterface] : []);
-  
+
   if (interfaces.length === 0) {
     return { success: false, error: '% No interface selected' };
   }
-  
+
   const newPorts = { ...state.ports };
-  
+
   for (const portId of interfaces) {
     if (newPorts[portId]) {
       const port = newPorts[portId];
       // Önceki durumu geri yükle, yoksa notconnect yap
       const restoredStatus = port.previousStatus || 'notconnect';
-      
+
       newPorts[portId] = {
         ...port,
         shutdown: false,
@@ -1596,7 +1646,7 @@ function cmdNoShutdown(state: SwitchState): CommandResult {
       };
     }
   }
-  
+
   return {
     success: true,
     newState: { ports: newPorts }
@@ -1606,20 +1656,20 @@ function cmdNoShutdown(state: SwitchState): CommandResult {
 function cmdShutdown(state: SwitchState): CommandResult {
   // Interface range ile çoklu port seçimi
   const interfaces = state.selectedInterfaces || (state.currentInterface ? [state.currentInterface] : []);
-  
+
   if (interfaces.length === 0) {
     return { success: false, error: '% No interface selected' };
   }
-  
+
   const newPorts = { ...state.ports };
-  
+
   for (const portId of interfaces) {
     if (newPorts[portId]) {
       const port = newPorts[portId];
-      
+
       // Önceki durumu kaydet (no shutdown için)
       const savedStatus: PortStatus = port.status === 'disabled' ? 'notconnect' : port.status;
-      
+
       newPorts[portId] = {
         ...port,
         shutdown: true,
@@ -1628,7 +1678,7 @@ function cmdShutdown(state: SwitchState): CommandResult {
       };
     }
   }
-  
+
   return {
     success: true,
     newState: { ports: newPorts }
@@ -1637,23 +1687,23 @@ function cmdShutdown(state: SwitchState): CommandResult {
 
 function cmdSpeed(state: SwitchState, input: string): CommandResult {
   const interfaces = state.selectedInterfaces || (state.currentInterface ? [state.currentInterface] : []);
-  
+
   if (interfaces.length === 0) {
     return { success: false, error: '% No interface selected' };
   }
-  
+
   const match = input.match(/^speed\s+(10|100|1000|auto)$/i);
   if (!match) return { success: false, error: '% Invalid speed value' };
-  
+
   const speed = match[1] as '10' | '100' | '1000' | 'auto';
-  
+
   const newPorts = { ...state.ports };
   for (const portId of interfaces) {
     if (newPorts[portId]) {
       newPorts[portId] = { ...newPorts[portId], speed };
     }
   }
-  
+
   return {
     success: true,
     newState: { ports: newPorts }
@@ -1662,23 +1712,23 @@ function cmdSpeed(state: SwitchState, input: string): CommandResult {
 
 function cmdDuplex(state: SwitchState, input: string): CommandResult {
   const interfaces = state.selectedInterfaces || (state.currentInterface ? [state.currentInterface] : []);
-  
+
   if (interfaces.length === 0) {
     return { success: false, error: '% No interface selected' };
   }
-  
+
   const match = input.match(/^duplex\s+(half|full|auto)$/i);
   if (!match) return { success: false, error: '% Invalid duplex value' };
-  
+
   const duplex = match[1] as 'half' | 'full' | 'auto';
-  
+
   const newPorts = { ...state.ports };
   for (const portId of interfaces) {
     if (newPorts[portId]) {
       newPorts[portId] = { ...newPorts[portId], duplex };
     }
   }
-  
+
   return {
     success: true,
     newState: { ports: newPorts }
@@ -1687,23 +1737,23 @@ function cmdDuplex(state: SwitchState, input: string): CommandResult {
 
 function cmdDescription(state: SwitchState, input: string): CommandResult {
   const interfaces = state.selectedInterfaces || (state.currentInterface ? [state.currentInterface] : []);
-  
+
   if (interfaces.length === 0) {
     return { success: false, error: '% No interface selected' };
   }
-  
+
   const match = input.match(/^description\s+(.+)$/i);
   if (!match) return { success: false, error: '% Invalid description' };
-  
+
   const description = match[1].trim();
-  
+
   const newPorts = { ...state.ports };
   for (const portId of interfaces) {
     if (newPorts[portId]) {
       newPorts[portId] = { ...newPorts[portId], name: description };
     }
   }
-  
+
   return {
     success: true,
     newState: { ports: newPorts }
@@ -1712,18 +1762,18 @@ function cmdDescription(state: SwitchState, input: string): CommandResult {
 
 function cmdNoDescription(state: SwitchState): CommandResult {
   const interfaces = state.selectedInterfaces || (state.currentInterface ? [state.currentInterface] : []);
-  
+
   if (interfaces.length === 0) {
     return { success: false, error: '% No interface selected' };
   }
-  
+
   const newPorts = { ...state.ports };
   for (const portId of interfaces) {
     if (newPorts[portId]) {
       newPorts[portId] = { ...newPorts[portId], name: '' };
     }
   }
-  
+
   return {
     success: true,
     newState: { ports: newPorts }
@@ -1732,16 +1782,16 @@ function cmdNoDescription(state: SwitchState): CommandResult {
 
 function cmdSwitchportMode(state: SwitchState, input: string): CommandResult {
   const interfaces = state.selectedInterfaces || (state.currentInterface ? [state.currentInterface] : []);
-  
+
   if (interfaces.length === 0) {
     return { success: false, error: '% No interface selected' };
   }
-  
+
   const match = input.match(/^switchport\s+mode\s+(access|trunk)$/i);
   if (!match) return { success: false, error: '% Invalid mode' };
-  
+
   const mode = match[1] as 'access' | 'trunk';
-  
+
   const newPorts = { ...state.ports };
   for (const portId of interfaces) {
     if (newPorts[portId]) {
@@ -1758,7 +1808,7 @@ function cmdSwitchportMode(state: SwitchState, input: string): CommandResult {
       }
     }
   }
-  
+
   return {
     success: true,
     newState: { ports: newPorts }
@@ -1767,27 +1817,27 @@ function cmdSwitchportMode(state: SwitchState, input: string): CommandResult {
 
 function cmdSwitchportAccessVlan(state: SwitchState, input: string): CommandResult {
   const interfaces = state.selectedInterfaces || (state.currentInterface ? [state.currentInterface] : []);
-  
+
   if (interfaces.length === 0) {
     return { success: false, error: '% No interface selected' };
   }
-  
+
   const match = input.match(/^switchport\s+access\s+vlan\s+(\d+)$/i);
   if (!match) return { success: false, error: '% Invalid VLAN ID' };
-  
+
   const vlanId = parseInt(match[1]);
-  
+
   if (!state.vlans[vlanId]) {
     return { success: false, error: `% VLAN ${vlanId} does not exist` };
   }
-  
+
   const newPorts = { ...state.ports };
   for (const portId of interfaces) {
     if (newPorts[portId]) {
       newPorts[portId] = { ...newPorts[portId], vlan: vlanId };
     }
   }
-  
+
   return {
     success: true,
     newState: { ports: newPorts }
@@ -1796,17 +1846,17 @@ function cmdSwitchportAccessVlan(state: SwitchState, input: string): CommandResu
 
 function cmdSwitchportTrunkAllowedVlan(state: SwitchState, input: string): CommandResult {
   const interfaces = state.selectedInterfaces || (state.currentInterface ? [state.currentInterface] : []);
-  
+
   if (interfaces.length === 0) {
     return { success: false, error: '% No interface selected' };
   }
-  
+
   const match = input.match(/^switchport\s+trunk\s+allowed\s+vlan\s+(all|add|remove)?\s*((\d+[,-\d]*))?$/i);
   if (!match) return { success: false, error: '% Invalid value' };
-  
+
   const action = (match[1] || '').toLowerCase();
   const vlanString = match[2];
-  
+
   const parseVlanList = (str: string): number[] => {
     const result: number[] = [];
     const parts = str.split(',');
@@ -1825,21 +1875,21 @@ function cmdSwitchportTrunkAllowedVlan(state: SwitchState, input: string): Comma
   };
 
   const newPorts = { ...state.ports };
-  
+
   for (const portId of interfaces) {
     if (newPorts[portId]) {
       const port = newPorts[portId];
-      let currentAllowed = Array.isArray(port.allowedVlans) ? [...port.allowedVlans] : port.allowedVlans === 'all' ? Array.from({length: 4094}, (_, i) => i + 1) : [];
-      
+      let currentAllowed = Array.isArray(port.allowedVlans) ? [...port.allowedVlans] : port.allowedVlans === 'all' ? Array.from({ length: 4094 }, (_, i) => i + 1) : [];
+
       if (action === 'all') {
         newPorts[portId] = { ...port, allowedVlans: 'all' };
       } else if (action === 'add' && vlanString) {
         const toAdd = parseVlanList(vlanString);
-        const updated = Array.from(new Set([...currentAllowed, ...toAdd])).sort((a,b) => a-b);
+        const updated = Array.from(new Set([...currentAllowed, ...toAdd])).sort((a, b) => a - b);
         newPorts[portId] = { ...port, allowedVlans: updated };
       } else if (action === 'remove' && vlanString) {
         const toRemove = parseVlanList(vlanString);
-        const updated = currentAllowed.filter(v => !toRemove.includes(v)).sort((a,b) => a-b);
+        const updated = currentAllowed.filter(v => !toRemove.includes(v)).sort((a, b) => a - b);
         newPorts[portId] = { ...port, allowedVlans: updated };
       } else {
         const newList = parseVlanList(vlanString || action);
@@ -1859,18 +1909,18 @@ function cmdVlanName(state: SwitchState, input: string): CommandResult {
   if (!state.currentVlan) {
     return { success: false, error: '% No VLAN selected' };
   }
-  
+
   const match = input.match(/^name\s+(.+)$/i);
   if (!match) return { success: false, error: '% Invalid name' };
-  
+
   const name = match[1].trim();
-  
+
   const newVlans = { ...state.vlans };
   newVlans[state.currentVlan] = {
     ...newVlans[state.currentVlan],
     name
   };
-  
+
   return {
     success: true,
     newState: { vlans: newVlans }
@@ -1881,13 +1931,13 @@ function cmdNoVlanName(state: SwitchState): CommandResult {
   if (!state.currentVlan) {
     return { success: false, error: '% No VLAN selected' };
   }
-  
+
   const newVlans = { ...state.vlans };
   newVlans[state.currentVlan] = {
     ...newVlans[state.currentVlan],
     name: `VLAN${state.currentVlan}`
   };
-  
+
   return {
     success: true,
     newState: { vlans: newVlans }
@@ -1908,7 +1958,7 @@ function cmdLineConsole(state: SwitchState): CommandResult {
 function cmdLineVty(state: SwitchState, input: string): CommandResult {
   const match = input.match(/^line\s+vty\s+(\d+)\s+(\d+)$/i);
   if (!match) return { success: false, error: '% Invalid VTY range' };
-  
+
   return {
     success: true,
     newState: {
@@ -1922,12 +1972,12 @@ function cmdPassword(state: SwitchState, input: string): CommandResult {
   if (!state.currentLine) {
     return { success: false, error: '% No line selected' };
   }
-  
+
   const match = input.match(/^password\s+(.+)$/i);
   if (!match) return { success: false, error: '% Invalid password' };
-  
+
   const password = match[1].trim();
-  
+
   if (state.currentLine.startsWith('console')) {
     return {
       success: true,
@@ -1955,7 +2005,7 @@ function cmdNoLogin(state: SwitchState): CommandResult {
   if (!state.currentLine) {
     return { success: false, error: '% No line selected' };
   }
-  
+
   if (state.currentLine.startsWith('console')) {
     return {
       success: true,
@@ -1983,12 +2033,12 @@ function cmdTransportInput(state: SwitchState, input: string): CommandResult {
   if (!state.currentLine) {
     return { success: false, error: '% No line selected' };
   }
-  
+
   const match = input.match(/^transport\s+input\s+(ssh|telnet|all|none)$/i);
   if (!match) return { success: false, error: '% Invalid transport input' };
-  
+
   const transport = match[1].toLowerCase() as 'ssh' | 'telnet' | 'all' | 'none';
-  
+
   if (state.currentLine.startsWith('console')) {
     return {
       success: true,
@@ -2015,20 +2065,20 @@ function cmdTransportInput(state: SwitchState, input: string): CommandResult {
 function cmdShowInterfacesStatus(state: SwitchState): CommandResult {
   let output = 'Port      Name               Status       Vlan       Duplex  Speed Type\n';
   output += '--------- ------------------ ------------ ---------- ------ ------ ------------\n';
-  
+
   Object.values(state.ports).forEach(port => {
     const portUpper = port.id.toUpperCase();
     const name = port.name.substring(0, 18).padEnd(18);
-    const status = port.shutdown ? 'disabled' : 
-                   port.status === 'connected' ? 'connected' : 'notconnect';
+    const status = port.shutdown ? 'disabled' :
+      port.status === 'connected' ? 'connected' : 'notconnect';
     const vlan = port.mode === 'trunk' ? 'trunk' : port.vlan.toString();
     const duplex = port.duplex === 'auto' ? 'a-' + (port.status === 'connected' ? 'full' : 'auto') : port.duplex;
     const speed = port.speed === 'auto' ? 'a-' + (port.status === 'connected' ? (port.type === 'gigabitethernet' ? '1000' : '100') : 'auto') : port.speed;
     const type = port.type === 'gigabitethernet' ? '10/100/1000BaseTX' : '10/100BaseTX';
-    
+
     output += `${portUpper.padEnd(9)} ${name} ${status.padEnd(12)} ${vlan.padEnd(10)} ${(duplex).padEnd(6)} ${(speed).padEnd(6)} ${type}\n`;
   });
-  
+
   return { success: true, output };
 }
 
@@ -2038,49 +2088,49 @@ function cmdShowInterface(state: SwitchState, input: string): CommandResult {
   }
   const match = input.match(/^show\s+interface\s+(.+)$/i);
   if (!match) return { success: false, error: '% Invalid interface' };
-  
+
   const portId = normalizePortId(match[1]);
   if (!portId || !state.ports[portId]) {
     return { success: false, error: '% Invalid interface' };
   }
-  
+
   const port = state.ports[portId];
   const portUpper = port.id.toUpperCase().replace('FA', 'FastEthernet').replace('GI', 'GigabitEthernet');
-  const status = port.shutdown ? 'administratively down' : 
-                 port.status === 'connected' ? 'up' : 'down';
+  const status = port.shutdown ? 'administratively down' :
+    port.status === 'connected' ? 'up' : 'down';
   const lineProtocol = port.status === 'connected' && !port.shutdown ? 'up' : 'down';
-  
+
   let output = `${portUpper} is ${status}, line protocol is ${lineProtocol}\n`;
   output += `  Hardware is ${port.type === 'gigabitethernet' ? 'Gigabit Ethernet' : 'Fast Ethernet'}\n`;
   output += `  Description: ${port.name || '(not set)'}\n`;
   output += `  VLAN: ${port.vlan}, Mode: ${port.mode}\n`;
-  
+
   return { success: true, output };
 }
 
 function cmdShowVlanBrief(state: SwitchState): CommandResult {
   let output = '\nVLAN Name                             Status    Ports\n';
   output += '---- -------------------------------- --------- -------------------------------\n';
-  
+
   Object.values(state.vlans).forEach(vlan => {
     const id = vlan.id.toString().padEnd(4);
     const name = vlan.name.substring(0, 32).padEnd(32);
     const status = vlan.status.padEnd(9);
-    
+
     // VLAN'a atanmış portları bul
     const vlanPorts = Object.values(state.ports)
       .filter(p => p.vlan === vlan.id && !p.shutdown)
       .map(p => p.id.toUpperCase());
-    
+
     // Portları satırlara böl
     let portStr = '';
     if (vlanPorts.length > 0) {
       portStr = vlanPorts.join(', ');
     }
-    
+
     output += `${id} ${name} ${status}    ${portStr}\n`;
   });
-  
+
   return { success: true, output };
 }
 
@@ -2106,7 +2156,7 @@ function cmdShowVersion(state: SwitchState): CommandResult {
   output += `Top Assembly Revision Number    : A0\n`;
   output += `Version ID                      : V01\n`;
   output += `Configuration register is 0xF\n`;
-  
+
   return { success: true, output };
 }
 
@@ -2115,13 +2165,13 @@ function cmdShowMacAddressTable(state: SwitchState): CommandResult {
   output += '-------------------------------------------\n\n';
   output += 'Vlan    Mac Address       Type        Ports\n';
   output += '----    -----------       --------    -----\n';
-  
+
   state.macAddressTable.forEach(entry => {
     output += `${entry.vlan.toString().padEnd(7)} ${entry.mac.padEnd(17)} ${entry.type.padEnd(11)} ${entry.port}\n`;
   });
-  
+
   output += '\nTotal Mac Addresses for this criterion: ' + state.macAddressTable.length + '\n';
-  
+
   return { success: true, output };
 }
 
@@ -2149,13 +2199,13 @@ function generateRunningConfig(state: SwitchState): string {
   let config = '!\n';
   config += `hostname ${state.hostname}\n`;
   config += '!\n';
-  
+
   // Banner
   if (state.bannerMOTD) {
     config += `banner motd #${state.bannerMOTD}#\n`;
     config += '!\n';
   }
-  
+
   // Enable secret/password
   if (state.security.enableSecret) {
     if (state.security.servicePasswordEncryption && state.security.enableSecretEncrypted) {
@@ -2171,19 +2221,19 @@ function generateRunningConfig(state: SwitchState): string {
       config += `enable password ${state.security.enablePassword}\n`;
     }
   }
-  
+
   // Password encryption
   if (state.security.servicePasswordEncryption) {
     config += 'service password-encryption\n';
   }
   config += '!\n';
-  
+
   // Users
   state.security.users.forEach(user => {
     config += `username ${user.username} privilege ${user.privilege} password ${user.password}\n`;
   });
   if (state.security.users.length > 0) config += '!\n';
-  
+
   // Interfaces
   Object.values(state.ports).forEach(port => {
     const portUpper = port.id.toUpperCase().replace('FA', 'FastEthernet').replace('GI', 'GigabitEthernet');
@@ -2230,7 +2280,7 @@ function generateRunningConfig(state: SwitchState): string {
   if (state.vtpMode || state.vtpDomain || (state as any).vtpPassword) {
     config += '!\n';
   }
-  
+
   // VLANs
   Object.values(state.vlans).forEach(vlan => {
     if (vlan.id >= 2 && vlan.id <= 1001 && vlan.name !== `VLAN${vlan.id}`) {
@@ -2239,7 +2289,7 @@ function generateRunningConfig(state: SwitchState): string {
       config += '!\n';
     }
   });
-  
+
   // Line console
   config += 'line con 0\n';
   if (state.security.consoleLine.password) {
@@ -2249,7 +2299,7 @@ function generateRunningConfig(state: SwitchState): string {
     config += ' login\n';
   }
   config += '!\n';
-  
+
   // Line VTY
   config += 'line vty 0 4\n';
   if (state.security.vtyLines.password) {
@@ -2258,14 +2308,14 @@ function generateRunningConfig(state: SwitchState): string {
   if (state.security.vtyLines.login) {
     config += ' login\n';
   }
-  if (state.security.vtyLines.transportInput.length > 0 && 
-      state.security.vtyLines.transportInput[0] !== 'all') {
+  if (state.security.vtyLines.transportInput.length > 0 &&
+    state.security.vtyLines.transportInput[0] !== 'all') {
     config += ` transport input ${state.security.vtyLines.transportInput.join(' ')}\n`;
   }
   config += '!\n';
-  
+
   config += 'end\n';
-  
+
   return config;
 }
 
@@ -2284,10 +2334,10 @@ function encryptPassword(password: string): string {
 function cmdNoUsername(state: SwitchState, input: string): CommandResult {
   const match = input.match(/^no\s+username\s+(\S+)$/i);
   if (!match) return { success: false, error: '% Invalid username' };
-  
+
   const username = match[1];
   const newUsers = state.security.users.filter(u => u.username !== username);
-  
+
   return {
     success: true,
     newState: { security: { ...state.security, users: newUsers } }
@@ -2298,7 +2348,7 @@ function cmdNoUsername(state: SwitchState, input: string): CommandResult {
 function cmdIpDomainName(state: SwitchState, input: string): CommandResult {
   const match = input.match(/^ip\s+domain-name\s+(.+)$/i);
   if (!match) return { success: false, error: '% Invalid domain name' };
-  
+
   return {
     success: true,
     newState: { domainName: match[1].trim() }
@@ -2309,7 +2359,7 @@ function cmdIpDomainName(state: SwitchState, input: string): CommandResult {
 function cmdIpDefaultGateway(state: SwitchState, input: string): CommandResult {
   const match = input.match(/^ip\s+default-gateway\s+(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/i);
   if (!match) return { success: false, error: '% Invalid IP address' };
-  
+
   return {
     success: true,
     newState: { defaultGateway: match[1] }
@@ -2320,7 +2370,7 @@ function cmdIpDefaultGateway(state: SwitchState, input: string): CommandResult {
 function cmdIpSshVersion(state: SwitchState, input: string): CommandResult {
   const match = input.match(/^ip\s+ssh\s+version\s+(1|2)$/i);
   if (!match) return { success: false, error: '% Invalid SSH version' };
-  
+
   return {
     success: true,
     newState: { sshVersion: parseInt(match[1]) as 1 | 2 }
@@ -2355,7 +2405,7 @@ function cmdNoCdpRun(state: SwitchState): CommandResult {
 function cmdSpanningTreeMode(state: SwitchState, input: string): CommandResult {
   const match = input.match(/^spanning-tree\s+mode\s+(pvst|rapid-pvst|mst)$/i);
   if (!match) return { success: false, error: '% Invalid spanning-tree mode' };
-  
+
   return {
     success: true,
     newState: { spanningTreeMode: match[1].toLowerCase() as 'pvst' | 'rapid-pvst' | 'mst' }
@@ -2366,7 +2416,7 @@ function cmdSpanningTreeMode(state: SwitchState, input: string): CommandResult {
 function cmdVtpMode(state: SwitchState, input: string): CommandResult {
   const match = input.match(/^vtp\s+mode\s+(server|client|transparent|off)$/i);
   if (!match) return { success: false, error: '% Invalid VTP mode' };
-  
+
   return {
     success: true,
     newState: { vtpMode: match[1].toLowerCase() as 'server' | 'client' | 'transparent' | 'off' }
@@ -2377,7 +2427,7 @@ function cmdVtpMode(state: SwitchState, input: string): CommandResult {
 function cmdVtpDomain(state: SwitchState, input: string): CommandResult {
   const match = input.match(/^vtp\s+domain\s+(.+)$/i);
   if (!match) return { success: false, error: '% Invalid VTP domain' };
-  
+
   return {
     success: true,
     newState: { vtpDomain: match[1].trim() }
@@ -2438,7 +2488,7 @@ function cmdSnmpServerCommunity(state: SwitchState, input: string): CommandResul
 function cmdNtpServer(state: SwitchState, input: string): CommandResult {
   const match = input.match(/^ntp\s+server\s+(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/i);
   if (!match) return { success: false, error: '% Invalid NTP server address' };
-  
+
   const ntpServers = [...(state.ntpServers || []), match[1]];
   return {
     success: true,
@@ -2451,34 +2501,34 @@ function cmdInterfaceRange(state: SwitchState, input: string, language: 'tr' | '
   // "interface range fa0/1-24" veya "int r fa0/1-24" gibi formatları kabul et
   const match = input.match(/^interface\s+r(?:ange)?\s+(.+)$/i);
   if (!match) return { success: false, error: '% Invalid interface range' };
-  
+
   const rangeInput = match[1].trim();
   const selectedPorts: string[] = [];
-  
+
   // Virgülle ayrılmış birden fazla range desteği: fa0/1-12,gi0/1-2 veya fa0/1-2,fa0/5-6
   const ranges = rangeInput.split(',').map(r => r.trim());
-  
+
   for (const range of ranges) {
     // Boşlukları kaldır (örn: "fa 0/1-2" -> "fa0/1-2")
     const normalizedRange = range.replace(/\s+/g, '').toLowerCase();
-    
+
     // FastEthernet range: fa0/1-24, fa0/1, fastethernet0/1-24
     const faMatch = normalizedRange.match(/^(?:fa|fastethernet|fast|f)(\d+)\/(\d+)(?:-(\d+))?$/);
     // GigabitEthernet range: gi0/1-2, gig0/1-2, gigabitethernet0/1-2
     const giMatch = normalizedRange.match(/^(?:gi|gig|gigabit|gigabitethernet|g)(\d+)\/(\d+)(?:-(\d+))?$/);
-    
+
     const portMatch = faMatch || giMatch;
     if (portMatch) {
       const prefix = faMatch ? 'fa' : 'gi';
       const moduleNum = portMatch[1];
       const startPort = parseInt(portMatch[2]);
       const endPort = portMatch[3] ? parseInt(portMatch[3]) : startPort;
-      
+
       // Geçerli port aralığı kontrolü (0-48 arası portlar)
       if (startPort < 0 || endPort > 48 || startPort > endPort) {
         return { success: false, error: '% Invalid port range. Valid range: 0-48' };
       }
-      
+
       for (let i = startPort; i <= endPort; i++) {
         const portId = `${prefix}${moduleNum}/${i}`;
         // physical limit check: only allow existing ports
@@ -2488,11 +2538,11 @@ function cmdInterfaceRange(state: SwitchState, input: string, language: 'tr' | '
       }
     }
   }
-  
+
   if (selectedPorts.length === 0) {
     return { success: false, error: language === 'tr' ? '% Geçersiz aralık veya bu cihazda bu portlar mevcut değil' : '% Invalid range or these ports do not exist on this device' };
   }
-  
+
   return {
     success: true,
     newState: {
@@ -2508,10 +2558,10 @@ function cmdSwitchportTrunkNativeVlan(state: SwitchState, input: string): Comman
   if (!state.currentInterface) {
     return { success: false, error: '% No interface selected' };
   }
-  
+
   const match = input.match(/^switchport\s+trunk\s+native\s+vlan\s+(\d+)$/i);
   if (!match) return { success: false, error: '% Invalid VLAN ID' };
-  
+
   return { success: true };
 }
 
@@ -2544,7 +2594,7 @@ function cmdSwitchportPortSecurity(state: SwitchState): CommandResult {
   if (!state.currentInterface) {
     return { success: false, error: '% No interface selected' };
   }
-  
+
   const newPorts = { ...state.ports };
   newPorts[state.currentInterface] = {
     ...newPorts[state.currentInterface],
@@ -2555,39 +2605,39 @@ function cmdSwitchportPortSecurity(state: SwitchState): CommandResult {
       stickyMac: false
     }
   };
-  
+
   return { success: true, newState: { ports: newPorts } };
 }
 
 // Switchport Port-Security Maximum
 function cmdSwitchportPortSecurityMaximum(state: SwitchState, input: string): CommandResult {
   if (!state.currentInterface) return { success: false, error: '% No interface selected' };
-  
+
   const match = input.match(/^switchport\s+port-security\s+maximum\s+(\d+)$/i);
   if (!match) return { success: false, error: '% Invalid maximum value' };
-  
+
   const newPorts = { ...state.ports };
   const port = newPorts[state.currentInterface];
   if (port.portSecurity) {
     port.portSecurity.maxMac = parseInt(match[1]);
   }
-  
+
   return { success: true, newState: { ports: newPorts } };
 }
 
 // Switchport Port-Security Violation
 function cmdSwitchportPortSecurityViolation(state: SwitchState, input: string): CommandResult {
   if (!state.currentInterface) return { success: false, error: '% No interface selected' };
-  
+
   const match = input.match(/^switchport\s+port-security\s+violation\s+(protect|restrict|shutdown)$/i);
   if (!match) return { success: false, error: '% Invalid violation mode' };
-  
+
   const newPorts = { ...state.ports };
   const port = newPorts[state.currentInterface];
   if (port.portSecurity) {
     port.portSecurity.violation = match[1].toLowerCase() as 'protect' | 'restrict' | 'shutdown';
   }
-  
+
   return { success: true, newState: { ports: newPorts } };
 }
 
@@ -2600,13 +2650,13 @@ function cmdSwitchportPortSecurityMac(state: SwitchState, input: string): Comman
 // Switchport Port-Security Sticky
 function cmdSwitchportPortSecuritySticky(state: SwitchState): CommandResult {
   if (!state.currentInterface) return { success: false, error: '% No interface selected' };
-  
+
   const newPorts = { ...state.ports };
   const port = newPorts[state.currentInterface];
   if (port.portSecurity) {
     port.portSecurity.stickyMac = true;
   }
-  
+
   return { success: true, newState: { ports: newPorts } };
 }
 
@@ -2676,8 +2726,8 @@ function cmdChannelGroup(state: SwitchState, input: string): CommandResult {
 
   const inferredProtocol =
     mode === 'active' || mode === 'passive' ? 'lacp' :
-    mode === 'desirable' || mode === 'auto' ? 'pagp' :
-    undefined;
+      mode === 'desirable' || mode === 'auto' ? 'pagp' :
+        undefined;
 
   const newPorts = { ...state.ports };
   for (const portId of interfaces) {
@@ -2795,25 +2845,25 @@ function cmdIpArpInspectionTrust(state: SwitchState): CommandResult {
 // VLAN State
 function cmdVlanState(state: SwitchState, input: string): CommandResult {
   if (!state.currentVlan) return { success: false, error: '% No VLAN selected' };
-  
+
   const match = input.match(/^state\s+(active|suspend)$/i);
   if (!match) return { success: false, error: '% Invalid state' };
-  
+
   const newVlans = { ...state.vlans };
   newVlans[state.currentVlan] = {
     ...newVlans[state.currentVlan],
     status: match[1].toLowerCase() === 'active' ? 'active' : 'suspend'
   };
-  
+
   return { success: true, newState: { vlans: newVlans } };
 }
 
 // Login with local option
 function cmdLogin(state: SwitchState, input: string): CommandResult {
   if (!state.currentLine) return { success: false, error: '% No line selected' };
-  
+
   const isLocal = input.toLowerCase().includes('local');
-  
+
   if (state.currentLine.startsWith('console')) {
     return {
       success: true,
@@ -2864,14 +2914,14 @@ function cmdHistorySize(state: SwitchState, input: string): CommandResult {
 // Show Running Config with filter support
 function cmdShowRunningConfig(state: SwitchState, input: string): CommandResult {
   const config = generateRunningConfig(state);
-  
+
   // Check for pipe filters
   const pipeMatch = input.match(/\|\s+(include|section|begin|exclude)\s+(.+)$/i);
   if (pipeMatch) {
     const filter = pipeMatch[1].toLowerCase();
     const pattern = pipeMatch[2].toLowerCase();
     const lines = config.split('\n');
-    
+
     const filteredLines = lines.filter(line => {
       switch (filter) {
         case 'include':
@@ -2885,10 +2935,10 @@ function cmdShowRunningConfig(state: SwitchState, input: string): CommandResult 
           return true;
       }
     });
-    
+
     return { success: true, output: filteredLines.join('\n') };
   }
-  
+
   return { success: true, output: config };
 }
 
@@ -2912,22 +2962,22 @@ function cmdShowInterfaces(state: SwitchState, input: string): CommandResult {
   if (input.toLowerCase().includes('trunk')) {
     return cmdShowInterfacesTrunk(state);
   }
-  
+
   let output = '';
-  
+
   Object.values(state.ports).forEach(port => {
     const portUpper = port.id.toUpperCase().replace('FA', 'FastEthernet').replace('GI', 'GigabitEthernet');
-    const status = port.shutdown ? 'administratively down' : 
-                   port.status === 'connected' ? 'up' : 'down';
+    const status = port.shutdown ? 'administratively down' :
+      port.status === 'connected' ? 'up' : 'down';
     const lineProtocol = port.status === 'connected' && !port.shutdown ? 'up' : 'down';
-    
+
     output += `${portUpper} is ${status}, line protocol is ${lineProtocol}\n`;
     output += `  Description: ${port.name || '(not set)'}\n`;
     output += `  Hardware is ${port.type === 'gigabitethernet' ? 'Gigabit Ethernet' : 'Fast Ethernet'}\n`;
     output += `  VLAN: ${port.vlan}, Mode: ${port.mode}\n`;
     output += `  Duplex: ${port.duplex}, Speed: ${port.speed}\n\n`;
   });
-  
+
   return { success: true, output };
 }
 
@@ -3009,19 +3059,19 @@ function cmdShowInterfacesTrunk(state: SwitchState): CommandResult {
 // Show CDP Neighbors
 function cmdShowCdpNeighbors(state: SwitchState, input: string): CommandResult {
   const isDetail = input.toLowerCase().includes('detail');
-  
+
   if (isDetail) {
     return {
       success: true,
       output: `\n-------------------------\nDevice ID: Core-Switch-01\nEntry address(es): \n  IP address: 192.168.1.1\nPlatform: network WS-C2960-24TT-L,  Capabilities: Switch \nInterface: Gi0/1,  Port ID (outgoing port): Gi0/24\nHoldtime : 163 sec\n\nVersion :\nNetwork NOS Software, C2960 Software (C2960-LANBASE-M), Version 15.0(2)SE4\n\nadvertisement version: 2\nProtocol Hello:  OUI=0x00000C, Protocol ID=0x0112; payload len=27, value=00000000FFFFFFFF010221FF000000000000000000000000\nVTP Management Domain: 'LOCAL'\nDuplex: full\nManagement address(es):\n  IP address: 192.168.1.1\n`
     };
   }
-  
+
   let output = '\nCapability Codes: R - Router, T - Trans Bridge, B - Source Route Bridge\n                  S - Switch, H - Host, I - IGMP, r - Repeater, P - Phone\n\n';
   output += 'Device ID        Local Intrfce     Holdtme    Capability  Platform  Port ID\n';
   output += 'Core-Switch-01   Gi0/1             163        S           WS-C2960  Gi0/24\n';
   output += 'Router-Edge      Gi0/1             150        R S I       2911      Gi0/0\n';
-  
+
   return { success: true, output };
 }
 
@@ -3037,11 +3087,11 @@ function cmdShowIpInterfaceBrief(state: SwitchState): CommandResult {
   output += `Vlan1                  ${vlan1Ip.padEnd(15)} YES unset  ${vlan1Status.padEnd(21)} ${vlan1Proto}\n`;
 
   // All other physical ports
-  Object.values(state.ports).filter(p => p.id !== 'vlan1').sort((a,b) => a.id.localeCompare(b.id)).forEach(port => {
+  Object.values(state.ports).filter(p => p.id !== 'vlan1').sort((a, b) => a.id.localeCompare(b.id)).forEach(port => {
     const portUpper = port.id.toUpperCase().replace('FA', 'FastEthernet').replace('GI', 'GigabitEthernet');
     const ip = port.ipAddress || 'unassigned';
-    const status = port.shutdown ? 'administratively down' : 
-                   port.status === 'connected' ? 'up' : 'down';
+    const status = port.shutdown ? 'administratively down' :
+      port.status === 'connected' ? 'up' : 'down';
     const protocol = port.status === 'connected' && !port.shutdown ? 'up' : 'down';
 
     output += `${portUpper.padEnd(22)} ${ip.padEnd(15)} YES unset  ${status.padEnd(21)} ${protocol}\n`;
@@ -3053,7 +3103,7 @@ function cmdShowIpInterfaceBrief(state: SwitchState): CommandResult {
 function cmdShowSpanningTree(state: SwitchState): CommandResult {
   const mode = state.spanningTreeMode || 'pvst';
   const modeName = mode === 'rapid-pvst' ? 'rapid-pvst' : mode === 'mst' ? 'mst' : 'ieee';
-  
+
   let output = `\nVLAN0001\n`;
   output += `  Spanning tree enabled protocol ${modeName}\n`;
   output += '  Root ID    Priority    32769\n';
@@ -3066,18 +3116,18 @@ function cmdShowSpanningTree(state: SwitchState): CommandResult {
   output += '             Aging Time  15 sec\n\n';
   output += 'Interface           Role Sts Cost      Prio.Nbr Type\n';
   output += '------------------- ---- --- --------- -------- --------------------------------\n';
-  
+
   Object.values(state.ports).forEach(port => {
     if (port.shutdown) return;
-    
+
     const role = 'Desg';
     const sts = port.status === 'connected' ? 'FWD' : 'BLK';
     const cost = port.type === 'gigabitethernet' ? '4' : '19';
     const prio = port.id.startsWith('gi') ? '128.25' : `128.${port.id.replace('fa0/', '')}`;
-    
+
     output += `${port.id.toUpperCase().padEnd(19)} ${role.padEnd(4)} ${sts.padEnd(3)} ${cost.padEnd(9)} ${prio.padEnd(8)} P2p\n`;
   });
-  
+
   return { success: true, output };
 }
 
@@ -3086,7 +3136,7 @@ function cmdShowPortSecurity(state: SwitchState): CommandResult {
   let output = '\nSecure Port  MaxSecureAddr  CurrentAddr  SecurityViolation  Security Action\n';
   output += '               (Count)       (Count)      (Count)\n';
   output += '-------------------------------------------------------------------------\n';
-  
+
   const securedPorts = Object.values(state.ports).filter(p => p.portSecurity?.enabled);
   if (securedPorts.length === 0) {
     output += '(No secure ports configured)\n';
@@ -3095,10 +3145,10 @@ function cmdShowPortSecurity(state: SwitchState): CommandResult {
       output += `${port.id.toUpperCase().padEnd(14)}${String(port.portSecurity?.maxMac || 1).padEnd(15)}0            0                   ${port.portSecurity?.violation || 'shutdown'}\n`;
     });
   }
-  
+
   output += '\nTotal Addresses in System: 0\n';
   output += 'Max Addresses limit in System: 6144\n';
-  
+
   return { success: true, output };
 }
 
@@ -3174,7 +3224,7 @@ function cmdShowVtpStatus(state: SwitchState): CommandResult {
   output += 'Device ID                       : 0011.2233.4400\n';
   output += 'Configuration last modified by 0.0.0.0 at 0-0-00 00:00:00\n';
   output += 'Local updater ID is 0.0.0.0 (no valid interface found)\n';
-  
+
   return { success: true, output };
 }
 
@@ -3202,7 +3252,7 @@ function cmdShowErrdisableRecovery(state: SwitchState): CommandResult {
   output += 'psp                            Disabled\n';
   output += '\nTimer interval: 300 seconds\n';
   output += '\nInterfaces that will be enabled at the next timeout:\n';
-  
+
   return { success: true, output };
 }
 
@@ -3223,7 +3273,7 @@ function cmdShowFlash(state: SwitchState): CommandResult {
   output += '3     1464     Mar 01 2024 00:00:00 +00:00  private-config.text\n';
   output += '4     3024     Mar 01 2024 00:00:00 +00:00  c2960-lanbase-mz.150-2.SE4.bin\n';
   output += '\n32505856 bytes available (29720576 bytes used)\n';
-  
+
   return { success: true, output };
 }
 
@@ -3236,7 +3286,7 @@ function cmdShowBoot(state: SwitchState): CommandResult {
   output += 'Manual Boot         : no\n';
   output += 'HELPER path-list    : \n';
   output += 'Auto upgrade        : yes\n';
-  
+
   return { success: true, output };
 }
 
@@ -3244,7 +3294,7 @@ function cmdShowBoot(state: SwitchState): CommandResult {
 function cmdShowInventory(state: SwitchState): CommandResult {
   let output = '\nNAME: "1", DESCR: "WS-C2960-24TT-L"\n';
   output += 'PID: WS-C2960-24TT-L  , VID: V01  , SN: ' + state.version.serialNumber + '\n';
-  
+
   return { success: true, output };
 }
 
@@ -3254,7 +3304,7 @@ function cmdShowUsers(state: SwitchState): CommandResult {
   output += '   0 con 0                idle                 00:00:00 \n';
   output += '*  2 vty 0                idle                 00:00:00 192.168.1.100\n\n';
   output += '  Interface    User               Mode         Idle     Peer Address\n';
-  
+
   return { success: true, output };
 }
 
@@ -3279,7 +3329,7 @@ function cmdShowArp(state: SwitchState): CommandResult {
   let output = '\nProtocol  Address          Age (min)  Hardware Addr   Type   Interface\n';
   output += 'Internet  192.168.1.1             -   0011.2233.4401  ARPA   Vlan1\n';
   output += 'Internet  192.168.1.100          10   0001.C234.5678   ARPA   Vlan1\n';
-  
+
   return { success: true, output };
 }
 
@@ -3290,7 +3340,7 @@ function cmdShowIpDhcpSnooping(state: SwitchState): CommandResult {
   output += 'Insertion of option 82 is enabled\n';
   output += 'circuit-id format: dot-decimal\n';
   output += 'Option 82 on untrusted port is not allowed\n';
-  
+
   return { success: true, output };
 }
 
@@ -3389,7 +3439,7 @@ function cmdShowEnvironment(state: SwitchState): CommandResult {
   output += 'Power Supply Status:\n';
   output += '--------------------\n';
   output += 'Power Supply 1 is OK\n';
-  
+
   return { success: true, output };
 }
 
@@ -3438,7 +3488,7 @@ function cmdEraseStartupConfig(state: SwitchState): CommandResult {
 function cmdDo(state: SwitchState, input: string): CommandResult {
   const doMatch = input.match(/^do\s+(.+)$/i);
   if (!doMatch) return { success: false, error: '% Invalid do command' };
-  
+
   const subCommand = doMatch[1];
   // Execute as privileged command
   return executeCommand({ ...state, currentMode: 'privileged' }, subCommand);
@@ -3446,7 +3496,7 @@ function cmdDo(state: SwitchState, input: string): CommandResult {
 
 // Ping
 function cmdPing(
-  state: SwitchState, 
+  state: SwitchState,
   input: string,
   devices?: any[],
   connections?: any[],
@@ -3454,16 +3504,16 @@ function cmdPing(
 ): CommandResult {
   const match = input.match(/^ping\s+(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})/i);
   if (!match) return { success: false, error: '% Invalid IP address' };
-  
+
   const targetIp = match[1];
-  
+
   if (devices && connections) {
     // Find our own device ID
     const myDeviceId = Array.from(deviceStates?.entries() || [])
       .find(([_, s]) => s === state)?.[0] || 'switch-1';
-      
+
     const result = checkConnectivity(myDeviceId, targetIp, devices, connections, deviceStates);
-    
+
     if (result.success) {
       return {
         success: true,
@@ -3486,7 +3536,7 @@ function cmdPing(
 
 // Traceroute
 function cmdTraceroute(
-  state: SwitchState, 
+  state: SwitchState,
   input: string,
   devices?: any[],
   connections?: any[],
@@ -3494,15 +3544,15 @@ function cmdTraceroute(
 ): CommandResult {
   const match = input.match(/^traceroute\s+(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})/i);
   if (!match) return { success: false, error: '% Invalid IP address' };
-  
+
   const targetIp = match[1];
 
   if (devices && connections) {
     const myDeviceId = Array.from(deviceStates?.entries() || [])
       .find(([_, s]) => s === state)?.[0] || 'switch-1';
-      
+
     const result = checkConnectivity(myDeviceId, targetIp, devices, connections, deviceStates);
-    
+
     if (result.success) {
       let output = `\nType escape sequence to abort.\nTracing the route to ${targetIp}\n\n`;
       result.hops.forEach((hop, index) => {
@@ -3516,7 +3566,7 @@ function cmdTraceroute(
       };
     }
   }
-  
+
   return {
     success: true,
     output: `\nType escape sequence to abort.\nTracing the route to ${targetIp}\n\n  1 192.168.1.1 0 msec 0 msec 0 msec\n  2 ${targetIp} 1 msec *  1 msec`
@@ -3527,7 +3577,7 @@ function cmdTraceroute(
 function cmdTelnet(state: SwitchState, input: string): CommandResult {
   const match = input.match(/^telnet\s+(\S+)/i);
   if (!match) return { success: false, error: '% Incomplete command.' };
-  
+
   const target = match[1];
   // Signal to the page layer to find and open that device
   return {
@@ -3541,7 +3591,7 @@ function cmdTelnet(state: SwitchState, input: string): CommandResult {
 function cmdSsh(state: SwitchState, input: string): CommandResult {
   const match = input.match(/(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})/);
   if (!match) return { success: false, error: '% Invalid IP address' };
-  
+
   return {
     success: true,
     output: `Connecting to ${match[1]}...\n\nUser Access Verification\n\nUsername:`
@@ -3556,7 +3606,7 @@ function cmdReload(state: SwitchState, input: string): CommandResult {
       output: 'Reload cancelled.'
     };
   }
-  
+
   return {
     success: true,
     requiresConfirmation: true,
@@ -3627,12 +3677,12 @@ function cmdNoMonitorSession(state: SwitchState, input: string): CommandResult {
 // Show IPv6 Interface Brief
 function cmdShowIpv6InterfaceBrief(state: SwitchState): CommandResult {
   let output = '\nInterface              IPv6-Address                                Status                Protocol\n';
-  
-  Object.values(state.ports).sort((a,b) => a.id.localeCompare(b.id)).forEach(port => {
+
+  Object.values(state.ports).sort((a, b) => a.id.localeCompare(b.id)).forEach(port => {
     const portUpper = port.id.toUpperCase().replace('FA', 'FastEthernet').replace('GI', 'GigabitEthernet');
     const ip = port.ipv6Address ? `${port.ipv6Address}/${port.ipv6Prefix}` : 'unassigned';
-    const status = port.shutdown ? 'administratively down' : 
-                   port.status === 'connected' ? 'up' : 'down';
+    const status = port.shutdown ? 'administratively down' :
+      port.status === 'connected' ? 'up' : 'down';
     const protocol = port.status === 'connected' && !port.shutdown ? 'up' : 'down';
 
     output += `${portUpper.padEnd(22)} ${ip.padEnd(42)} ${status.padEnd(21)} ${protocol}\n`;
@@ -3646,34 +3696,34 @@ function cmdShowIpv6InterfaceBrief(state: SwitchState): CommandResult {
  */
 function cmdIpv6Address(state: SwitchState, input: string): CommandResult {
   if (!state.currentInterface) return { success: false, error: '% No interface selected' };
-  
+
   const match = input.match(/^ipv6\s+address\s+([0-9a-f:]+)\/(\d+)/i);
   if (!match) return { success: false, error: '% Invalid IPv6 address/prefix' };
-  
+
   const ip = match[1];
   const prefix = parseInt(match[2]);
-  
+
   const newPorts = { ...state.ports };
   if (!newPorts[state.currentInterface]) {
-      newPorts[state.currentInterface] = {
-          id: state.currentInterface,
-          name: '',
-          status: 'notconnect',
-          vlan: 1,
-          mode: 'access',
-          duplex: 'auto',
-          speed: 'auto',
-          shutdown: false,
-          type: 'fastethernet'
-      };
+    newPorts[state.currentInterface] = {
+      id: state.currentInterface,
+      name: '',
+      status: 'notconnect',
+      vlan: 1,
+      mode: 'access',
+      duplex: 'auto',
+      speed: 'auto',
+      shutdown: false,
+      type: 'fastethernet'
+    };
   }
-  
+
   newPorts[state.currentInterface] = {
     ...newPorts[state.currentInterface],
     ipv6Address: ip,
     ipv6Prefix: prefix
   };
-  
+
   return {
     success: true,
     newState: { ports: newPorts, ipv6Enabled: true }
@@ -3690,7 +3740,7 @@ function cmdIpRoute(state: SwitchState, input: string, deviceStates: Map<string,
   }
 
   const [, destination, subnetMask, nextHop] = match;
-  
+
   // Validate IP addresses
   if (!isValidIP(destination) || !isValidIP(subnetMask) || !isValidIP(nextHop)) {
     return { success: false, error: '% Invalid IP address format' };
@@ -3718,21 +3768,21 @@ function cmdShowIpRoute(state: SwitchState, deviceStates: Map<string, SwitchStat
   }
 
   const routes = getRoutingTable(deviceId, deviceStates);
-  
+
   let output = '\nCodes: C - connected, S - static, R - RIP, O - OSPF\n';
   output += '       * - candidate default, U - per-user static route\n';
   output += 'Gateway of last resort is not set\n\n';
-  
+
   output += '     10.0.0.0/8 is variably subnetted, 2 subnets, 2 masks\n';
   output += 'C       10.0.1.0/24 is directly connected, GigabitEthernet0/0\n';
   output += 'C       10.0.2.0/24 is directly connected, GigabitEthernet0/1\n';
-  
+
   if (routes.length > 0) {
     routes.forEach(route => {
-      const code = route.type === 'connected' ? 'C' : 
-                   route.type === 'static' ? 'S' : 
-                   route.type === 'dynamic' ? 'R' : 'O';
-      
+      const code = route.type === 'connected' ? 'C' :
+        route.type === 'static' ? 'S' :
+          route.type === 'dynamic' ? 'R' : 'O';
+
       if (route.type === 'connected') {
         output += `${code}       ${route.destination}/${getPrefixLength(route.subnetMask)} is directly connected, ${route.nextHop}\n`;
       } else {
@@ -3751,9 +3801,9 @@ function cmdIpRouting(state: SwitchState): CommandResult {
   return {
     success: true,
     output: '',
-    newState: { 
+    newState: {
       ipRouting: true,
-      isLayer3Switch: true 
+      isLayer3Switch: true
     }
   };
 }
@@ -3765,9 +3815,9 @@ function cmdNoIpRouting(state: SwitchState): CommandResult {
   return {
     success: true,
     output: '',
-    newState: { 
+    newState: {
       ipRouting: false,
-      isLayer3Switch: false 
+      isLayer3Switch: false
     }
   };
 }
@@ -3786,7 +3836,7 @@ function cmdIpAddress(state: SwitchState, input: string): CommandResult {
   }
 
   const [, ip, mask] = match;
-  
+
   if (!isValidIP(ip) || !isValidIP(mask)) {
     return { success: false, error: '% Invalid IP address format' };
   }
@@ -3841,12 +3891,12 @@ function cmdNoIpAddress(state: SwitchState): CommandResult {
 function isValidIP(ip: string): boolean {
   const parts = ip.split('.');
   if (parts.length !== 4) return false;
-  
+
   for (const part of parts) {
     const num = parseInt(part);
     if (isNaN(num) || num < 0 || num > 255) return false;
   }
-  
+
   return true;
 }
 
@@ -3856,7 +3906,7 @@ function isValidIP(ip: string): boolean {
 function getPrefixLength(subnetMask: string): number {
   const parts = subnetMask.split('.').map(Number);
   let count = 0;
-  
+
   for (const part of parts) {
     if (part === 255) count += 8;
     else if (part === 254) { count += 7; break; }
@@ -3868,7 +3918,7 @@ function getPrefixLength(subnetMask: string): number {
     else if (part === 128) { count += 1; break; }
     else break;
   }
-  
+
   return count;
 }
 

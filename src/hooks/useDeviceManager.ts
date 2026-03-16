@@ -105,6 +105,7 @@ export function useDeviceManager(language: 'tr' | 'en') {
       const { requiresConfirmation, confirmationMessage, confirmationAction, success, newState, error, ...result } = executeCommand(deviceState, command, language, topologyDevices ?? undefined, topologyConnections ?? undefined, deviceStates);
 
       const trimmedCommand = command.trim().toLowerCase();
+      const isInternalCommand = command === '__CONSOLE_CONNECT__';
       if (!requiresConfirmation && !skipConfirm && trimmedCommand.startsWith('reload')) {
         setIsLoading(false);
         setConfirmDialog({
@@ -134,7 +135,7 @@ export function useDeviceManager(language: 'tr' | 'en') {
       }
 
       const newOutputs: TerminalOutput[] = [];
-      if (!deviceState.awaitingPassword) {
+      if (!isInternalCommand && !deviceState.awaitingPassword) {
         newOutputs.push({ id: Date.now().toString(), type: 'command', content: command, prompt: devicePrompt });
       }
 

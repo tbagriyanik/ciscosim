@@ -134,6 +134,7 @@ export function createInitialState(mac?: string): SwitchState {
     hostname: 'Switch',
     macAddress,
     currentMode: 'user',
+    consoleAuthenticated: true, // no console login by default
     ports,
     vlans,
     security: createInitialSecurity(),
@@ -209,6 +210,7 @@ export function createInitialRouterState(mac?: string): SwitchState {
     hostname: 'Router',
     macAddress,
     currentMode: 'user',
+    consoleAuthenticated: true,
     ports,
     vlans,
     security: createInitialSecurity(),
