@@ -52,6 +52,8 @@ This document tracks the implementation status of features and planned enhanceme
 - [x] **VLAN-Aware Connectivity** - Cross-VLAN communication through trunk ports
 - [x] **Inter-VLAN Routing** - Router-on-a-stick and Layer 3 Switch routing
 - [x] **Static Routing** - `ip route` implementation with routing table
+- [x] **Same-VLAN Ping** - PCs can ping within their own VLAN
+- [x] **VLAN SVI Detection** - Correct VLAN detection for all switch SVIs (vlan1, vlan10, vlan20, etc.)
 - [ ] **Dynamic Routing** - OSPF or RIP basic simulation
 - [x] **DHCP Services** - Basic DHCP simulation
 - [ ] **Access Control Lists (ACL)** - Standard and Extended IP ACLs
@@ -72,6 +74,9 @@ This document tracks the implementation status of features and planned enhanceme
 - [x] **UX/UI Polish (Q1 2026)** - Project menu simplification, save status indicator, tab tooltips, mobile labels, task badges, toasts, onboarding tour
 - [x] **Save Status Indicator** - Real-time unsaved/saved status with compact labels
 - [x] **Mobile Tab Management** - Bottom tab bar hidden in modals for better UX
+- [x] **Integrated Toolbar** - Unified toolbar with undo/redo, project controls, and settings
+- [x] **Footer Component** - Save status, quick hints, and lab progress in footer
+- [x] **Keyboard Shortcuts** - Ctrl+Y for redo, Ctrl+Z for undo, Ctrl+S for save
 - [ ] **Scenario Creator** - Tool to create custom labs without coding
 - [ ] **Certification Tracks** - Pre-defined CCNA-style lab sequences
 
@@ -95,6 +100,8 @@ This document tracks the implementation status of features and planned enhanceme
 - [x] **Static Routing Lab** - Multi-router topology with static routes
 - [x] **Port Security Lab** - Switch with port security configuration
 - [x] **EtherChannel Lab** - Link aggregation between switches
+- [x] **STP Redundant Links** - Spanning Tree with redundant paths
+- [x] **Campus Network** - Core router with access switches
 
 ### 🏭 Advanced Labs
 - [ ] **OSPF Multi-Area** - Dynamic routing with OSPF areas
