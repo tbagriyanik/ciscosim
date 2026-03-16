@@ -1665,13 +1665,13 @@ export default function Home() {
                 {(
                   <div className="flex flex-col items-end ml-1">
                     <span className={`flex items-center gap-1 text-[10px] font-semibold ${hasUnsavedChanges ? 'text-amber-400' : 'text-emerald-400'}`}>
-                      <span className={`w-1.5 h-1.5 rounded-full ${hasUnsavedChanges ? 'bg-amber-400 animate-pulse' : 'bg-emerald-400'}`} />
+                      <span className={`text-center w-1.5 h-1.5 rounded-full ${hasUnsavedChanges ? 'bg-amber-400 animate-pulse' : 'bg-emerald-400'}`} />
                       {hasUnsavedChanges
-                        ? (language === 'tr' ? 'Kaydedilmemiş değişiklikler' : 'Unsaved changes')
-                        : (language === 'tr' ? 'Tüm değişiklikler kaydedildi' : 'All changes saved')}
+                        ? (language === 'tr' ? 'Kaydedilmedi' : 'Unsaved')
+                        : (language === 'tr' ? 'Kaydedildi' : 'Saved')}
                     </span>
                     {lastSaveTime && (
-                      <span className={`text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>
+                      <span className={`text-center text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>
                         {(language === 'tr' ? 'Son kayıt: ' : 'Last save: ') + lastSaveTime}
                       </span>
                     )}

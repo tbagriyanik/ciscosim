@@ -1,5 +1,6 @@
 import { CanvasDevice, CanvasConnection } from '@/components/network/networkTopology.types';
 import { CableInfo, SwitchState, isCableCompatible } from './types';
+import { findRoute, ipToNumber, getRoutingTable } from './routing';
 
 /**
  * Robust Network connectivity checker for simulation
@@ -217,6 +218,51 @@ export function checkConnectivity(
         hops: path.map(id => devices.find(d => d.id === id)?.name || id),
         error: `VLAN mismatch: source VLAN ${sourceVlan}, target VLAN ${targetVlan}.`
       };
+    }
+  }
+
+  // 6. Layer 3 Routing Logic - Check if routing is possible between different subnets/VLANs
+  if (deviceStates) {
+    const sourceState = deviceStates.get(sourceId);
+    const targetState = deviceStates.get(targetDevice.id);
+    
+    // Check if source has routing capability and a route to target
+    if (sourceState?.ipRouting) {
+      const sourceRoutes = getRoutingTable(sourceId, deviceStates);
+      const route = findRoute(targetIp, sourceRoutes);
+      
+      if (route) {
+        // Route found - allow communication through L3 routing
+        return { 
+          success: true, 
+          hops: path.map(id => devices.find(d => d.id === id)?.name || id),
+          error: undefined
+        };
+      }
+    }
+    
+    // Check if there's a router in the path that can route between VLANs
+    for (const deviceId of path) {
+      const state = deviceStates.get(deviceId);
+      const device = devices.find(d => d.id === deviceId);
+      
+      if (state?.ipRouting && device?.type === 'router') {
+        // Router in path - check if it has routes to both source and target networks
+        const routes = getRoutingTable(deviceId, deviceStates);
+        // Get source IP from device data
+        const srcDevice = devices.find(d => d.id === sourceId);
+        const srcIp = srcDevice?.ip || deviceStates.get(sourceId)?.ports['vlan1']?.ipAddress || '';
+        const sourceRoute = findRoute(srcIp, routes);
+        const targetRoute = findRoute(targetIp, routes);
+        
+        if (sourceRoute && targetRoute) {
+          return { 
+            success: true, 
+            hops: path.map(id => devices.find(d => d.id === id)?.name || id),
+            error: undefined
+          };
+        }
+      }
     }
   }
 

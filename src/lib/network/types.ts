@@ -6,10 +6,11 @@ export type CommandMode =
   | 'config'         // Switch(config)#
   | 'interface'      // Switch(config-if)#
   | 'line'           // Switch(config-line)#
-  | 'vlan';          // Switch(config-vlan)#
+  | 'vlan'           // Switch(config-vlan)#
+  | 'router-config'; // Router(config)#
 
 export type PortStatus = 'connected' | 'notconnect' | 'disabled' | 'blocked';
-export type PortMode = 'access' | 'trunk';
+export type PortMode = 'access' | 'trunk' | 'routed';
 export type DuplexMode = 'half' | 'full' | 'auto';
 export type SpeedMode = '10' | '100' | '1000' | 'auto';
 export type VoiceVlanMode = number | 'dot1p' | 'none' | 'untagged';
@@ -42,6 +43,7 @@ export interface Port {
   };
   ipv6Address?: string;         // For CCNA 1 v7 support
   ipv6Prefix?: number;
+  isRoutedPort?: boolean;       // For L3 switch routed ports
 }
 
 export interface Vlan {
@@ -110,6 +112,11 @@ export interface SwitchState {
   ipv6Enabled?: boolean;
   ipRouting: boolean;
   startupConfig?: StartupConfig;
+  // New routing fields
+  isLayer3Switch?: boolean;        // L3 switch capability
+  staticRoutes?: Route[];          // Static routing table
+  dynamicRoutes?: Route[];         // Dynamic routing table
+  routingProtocol?: 'none' | 'rip' | 'ospf'; // Routing protocol
 }
 
 export interface StartupConfig {
@@ -256,4 +263,13 @@ export function parsePortId(portId: string): { type: 'fa' | 'gi'; module: number
 export function formatPortId(type: 'fastethernet' | 'gigabitethernet', module: number, port: number): string {
   const prefix = type === 'fastethernet' ? 'Fa' : 'Gi';
   return `${prefix}${module}/${port}`;
+}
+
+// Route interface for routing functionality
+export interface Route {
+  destination: string;      // e.g., "192.168.2.0"
+  subnetMask: string;       // e.g., "255.255.255.0"
+  nextHop: string;          // e.g., "192.168.1.1" or interface name
+  metric?: number;          // Administrative distance/metric
+  type: 'connected' | 'static' | 'dynamic'; // Route type
 }

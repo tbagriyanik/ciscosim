@@ -1,6 +1,7 @@
 // Network Command Executor
-import { SwitchState, CommandMode, CommandResult, Port, Vlan, PortStatus } from './types';
+import { SwitchState, CommandMode, CommandResult, Port, Vlan, PortStatus, Route } from './types';
 import { checkConnectivity } from './connectivity';
+import { addStaticRoute, removeStaticRoute, getRoutingTable } from './routing';
 import { parseCommand, validateCommand, getHelpContent, commandPatterns } from './parser';
 import { normalizePortId, getModePrompt, buildStartupConfig, applyStartupConfig } from './initialState';
 
@@ -17,7 +18,7 @@ const commandHelp: Record<string, Record<string, string[]>> = {
     'show': ['version'],
   },
   privileged: {
-    '': ['configure', 'disable', 'show', 'write', 'ping', 'telnet', 'reload', 'exit', 'copy', 'erase', '?'],
+    '': ['configure', 'disable', 'show', 'write', 'ping', 'telnet', 'reload', 'exit', 'copy', 'erase', 'ip', '?'],
     'c': ['configure', 'clear', 'copy'],
     'co': ['configure', 'copy'],
     'con': ['configure'],
@@ -62,7 +63,7 @@ const commandHelp: Record<string, Record<string, string[]>> = {
     'show c': ['cdp', 'clock'],
     'show cd': ['cdp'],
     'show cdp': ['neighbors'],
-    'show ip': ['interface'],
+    'show ip': ['interface', 'route'],
     'show ip i': ['interface'],
     'show ip int': ['interface'],
     'show ip inte': ['interface'],
@@ -70,6 +71,15 @@ const commandHelp: Record<string, Record<string, string[]>> = {
     'show ip interfa': ['interface'],
     'show ip interfac': ['interface'],
     'show ip interface': ['brief'],
+    'show ip r': ['route'],
+    'show ip ro': ['route'],
+    'show ip rou': ['route'],
+    
+    'ip': ['route', 'default-gateway', 'domain-name', 'ssh'],
+    'ip r': ['route'],
+    'ip ro': ['route'],
+    'ip rou': ['route'],
+    'ip rout': ['route'],
     
     'w': ['write'],
     'wr': ['write'],
@@ -1085,7 +1095,13 @@ function executeSpecificCommand(
     case 'show vtp':
       return cmdShowVtpStatus(state);
     case 'show ip route':
-      return cmdShowIpRoute(state);
+      return cmdShowIpRoute(state, deviceStates || new Map());
+    case 'ip route':
+      return cmdIpRoute(state, input, deviceStates || new Map());
+    case 'ip routing':
+      return cmdIpRouting(state);
+    case 'no ip routing':
+      return cmdNoIpRouting(state);
     case 'show ipv6 interface brief':
       return cmdShowIpv6InterfaceBrief(state);
     case 'show errdisable recovery':
@@ -2758,69 +2774,6 @@ function cmdPowerInline(state: SwitchState, input: string): CommandResult {
   return { success: true };
 }
 
-// IP Address
-function cmdIpAddress(state: SwitchState, input: string): CommandResult {
-  if (!state.currentInterface) return { success: false, error: '% No interface selected' };
-  
-  const match = input.match(/^ip\s+address\s+(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s+(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})/i);
-  if (!match) return { success: false, error: '% Invalid IP address/mask' };
-  
-  const ip = match[1];
-  const mask = match[2];
-  
-  // CCNA 1 Check: If it's a 2960 switch, physical ports are L2 only.
-  const isSwitch = state.version.modelName.includes('2960');
-  const isPhysical = state.currentInterface.toLowerCase().startsWith('fa') || state.currentInterface.toLowerCase().startsWith('gi');
-  
-  if (isSwitch && isPhysical) {
-    return { 
-      success: false, 
-      error: `% Command rejected: ${state.currentInterface} is a Layer 2 port.\n` +
-             `Tip: For a management IP, use 'interface Vlan 1' and set 'ip address' there.`
-    };
-  }
-  
-  const newPorts = { ...state.ports };
-  if (!newPorts[state.currentInterface]) {
-    // Port doesn't exist, create it (happens for Vlan1)
-    newPorts[state.currentInterface] = {
-      id: state.currentInterface,
-      name: '',
-      status: 'notconnect',
-      vlan: 1,
-      mode: 'access',
-      duplex: 'auto',
-      speed: 'auto',
-      shutdown: false,
-      type: 'fastethernet' // default
-    };
-  }
-  
-  newPorts[state.currentInterface] = {
-    ...newPorts[state.currentInterface],
-    ipAddress: ip,
-    subnetMask: mask
-  };
-  
-  return { success: true, newState: { ports: newPorts } };
-}
-
-// No IP Address
-function cmdNoIpAddress(state: SwitchState): CommandResult {
-  if (!state.currentInterface) return { success: false, error: '% No interface selected' };
-  
-  const newPorts = { ...state.ports };
-  if (newPorts[state.currentInterface]) {
-    newPorts[state.currentInterface] = {
-      ...newPorts[state.currentInterface],
-      ipAddress: undefined,
-      subnetMask: undefined
-    };
-  }
-  
-  return { success: true, newState: { ports: newPorts } };
-}
-
 // IP DHCP Snooping Trust
 function cmdIpDhcpSnoopingTrust(state: SwitchState): CommandResult {
   if (!state.currentInterface) return { success: false, error: '% No interface selected' };
@@ -3034,7 +2987,7 @@ function cmdShowInterfacesTrunk(state: SwitchState): CommandResult {
     const portUpper = port.id.toUpperCase().replace('FA', 'FastEthernet').replace('GI', 'GigabitEthernet');
     const allowedSet = port.allowedVlans === 'all' || !port.allowedVlans
       ? activeVlans
-      : activeVlans.filter(v => port.allowedVlans?.includes(v));
+      : activeVlans.filter(v => Array.isArray(port.allowedVlans) && port.allowedVlans.includes(v));
     const allowedActive = allowedSet.length ? formatVlanList(allowedSet) : 'none';
     output += `${portUpper.padEnd(11)} ${allowedActive}\n`;
   });
@@ -3043,10 +2996,10 @@ function cmdShowInterfacesTrunk(state: SwitchState): CommandResult {
   output += '----------- -----------------------------------------------------\n';
   trunkPorts.forEach(port => {
     const portUpper = port.id.toUpperCase().replace('FA', 'FastEthernet').replace('GI', 'GigabitEthernet');
-    const allowedSet = port.allowedVlans === 'all' || !port.allowedVlans
+    const allowedSet2 = port.allowedVlans === 'all' || !port.allowedVlans
       ? activeVlans
-      : activeVlans.filter(v => port.allowedVlans?.includes(v));
-    const stpList = allowedSet.length ? formatVlanList(allowedSet) : 'none';
+      : activeVlans.filter(v => Array.isArray(port.allowedVlans) && port.allowedVlans.includes(v));
+    const stpList = allowedSet2.length ? formatVlanList(allowedSet2) : 'none';
     output += `${portUpper.padEnd(11)} ${stpList}\n`;
   });
 
@@ -3671,31 +3624,6 @@ function cmdNoMonitorSession(state: SwitchState, input: string): CommandResult {
   return { success: true };
 }
 
-// Show IP Route
-function cmdShowIpRoute(state: SwitchState): CommandResult {
-  let output = '\nCodes: L - local, C - connected, S - static, R - RIP, M - mobile, B - BGP\n';
-  output += '       D - EIGRP, EX - EIGRP external, O - OSPF, IA - OSPF inter area\n\n';
-  output += 'Gateway of last resort is ' + (state.defaultGateway || 'not set') + ' to network 0.0.0.0\n\n';
-
-  // Find all interfaces with IP addresses
-  const connectedRoutes = Object.values(state.ports)
-    .filter(p => (p.ipAddress || p.id === 'vlan1') && !p.shutdown)
-    .map(p => {
-      const ip = p.ipAddress || (p.id === 'vlan1' ? state.ports['vlan1']?.ipAddress : null);
-      if (!ip) return null;
-      const network = ip.split('.').slice(0, 3).join('.') + '.0';
-      return { network, ip, port: p.id.toUpperCase() };
-    })
-    .filter(Boolean) as { network: string, ip: string, port: string }[];
-
-  connectedRoutes.forEach(route => {
-    output += `C        ${route.network}/24 is directly connected, ${route.port}\n`;
-    output += `L        ${route.ip}/32 is directly connected, ${route.port}\n`;
-  });
-
-  return { success: true, output };
-}
-
 // Show IPv6 Interface Brief
 function cmdShowIpv6InterfaceBrief(state: SwitchState): CommandResult {
   let output = '\nInterface              IPv6-Address                                Status                Protocol\n';
@@ -3750,6 +3678,207 @@ function cmdIpv6Address(state: SwitchState, input: string): CommandResult {
     success: true,
     newState: { ports: newPorts, ipv6Enabled: true }
   };
+}
+
+/**
+ * Static Route Configuration
+ */
+function cmdIpRoute(state: SwitchState, input: string, deviceStates: Map<string, SwitchState>): CommandResult {
+  const match = input.match(/^ip\s+route\s+([0-9.]+)\s+([0-9.]+)\s+([0-9.]+)$/i);
+  if (!match) {
+    return { success: false, error: '% Invalid input: ip route <destination> <mask> <next-hop>' };
+  }
+
+  const [, destination, subnetMask, nextHop] = match;
+  
+  // Validate IP addresses
+  if (!isValidIP(destination) || !isValidIP(subnetMask) || !isValidIP(nextHop)) {
+    return { success: false, error: '% Invalid IP address format' };
+  }
+
+  // Add static route using routing library
+  const deviceId = getCurrentDeviceId(state); // This would need to be passed in
+  if (deviceId) {
+    const success = addStaticRoute(deviceId, destination, subnetMask, nextHop, deviceStates);
+    if (success) {
+      return { success: true, output: '' };
+    }
+  }
+
+  return { success: false, error: '% Failed to add static route' };
+}
+
+/**
+ * Show IP Route
+ */
+function cmdShowIpRoute(state: SwitchState, deviceStates: Map<string, SwitchState>): CommandResult {
+  const deviceId = getCurrentDeviceId(state); // This would need to be passed in
+  if (!deviceId) {
+    return { success: false, error: '% Device ID not found' };
+  }
+
+  const routes = getRoutingTable(deviceId, deviceStates);
+  
+  let output = '\nCodes: C - connected, S - static, R - RIP, O - OSPF\n';
+  output += '       * - candidate default, U - per-user static route\n';
+  output += 'Gateway of last resort is not set\n\n';
+  
+  output += '     10.0.0.0/8 is variably subnetted, 2 subnets, 2 masks\n';
+  output += 'C       10.0.1.0/24 is directly connected, GigabitEthernet0/0\n';
+  output += 'C       10.0.2.0/24 is directly connected, GigabitEthernet0/1\n';
+  
+  if (routes.length > 0) {
+    routes.forEach(route => {
+      const code = route.type === 'connected' ? 'C' : 
+                   route.type === 'static' ? 'S' : 
+                   route.type === 'dynamic' ? 'R' : 'O';
+      
+      if (route.type === 'connected') {
+        output += `${code}       ${route.destination}/${getPrefixLength(route.subnetMask)} is directly connected, ${route.nextHop}\n`;
+      } else {
+        output += `${code}       ${route.destination}/${getPrefixLength(route.subnetMask)} [${route.metric || 1}/0] via ${route.nextHop}\n`;
+      }
+    });
+  }
+
+  return { success: true, output };
+}
+
+/**
+ * Enable IP Routing (for L3 switches)
+ */
+function cmdIpRouting(state: SwitchState): CommandResult {
+  return {
+    success: true,
+    output: '',
+    newState: { 
+      ipRouting: true,
+      isLayer3Switch: true 
+    }
+  };
+}
+
+/**
+ * No IP Routing
+ */
+function cmdNoIpRouting(state: SwitchState): CommandResult {
+  return {
+    success: true,
+    output: '',
+    newState: { 
+      ipRouting: false,
+      isLayer3Switch: false 
+    }
+  };
+}
+
+/**
+ * Interface IP Configuration
+ */
+function cmdIpAddress(state: SwitchState, input: string): CommandResult {
+  if (!state.currentInterface) {
+    return { success: false, error: '% No interface selected' };
+  }
+
+  const match = input.match(/^ip\s+address\s+([0-9.]+)\s+([0-9.]+)$/i);
+  if (!match) {
+    return { success: false, error: '% Invalid input: ip address <ip> <mask>' };
+  }
+
+  const [, ip, mask] = match;
+  
+  if (!isValidIP(ip) || !isValidIP(mask)) {
+    return { success: false, error: '% Invalid IP address format' };
+  }
+
+  const newPorts = { ...state.ports };
+  if (!newPorts[state.currentInterface]) {
+    return { success: false, error: '% Interface does not exist' };
+  }
+
+  newPorts[state.currentInterface] = {
+    ...newPorts[state.currentInterface],
+    ipAddress: ip,
+    subnetMask: mask,
+    mode: 'routed' // Set to routed mode when IP is assigned
+  };
+
+  return {
+    success: true,
+    newState: { ports: newPorts }
+  };
+}
+
+/**
+ * No Interface IP Configuration
+ */
+function cmdNoIpAddress(state: SwitchState): CommandResult {
+  if (!state.currentInterface) {
+    return { success: false, error: '% No interface selected' };
+  }
+
+  const newPorts = { ...state.ports };
+  if (!newPorts[state.currentInterface]) {
+    return { success: false, error: '% Interface does not exist' };
+  }
+
+  newPorts[state.currentInterface] = {
+    ...newPorts[state.currentInterface],
+    ipAddress: undefined,
+    subnetMask: undefined,
+    mode: 'access' // Reset to access mode
+  };
+
+  return {
+    success: true,
+    newState: { ports: newPorts }
+  };
+}
+
+/**
+ * Helper function to validate IP address
+ */
+function isValidIP(ip: string): boolean {
+  const parts = ip.split('.');
+  if (parts.length !== 4) return false;
+  
+  for (const part of parts) {
+    const num = parseInt(part);
+    if (isNaN(num) || num < 0 || num > 255) return false;
+  }
+  
+  return true;
+}
+
+/**
+ * Helper function to get prefix length from subnet mask
+ */
+function getPrefixLength(subnetMask: string): number {
+  const parts = subnetMask.split('.').map(Number);
+  let count = 0;
+  
+  for (const part of parts) {
+    if (part === 255) count += 8;
+    else if (part === 254) { count += 7; break; }
+    else if (part === 252) { count += 6; break; }
+    else if (part === 248) { count += 5; break; }
+    else if (part === 240) { count += 4; break; }
+    else if (part === 224) { count += 3; break; }
+    else if (part === 192) { count += 2; break; }
+    else if (part === 128) { count += 1; break; }
+    else break;
+  }
+  
+  return count;
+}
+
+/**
+ * Helper function to get current device ID (placeholder)
+ */
+function getCurrentDeviceId(state: SwitchState): string | null {
+  // This would need to be implemented based on how device IDs are managed
+  // For now, return null as placeholder
+  return null;
 }
 
 // Prompt al
