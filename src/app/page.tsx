@@ -2012,7 +2012,7 @@ export default function Home() {
       {/* Mobile Bottom Tab Bar (Icons Only) */}
       <div className={`sm:hidden fixed bottom-0 left-0 right-0 z-[100] border-t backdrop-blur-xl flex items-center justify-around px-2 py-2 safe-area-inset-bottom ${
         isDark ? 'bg-slate-900/90 border-slate-800 text-slate-400' : 'bg-white/90 border-slate-200 text-slate-500'
-      }`}>
+      } ${showProjectPicker || showOnboarding ? 'hidden' : ''}`}>
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id;
           return (
@@ -2045,14 +2045,14 @@ export default function Home() {
         })}
       </div>
       <Dialog open={showProjectPicker} onOpenChange={setShowProjectPicker}>
-        <DialogContent className={`${isDark ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white'} sm:max-w-2xl`}>
+        <DialogContent className={`${isDark ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white'} w-screen h-screen max-w-none m-0 rounded-none`}>
           <DialogHeader>
             <DialogTitle>{language === 'tr' ? 'Yeni Proje' : 'New Project'}</DialogTitle>
             <DialogDescription className={isDark ? 'text-slate-400' : 'text-slate-500'}>
               {language === 'tr' ? 'Boş bir proje başlat veya hazır örneklerden birini seç.' : 'Start with an empty project or choose a ready-made example.'}
             </DialogDescription>
           </DialogHeader>
-          <div className="grid grid-cols-1 gap-3">
+          <div className="grid grid-cols-1 gap-3 h-[calc(100vh-8rem)] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-slate-800 hover:scrollbar-thumb-slate-500 transition-colors">
             <Button
               variant="outline"
               className={`justify-between ${isDark ? 'border-slate-800 hover:bg-slate-800/60' : ''}`}
