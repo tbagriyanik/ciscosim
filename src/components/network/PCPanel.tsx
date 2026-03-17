@@ -446,20 +446,25 @@ export function PCPanel({
   useEffect(() => {
     if (!isConsoleConnected || !connectedDeviceId) return;
 
-    // If a console password was attempted and the device is no longer awaiting a password,
-    // but still isn't authenticated, bounce back to the connection screen.
+    // Check for failed password attempt
     if (consolePasswordAttempted && !consoleAwaitingPassword && !consoleAuthenticated) {
+      toast({
+        title: language === 'tr' ? 'Kimlik Doğrulama Başarısız' : 'Authentication Failed',
+        description: language === 'tr' ? 'Hatalı parola girdiniz.' : 'Incorrect password.',
+        variant: 'destructive',
+      });
+      
+      // Reset flow
       setIsConsoleConnected(false);
       setConnectedDeviceId(null);
       setShowConsolePasswordPrompt(false);
       setConsolePasswordAttempted(false);
       setConsolePasswordInput('');
-    }
-
-    if (consoleAuthenticated) {
+    } else if (consoleAuthenticated && consolePasswordAttempted) {
+      // Success case
       setConsolePasswordAttempted(false);
     }
-  }, [consoleAuthenticated, consoleAwaitingPassword, consolePasswordAttempted, connectedDeviceId, isConsoleConnected]);
+  }, [consoleAuthenticated, consoleAwaitingPassword, consolePasswordAttempted, connectedDeviceId, isConsoleConnected, language]);
 
   const connectionErrorText = useMemo(() => {
     if (!isPcPoweredOff && !isConsoleTargetPoweredOff) return '';

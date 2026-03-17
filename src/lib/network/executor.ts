@@ -871,7 +871,6 @@ function handlePasswordInput(state: SwitchState, password: string, language: 'tr
         success: false,
         error: language === 'tr' ? '% Erişim reddedildi' : '% Access denied',
         newState: {
-          consoleAuthenticated: false,
           awaitingPassword: false,
           passwordContext: undefined
         }

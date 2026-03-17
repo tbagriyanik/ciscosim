@@ -2296,7 +2296,7 @@ export default function Home() {
             {/* CMD Terminal Sekmesi - Always mounted, hidden via CSS */}
             <div className={`w-full h-full overflow-hidden flex flex-col min-h-[calc(100vh-8rem)] sm:min-h-[450px] ${activeTab === 'cmd' ? 'block' : 'hidden'}`}>
               <PCPanel
-                key="pc-panel"
+                key={`pc-panel-${activeDeviceId}`}
                 deviceId={activeDeviceId}
                 cableInfo={cableInfo}
                 isVisible={activeTab === 'cmd'}
