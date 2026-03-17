@@ -1459,7 +1459,7 @@ export default function Home() {
       }
 
       // Shift Shortcuts
-      if (e.shiftKey && !e.ctrlKey && !e.metaKey) {
+      if (e.altKey && !e.ctrlKey && !e.metaKey) {
         const key = e.key.toLowerCase();
         if (key === 'n') {
           e.preventDefault();
@@ -1468,7 +1468,6 @@ export default function Home() {
           }
         }
       }
-
       if (e.key === 'Enter') {
         if (confirmDialog?.show) {
           e.preventDefault();
@@ -1666,7 +1665,7 @@ export default function Home() {
                           <File className="w-4 h-4" />
                         </Button>
                       </TooltipTrigger>
-                      <TooltipContent>{t.newProject} {!isMobile && '(Shift+N)'}</TooltipContent>
+                      <TooltipContent>{t.newProject} {!isMobile && '(Alt+N)'}</TooltipContent>
                     </Tooltip>
                     <Tooltip>
                       <TooltipTrigger asChild>

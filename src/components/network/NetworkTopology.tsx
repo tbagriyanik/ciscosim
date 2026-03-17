@@ -2437,13 +2437,14 @@ export function NetworkTopology({
         }
       }
 
-      // Shift Shortcuts
-      if (e.shiftKey && !e.ctrlKey && !e.metaKey) {
+      // Alt Shortcuts
+      if (e.altKey && !e.ctrlKey && !e.metaKey) {
         if (key === 'r') {
           e.preventDefault();
           resetView();
         }
       }
+
     };
 
     window.addEventListener('keydown', handleKeyDown);
@@ -4276,7 +4277,7 @@ export function NetworkTopology({
                   <span className="hidden sm:inline">{language === 'tr' ? 'Sıfırla' : 'Reset'}</span>
                 </button>
               </TooltipTrigger>
-              <TooltipContent>Shift+R</TooltipContent>
+              <TooltipContent>{language === 'tr' ? 'Sıfırla (Alt+R)' : 'Reset (Alt+R)'}</TooltipContent>
             </Tooltip>
             <Tooltip>
               <TooltipTrigger asChild>
