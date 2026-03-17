@@ -3202,7 +3202,7 @@ export function NetworkTopology({
               >
                 <circle
                   r={6}
-                  fill={portColor}
+                  fill={forceGrayFrame ? "url(#portOfflineGradient)" : isConnected ? "url(#portConnectedGradient)" : isShutdown ? "url(#portShutdownGradient)" : "url(#portOfflineGradient)"}
                   stroke={forceGrayFrame ? '#4b5563' : (isShutdown ? '#991b1b' : isConnected ? '#4ade80' : '#1e293b')}
                   strokeWidth={isShutdown || isConnected ? 2 : 1}
                 />
@@ -3286,7 +3286,16 @@ export function NetworkTopology({
               >
                 <circle
                   r={6}
-                  fill={portFill}
+                  fill={
+                    forceGrayFrame ? "url(#portOfflineGradient)" :
+                      isShutdown ? "url(#portShutdownGradient)" :
+                        isBlocked ? "url(#portBlockedGradient)" :
+                          isConnected ? "url(#portConnectedGradient)" :
+                            isConsole ? "url(#portConsoleGradient)" :
+                              isGigabit ? "url(#portGigabitGradient)" :
+                                isFastEthernet ? "url(#portFastEthernetGradient)" :
+                                  "url(#portOfflineGradient)"
+                  }
                   stroke={forceGrayFrame ? '#6b7280' : (isDownOrBlocked || isConnected ? portStroke : '#4b5563')}
                   strokeWidth={isDownOrBlocked || isConnected ? 2.5 : 1}
                   className={!forceGrayFrame && isDownOrBlocked ? 'animate-pulse' : ''}
@@ -3944,6 +3953,49 @@ export function NetworkTopology({
                   <radialGradient id="bgGradient" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
                     <stop offset="0%" stopColor={isDark ? '#1e293b' : '#ffffff'} />
                     <stop offset="100%" stopColor={isDark ? '#0f172a' : '#f1f5f9'} />
+                  </radialGradient>
+
+                  {/* Port Color Radial Gradients */}
+                  {/* Console (Turquoise) */}
+                  <radialGradient id="portConsoleGradient" cx="30%" cy="30%" r="70%">
+                    <stop offset="0%" stopColor="#22d3ee" />
+                    <stop offset="100%" stopColor="#0ea5e9" />
+                  </radialGradient>
+
+                  {/* Gigabit (Orange) */}
+                  <radialGradient id="portGigabitGradient" cx="30%" cy="30%" r="70%">
+                    <stop offset="0%" stopColor="#fb923c" />
+                    <stop offset="100%" stopColor="#f97316" />
+                  </radialGradient>
+
+                  {/* FastEthernet (Blue) */}
+                  <radialGradient id="portFastEthernetGradient" cx="30%" cy="30%" r="70%">
+                    <stop offset="0%" stopColor="#60a5fa" />
+                    <stop offset="100%" stopColor="#3b82f6" />
+                  </radialGradient>
+
+                  {/* Default/Connected (Green) */}
+                  <radialGradient id="portConnectedGradient" cx="30%" cy="30%" r="70%">
+                    <stop offset="0%" stopColor="#4ade80" />
+                    <stop offset="100%" stopColor="#22c55e" />
+                  </radialGradient>
+
+                  {/* Shutdown (Red) */}
+                  <radialGradient id="portShutdownGradient" cx="30%" cy="30%" r="70%">
+                    <stop offset="0%" stopColor="#f87171" />
+                    <stop offset="100%" stopColor="#dc2626" />
+                  </radialGradient>
+
+                  {/* Blocked (Amber) */}
+                  <radialGradient id="portBlockedGradient" cx="30%" cy="30%" r="70%">
+                    <stop offset="0%" stopColor="#fbbf24" />
+                    <stop offset="100%" stopColor="#d97706" />
+                  </radialGradient>
+
+                  {/* Offline/Disabled (Gray) */}
+                  <radialGradient id="portOfflineGradient" cx="30%" cy="30%" r="70%">
+                    <stop offset="0%" stopColor="#94a3b8" />
+                    <stop offset="100%" stopColor="#64748b" />
                   </radialGradient>
                 </defs>
 

@@ -153,6 +153,25 @@ export default function Home() {
   const { t, language, setLanguage } = useLanguage();
   const { theme, toggleTheme } = useTheme();
 
+  const {
+    deviceStates,
+    setDeviceStates,
+    deviceOutputs,
+    setDeviceOutputs,
+    pcOutputs,
+    setPcOutputs,
+    pcHistories,
+    setPcHistories,
+    isLoading: isExecutingCommand,
+    confirmDialog,
+    setConfirmDialog,
+    getOrCreateDeviceState,
+    getOrCreateDeviceOutputs,
+    getOrCreatePCOutputs,
+    handleCommandForDevice,
+    resetAll
+  } = useDeviceManager(language);
+
   const [isAppLoading, setIsLoading] = useState(true);
   const [showContent, setShowContent] = useState(false);
 
@@ -281,24 +300,7 @@ export default function Home() {
   // Initial App Loading State
   // No longer needed here as it's declared earlier
 
-  const {
-    deviceStates,
-    setDeviceStates,
-    deviceOutputs,
-    setDeviceOutputs,
-    pcOutputs,
-    setPcOutputs,
-    pcHistories,
-    setPcHistories,
-    isLoading: isExecutingCommand,
-    confirmDialog,
-    setConfirmDialog,
-    getOrCreateDeviceState,
-    getOrCreateDeviceOutputs,
-    getOrCreatePCOutputs,
-    handleCommandForDevice,
-    resetAll
-  } = useDeviceManager(language);
+  // Device manager hook moved to top
 
   const [topologyKey, setTopologyKey] = useState(0);
 
@@ -2287,7 +2289,7 @@ export default function Home() {
             {activeTab === 'topology' && (
               <div className="flex-1 flex flex-col h-full min-h-0 overflow-hidden">
                 {/* Network Topology fills remaining space */}
-                <div ref={topologyContainerRef} className="flex-1 w-full flex flex-col min-h-[500px]">
+                <div ref={topologyContainerRef} className="flex-1 w-full flex flex-col min-h-[500px] topology-print-area">
                   <NetworkTopology
                     key={topologyKey}
                     cableInfo={cableInfo}

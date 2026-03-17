@@ -327,3 +327,60 @@ svg text {
 .connection-line {
   vector-effect: non-scaling-stroke;
 }
+
+/* Print Styles - Only Topology */
+@media print {
+  @page {
+    margin: 0;
+    size: landscape;
+  }
+  
+  body, html {
+    background: white !important;
+    height: 100% !important;
+    width: 100% !important;
+    overflow: visible !important;
+    color: black !important;
+  }
+
+  /* Hide everything */
+  body > *:not(main),
+  main > *:not(.topology-print-area),
+  button, 
+  header, 
+  footer, 
+  .mobile-top-nav, 
+  .mobile-bottom-nav,
+  .zoom-controls, 
+  .minimap,
+  .instructions-panel,
+  .context-menu,
+  [role="tooltip"],
+  .about-modal {
+    display: none !important;
+  }
+
+  /* Specifically show main/topology and ensure it expands */
+  main,
+  .topology-print-area {
+    display: block !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    visibility: visible !important;
+    z-index: 99999 !important;
+    overflow: visible !important;
+    background: white !important;
+  }
+
+  /* Force white background for SVG canvas during print */
+  svg {
+    width: 100vw !important;
+    height: 100vh !important;
+    background: white !important;
+  }
+}
