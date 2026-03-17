@@ -149,7 +149,7 @@ export interface CommandResult {
   modeChange?: CommandMode;
   requiresPassword?: boolean;        // Şifre gerekiyor mu?
   passwordPrompt?: string;           // Şifre istemi metni
-  passwordContext?: 'enable';        // Şifre bağlamı
+  passwordContext?: 'enable' | 'console';        // Şifre bağlamı
   requiresConfirmation?: boolean;    // Onay gerekiyor mu?
   confirmationMessage?: string;      // Onay mesajı
   confirmationAction?: string;       // Onay sonrası yapılacak işlem

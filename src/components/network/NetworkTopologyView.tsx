@@ -2,13 +2,15 @@ import React, { useMemo } from 'react';
 import { ConnectionLine } from './ConnectionLine';
 import { DeviceNode } from './DeviceNode';
 import { PingAnimationOverlay } from './PingAnimationOverlay';
-import { NetworkTopologyContextMenu } from './NetworkTopologyContextMenu';
+import NetworkTopologyContextMenu from './NetworkTopologyContextMenu';
 import { NetworkTopologyPortSelectorModal } from './NetworkTopologyPortSelectorModal';
 import { CABLE_COLORS, MIN_ZOOM, MAX_ZOOM } from './networkTopology.constants';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 type NetworkTopologyViewProps = Record<string, any>;
 
 export function NetworkTopologyView(props: NetworkTopologyViewProps) {
+  const { t } = useLanguage();
   const {
     isDark,
     language,

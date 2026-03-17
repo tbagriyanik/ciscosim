@@ -51,7 +51,6 @@ function TooltipContent({
           className
         )}
         {...props}
-        sideOffset={8}
         side="bottom"
       >
         {children}

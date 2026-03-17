@@ -4441,8 +4441,8 @@ export function NetworkTopology({
             selectedDeviceIds={selectedDeviceIds}
             clipboardLength={clipboard.length}
             noteClipboardLength={noteClipboard.length}
-            canUndo={canUndo}
-            canRedo={canRedo}
+            canUndo={canUndo ?? false}
+            canRedo={canRedo ?? false}
             onClose={() => setContextMenu(null)}
             onUpdateNoteStyle={updateNoteStyle}
             onNoteCut={handleNoteTextCut}
