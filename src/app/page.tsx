@@ -56,6 +56,11 @@ import { Separator } from "@/components/ui/separator";
 import { ChevronDown, Menu, Plus, Save, FolderOpen, Languages, Sun, Moon, Network, ShieldCheck, Database, Info, File, Layers, Terminal as TerminalIcon, Undo2, Redo2, Link2 } from "lucide-react";
 
 import { Button } from '@/components/ui/button';
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from "@/components/ui/tooltip";
 import { useLanguage, Translations } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { toast } from "@/hooks/use-toast";
@@ -203,6 +208,14 @@ export default function Home() {
   }, []);
   const [zoom, setZoom] = useState(1.0);
   const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const toggleDevicePower = useCallback((deviceId: string) => {
     setTopologyDevices((prev) => {
@@ -322,7 +335,7 @@ export default function Home() {
   // Track changes and push to history
   // We need to debouncing this or use a ref to track if we're in the middle of an undo/redo
   const lastPushedStateRef = useRef<string>('');
-  
+
   // Initialize lastPushedStateRef with initial state to avoid redundant first push
   useEffect(() => {
     const initialState = getCurrentState();
@@ -338,7 +351,7 @@ export default function Home() {
 
   useEffect(() => {
     if (isAppLoading) return;
-    
+
     const currentState = getCurrentState();
     const stateString = JSON.stringify({
       t: currentState.topologyDevices,
@@ -450,7 +463,7 @@ export default function Home() {
       clearTimeout(autosaveTimerRef.current);
     }
 
-      autosaveTimerRef.current = setTimeout(() => {
+    autosaveTimerRef.current = setTimeout(() => {
       const projectData = {
         version: '1.0',
         timestamp: new Date().toISOString(),
@@ -497,7 +510,7 @@ export default function Home() {
         const newDeviceOutputs = new Map<string, TerminalOutput[]>();
         projectData.deviceOutputs.forEach((item: { id: string; outputs: TerminalOutput[] }) => {
           let outputs = item.outputs || [];
-          
+
           // If banner is in state but not in outputs, prepend it (only for switches/routers)
           const stateItem = projectData.devices?.find((d: any) => d.id === item.id);
           if (stateItem?.state?.bannerMOTD && !outputs.some(o => o.content?.includes(stateItem.state.bannerMOTD))) {
@@ -510,7 +523,7 @@ export default function Home() {
               ...outputs
             ];
           }
-          
+
           newDeviceOutputs.set(item.id, outputs);
         });
         setDeviceOutputs(newDeviceOutputs);
@@ -553,7 +566,7 @@ export default function Home() {
       if (projectData.activeDeviceType) {
         setActiveDeviceType(projectData.activeDeviceType);
       }
-      
+
       // Load active tab
       if (projectData.activeTab) {
         setActiveTab(projectData.activeTab);
@@ -733,10 +746,10 @@ export default function Home() {
   // Handle command using active device
   const handleCommand = useCallback(async (command: string) => {
     await handleCommandForDevice(
-      activeDeviceId, 
-      command, 
-      topologyDevices, 
-      setActiveDeviceId, 
+      activeDeviceId,
+      command,
+      topologyDevices,
+      setActiveDeviceId,
       setActiveDeviceType,
       topologyConnections
     );
@@ -788,7 +801,7 @@ export default function Home() {
   const handleDeviceDoubleClick = useCallback((device: 'pc' | 'switch' | 'router', deviceId: string) => {
     // Determine actual device type
     const actualDeviceType = deviceId.includes('router') ? 'router' : deviceId.includes('pc') ? 'pc' : 'switch';
-    
+
     if (actualDeviceType === 'pc') {
       // PC - open CMD tab
       setActiveTab('cmd');
@@ -801,7 +814,7 @@ export default function Home() {
       setActiveDeviceId(deviceId);
       const actualType = actualDeviceType as 'switch' | 'router';
       setActiveDeviceType(actualType);
-      
+
       const deviceObj = topologyDevices?.find(d => d.id === deviceId);
       getOrCreateDeviceState(deviceId, actualType, deviceObj?.name, deviceObj?.macAddress);
       getOrCreateDeviceOutputs(deviceId);
@@ -831,10 +844,10 @@ export default function Home() {
             const statePort = updatedPorts[topoPort.id];
             if (statePort && statePort.status !== topoPort.status) {
               // Ensure we translate correctly between Canvas status and Simulator status
-              const newStatus = topoPort.status === 'disconnected' || (topoPort.status as any) === 'notconnect' 
-                ? 'notconnect' 
+              const newStatus = topoPort.status === 'disconnected' || (topoPort.status as any) === 'notconnect'
+                ? 'notconnect'
                 : topoPort.status as 'connected' | 'disabled' | 'blocked';
-                
+
               updatedPorts[topoPort.id] = {
                 ...statePort,
                 status: newStatus
@@ -864,14 +877,14 @@ export default function Home() {
       setShowPCPanel(false);
       setShowPCDeviceId('pc-1');
     }
-    
+
     // Reset selected device if deleted
     if (selectedDevice) {
       setSelectedDevice(null);
     }
-    
+
     // 1. Identify connections and ports to disconnect FIRST
-    const connectionsToRemove = topologyConnections.filter(conn => 
+    const connectionsToRemove = topologyConnections.filter(conn =>
       conn.sourceDeviceId === deviceId || conn.targetDeviceId === deviceId
     );
 
@@ -886,7 +899,7 @@ export default function Home() {
     // 2. Release ports on OTHER devices in simulation state (deviceStates)
     setDeviceStates(prev => {
       const newMap = new Map(prev);
-      
+
       // Reset ports on other devices that were connected to the one being deleted
       portsToDisconnect.forEach(p => {
         const targetState = newMap.get(p.deviceId);
@@ -905,7 +918,7 @@ export default function Home() {
           }
         }
       });
-      
+
       // Delete the device itself
       newMap.delete(deviceId);
       return newMap;
@@ -925,7 +938,7 @@ export default function Home() {
     });
 
     // 4. Update topology: Remove connections
-    const remainingConnections = topologyConnections.filter(conn => 
+    const remainingConnections = topologyConnections.filter(conn =>
       conn.sourceDeviceId !== deviceId && conn.targetDeviceId !== deviceId
     );
     setTopologyConnections(remainingConnections);
@@ -933,21 +946,21 @@ export default function Home() {
     // 5. Update EVERYTHING: Full sync of all ports on all remaining devices
     setTopologyDevices(prev => {
       const remainingDevices = prev.filter(d => d.id !== deviceId);
-      
+
       return remainingDevices.map(device => {
         const updatedPorts = device.ports.map(port => {
           // Check if this port is used in ANY remaining connection
-          const isActuallyConnected = remainingConnections.some(conn => 
+          const isActuallyConnected = remainingConnections.some(conn =>
             (conn.sourceDeviceId === device.id && conn.sourcePort === port.id) ||
             (conn.targetDeviceId === device.id && conn.targetPort === port.id)
           );
-          
+
           return {
             ...port,
             status: isActuallyConnected ? 'connected' as const : 'disconnected' as const
           };
         });
-        
+
         return { ...device, ports: updatedPorts };
       });
     });
@@ -956,19 +969,19 @@ export default function Home() {
     setDeviceStates(prev => {
       const newMap = new Map(prev);
       newMap.delete(deviceId); // Remove deleted device
-      
+
       // Update all remaining devices
       newMap.forEach((state, id) => {
         if (state.ports) {
           const updatedPorts = { ...state.ports };
           let changed = false;
-          
+
           Object.keys(updatedPorts).forEach(portId => {
-            const isActuallyConnected = remainingConnections.some(conn => 
+            const isActuallyConnected = remainingConnections.some(conn =>
               (conn.sourceDeviceId === id && conn.sourcePort === portId) ||
               (conn.targetDeviceId === id && conn.targetPort === portId)
             );
-            
+
             const expectedStatus = isActuallyConnected ? 'connected' : 'notconnect';
             if (updatedPorts[portId].status !== expectedStatus) {
               updatedPorts[portId] = {
@@ -978,13 +991,13 @@ export default function Home() {
               changed = true;
             }
           });
-          
+
           if (changed) {
             newMap.set(id, { ...state, ports: updatedPorts });
           }
         }
       });
-      
+
       return newMap;
     });
 
@@ -996,7 +1009,7 @@ export default function Home() {
         const nextDevice = currentDevices[0];
         setActiveDeviceId(nextDevice.id);
         setActiveDeviceType(nextDevice.type as 'pc' | 'switch' | 'router');
-        
+
         // Switch to topology tab when device changes
         setActiveTab('topology');
       } else {
@@ -1079,11 +1092,61 @@ export default function Home() {
 
   // New project - reset everything
   const resetToEmptyProject = useCallback(() => {
-      // Clear all states and set defaults
-      setDeviceStates(new Map());
-      setDeviceOutputs(new Map());
-      setPcOutputs(new Map());
-      setTopologyDevices([
+    // Clear all states and set defaults
+    setDeviceStates(new Map());
+    setDeviceOutputs(new Map());
+    setPcOutputs(new Map());
+    setTopologyDevices([
+      {
+        id: 'pc-1',
+        type: 'pc',
+        name: 'PC-1',
+        x: 50,
+        y: 50,
+        ip: '192.168.1.10',
+        macAddress: '00E0.F701.A1B1',
+        status: 'online',
+        ports: [
+          { id: 'eth0', label: 'Eth0', status: 'disconnected' as const },
+          { id: 'com1', label: 'COM1', status: 'disconnected' as const }
+        ]
+      },
+      {
+        id: 'switch-1',
+        type: 'switch',
+        name: 'SWITCH-1',
+        x: 200,
+        y: 50,
+        macAddress: '0011.2233.4401',
+        ip: '',
+        status: 'online',
+        ports: [
+          { id: 'console', label: 'Console', status: 'disconnected' as const },
+          ...Array.from({ length: 24 }, (_, i) => ({ id: `fa0/${i + 1}`, label: `Fa0/${i + 1}`, status: 'disconnected' as const })),
+          { id: 'gi0/1', label: 'Gi0/1', status: 'disconnected' as const },
+          { id: 'gi0/2', label: 'Gi0/2', status: 'disconnected' as const }
+        ]
+      }
+    ]);
+    setTopologyConnections([]);
+    setTopologyNotes([]);
+
+    // Reset active selections
+    setActiveDeviceId('switch-1');
+    setActiveDeviceType('switch');
+    setSelectedDevice(null);
+    setShowPCPanel(false);
+
+    // Force return to topology
+    setActiveTab('topology');
+    setHasUnsavedChanges(false);
+
+    // Increment key to force NetworkTopology remount
+    setTopologyKey(prev => prev + 1);
+
+    // Reset history with the new initial state
+    resetHistory({
+      topologyDevices: [
         {
           id: 'pc-1',
           type: 'pc',
@@ -1114,70 +1177,20 @@ export default function Home() {
             { id: 'gi0/2', label: 'Gi0/2', status: 'disconnected' as const }
           ]
         }
-      ]);
-      setTopologyConnections([]);
-      setTopologyNotes([]);
-      
-      // Reset active selections
-      setActiveDeviceId('switch-1');
-      setActiveDeviceType('switch');
-      setSelectedDevice(null);
-      setShowPCPanel(false);
-      
-      // Force return to topology
-      setActiveTab('topology');
-      setHasUnsavedChanges(false);
-      
-      // Increment key to force NetworkTopology remount
-      setTopologyKey(prev => prev + 1);
-      
-      // Reset history with the new initial state
-      resetHistory({
-        topologyDevices: [
-          {
-            id: 'pc-1',
-            type: 'pc',
-            name: 'PC-1',
-            x: 50,
-            y: 50,
-            ip: '192.168.1.10',
-            macAddress: '00E0.F701.A1B1',
-            status: 'online',
-            ports: [
-              { id: 'eth0', label: 'Eth0', status: 'disconnected' as const },
-              { id: 'com1', label: 'COM1', status: 'disconnected' as const }
-            ]
-          },
-          {
-            id: 'switch-1',
-            type: 'switch',
-            name: 'SWITCH-1',
-            x: 200,
-            y: 50,
-            macAddress: '0011.2233.4401',
-            ip: '',
-            status: 'online',
-            ports: [
-              { id: 'console', label: 'Console', status: 'disconnected' as const },
-              ...Array.from({ length: 24 }, (_, i) => ({ id: `fa0/${i + 1}`, label: `Fa0/${i + 1}`, status: 'disconnected' as const })),
-              { id: 'gi0/1', label: 'Gi0/1', status: 'disconnected' as const },
-              { id: 'gi0/2', label: 'Gi0/2', status: 'disconnected' as const }
-            ]
-          }
-        ],
-        topologyConnections: [],
-        topologyNotes: [],
-        deviceStates: new Map(),
-        deviceOutputs: new Map(),
-        pcOutputs: new Map(),
-        pcHistories: new Map(),
-        cableInfo: { connected: false, cableType: 'straight', sourceDevice: 'pc', targetDevice: 'switch' },
-        activeDeviceId: 'switch-1',
-        activeDeviceType: 'switch',
-        zoom: 1.0,
-        pan: { x: 0, y: 0 },
-        activeTab: 'topology'
-      });
+      ],
+      topologyConnections: [],
+      topologyNotes: [],
+      deviceStates: new Map(),
+      deviceOutputs: new Map(),
+      pcOutputs: new Map(),
+      pcHistories: new Map(),
+      cableInfo: { connected: false, cableType: 'straight', sourceDevice: 'pc', targetDevice: 'switch' },
+      activeDeviceId: 'switch-1',
+      activeDeviceType: 'switch',
+      zoom: 1.0,
+      pan: { x: 0, y: 0 },
+      activeTab: 'topology'
+    });
   }, [resetHistory, setDeviceStates, setDeviceOutputs, setPcOutputs, setPcHistories, setTopologyDevices, setTopologyConnections, setTopologyNotes, setActiveDeviceId, setActiveDeviceType, setSelectedDevice, setShowPCPanel, setActiveTab, setHasUnsavedChanges, setTopologyKey]);
 
   const runWithSaveGuard = useCallback((action: () => void) => {
@@ -1210,18 +1223,18 @@ export default function Home() {
     if (isTopologyFullscreen) return; // Prevent new project in fullscreen
     setShowProjectPicker(true);
   }
-  
+
   // Sync hostname changes between Topology and Simulator
   useEffect(() => {
     if (!topologyDevices) return;
-    
+
     let topologyChanged = false;
     let simulatorChanged = false;
     const newDeviceStates = new Map(deviceStates);
-    
+
     const updatedTopologyDevices = topologyDevices.map(device => {
       if (device.type === 'pc') return device;
-      
+
       const deviceState = deviceStates.get(device.id);
       if (!deviceState) return device;
 
@@ -1229,10 +1242,10 @@ export default function Home() {
       if (deviceState.hostname !== device.name) {
         // Special case: if simulator has default generic name and topology has specific name (initial load/create)
         const isDefaultCLIHostname = deviceState.hostname === 'Switch' || deviceState.hostname === 'Router';
-        
+
         if (isDefaultCLIHostname && !device.name.includes('Router') && !device.name.includes('Switch')) {
-           // This shouldn't really happen with current logic but keeping for safety
-           // Usually topology has names like Switch-1, Router-1 which are also defaults
+          // This shouldn't really happen with current logic but keeping for safety
+          // Usually topology has names like Switch-1, Router-1 which are also defaults
         }
 
         // If the simulator name changed, update topology
@@ -1245,7 +1258,7 @@ export default function Home() {
     if (simulatorChanged) {
       setDeviceStates(newDeviceStates);
     }
-    
+
     if (topologyChanged) {
       setTopologyDevices(updatedTopologyDevices);
       setHasUnsavedChanges(true);
@@ -1406,7 +1419,7 @@ export default function Home() {
         setShowOnboarding(false);
         window.dispatchEvent(new CustomEvent('close-menus-broadcast', { detail: { source: 'escape' } }));
       }
-      
+
       // Ctrl Shortcuts
       if (e.ctrlKey || e.metaKey) {
         const key = e.key.toLowerCase();
@@ -1530,14 +1543,14 @@ export default function Home() {
               <div className="absolute inset-0 p-4 rounded-2xl bg-red-500/30 animate-glitch-skew mix-blend-screen" />
               <div className="absolute inset-0 p-4 rounded-2xl bg-blue-500/30 animate-glitch mix-blend-screen" style={{ animationDelay: '0.1s' }} />
             </div>
-            
-            <h2 
+
+            <h2
               className="text-3xl font-black tracking-tighter text-white glitch-text mb-2 text-center"
               data-text="NETWORK SIMULATOR 2026"
             >
               NETWORK SIMULATOR 2026
             </h2>
-            
+
             <div className="flex items-center gap-2 mt-4">
               <div className="w-1.5 h-1.5 rounded-full bg-cyan-500 animate-pulse" />
               <span className="text-xs font-bold tracking-[0.3em] text-cyan-500 uppercase">
@@ -1545,154 +1558,175 @@ export default function Home() {
               </span>
             </div>
           </motion.div>
-          
+
           {/* Background scanline effect */}
           <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.1)_50%),linear-gradient(90deg,rgba(255,0,0,0.03),rgba(0,255,0,0.01),rgba(0,0,255,0.03))] bg-[length:100%_4px,3px_100%]" />
         </div>
       )}
 
       {/* Main Content with transition */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: showContent ? 1 : 0 }}
         transition={{ duration: 0.5 }}
         className="flex flex-col flex-1"
       >
         {/* Header */}
-      <header className={`${isDark ? 'bg-slate-900/95 border-slate-800' : 'bg-white/90 border-slate-200'} backdrop-blur-xl border-b px-4 py-3 sticky top-0 z-50 pb-0`}>
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between">
-            {/* Logo & Title */}
-            <Button
-              variant="ghost"
-              onClick={() => window.location.reload()}
-              className="flex items-center gap-3 p-2"
-              title={t.reloadPage}
-            >
-              <div className="p-1 flex items-center justify-center">
-                <img src="/favicon.png" alt="Logo" className="w-7 h-7 object-contain" />
-              </div>
-              <div className="hidden sm:flex flex-col">
-                <h1 className="text-lg font-bold tracking-tight bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent leading-none">
-                  {t.title}
-                </h1>
-                <p className={`text-xs font-medium mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{t.subtitle}</p>
-              </div>
-            </Button>
-
-            {/* Total Score - Desktop */}
-            <div className="hidden md:flex items-center gap-4">
-              <div className="flex flex-col items-end gap-1">
-                <div className="flex items-center gap-2">
-                   <span className={`text-[10px] font-black uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                    {t.labProgress}
-                  </span>
-                  <motion.span 
-                    key={totalScore}
-                    initial={{ opacity: 0.5, y: -2 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className={`text-[10px] font-black tabular-nums px-1.5 py-0.5 rounded-full ${
-                      totalScore >= maxScore * 0.7 ? 'bg-emerald-500/10 text-emerald-400' : 
-                      totalScore >= maxScore * 0.4 ? 'bg-amber-500/10 text-amber-400' : 
-                      'bg-rose-500/10 text-rose-400'
-                    }`}
-                  >
-                    {Math.round((totalScore / maxScore) * 100)}%
-                  </motion.span>
+        <header className={`${isDark ? 'bg-slate-900/95 border-slate-800' : 'bg-white/90 border-slate-200'} backdrop-blur-xl border-b px-4 py-3 sticky top-0 z-50 pb-0`}>
+          <div className="max-w-7xl mx-auto">
+            <div className="flex items-center justify-between">
+              {/* Logo & Title */}
+              <Button
+                variant="ghost"
+                onClick={() => window.location.reload()}
+                className="flex items-center gap-3 p-2"
+                title={t.reloadPage}
+              >
+                <div className="p-1 flex items-center justify-center">
+                  <img src="/favicon.png" alt="Logo" className="w-7 h-7 object-contain" />
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className={`h-1.5 w-24 rounded-full overflow-hidden p-[px] ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`}>
-                    <motion.div 
-                      initial={{ width: 0 }}
-                      animate={{ width: `${(totalScore / maxScore) * 100}%` }}
-                      transition={{ type: "spring", stiffness: 50, damping: 15 }}
-                      className={`h-full rounded-full bg-gradient-to-r shadow-[0_0_8px_rgba(0,0,0,0.2)] ${
-                        totalScore >= maxScore * 0.7 ? 'from-emerald-500 via-teal-400 to-emerald-400' : 
-                        totalScore >= maxScore * 0.4 ? 'from-amber-500 via-orange-400 to-amber-400' : 
-                        'from-rose-500 via-pink-500 to-rose-400'
-                      }`} 
-                    />
+                <div className="hidden sm:flex flex-col">
+                  <h1 className="text-lg font-bold tracking-tight bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent leading-none">
+                    {t.title}
+                  </h1>
+                  <p className={`text-xs font-medium mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{t.subtitle}</p>
+                </div>
+              </Button>
+
+              {/* Total Score - Desktop */}
+              <div className="hidden md:flex items-center gap-4">
+                <div className="flex flex-col items-end gap-1">
+                  <div className="flex items-center gap-2">
+                    <span className={`text-[10px] font-black uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                      {t.labProgress}
+                    </span>
+                    <motion.span
+                      key={totalScore}
+                      initial={{ opacity: 0.5, y: -2 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className={`text-[10px] font-black tabular-nums px-1.5 py-0.5 rounded-full ${totalScore >= maxScore * 0.7 ? 'bg-emerald-500/10 text-emerald-400' :
+                          totalScore >= maxScore * 0.4 ? 'bg-amber-500/10 text-amber-400' :
+                            'bg-rose-500/10 text-rose-400'
+                        }`}
+                    >
+                      {Math.round((totalScore / maxScore) * 100)}%
+                    </motion.span>
                   </div>
-                  <div className="flex items-baseline gap-0.5">
-                    <span className={`text-xs font-black tabular-nums ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                      {totalScore}
-                    </span>
-                    <span className={`text-[10px] font-bold opacity-30 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                      /{maxScore}
-                    </span>
+                  <div className="flex items-center gap-2">
+                    <div className={`h-1.5 w-24 rounded-full overflow-hidden p-[px] ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`}>
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${(totalScore / maxScore) * 100}%` }}
+                        transition={{ type: "spring", stiffness: 50, damping: 15 }}
+                        className={`h-full rounded-full bg-gradient-to-r shadow-[0_0_8px_rgba(0,0,0,0.2)] ${totalScore >= maxScore * 0.7 ? 'from-emerald-500 via-teal-400 to-emerald-400' :
+                            totalScore >= maxScore * 0.4 ? 'from-amber-500 via-orange-400 to-amber-400' :
+                              'from-rose-500 via-pink-500 to-rose-400'
+                          }`}
+                      />
+                    </div>
+                    <div className="flex items-baseline gap-0.5">
+                      <span className={`text-xs font-black tabular-nums ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                        {totalScore}
+                      </span>
+                      <span className={`text-[10px] font-bold opacity-30 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                        /{maxScore}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
 
-            {/* Right Controls - Integrated Toolbar */}
-            <div className="flex items-center gap-2">
-              {/* Unified Toolbar */}
-              <div className={`flex items-center gap-1 px-2 py-1.5 rounded-xl border ${isDark ? 'bg-slate-800/40 border-slate-800' : 'bg-slate-100 border-slate-200'}`}>
-                {/* Undo/Redo Group */}
-                {activeTab === 'topology' && (
-                  <>
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleUndo} disabled={!canUndo} title={t.undo}>
-                      <Undo2 className={`w-4 h-4 ${!canUndo ? 'opacity-30' : ''}`} />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleRedo} disabled={!canRedo} title={t.redo}>
-                      <Redo2 className={`w-4 h-4 ${!canRedo ? 'opacity-30' : ''}`} />
-                    </Button>
+              {/* Right Controls - Integrated Toolbar */}
+              <div className="flex items-center gap-2">
+                {/* Unified Toolbar */}
+                <div className={`flex items-center gap-1 px-2 py-1.5 rounded-xl border ${isDark ? 'bg-slate-800/40 border-slate-800' : 'bg-slate-100 border-slate-200'}`}>
+                  {/* Undo/Redo Group */}
+                  {activeTab === 'topology' && (
+                    <>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-blue-500 transition-colors" onClick={handleUndo} disabled={!canUndo} title={t.undo}>
+                        <Undo2 className={`w-4 h-4 ${!canUndo ? 'opacity-30' : ''}`} />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-blue-500 transition-colors" onClick={handleRedo} disabled={!canRedo} title={t.redo}>
+                        <Redo2 className={`w-4 h-4 ${!canRedo ? 'opacity-30' : ''}`} />
+                      </Button>
+                      <div className={`w-px h-4 mx-1 ${isDark ? 'bg-slate-700' : 'bg-slate-300'} hidden md:block`} />
+                    </>
+                  )}
+
+                  {/* Project Controls - Desktop only */}
+                  <div className="hidden md:flex items-center gap-1">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 hover:text-green-500 transition-colors"
+                          onClick={handleNewProject}
+                        >
+                          <File className="w-4 h-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>{t.newProject} {!isMobile && '(Shift+N)'}</TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 hover:text-amber-500 transition-colors"
+                          onClick={() => fileInputRef.current?.click()}
+                        >
+                          <FolderOpen className="w-4 h-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>{t.loadProject} {!isMobile && '(Ctrl+O)'}</TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 hover:text-blue-500 transition-colors"
+                          onClick={handleSaveProject}
+                        >
+                          <Save className="w-4 h-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>{t.saveProject} {!isMobile && '(Ctrl+S)'}</TooltipContent>
+                    </Tooltip>
+                  </div>
+                  <input ref={fileInputRef} type="file" accept=".json" onChange={handleLoadProject} className="hidden" />
+                  {(activeTab === 'topology') && (
                     <div className={`w-px h-4 mx-1 ${isDark ? 'bg-slate-700' : 'bg-slate-300'} hidden md:block`} />
-                  </>
-                )}
+                  )}
 
-                {/* Project Controls - Desktop only */}
-                <div className="hidden md:flex items-center gap-1">
+                  {/* Info & Settings */}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-sky-500 transition-colors" onClick={() => setShowAboutModal(true)}>
+                        <Info className="w-4 h-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>{t.about}</TooltipContent>
+                  </Tooltip>
                   <Button
                     variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={handleNewProject}
-                    title={t.newProject}
+                    size="sm"
+                    onClick={() => setLanguage(language === 'tr' ? 'en' : 'tr')}
+                    className="text-xs font-bold h-8 px-2 hover:text-purple-500 transition-colors"
                   >
-                    <File className="w-4 h-4" />
+                    <Languages className="w-4 h-4 mr-1" />
+                    {language.toUpperCase()}
                   </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => fileInputRef.current?.click()}
-                    title={t.loadProject}
-                  >
-                    <FolderOpen className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={handleSaveProject}
-                    title={t.saveProject}
-                  >
-                    <Save className="w-4 h-4" />
-                  </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-yellow-500 transition-colors" onClick={toggleTheme}>
+                        {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>{isDark ? (language === 'tr' ? 'Açık Tema' : 'Light Mode') : (language === 'tr' ? 'Koyu Tema' : 'Dark Mode')}</TooltipContent>
+                  </Tooltip>
                 </div>
-                <input ref={fileInputRef} type="file" accept=".json" onChange={handleLoadProject} className="hidden" />
-                {(activeTab === 'topology') && (
-                  <div className={`w-px h-4 mx-1 ${isDark ? 'bg-slate-700' : 'bg-slate-300'} hidden md:block`} />
-                )}
-
-                {/* Info & Settings */}
-                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setShowAboutModal(true)} title={t.about}>
-                  <Info className="w-4 h-4" />
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => setLanguage(language === 'tr' ? 'en' : 'tr')}
-                  className="text-xs font-bold h-8 px-2"
-                >
-                  <Languages className="w-4 h-4 mr-1" />
-                  {language.toUpperCase()}
-                </Button>
-                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={toggleTheme}>
-                  {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-                </Button>
               </div>
 
               {/* Mobile Menu */}
@@ -1760,7 +1794,7 @@ export default function Home() {
                           {ALL_TABS.map((tab) => {
                             const isTabVisible = tab.id === 'topology' || (activeDeviceId && tab.showFor.includes(activeDeviceType));
                             if (!isTabVisible) return null;
-                            
+
                             const isActive = activeTab === tab.id;
                             const label = t[tab.labelKey as keyof typeof t] as string;
                             return (
@@ -1792,8 +1826,8 @@ export default function Home() {
                           <span className="text-xs font-bold text-cyan-400">{Math.round((totalScore / maxScore) * 100)}%</span>
                         </div>
                         <div className={`h-1.5 w-full rounded-full ${isDark ? 'bg-slate-800' : 'bg-slate-200'} overflow-hidden mb-1.5`}>
-                          <div 
-                            className="h-full bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.5)] transition-all duration-500" 
+                          <div
+                            className="h-full bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.5)] transition-all duration-500"
                             style={{ width: `${(totalScore / maxScore) * 100}%` }}
                           />
                         </div>
@@ -1813,9 +1847,9 @@ export default function Home() {
               {activeTab === 'topology' && (
                 <div className={`flex items-center gap-1 p-1 rounded-xl border ${isDark ? 'bg-slate-900/40 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
                   {/* Add Button (Device, Cable, Note) */}
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     className="h-9 w-9 text-emerald-500 hover:bg-emerald-500/10"
                     onClick={() => {
                       const event = new CustomEvent('trigger-topology-palette');
@@ -1829,9 +1863,9 @@ export default function Home() {
                   <div className={`w-px h-4 ${isDark ? 'bg-slate-800' : 'bg-slate-200'} mx-0.5`} />
 
                   {/* Connect Button */}
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     className="h-9 w-9 text-cyan-500 hover:bg-cyan-500/10"
                     onClick={() => {
                       const event = new CustomEvent('trigger-topology-connect');
@@ -1848,13 +1882,12 @@ export default function Home() {
             {/* Active Device Dropdown - Always show if component is rendered */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg border transition-all ${
-                    isDark 
-                      ? 'bg-slate-900 border-slate-800 text-cyan-400 hover:text-cyan-300' 
+                <Button
+                  variant="ghost"
+                  className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg border transition-all ${isDark
+                      ? 'bg-slate-900 border-slate-800 text-cyan-400 hover:text-cyan-300'
                       : 'bg-white border-slate-200 text-cyan-700 hover:text-cyan-800'
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center gap-2">
                     {activeDeviceId && (topologyDevices.some(d => d.id === activeDeviceId)) ? (
@@ -1926,9 +1959,9 @@ export default function Home() {
                           : status === 'online'
                             ? 'bg-emerald-400'
                             : 'bg-amber-400';
-                      
+
                       return (
-                        <DropdownMenuItem 
+                        <DropdownMenuItem
                           key={device.id}
                           className={`flex items-center gap-2 py-1.5 cursor-pointer ${activeDeviceId === device.id ? 'bg-cyan-500/10 text-cyan-400' : ''}`}
                           onClick={() => handleDeviceSelectFromMenu(device.type, device.id)}
@@ -1960,515 +1993,530 @@ export default function Home() {
             <div className="hidden sm:flex items-end gap-1">
               {tabs.map((tab, index) => {
                 const isActive = activeTab === tab.id;
+                // Unified Color Mapping
+                const tabColors: Record<string, string> = {
+                  topology: 'text-blue-500 hover:text-blue-500',
+                  cmd: 'text-blue-500 hover:text-blue-500',
+                  terminal: 'text-emerald-500 hover:text-emerald-600',
+                  ports: 'text-cyan-500 hover:text-cyan-600',
+                  vlan: 'text-purple-500 hover:text-purple-600',
+                  security: 'text-amber-500 hover:text-amber-600',
+                };                const colorClass = tabColors[tab.id] || 'text-slate-500 hover:text-slate-600';
+
                 return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    title={`${tab.label} (Ctrl+${index + 1}) — ${getTabDescription(tab.id)}`}
-                    className={`flex items-center gap-2 px-3 lg:px-5 py-3 rounded-t-xl text-sm font-semibold transition-all border-x border-t min-w-[50px] lg:min-w-[120px] justify-center ${
-                      isActive
-                        ? isDark ? 'bg-slate-950 border-slate-800 text-cyan-400 shadow-[0_-4px_0_0_#22d3ee]' : 'bg-slate-100 border-slate-300 text-slate-900 shadow-[0_-4px_0_0_#06b6d4]'
-                        : isDark ? 'bg-slate-900/50 border-transparent text-slate-500 hover:text-white hover:bg-slate-800' : 'bg-slate-200/50 border-transparent text-slate-500 hover:text-slate-900 hover:bg-slate-200'
-                    }`}
-                  >
-                    <span className={`transition-transform duration-300 ${isActive ? 'scale-110 text-cyan-500' : ''}`}>
-                      {tab.id === 'topology' ? <Network className="w-4 h-4" /> : 
-                       (tab.id === 'cmd' || tab.id === 'terminal') ? <TerminalIcon className="w-4 h-4" /> :
-                       tab.id === 'ports' ? <Database className="w-4 h-4" /> :
-                       tab.id === 'vlan' ? <Layers className="w-4 h-4" /> :
-                       <ShieldCheck className="w-4 h-4" />}
-                    </span>
-                    <span className="hidden lg:inline flex items-center gap-1.5">
-                      {tab.label}
-                      {tab.id === 'ports' && (
-                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-400">
-                          {completedPortTasks}/{portTasks.length}
+                  <Tooltip key={tab.id}>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={() => setActiveTab(tab.id)}
+                        className={`flex items-center gap-2 px-3 lg:px-5 py-3 rounded-t-xl text-sm font-semibold transition-all border-x border-t min-w-[50px] lg:min-w-[120px] justify-center ${isActive
+                            ? `${isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-300'} ${colorClass.split(' ')[0]} shadow-[0_-4px_0_0_currentColor]`
+                            : `${isDark ? 'bg-slate-900/50 border-transparent' : 'bg-slate-200/50 border-transparent'} ${colorClass} hover:bg-slate-200/30`
+                          }`}
+                      >
+                        <span className={`transition-transform duration-300 ${isActive ? 'scale-110' : ''}`}>
+                          {tab.id === 'topology' ? <Network className="w-4 h-4" /> :
+                            (tab.id === 'cmd' || tab.id === 'terminal') ? <TerminalIcon className="w-4 h-4" /> :
+                              tab.id === 'ports' ? <Database className="w-4 h-4" /> :
+                                tab.id === 'vlan' ? <Layers className="w-4 h-4" /> :
+                                  <ShieldCheck className="w-4 h-4" />}
                         </span>
-                      )}
-                      {tab.id === 'vlan' && (
-                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-purple-500/10 text-purple-300">
-                          {completedVlanTasks}/{vlanTasks.length}
+                        <span className="hidden lg:inline flex items-center gap-1.5">
+                          {tab.label}
+                          {tab.id === 'ports' && (
+                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400">
+                              {completedPortTasks}/{portTasks.length}
+                            </span>
+                          )}
+                          {tab.id === 'vlan' && (
+                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-purple-500/10 text-purple-300">
+                              {completedVlanTasks}/{vlanTasks.length}
+                            </span>
+                          )}
+                          {tab.id === 'security' && (
+                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-400">
+                              {completedSecurityTasks}/{securityTasks.length}
+                            </span>
+                          )}
                         </span>
-                      )}
-                      {tab.id === 'security' && (
-                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-rose-500/10 text-rose-300">
-                          {completedSecurityTasks}/{securityTasks.length}
-                        </span>
-                      )}
-                    </span>
-                  </button>
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent className="flex flex-col gap-1">
+                      <span>{tab.label} (Ctrl+{index + 1})</span>
+                      <span className="font-normal text-xs opacity-75">{getTabDescription(tab.id)}</span>
+                    </TooltipContent>
+                  </Tooltip>
                 );
               })}
             </div>
           </div>
+        </header>
+        {/* Mobile Bottom Tab Bar (Icons Only) */}
+        <div className={`sm:hidden fixed bottom-0 left-0 right-0 z-[100] border-t backdrop-blur-xl flex items-center justify-around px-2 mobile-bottom-nav ${isDark ? 'bg-slate-900/95 border-slate-800 text-slate-400' : 'bg-white/95 border-slate-200 text-slate-500'
+          } ${showProjectPicker || showOnboarding ? 'hidden' : ''}`}>
+          {tabs.map((tab, index) => {
+            const isActive = activeTab === tab.id;
+            
+            // Shared Color Mapping
+            const tabColors: Record<string, string> = {
+              topology: 'text-blue-500 hover:text-blue-500',
+              cmd: 'text-blue-500 hover:text-blue-500',
+              terminal: 'text-emerald-500 hover:text-emerald-600',
+              ports: 'text-cyan-500 hover:text-cyan-600',
+              vlan: 'text-purple-500 hover:text-purple-600',
+              security: 'text-amber-500 hover:text-amber-600',
+            };
+            const colorClass = tabColors[tab.id] || 'text-slate-500 hover:text-slate-600';
+
+            return (
+              <Tooltip key={tab.id}>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`flex flex-col items-center justify-center min-h-[44px] flex-1 px-3 py-2 rounded-xl transition-all relative ${isActive ? 'text-blue-500' : `${colorClass} active:scale-95`
+                      }`}
+                  >
+                    {isActive && (
+                      <motion.div
+                        layoutId="mobileTabActive"
+                        className="absolute inset-0 bg-blue-500/10 rounded-xl"
+                        transition={{ type: "spring", duration: 0.4, bounce: 0.2 }}
+                      />
+                    )}
+                    <div className={`relative z-10 transition-transform duration-200 ${isActive ? 'scale-110' : ''}`}>
+                      {tab.id === 'topology' ? <Network className="w-5 h-5" /> :
+                        (tab.id === 'cmd' || tab.id === 'terminal') ? <TerminalIcon className="w-5 h-5" /> :
+                          tab.id === 'ports' ? <Database className="w-5 h-5" /> :
+                            tab.id === 'vlan' ? <Layers className="w-5 h-5" /> :
+                              <ShieldCheck className="w-5 h-5" />}
+                    </div>
+                    <span className="mt-0.5 text-[10px] font-semibold leading-tight relative z-10">
+                      {tab.label}
+                    </span>
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>{tab.label}</TooltipContent>
+              </Tooltip>
+            );
+          })}
         </div>
-      </header>
-      
-      {/* Mobile Bottom Tab Bar (Icons Only) */}
-      <div className={`sm:hidden fixed bottom-0 left-0 right-0 z-[100] border-t backdrop-blur-xl flex items-center justify-around px-2 mobile-bottom-nav ${
-        isDark ? 'bg-slate-900/95 border-slate-800 text-slate-400' : 'bg-white/95 border-slate-200 text-slate-500'
-      } ${showProjectPicker || showOnboarding ? 'hidden' : ''}`}>
-        {tabs.map((tab) => {
-          const isActive = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex flex-col items-center justify-center min-h-[44px] flex-1 px-3 py-2 rounded-xl transition-all relative ${
-                isActive ? 'text-cyan-400' : 'active:scale-95'
-              }`}
-            >
-              {isActive && (
-                <motion.div 
-                  layoutId="mobileTabActive"
-                  className="absolute inset-0 bg-cyan-500/10 rounded-xl"
-                  transition={{ type: "spring", duration: 0.4, bounce: 0.2 }}
-                />
-              )}
-              <div className={`relative z-10 transition-transform duration-200 ${isActive ? 'scale-110' : ''}`}>
-                {tab.id === 'topology' ? <Network className="w-5 h-5" /> : 
-                 (tab.id === 'cmd' || tab.id === 'terminal') ? <TerminalIcon className="w-5 h-5" /> :
-                 tab.id === 'ports' ? <Database className="w-5 h-5" /> :
-                 tab.id === 'vlan' ? <Layers className="w-5 h-5" /> :
-                 <ShieldCheck className="w-5 h-5" />}
-              </div>
-              <span className="mt-0.5 text-[10px] font-semibold leading-tight relative z-10">
-                {tab.label}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-      <Dialog open={showProjectPicker} onOpenChange={setShowProjectPicker}>
-        <DialogContent className={`${isDark ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white'} w-screen h-screen max-w-none m-0 rounded-none`}>
-          <DialogHeader>
-            <DialogTitle>{language === 'tr' ? 'Yeni Proje' : 'New Project'}</DialogTitle>
-            <DialogDescription className={isDark ? 'text-slate-400' : 'text-slate-500'}>
-              {language === 'tr' ? 'Boş bir proje başlat veya hazır örneklerden birini seç.' : 'Start with an empty project or choose a ready-made example.'}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid grid-cols-1 gap-3 h-[calc(100vh-8rem)] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-slate-800 hover:scrollbar-thumb-slate-500 transition-colors">
-            <Button
-              variant="outline"
-              className={`justify-between ${isDark ? 'border-slate-800 hover:bg-slate-800/60' : ''}`}
-              onClick={() => { setShowProjectPicker(false); runWithSaveGuard(() => { resetToEmptyProject(); }); }}
-            >
-              <span className="font-semibold">{language === 'tr' ? 'Boş Proje' : 'Empty Project'}</span>
-              <span className="text-xs opacity-70">{language === 'tr' ? 'Sıfırdan başla' : 'Start from scratch'}</span>
-            </Button>
-            {exampleProjects(language).map((example) => (
-              <Button
-                key={example.id}
-                variant="ghost"
-                className={`h-auto flex-col items-start gap-1 px-4 py-3 text-left border ${isDark ? 'border-slate-800 hover:bg-slate-800/60' : 'border-slate-200 hover:bg-slate-100'}`}
-                onClick={() => { setShowProjectPicker(false); runWithSaveGuard(() => applyExampleProject(example.data)); }}
-              >
-                <div className="flex items-center justify-between w-full">
-                  <span className="font-semibold">{example.title}</span>
-                  <span className={`text-[10px] uppercase tracking-wider ${isDark ? 'text-cyan-400' : 'text-cyan-600'}`}>{example.tag}</span>
-                </div>
-                <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{example.description}</span>
-                {example.detail && (
-                  <span className={`text-[11px] ${isDark ? 'text-amber-300' : 'text-amber-700'}`}>{example.detail}</span>
-                )}
-              </Button>
-            ))}
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog
-        open={showOnboarding}
-        onOpenChange={(open) => {
-          if (!open) closeOnboardingForever();
-          else setShowOnboarding(true);
-        }}
-      >
-        <DialogContent className={`${isDark ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white'} sm:max-w-lg`}>
-          <DialogHeader>
-            <DialogTitle className="flex items-center justify-between gap-3">
-              <span>{onboardingSteps[onboardingStep]?.title}</span>
-              <span className={`text-[11px] font-bold px-2 py-1 rounded-full ${isDark ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>
-                {onboardingStep + 1}/{onboardingSteps.length}
-              </span>
-            </DialogTitle>
-            <DialogDescription className={isDark ? 'text-slate-400' : 'text-slate-600'}>
-              {onboardingSteps[onboardingStep]?.description}
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="flex items-center justify-between gap-2 pt-2">
-            <Button variant="ghost" onClick={closeOnboardingForever} className="text-xs font-semibold">
-              {language === 'tr' ? 'Geç' : 'Skip'}
-            </Button>
-            <div className="flex items-center gap-2">
+        <Dialog open={showProjectPicker} onOpenChange={setShowProjectPicker}>
+          <DialogContent className={`${isDark ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white'} w-screen h-screen max-w-none m-0 rounded-none`}>
+            <DialogHeader>
+              <DialogTitle>{language === 'tr' ? 'Yeni Proje' : 'New Project'}</DialogTitle>
+              <DialogDescription className={isDark ? 'text-slate-400' : 'text-slate-500'}>
+                {language === 'tr' ? 'Boş bir proje başlat veya hazır örneklerden birini seç.' : 'Start with an empty project or choose a ready-made example.'}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid grid-cols-1 gap-3 h-[calc(100vh-8rem)] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-slate-800 hover:scrollbar-thumb-slate-500 transition-colors">
               <Button
                 variant="outline"
-                onClick={prevOnboarding}
-                disabled={onboardingStep === 0}
-                className="text-xs font-semibold"
+                className={`justify-between ${isDark ? 'border-slate-800 hover:bg-slate-800/60' : ''}`}
+                onClick={() => { setShowProjectPicker(false); runWithSaveGuard(() => { resetToEmptyProject(); }); }}
               >
-                {language === 'tr' ? 'Geri' : 'Back'}
+                <span className="font-semibold">{language === 'tr' ? 'Boş Proje' : 'Empty Project'}</span>
+                <span className="text-xs opacity-70">{language === 'tr' ? 'Sıfırdan başla' : 'Start from scratch'}</span>
               </Button>
-              <Button onClick={nextOnboarding} className="text-xs font-semibold bg-cyan-600 hover:bg-cyan-700 text-white">
-                {onboardingStep >= onboardingSteps.length - 1
-                  ? (language === 'tr' ? 'Bitir' : 'Finish')
-                  : (language === 'tr' ? 'İleri' : 'Next')}
+              {exampleProjects(language).map((example) => (
+                <Button
+                  key={example.id}
+                  variant="ghost"
+                  className={`h-auto flex-col items-start gap-1 px-4 py-3 text-left border ${isDark ? 'border-slate-800 hover:bg-slate-800/60' : 'border-slate-200 hover:bg-slate-100'}`}
+                  onClick={() => { setShowProjectPicker(false); runWithSaveGuard(() => applyExampleProject(example.data)); }}
+                >
+                  <div className="flex items-center justify-between w-full">
+                    <span className="font-semibold">{example.title}</span>
+                    <span className={`text-[10px] uppercase tracking-wider ${isDark ? 'text-cyan-400' : 'text-cyan-600'}`}>{example.tag}</span>
+                  </div>
+                  <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{example.description}</span>
+                  {example.detail && (
+                    <span className={`text-[11px] ${isDark ? 'text-amber-300' : 'text-amber-700'}`}>{example.detail}</span>
+                  )}
+                </Button>
+              ))}
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog
+          open={showOnboarding}
+          onOpenChange={(open) => {
+            if (!open) closeOnboardingForever();
+            else setShowOnboarding(true);
+          }}
+        >
+          <DialogContent className={`${isDark ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white'} sm:max-w-lg`}>
+            <DialogHeader>
+              <DialogTitle className="flex items-center justify-between gap-3">
+                <span>{onboardingSteps[onboardingStep]?.title}</span>
+                <span className={`text-[11px] font-bold px-2 py-1 rounded-full ${isDark ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>
+                  {onboardingStep + 1}/{onboardingSteps.length}
+                </span>
+              </DialogTitle>
+              <DialogDescription className={isDark ? 'text-slate-400' : 'text-slate-600'}>
+                {onboardingSteps[onboardingStep]?.description}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="flex items-center justify-between gap-2 pt-2">
+              <Button variant="ghost" onClick={closeOnboardingForever} className="text-xs font-semibold">
+                {language === 'tr' ? 'Geç' : 'Skip'}
               </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Global Dialogs (AlertDialog for better z-index and standard behavior) */}
-      <AlertDialog open={!!confirmDialog} onOpenChange={(open) => !open && setConfirmDialog(null)}>
-        <AlertDialogContent className={`${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white'}`}>
-          <AlertDialogHeader>
-            <AlertDialogTitle className={isDark ? 'text-white' : 'text-slate-900'}>
-              {t.confirmationRequired}
-            </AlertDialogTitle>
-            <AlertDialogDescription className={isDark ? 'text-slate-400' : 'text-slate-500'}>
-              {confirmDialog?.message}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className={isDark ? 'bg-slate-800 text-white border-slate-700 hover:bg-slate-700' : ''}>
-              {t.cancel}
-            </AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={() => confirmDialog?.onConfirm()}
-              className="bg-cyan-600 hover:bg-cyan-700 text-white"
-            >
-              {t.continue}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <AlertDialog open={!!saveDialog} onOpenChange={(open) => !open && setSaveDialog(null)}>
-        <AlertDialogContent className={`${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white'}`}>
-          <AlertDialogHeader>
-            <AlertDialogTitle className={isDark ? 'text-white' : 'text-slate-900'}>
-              {language === 'tr' ? 'Projeyi Kaydet' : 'Save Project'}
-            </AlertDialogTitle>
-            <AlertDialogDescription className={isDark ? 'text-slate-400' : 'text-slate-500'}>
-              {saveDialog?.message}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <Button 
-              variant="outline" 
-              onClick={() => saveDialog?.onConfirm(false)}
-              className={isDark ? 'bg-slate-800 text-white border-slate-700 hover:bg-slate-700' : ''}
-            >
-              {t.dontSave}
-            </Button>
-            <AlertDialogAction 
-              onClick={() => saveDialog?.onConfirm(true)}
-              className="bg-cyan-600 hover:bg-cyan-700 text-white"
-            >
-              {t.saveLabel}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Main Content with matching top background */}
-      <main className={`flex-1 overflow-hidden ${isDark ? 'bg-slate-950' : 'bg-slate-100'}`}>
-        <div className="max-w-7xl w-full mx-auto p-4 pb-20 sm:pb-6 h-full flex flex-col">
-        {/* Tab Content */}
-        {activeTab === 'topology' && (
-          <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-            {/* Network Topology fills remaining space */}
-            <div ref={topologyContainerRef} className="flex-1 w-full flex flex-col min-h-[500px]">
-                <NetworkTopology
-                  key={topologyKey}
-                  cableInfo={cableInfo}
-                  onCableChange={setCableInfo}
-                  selectedDevice={selectedDevice}
-                  onDeviceSelect={handleDeviceSelectFromCanvas}
-                  onDeviceDoubleClick={handleDeviceDoubleClick}
-                  onTopologyChange={handleTopologyChange}
-                  onDeviceDelete={handleDeviceDelete}
-                  initialDevices={topologyDevices || undefined}
-                  initialConnections={topologyConnections || undefined}
-                  initialNotes={topologyNotes || undefined}
-                  isActive={activeTab === 'topology'}
-                  activeDeviceId={activeDeviceId}
-                  deviceStates={deviceStates}
-                  isFullscreen={isTopologyFullscreen}
-                  onFullscreenChange={setIsTopologyFullscreen}
-                  zoom={zoom}
-                onZoomChange={setZoom}
-                pan={pan}
-                onPanChange={setPan}
-                canUndo={canUndo}
-                canRedo={canRedo}
-                onUndo={handleUndo}
-                onRedo={handleRedo}
-              />
-            </div>
-          </div>
-        )}
-
-        {/* CMD Terminal Sekmesi */}
-        {/* CMD Terminal Sekmesi - Always mounted, hidden via CSS */}
-        <div className={`w-full h-full overflow-hidden flex flex-col min-h-[calc(100vh-8rem)] sm:min-h-[450px] ${activeTab === 'cmd' ? 'block' : 'hidden'}`}>
-            <PCPanel
-              key="pc-panel"
-              deviceId={activeDeviceId}
-              cableInfo={cableInfo}
-              isVisible={activeTab === 'cmd'}
-              onClose={() => setActiveTab('topology')}
-              onTogglePower={toggleDevicePower}
-              topologyDevices={topologyDevices || undefined}
-              topologyConnections={topologyConnections || undefined}
-              deviceStates={deviceStates}
-              deviceOutputs={deviceOutputs}
-              pcOutputs={pcOutputs}
-              pcHistories={pcHistories}
-              onUpdatePCHistory={handleUpdatePCHistory}
-              onExecuteDeviceCommand={handleExecuteCommand}
-            />
-        </div>
-
-        {/* Terminal Sekmesi - Always mounted, hidden via CSS */}
-        <div className={`flex-1 flex flex-col gap-4 overflow-hidden min-h-[450px] ${activeTab === 'terminal' ? 'flex' : 'hidden'}`}>
-          <div className="grid lg:grid-cols-4 gap-4 flex-1 overflow-hidden">
-            <div className="lg:col-span-3 flex flex-col gap-4 overflow-hidden">
-              <Terminal
-                key="terminal"
-                deviceId={activeDeviceId}
-                  // use same display name as the dropdown (hostname or topology name)
-                  deviceName={
-                    (() => {
-                      const deviceState = deviceStates.get(activeDeviceId);
-                      return deviceState?.hostname || activeDeviceId;
-                    })()
-                  }
-                  prompt={prompt}
-                  state={state}
-                  onCommand={handleCommand}
-                  onClear={handleClearTerminal}
-                  output={output}
-                  isLoading={isExecutingCommand}
-                  isConnectionError={topologyDevices.some(d => d.id === activeDeviceId && d.status === 'offline')}
-                  connectionErrorMessage={language === 'tr' ? 'Bağlantı hatası' : 'Connection error'}
-                  isPoweredOff={topologyDevices.some(d => d.id === activeDeviceId && d.status === 'offline')}
-                  onTogglePower={toggleDevicePower}
-                  onClose={() => setActiveTab('topology')}
-                  t={t}
-                  theme={theme}
-                  language={language}
-                  onUpdateHistory={handleUpdateHistory}
-                />
-                <QuickCommands
-                  currentMode={state.currentMode}
-                  onExecuteCommand={handleCommand}
-                  isDevicePoweredOff={topologyDevices.some(d => d.id === activeDeviceId && d.status === 'offline')}
-                  t={t}
-                  theme={theme}
-                  language={language}
-                />
-              </div>
-              <div className="space-y-4">
-                <ConfigPanel
-                  state={state}
-                  onExecuteCommand={handleCommand}
-                  isDevicePoweredOff={topologyDevices.some(d => d.id === activeDeviceId && d.status === 'offline')}
-                  t={t}
-                  theme={theme}
-                />
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  onClick={prevOnboarding}
+                  disabled={onboardingStep === 0}
+                  className="text-xs font-semibold"
+                >
+                  {language === 'tr' ? 'Geri' : 'Back'}
+                </Button>
+                <Button onClick={nextOnboarding} className="text-xs font-semibold bg-cyan-600 hover:bg-cyan-700 text-white">
+                  {onboardingStep >= onboardingSteps.length - 1
+                    ? (language === 'tr' ? 'Bitir' : 'Finish')
+                    : (language === 'tr' ? 'İleri' : 'Next')}
+                </Button>
               </div>
             </div>
-          </div>
+          </DialogContent>
+        </Dialog>
 
-        {/* Portlar Sekmesi */}
-        {activeTab === 'ports' && (
-          <div className="grid lg:grid-cols-3 gap-4 flex-1 overflow-y-auto custom-scrollbar">
-            <div className="lg:col-span-2">
-              <PortPanel 
-                ports={state.ports}
-                t={t} 
-                theme={theme}
-                deviceName={state.hostname}
-                deviceModel={activeDeviceType === 'router' ? 'NETWORK-1941' : 'WS-C2960-24TT-L'}
-                activeDeviceId={activeDeviceId}
-                isDevicePoweredOff={topologyDevices.some(d => d.id === activeDeviceId && d.status === 'offline')}
-                topologyDevices={topologyDevices}
-                onTogglePower={toggleDevicePower}
-                topologyConnections={topologyConnections || undefined}
-              />
-            </div>
-            <div>
-              <TaskCard
-                tasks={portTasks}
-                state={state}
-                context={taskContext}
-                color="from-yellow-500 to-orange-500"
-                isDark={isDark}
-              />
-            </div>
-          </div>
-        )}
+        {/* Global Dialogs (AlertDialog for better z-index and standard behavior) */}
+        <AlertDialog open={!!confirmDialog} onOpenChange={(open) => !open && setConfirmDialog(null)}>
+          <AlertDialogContent className={`${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white'}`}>
+            <AlertDialogHeader>
+              <AlertDialogTitle className={isDark ? 'text-white' : 'text-slate-900'}>
+                {t.confirmationRequired}
+              </AlertDialogTitle>
+              <AlertDialogDescription className={isDark ? 'text-slate-400' : 'text-slate-500'}>
+                {confirmDialog?.message}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel className={isDark ? 'bg-slate-800 text-white border-slate-700 hover:bg-slate-700' : ''}>
+                {t.cancel}
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => confirmDialog?.onConfirm()}
+                className="bg-cyan-600 hover:bg-cyan-700 text-white"
+              >
+                {t.continue}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
-        {/* VLAN Sekmesi */}
-        {activeTab === 'vlan' && (
-          <div className="grid lg:grid-cols-3 gap-4 flex-1 overflow-y-auto custom-scrollbar">
-            <div className="lg:col-span-2">
-              <VlanPanel
-                vlans={state.vlans}
-                ports={state.ports}
-                deviceName={state.hostname}
-                deviceModel={activeDeviceType === 'router' ? 'NETWORK-1941' : 'WS-C2960-24TT-L'}
-                deviceId={activeDeviceId}
-                onTogglePower={toggleDevicePower}
-                onExecuteCommand={handleCommand}
-                t={t}
-                theme={theme}
-                activeDeviceType={activeDeviceType}
-                isDevicePoweredOff={topologyDevices.some(d => d.id === activeDeviceId && d.status === 'offline')}
-              />
-            </div>
-            <div>
-              <TaskCard
-                tasks={vlanTasks}
-                state={state}
-                context={taskContext}
-                color="from-purple-500 to-pink-500"
-                isDark={isDark}
-              />
-            </div>
-          </div>
-        )}
+        <AlertDialog open={!!saveDialog} onOpenChange={(open) => !open && setSaveDialog(null)}>
+          <AlertDialogContent className={`${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white'}`}>
+            <AlertDialogHeader>
+              <AlertDialogTitle className={isDark ? 'text-white' : 'text-slate-900'}>
+                {language === 'tr' ? 'Projeyi Kaydet' : 'Save Project'}
+              </AlertDialogTitle>
+              <AlertDialogDescription className={isDark ? 'text-slate-400' : 'text-slate-500'}>
+                {saveDialog?.message}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => saveDialog?.onConfirm(false)}
+                className={isDark ? 'bg-slate-800 text-white border-slate-700 hover:bg-slate-700' : ''}
+              >
+                {t.dontSave}
+              </Button>
+              <AlertDialogAction
+                onClick={() => saveDialog?.onConfirm(true)}
+                className="bg-cyan-600 hover:bg-cyan-700 text-white"
+              >
+                {t.saveLabel}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
-        {/* Güvenlik Sekmesi */}
-        {activeTab === 'security' && (
-          <div className="grid lg:grid-cols-3 gap-4 flex-1 overflow-y-auto custom-scrollbar">
-            <div className="lg:col-span-2">
-                <SecurityPanel
-                  security={state.security}
-                  t={t}
-                  theme={theme}
-                  deviceId={activeDeviceId}
-                  isDevicePoweredOff={topologyDevices.some(d => d.id === activeDeviceId && d.status === 'offline')}
-                  onTogglePower={toggleDevicePower}
-                />
-            </div>
-            <div>
-              <TaskCard
-                tasks={securityTasks}
-                state={state}
-                context={taskContext}
-                color="from-red-500 to-rose-500"
-                isDark={isDark}
-              />
-            </div>
-          </div>
-        )}
-        </div>
-      </main>
-
-      {/* Footer - Save Status & Hints */}
-      <footer className={`fixed bottom-0 left-0 right-0 z-50 border-t backdrop-blur-xl transition-all ${
-        isDark ? 'bg-slate-900/95 border-slate-800' : 'bg-white/95 border-slate-200'
-      } ${showProjectPicker || showOnboarding ? 'hidden' : ''}`}>
-        <div className="max-w-7xl mx-auto px-4 py-2">
-          <div className="flex items-center justify-between gap-4">
-            {/* Save Status */}
-            <div className="flex items-center gap-3">
-              <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border ${
-                isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-100 border-slate-200'
-              }`}>
-                <span className={`flex items-center gap-1.5 text-xs font-semibold ${
-                  hasUnsavedChanges ? 'text-amber-400' : 'text-emerald-400'
-                }`}>
-                  <span className={`w-2 h-2 rounded-full ${
-                    hasUnsavedChanges ? 'bg-amber-400 animate-pulse' : 'bg-emerald-400'
-                  }`} />
-                  {hasUnsavedChanges
-                    ? (language === 'tr' ? 'Kaydedilmedi' : 'Unsaved')
-                    : (language === 'tr' ? 'Kaydedildi' : 'Saved')}
-                </span>
-                {lastSaveTime && (
-                  <span className={`text-[11px] ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>
-                    {(language === 'tr' ? 'Son: ' : 'Last: ') + lastSaveTime}
-                  </span>
-                )}
-              </div>
-
-              {/* Quick Hints */}
-              <div className={`hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg border ${
-                isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-100 border-slate-200'
-              }`}>
-                <span className={`text-[11px] font-medium ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-                  {language === 'tr' ? 'İpuçları:' : 'Tips:'}
-                </span>
-                <span className={`text-[11px] ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-                  {activeTab === 'topology' && (
-                    <>
-                      <kbd className={`px-1.5 py-0.5 rounded text-[10px] font-mono ${
-                        isDark ? 'bg-slate-700 text-slate-300' : 'bg-slate-200 text-slate-700'
-                      }`}>Ctrl+Z</kbd>
-                      <span className="mx-1">{language === 'tr' ? 'Geri' : 'Undo'}</span>
-                      <kbd className={`px-1.5 py-0.5 rounded text-[10px] font-mono ${
-                        isDark ? 'bg-slate-700 text-slate-300' : 'bg-slate-200 text-slate-700'
-                      }`}>Ctrl+Y</kbd>
-                      <span className="mx-1">{language === 'tr' ? 'İleri' : 'Redo'}</span>
-                      <kbd className={`px-1.5 py-0.5 rounded text-[10px] font-mono ${
-                        isDark ? 'bg-slate-700 text-slate-300' : 'bg-slate-200 text-slate-700'
-                      }`}>Ctrl+S</kbd>
-                      <span className="mx-1">{language === 'tr' ? 'Kaydet' : 'Save'}</span>
-                    </>
-                  )}
-                  {(activeTab === 'cmd' || activeTab === 'terminal') && (
-                    <>
-                      <kbd className={`px-1.5 py-0.5 rounded text-[10px] font-mono ${
-                        isDark ? 'bg-slate-700 text-slate-300' : 'bg-slate-200 text-slate-700'
-                      }`}>Ctrl+L</kbd>
-                      <span className="mx-1">{language === 'tr' ? 'Temizle' : 'Clear'}</span>
-                      <kbd className={`px-1.5 py-0.5 rounded text-[10px] font-mono ${
-                        isDark ? 'bg-slate-700 text-slate-300' : 'bg-slate-200 text-slate-700'
-                      }`}>↑↓</kbd>
-                      <span className="mx-1">{language === 'tr' ? 'Geçmiş' : 'History'}</span>
-                    </>
-                  )}
-                  {activeTab !== 'topology' && activeTab !== 'cmd' && activeTab !== 'terminal' && (
-                    <>
-                      <kbd className={`px-1.5 py-0.5 rounded text-[10px] font-mono ${
-                        isDark ? 'bg-slate-700 text-slate-300' : 'bg-slate-200 text-slate-700'
-                      }`}>Ctrl+1-5</kbd>
-                      <span className="mx-1">{language === 'tr' ? 'Sekmeler' : 'Tabs'}</span>
-                    </>
-                  )}
-                </span>
-              </div>
-            </div>
-
-            {/* Lab Progress */}
-            {totalScore > 0 && (
-              <div className={`hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg border ${
-                isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-100 border-slate-200'
-              }`}>
-                <span className={`text-[11px] font-bold uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-600'}`}>
-                  {t.labProgress}
-                </span>
-                <div className={`w-20 h-1.5 rounded-full ${isDark ? 'bg-slate-700' : 'bg-slate-200'} overflow-hidden`}>
-                  <div 
-                    className="h-full bg-cyan-500 shadow-[0_0_6px_rgba(6,182,212,0.5)] transition-all duration-300" 
-                    style={{ width: `${(totalScore / maxScore) * 100}%` }}
+        {/* Main Content with matching top background */}
+        <main className={`flex-1 overflow-hidden ${isDark ? 'bg-slate-950' : 'bg-slate-100'}`}>
+          <div className="max-w-7xl w-full mx-auto p-4 pb-20 sm:pb-6 h-full flex flex-col">
+            {/* Tab Content */}
+            {activeTab === 'topology' && (
+              <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+                {/* Network Topology fills remaining space */}
+                <div ref={topologyContainerRef} className="flex-1 w-full flex flex-col min-h-[500px]">
+                  <NetworkTopology
+                    key={topologyKey}
+                    cableInfo={cableInfo}
+                    onCableChange={setCableInfo}
+                    selectedDevice={selectedDevice}
+                    onDeviceSelect={handleDeviceSelectFromCanvas}
+                    onDeviceDoubleClick={handleDeviceDoubleClick}
+                    onTopologyChange={handleTopologyChange}
+                    onDeviceDelete={handleDeviceDelete}
+                    initialDevices={topologyDevices || undefined}
+                    initialConnections={topologyConnections || undefined}
+                    initialNotes={topologyNotes || undefined}
+                    isActive={activeTab === 'topology'}
+                    activeDeviceId={activeDeviceId}
+                    deviceStates={deviceStates}
+                    isFullscreen={isTopologyFullscreen}
+                    onFullscreenChange={setIsTopologyFullscreen}
+                    zoom={zoom}
+                    onZoomChange={setZoom}
+                    pan={pan}
+                    onPanChange={setPan}
+                    canUndo={canUndo}
+                    canRedo={canRedo}
+                    onUndo={handleUndo}
+                    onRedo={handleRedo}
                   />
                 </div>
-                <span className={`text-[11px] font-bold ${isDark ? 'text-cyan-400' : 'text-cyan-600'}`}>
-                  {Math.round((totalScore / maxScore) * 100)}%
-                </span>
+              </div>
+            )}
+
+            {/* CMD Terminal Sekmesi */}
+            {/* CMD Terminal Sekmesi - Always mounted, hidden via CSS */}
+            <div className={`w-full h-full overflow-hidden flex flex-col min-h-[calc(100vh-8rem)] sm:min-h-[450px] ${activeTab === 'cmd' ? 'block' : 'hidden'}`}>
+              <PCPanel
+                key="pc-panel"
+                deviceId={activeDeviceId}
+                cableInfo={cableInfo}
+                isVisible={activeTab === 'cmd'}
+                onClose={() => setActiveTab('topology')}
+                onTogglePower={toggleDevicePower}
+                topologyDevices={topologyDevices || undefined}
+                topologyConnections={topologyConnections || undefined}
+                deviceStates={deviceStates}
+                deviceOutputs={deviceOutputs}
+                pcOutputs={pcOutputs}
+                pcHistories={pcHistories}
+                onUpdatePCHistory={handleUpdatePCHistory}
+                onExecuteDeviceCommand={handleExecuteCommand}
+              />
+            </div>
+
+            {/* Terminal Sekmesi - Always mounted, hidden via CSS */}
+            <div className={`flex-1 flex flex-col gap-4 overflow-hidden min-h-[450px] ${activeTab === 'terminal' ? 'flex' : 'hidden'}`}>
+              <div className="grid lg:grid-cols-4 gap-4 flex-1 overflow-hidden">
+                <div className="lg:col-span-3 flex flex-col gap-4 overflow-hidden">
+                  <Terminal
+                    key="terminal"
+                    deviceId={activeDeviceId}
+                    // use same display name as the dropdown (hostname or topology name)
+                    deviceName={
+                      (() => {
+                        const deviceState = deviceStates.get(activeDeviceId);
+                        return deviceState?.hostname || activeDeviceId;
+                      })()
+                    }
+                    prompt={prompt}
+                    state={state}
+                    onCommand={handleCommand}
+                    onClear={handleClearTerminal}
+                    output={output}
+                    isLoading={isExecutingCommand}
+                    isConnectionError={topologyDevices.some(d => d.id === activeDeviceId && d.status === 'offline')}
+                    connectionErrorMessage={language === 'tr' ? 'Bağlantı hatası' : 'Connection error'}
+                    isPoweredOff={topologyDevices.some(d => d.id === activeDeviceId && d.status === 'offline')}
+                    onTogglePower={toggleDevicePower}
+                    onClose={() => setActiveTab('topology')}
+                    t={t}
+                    theme={theme}
+                    language={language}
+                    onUpdateHistory={handleUpdateHistory}
+                  />
+                  <QuickCommands
+                    currentMode={state.currentMode}
+                    onExecuteCommand={handleCommand}
+                    isDevicePoweredOff={topologyDevices.some(d => d.id === activeDeviceId && d.status === 'offline')}
+                    t={t}
+                    theme={theme}
+                    language={language}
+                  />
+                </div>
+                <div className="space-y-4">
+                  <ConfigPanel
+                    state={state}
+                    onExecuteCommand={handleCommand}
+                    isDevicePoweredOff={topologyDevices.some(d => d.id === activeDeviceId && d.status === 'offline')}
+                    t={t}
+                    theme={theme}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Portlar Sekmesi */}
+            {activeTab === 'ports' && (
+              <div className="grid lg:grid-cols-3 gap-4 flex-1 overflow-y-auto custom-scrollbar">
+                <div className="lg:col-span-2">
+                  <PortPanel
+                    ports={state.ports}
+                    t={t}
+                    theme={theme}
+                    deviceName={state.hostname}
+                    deviceModel={activeDeviceType === 'router' ? 'NETWORK-1941' : 'WS-C2960-24TT-L'}
+                    activeDeviceId={activeDeviceId}
+                    isDevicePoweredOff={topologyDevices.some(d => d.id === activeDeviceId && d.status === 'offline')}
+                    topologyDevices={topologyDevices}
+                    onTogglePower={toggleDevicePower}
+                    topologyConnections={topologyConnections || undefined}
+                  />
+                </div>
+                <div>
+                  <TaskCard
+                    tasks={portTasks}
+                    state={state}
+                    context={taskContext}
+                    color="from-yellow-500 to-orange-500"
+                    isDark={isDark}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* VLAN Sekmesi */}
+            {activeTab === 'vlan' && (
+              <div className="grid lg:grid-cols-3 gap-4 flex-1 overflow-y-auto custom-scrollbar">
+                <div className="lg:col-span-2">
+                  <VlanPanel
+                    vlans={state.vlans}
+                    ports={state.ports}
+                    deviceName={state.hostname}
+                    deviceModel={activeDeviceType === 'router' ? 'NETWORK-1941' : 'WS-C2960-24TT-L'}
+                    deviceId={activeDeviceId}
+                    onTogglePower={toggleDevicePower}
+                    onExecuteCommand={handleCommand}
+                    t={t}
+                    theme={theme}
+                    activeDeviceType={activeDeviceType}
+                    isDevicePoweredOff={topologyDevices.some(d => d.id === activeDeviceId && d.status === 'offline')}
+                  />
+                </div>
+                <div>
+                  <TaskCard
+                    tasks={vlanTasks}
+                    state={state}
+                    context={taskContext}
+                    color="from-purple-500 to-pink-500"
+                    isDark={isDark}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Güvenlik Sekmesi */}
+            {activeTab === 'security' && (
+              <div className="grid lg:grid-cols-3 gap-4 flex-1 overflow-y-auto custom-scrollbar">
+                <div className="lg:col-span-2">
+                  <SecurityPanel
+                    security={state.security}
+                    t={t}
+                    theme={theme}
+                    deviceId={activeDeviceId}
+                    isDevicePoweredOff={topologyDevices.some(d => d.id === activeDeviceId && d.status === 'offline')}
+                    onTogglePower={toggleDevicePower}
+                  />
+                </div>
+                <div>
+                  <TaskCard
+                    tasks={securityTasks}
+                    state={state}
+                    context={taskContext}
+                    color="from-red-500 to-rose-500"
+                    isDark={isDark}
+                  />
+                </div>
               </div>
             )}
           </div>
-        </div>
-      </footer>
+        </main>
 
-      <AboutModal isOpen={showAboutModal} onClose={() => setShowAboutModal(false)} />
+        {/* Footer - Save Status & Hints */}
+        <footer className={`fixed bottom-0 left-0 right-0 z-50 border-t backdrop-blur-xl transition-all ${isDark ? 'bg-slate-900/95 border-slate-800' : 'bg-white/95 border-slate-200'
+          } ${showProjectPicker || showOnboarding ? 'hidden' : ''}`}>
+          <div className="max-w-7xl mx-auto px-4 py-2">
+            <div className="flex items-center justify-between gap-4">
+              {/* Save Status */}
+              <div className="flex items-center gap-3">
+                <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border ${isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-100 border-slate-200'
+                  }`}>
+                  <span className={`flex items-center gap-1.5 text-xs font-semibold ${hasUnsavedChanges ? 'text-amber-400' : 'text-emerald-400'
+                    }`}>
+                    <span className={`w-2 h-2 rounded-full ${hasUnsavedChanges ? 'bg-amber-400 animate-pulse' : 'bg-emerald-400'
+                      }`} />
+                    {hasUnsavedChanges
+                      ? (language === 'tr' ? 'Kaydedilmedi' : 'Unsaved')
+                      : (language === 'tr' ? 'Kaydedildi' : 'Saved')}
+                  </span>
+                  {lastSaveTime && (
+                    <span className={`text-[11px] ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>
+                      {(language === 'tr' ? 'Son: ' : 'Last: ') + lastSaveTime}
+                    </span>
+                  )}
+                </div>
+
+                {/* Quick Hints */}
+                <div className={`hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg border ${isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-100 border-slate-200'
+                  }`}>
+                  <span className={`text-[11px] font-medium ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+                    {language === 'tr' ? 'İpuçları:' : 'Tips:'}
+                  </span>
+                  <span className={`text-[11px] ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                    {activeTab === 'topology' && (
+                      <>
+                        <kbd className={`px-1.5 py-0.5 rounded text-[10px] font-mono ${isDark ? 'bg-slate-700 text-slate-300' : 'bg-slate-200 text-slate-700'
+                          }`}>Ctrl+Z</kbd>
+                        <span className="mx-1">{language === 'tr' ? 'Geri' : 'Undo'}</span>
+                        <kbd className={`px-1.5 py-0.5 rounded text-[10px] font-mono ${isDark ? 'bg-slate-700 text-slate-300' : 'bg-slate-200 text-slate-700'
+                          }`}>Ctrl+Y</kbd>
+                        <span className="mx-1">{language === 'tr' ? 'İleri' : 'Redo'}</span>
+                        <kbd className={`px-1.5 py-0.5 rounded text-[10px] font-mono ${isDark ? 'bg-slate-700 text-slate-300' : 'bg-slate-200 text-slate-700'
+                          }`}>Ctrl+S</kbd>
+                        <span className="mx-1">{language === 'tr' ? 'Kaydet' : 'Save'}</span>
+                      </>
+                    )}
+                    {(activeTab === 'cmd' || activeTab === 'terminal') && (
+                      <>
+                        <kbd className={`px-1.5 py-0.5 rounded text-[10px] font-mono ${isDark ? 'bg-slate-700 text-slate-300' : 'bg-slate-200 text-slate-700'
+                          }`}>Ctrl+L</kbd>
+                        <span className="mx-1">{language === 'tr' ? 'Temizle' : 'Clear'}</span>
+                        <kbd className={`px-1.5 py-0.5 rounded text-[10px] font-mono ${isDark ? 'bg-slate-700 text-slate-300' : 'bg-slate-200 text-slate-700'
+                          }`}>↑↓</kbd>
+                        <span className="mx-1">{language === 'tr' ? 'Geçmiş' : 'History'}</span>
+                      </>
+                    )}
+                    {activeTab !== 'topology' && activeTab !== 'cmd' && activeTab !== 'terminal' && (
+                      <>
+                        <kbd className={`px-1.5 py-0.5 rounded text-[10px] font-mono ${isDark ? 'bg-slate-700 text-slate-300' : 'bg-slate-200 text-slate-700'
+                          }`}>Ctrl+1-5</kbd>
+                        <span className="mx-1">{language === 'tr' ? 'Sekmeler' : 'Tabs'}</span>
+                      </>
+                    )}
+                  </span>
+                </div>
+              </div>
+
+              {/* Lab Progress */}
+              {totalScore > 0 && (
+                <div className={`hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg border ${isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-100 border-slate-200'
+                  }`}>
+                  <span className={`text-[11px] font-bold uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-600'}`}>
+                    {t.labProgress}
+                  </span>
+                  <div className={`w-20 h-1.5 rounded-full ${isDark ? 'bg-slate-700' : 'bg-slate-200'} overflow-hidden`}>
+                    <div
+                      className="h-full bg-cyan-500 shadow-[0_0_6px_rgba(6,182,212,0.5)] transition-all duration-300"
+                      style={{ width: `${(totalScore / maxScore) * 100}%` }}
+                    />
+                  </div>
+                  <span className={`text-[11px] font-bold ${isDark ? 'text-cyan-400' : 'text-cyan-600'}`}>
+                    {Math.round((totalScore / maxScore) * 100)}%
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        </footer>
+
+        <AboutModal isOpen={showAboutModal} onClose={() => setShowAboutModal(false)} />
       </motion.div>
     </div>
   );

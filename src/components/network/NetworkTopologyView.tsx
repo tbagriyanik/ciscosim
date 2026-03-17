@@ -374,7 +374,7 @@ export function NetworkTopologyView(props: NetworkTopologyViewProps) {
             }));
             return newZoom;
           })}
-          className={`w-8 h-8 flex items-center justify-center rounded text-lg font-bold touch-target ${isDark ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-slate-100 text-slate-600'
+          className={`w-8 h-8 flex items-center justify-center rounded text-lg font-bold touch-target transition-colors ${isDark ? 'hover:bg-slate-700 hover:text-cyan-400 text-slate-300' : 'hover:bg-slate-100 hover:text-cyan-600 text-slate-600'
             }`}
           aria-label="Zoom out"
         >
@@ -396,7 +396,7 @@ export function NetworkTopologyView(props: NetworkTopologyViewProps) {
             }));
             return newZoom;
           })}
-          className={`w-8 h-8 flex items-center justify-center rounded text-lg font-bold touch-target ${isDark ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-slate-100 text-slate-600'
+          className={`w-8 h-8 flex items-center justify-center rounded text-lg font-bold touch-target transition-colors ${isDark ? 'hover:bg-slate-700 hover:text-cyan-400 text-slate-300' : 'hover:bg-slate-100 hover:text-cyan-600 text-slate-600'
             }`}
           aria-label="Zoom in"
         >
@@ -405,19 +405,21 @@ export function NetworkTopologyView(props: NetworkTopologyViewProps) {
         <div className={`w-px h-5 ${isDark ? 'bg-slate-600' : 'bg-slate-300'} mx-0.5 hidden md:block`} />
         <button
           onClick={resetView}
-          className={`hidden md:block px-2 py-1 text-xs rounded ${isDark
-            ? 'hover:bg-slate-700 text-slate-300'
-            : 'hover:bg-slate-100 text-slate-600'
+          className={`hidden md:block px-2 py-1 text-xs rounded transition-colors ${isDark
+            ? 'hover:bg-slate-700 hover:text-amber-400 text-slate-300'
+            : 'hover:bg-slate-100 hover:text-amber-600 text-slate-600'
             }`}
+          title={`${language === 'tr' ? 'Sıfırla' : 'Reset'} ${!isMobile ? '(Shift+R)' : ''}`}
         >
           {language === 'tr' ? 'Sıfırla' : 'Reset'}
         </button>
         <button
           onClick={toggleFullscreen}
-          className={`hidden md:flex px-2 py-1 text-xs rounded items-center gap-1 ${isDark
-            ? 'hover:bg-slate-700 text-slate-300'
-            : 'hover:bg-slate-100 text-slate-600'
+          className={`hidden md:flex px-2 py-1 text-xs rounded items-center gap-1 transition-colors ${isDark
+            ? 'hover:bg-slate-700 hover:text-purple-400 text-slate-300'
+            : 'hover:bg-slate-100 hover:text-purple-600 text-slate-600'
             }`}
+          title={props.isFullscreen ? (language === 'tr' ? 'Çık' : 'Exit') : (language === 'tr' ? 'Tam Ekran' : 'Fullscreen')}
         >
           {props.isFullscreen ? (language === 'tr' ? 'Çık' : 'Exit') : (language === 'tr' ? 'Tam Ekran' : 'Fullscreen')}
         </button>

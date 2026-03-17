@@ -3588,43 +3588,55 @@ export function NetworkTopology({
               <div className={`flex items-center gap-2 p-1.5 rounded-lg border ${isDark ? 'bg-slate-900/40 border-slate-700/30' : 'bg-blue-50/50 border-blue-100/50'}`}>
                 {/* Devices Group */}
                 <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => addDevice('pc')}
-                    title={t.addPcShort}
-                    className={`group relative p-2 rounded-lg transition-all duration-200 ${isDark
-                      ? 'hover:bg-slate-700/80 hover:shadow-lg hover:shadow-blue-500/20 text-blue-400 hover:text-blue-300'
-                      : 'hover:bg-slate-100 hover:shadow-lg hover:shadow-blue-500/10 text-blue-600 hover:text-blue-500'}`}
-                  >
-                    <svg className="w-6 h-6 transform group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 0 0 2-2V5a2 2 0 0 0 -2-2H5a2 2 0 0 0 -2 2v10a2 2 0 0 0 2 2z" />
-                    </svg>
-                    <span className={`absolute -bottom-1 left-1/2 -translate-x-1/2 text-[10px] font-medium ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>PC</span>
-                  </button>
-                  <button
-                    onClick={() => addDevice('switch')}
-                    title={t.addSwitchShort}
-                    className={`group relative p-2 rounded-xl transition-all duration-200 ${isDark
-                      ? 'hover:bg-slate-700/80 hover:shadow-lg hover:shadow-emerald-500/20 text-emerald-400 hover:text-emerald-300'
-                      : 'hover:bg-slate-100 hover:shadow-lg hover:shadow-emerald-500/10 text-emerald-600 hover:text-emerald-500'}`}
-                  >
-                    <svg className="w-6 h-6 transform group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 12h14M5 12a2 2 0 0 1 -2-2V6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1 -2 2M5 12a2 2 0 0 0 -2 2v4a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4a2 2 0 0 0 -2-2m-2-4h.01M17 16h.01" />
-                    </svg>
-                    <span className={`absolute -bottom-1 left-1/2 -translate-x-1/2 text-[10px] font-medium ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>SW</span>
-                  </button>
-                  <button
-                    onClick={() => addDevice('router')}
-                    title={t.addRouterShort}
-                    className={`group relative p-2 rounded-xl transition-all duration-200 ${isDark
-                      ? 'hover:bg-slate-700/80 hover:shadow-lg hover:shadow-purple-500/20 text-purple-400 hover:text-purple-300'
-                      : 'hover:bg-slate-100 hover:shadow-lg hover:shadow-purple-500/10 text-purple-600 hover:text-purple-500'}`}
-                  >
-                    <svg className="w-6 h-6 transform group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <circle cx="12" cy="12" r="9" strokeWidth={1.5} />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 5v14M5 12h14M12 5l-2 2m2-2l2 2m-2 12l-2-2m2 2l2-2M5 12l2-2m-2 2l2 2M19 12l-2-2m2 2l-2 2" />
-                    </svg>
-                    <span className={`absolute -bottom-1 left-1/2 -translate-x-1/2 text-[10px] font-medium ${isDark ? 'text-purple-400' : 'text-purple-600'}`}>RT</span>
-                  </button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={() => addDevice('pc')}
+                        className={`group relative p-2 rounded-lg transition-all duration-200 ${isDark
+                          ? 'hover:bg-slate-700/80 hover:shadow-lg hover:shadow-blue-500/20 text-blue-400 hover:text-blue-300'
+                          : 'hover:bg-slate-100 hover:shadow-lg hover:shadow-blue-500/10 text-blue-600 hover:text-blue-500'}`}
+                      >
+                        <svg className="w-6 h-6 transform group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 0 0 2-2V5a2 2 0 0 0 -2-2H5a2 2 0 0 0 -2 2v10a2 2 0 0 0 2 2z" />
+                        </svg>
+                        <span className={`absolute -bottom-1 left-1/2 -translate-x-1/2 text-[10px] font-medium ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>PC</span>
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>{t.addPcShort}</TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={() => addDevice('switch')}
+                        className={`group relative p-2 rounded-xl transition-all duration-200 ${isDark
+                          ? 'hover:bg-slate-700/80 hover:shadow-lg hover:shadow-emerald-500/20 text-emerald-400 hover:text-emerald-300'
+                          : 'hover:bg-slate-100 hover:shadow-lg hover:shadow-emerald-500/10 text-emerald-600 hover:text-emerald-500'}`}
+                      >
+                        <svg className="w-6 h-6 transform group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 12h14M5 12a2 2 0 0 1 -2-2V6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1 -2 2M5 12a2 2 0 0 0 -2 2v4a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4a2 2 0 0 0 -2-2m-2-4h.01M17 16h.01" />
+                        </svg>
+                        <span className={`absolute -bottom-1 left-1/2 -translate-x-1/2 text-[10px] font-medium ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>SW</span>
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>{t.addSwitchShort}</TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={() => addDevice('router')}
+                        className={`group relative p-2 rounded-xl transition-all duration-200 ${isDark
+                          ? 'hover:bg-slate-700/80 hover:shadow-lg hover:shadow-purple-500/20 text-purple-400 hover:text-purple-300'
+                          : 'hover:bg-slate-100 hover:shadow-lg hover:shadow-purple-500/10 text-purple-600 hover:text-purple-500'}`}
+                      >
+                        <svg className="w-6 h-6 transform group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <circle cx="12" cy="12" r="9" strokeWidth={1.5} />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 5v14M5 12h14M12 5l-2 2m2-2l2 2m-2 12l-2-2m2 2l2-2M5 12l2-2m-2 2l2 2M19 12l-2-2m2 2l-2 2" />
+                        </svg>
+                        <span className={`absolute -bottom-1 left-1/2 -translate-x-1/2 text-[10px] font-medium ${isDark ? 'text-purple-400' : 'text-purple-600'}`}>RT</span>
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>{t.addRouterShort}</TooltipContent>
+                  </Tooltip>
                 </div>
 
                 {/* Separator */}
@@ -3633,22 +3645,24 @@ export function NetworkTopology({
                 {/* Cable Types Group */}
                 <div className="flex items-center gap-1">
                   {(['straight', 'crossover', 'console'] as CableType[]).map((type) => (
-                    <button
-                      key={type}
-                      onClick={() => onCableChange({ ...cableInfo, cableType: type })}
-                      title={getDualCableLabel(type)}
-                      aria-label={getDualCableLabel(type)}
-                      className={`group relative flex flex-col items-center gap-1 p-2 rounded-lg transition-all duration-200 ${cableInfo.cableType === type
-                        ? `${CABLE_COLORS[type].bg} text-white hover:scale-105`
-                        : isDark ? 'hover:bg-slate-700 text-slate-400 hover:scale-105' : 'hover:bg-slate-100 text-slate-600 hover:scale-105'}`}
-                    >
-                      <div className={`w-2.5 h-2.5 rounded-full ${cableInfo.cableType === type ? 'bg-white' : CABLE_COLORS[type].bg}`} />
-                      <span className="text-[10px] font-bold">
-                        {type === 'straight' ? t.straight.substring(0, 3) :
-                          type === 'crossover' ? t.crossover.substring(0, 3) :
-                            t.console.substring(0, 3)}
-                      </span>
-                    </button>
+                    <Tooltip key={type}>
+                      <TooltipTrigger asChild>
+                        <button
+                          onClick={() => onCableChange({ ...cableInfo, cableType: type })}
+                          className={`group relative flex flex-col items-center gap-1 p-2 rounded-lg transition-all duration-200 ${cableInfo.cableType === type
+                            ? `${CABLE_COLORS[type].bg} text-white hover:scale-105`
+                            : isDark ? 'hover:bg-slate-700 text-slate-400 hover:scale-105' : 'hover:bg-slate-100 text-slate-600 hover:scale-105'}`}
+                        >
+                          <div className={`w-2.5 h-2.5 rounded-full ${cableInfo.cableType === type ? 'bg-white' : CABLE_COLORS[type].bg}`} />
+                          <span className="text-[10px] font-bold">
+                            {type === 'straight' ? t.straight.substring(0, 3) :
+                              type === 'crossover' ? t.crossover.substring(0, 3) :
+                                t.console.substring(0, 3)}
+                          </span>
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent>{getDualCableLabel(type)}</TooltipContent>
+                    </Tooltip>
                   ))}
                 </div>
 
@@ -3657,13 +3671,17 @@ export function NetworkTopology({
 
                 {/* Notes */}
                 <div className="flex items-center gap-1">
-                  <button
-                    onClick={addNote}
-                    title={t.addNote}
-                    className={`p-1.5 rounded-lg transition-all ${isDark ? 'hover:bg-slate-700 text-amber-300' : 'hover:bg-slate-100 text-amber-500'}`}
-                  >
-                    <Pencil className="w-4 h-5" />
-                  </button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={addNote}
+                        className={`p-1.5 rounded-lg transition-all ${isDark ? 'hover:bg-slate-700 text-amber-300' : 'hover:bg-slate-100 text-amber-500'}`}
+                      >
+                        <Pencil className="w-4 h-5" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>{t.addNote}</TooltipContent>
+                  </Tooltip>
                 </div>
               </div>
             </div>
@@ -4245,31 +4263,38 @@ export function NetworkTopology({
               +
             </button>
             <div className={`w-px h-5 ${isDark ? 'bg-slate-600' : 'bg-slate-300'} mx-1`} />
-            <button
-              onClick={resetView}
-              title="Shift+R"
-              className={`px-2 py-1 text-xs rounded flex items-center gap-1 ${isDark
-                ? 'hover:bg-slate-700 text-slate-300'
-                : 'hover:bg-slate-100 text-slate-600'
-                }`}
-            >
-              <RotateCcw className="w-3 h-3" />
-              <span className="hidden sm:inline">{language === 'tr' ? 'Sıfırla' : 'Reset'}</span>
-            </button>
-            <button
-              onClick={toggleFullscreen}
-              className={`px-2 py-1 text-xs rounded flex items-center gap-1 ${isDark
-                ? 'hover:bg-slate-700 text-slate-300'
-                : 'hover:bg-slate-100 text-slate-600'
-                }`}
-              title="Ctrl+F"
-            >
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
-              </svg>
-              <span className="hidden sm:inline">{isFullscreen ? (language === 'tr' ? 'Çıkış' : 'Exit') : (language === 'tr' ? 'Tam Ekran' : 'Full Screen')}</span>
-            </button>
-          </div>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={resetView}
+                  className={`px-2 py-1 text-xs rounded flex items-center gap-1 ${isDark
+                    ? 'hover:bg-slate-700 text-slate-300'
+                    : 'hover:bg-slate-100 text-slate-600'
+                    }`}
+                >
+                  <RotateCcw className="w-3 h-3" />
+                  <span className="hidden sm:inline">{language === 'tr' ? 'Sıfırla' : 'Reset'}</span>
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>Shift+R</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={toggleFullscreen}
+                  className={`px-2 py-1 text-xs rounded flex items-center gap-1 ${isDark
+                    ? 'hover:bg-slate-700 text-slate-300'
+                    : 'hover:bg-slate-100 text-slate-600'
+                    }`}
+                >
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                  </svg>
+                  <span className="hidden sm:inline">{isFullscreen ? (language === 'tr' ? 'Çıkış' : 'Exit') : (language === 'tr' ? 'Tam Ekran' : 'Full Screen')}</span>
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>Ctrl+F</TooltipContent>
+            </Tooltip>          </div>
 
           {/* Minimap - Desktop Only - Below Zoom Controls */}
           <div

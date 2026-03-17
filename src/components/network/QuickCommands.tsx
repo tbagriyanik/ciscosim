@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Translations } from '@/contexts/LanguageContext';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 
 interface QuickCommandsProps {
   currentMode: CommandMode;
@@ -83,14 +84,18 @@ export function QuickCommands({ currentMode, onExecuteCommand, t, theme, languag
         ) : availableCommands.length > 0 ? (
           <div className="grid grid-cols-3 sm:flex sm:flex-wrap gap-2 sm:gap-2">
             {availableCommands.map((cmd) => (
-              <Button
-                key={cmd.command}
-                size="sm"
-                onClick={() => onExecuteCommand(cmd.command)}
-                className={`text-xs sm:text-xs px-2 sm:px-3 h-10 sm:h-8 ${cmd.color}`}
-              >
-                {cmd.label}
-              </Button>
+              <Tooltip key={cmd.command}>
+                <TooltipTrigger asChild>
+                  <Button
+                    size="sm"
+                    onClick={() => onExecuteCommand(cmd.command)}
+                    className={`text-xs sm:text-xs px-2 sm:px-3 h-10 sm:h-8 ${cmd.color} transition-transform hover:scale-105`}
+                  >
+                    {cmd.label}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>{cmd.command}</TooltipContent>
+              </Tooltip>
             ))}
           </div>
         ) : (
