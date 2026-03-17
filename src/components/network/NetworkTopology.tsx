@@ -1523,6 +1523,10 @@ export function NetworkTopology({
     x = Math.max(10, x);
     y = Math.max(10, y);
 
+    // Hide tooltips when context menu opens
+    setDeviceTooltip(null);
+    setPortTooltip(null);
+
     window.dispatchEvent(new CustomEvent('close-menus-broadcast', { detail: { source: 'topology' } }));
     openContextMenu(x, y, deviceId || null, null, deviceId ? 'device' : 'canvas');
   }, [openContextMenu]);

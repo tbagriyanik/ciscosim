@@ -3,8 +3,8 @@
 import { useState, useEffect, type RefObject } from 'react';
 import { 
   Trash2, Undo2, Redo2, Scissors, Copy, ClipboardPaste, 
-  MousePointer2, ExternalLink, Zap, Shield, Layers, 
-  Database, Terminal as TerminalIcon
+  MousePointer2, ExternalLink, Mail, Shield, Layers, 
+  Database, Terminal as TerminalIcon, CheckSquare
 } from 'lucide-react';
 import { NOTE_COLORS, NOTE_FONT_SIZES, NOTE_OPACITY } from './networkTopology.constants';
 import { CanvasDevice, CanvasNote, ContextMenuState } from './networkTopology.types';
@@ -93,9 +93,9 @@ export default function NetworkTopologyContextMenu({
       case 'cut': return <Scissors className="w-4 h-4" />;
       case 'copy': return <Copy className="w-4 h-4" />;
       case 'paste': return <ClipboardPaste className="w-4 h-4" />;
-      case 'select': return <MousePointer2 className="w-4 h-4" />;
+      case 'select': return <CheckSquare className="w-4 h-4" />;
       case 'open': return <ExternalLink className="w-4 h-4" />;
-      case 'ping': return <Zap className="w-4 h-4" />;
+      case 'ping': return <Mail className="w-4 h-4" />;
       default: return null;
     }
   };
