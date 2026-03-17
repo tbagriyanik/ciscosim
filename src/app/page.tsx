@@ -1619,8 +1619,8 @@ export default function Home() {
         className="flex flex-col flex-1"
       >
         {/* Header */}
-        <header className={`${isDark ? 'bg-slate-900/95 border-slate-800' : 'bg-white/90 border-slate-200'} backdrop-blur-xl border-b px-4 py-3 sticky top-0 z-50 pb-0`}>
-          <div className="max-w-7xl mx-auto">
+        <header className={`${isDark ? 'bg-slate-900/95 border-slate-800' : 'bg-white/90 border-slate-200'} backdrop-blur-xl border-b px-5 py-3 sticky top-0 z-50 pb-0`}>
+          <div className="w-full">
             <div className="flex items-center justify-between">
               {/* Logo & Title */}
               <Button
@@ -2282,7 +2282,7 @@ export default function Home() {
 
         {/* Main Content with matching top background */}
         <main className={`flex-1 overflow-hidden ${isDark ? 'bg-slate-950' : 'bg-slate-100'}`}>
-          <div className="max-w-7xl w-full mx-auto p-4 pb-20 sm:pb-6 h-full flex flex-col">
+          <div className="w-full p-5 pb-20 sm:pb-5 h-full flex flex-col">
             {/* Tab Content */}
             {activeTab === 'topology' && (
               <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
@@ -2479,7 +2479,7 @@ export default function Home() {
         {/* Footer - Save Status & Hints */}
         <footer className={`fixed bottom-0 left-0 right-0 z-50 border-t backdrop-blur-xl transition-all ${isDark ? 'bg-slate-900/95 border-slate-800' : 'bg-white/95 border-slate-200'
           } ${showProjectPicker || showOnboarding ? 'hidden' : ''}`}>
-          <div className="max-w-7xl mx-auto px-4 py-2">
+          <div className="w-full px-5 py-2">
             <div className="flex items-center justify-between gap-4">
               {/* Save Status */}
               <div className="flex items-center gap-3">
