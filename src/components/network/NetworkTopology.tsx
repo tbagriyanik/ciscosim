@@ -44,7 +44,7 @@ import {
   VIRTUAL_CANVAS_WIDTH_MOBILE,
 } from './networkTopology.constants';
 import { generateMacAddress, generateRouterPorts, generateSwitchPorts } from './networkTopology.helpers';
-import { NetworkTopologyContextMenu } from './NetworkTopologyContextMenu';
+import NetworkTopologyContextMenu from './NetworkTopologyContextMenu';
 import { NetworkTopologyPortSelectorModal } from './NetworkTopologyPortSelectorModal';
 
 // Drag item from palette
@@ -1443,7 +1443,7 @@ export function NetworkTopology({
     setNotes(nextNotes);
   }, []);
 
-  const updateNoteStyle = useCallback((noteId: string, patch: Partial<Pick<CanvasNote, 'color' | 'font' | 'fontSize' | 'opacity'>>) => {
+  const updateNoteStyle = useCallback((noteId: string, patch: Partial<Pick<CanvasNote, 'color' | 'font' | 'fontSize' | 'opacity' | 'bold' | 'italic' | 'underline'>>) => {
     const nextNotes = notes.map(n => (n.id === noteId ? { ...n, ...patch } : n));
     commitNotesChange(nextNotes);
   }, [notes, commitNotesChange]);
@@ -2383,6 +2383,15 @@ export function NetworkTopology({
         deleteSelection(selectedDeviceIds, selectedNoteIds);
         if (selectedDeviceIds.length > 0) setSelectedDeviceIds([]);
         if (selectedNoteIds.length > 0) setSelectedNoteIds([]);
+      }
+
+      // Enter: open terminal for selected device
+      if (key === 'enter') {
+        if (!configuringDevice && selectedDeviceIds.length === 1) {
+          e.preventDefault();
+          const device = devices.find(d => d.id === selectedDeviceIds[0]);
+          if (device) handleDeviceDoubleClick(device);
+        }
       }
 
       // Alt+Enter: configure selected device
@@ -4070,23 +4079,61 @@ export function NetworkTopology({
                             <Trash2 className="w-3 h-3" />
                           </button>
                         </div>
-                        <textarea
-                          ref={(el) => { noteTextareaRefs.current[note.id] = el; }}
-                          data-note-textarea
-                          value={note.text}
-                          onChange={(e) => updateNoteText(note.id, e.target.value)}
-                          onBlur={() => {
-                            if (onTopologyChange) {
-                              onTopologyChange(devices, connections, notes);
-                            }
-                          }}
-                          className="flex-1 px-2 py-1 bg-transparent outline-none resize-none text-white placeholder:text-white/50"
+                        <div
+                          className="relative flex-1 w-full h-full overflow-hidden"
+                          onWheel={(e) => e.stopPropagation()}
                           style={{
-                            fontSize: note.fontSize,
-                            height: note.height - NOTE_HEADER_HEIGHT - 6,
-                            textShadow: '1px 1px 2px rgba(0,0,0,1)'
+                            minWidth: '100px',
+                            minHeight: '50px',
+                            paddingRight: '2px'
                           }}
-                        />
+                        >
+                          <textarea
+                            ref={(el) => { noteTextareaRefs.current[note.id] = el; }}
+                            data-note-textarea
+                            value={note.text}
+                            onChange={(e) => updateNoteText(note.id, e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.ctrlKey) {
+                                const textarea = e.target as HTMLTextAreaElement;
+                                const selectionStart = textarea.selectionStart;
+                                const selectionEnd = textarea.selectionEnd;
+                                const hasSelection = selectionStart !== selectionEnd;
+
+                                const key = e.key.toLowerCase();
+                                if (key === 'b') {
+                                  e.preventDefault();
+                                  if (hasSelection) {
+                                    updateNoteStyle(note.id, { bold: !note.bold });
+                                  }
+                                } else if (key === 'i') {
+                                  e.preventDefault();
+                                  if (hasSelection) {
+                                    updateNoteStyle(note.id, { italic: !note.italic });
+                                  }
+                                } else if (key === 'u') {
+                                  e.preventDefault();
+                                  if (hasSelection) {
+                                    updateNoteStyle(note.id, { underline: !note.underline });
+                                  }
+                                }
+                              }
+                            }}
+                            onBlur={() => {
+                              if (onTopologyChange) {
+                                onTopologyChange(devices, connections, notes);
+                              }
+                            }}
+                            className="w-full h-full px-2 py-1 bg-transparent outline-none resize-none text-white placeholder:text-white/50"
+                            style={{
+                              fontSize: note.fontSize,
+                              fontWeight: note.bold ? 'bold' : 'normal',
+                              fontStyle: note.italic ? 'italic' : 'normal',
+                              textDecoration: note.underline ? 'underline' : 'none',
+                              textShadow: '1px 1px 2px rgba(0,0,0,1)'
+                            }}
+                          />
+                        </div>
                         {!isMobile && (
                           <div
                             className="absolute right-1 bottom-1 w-4 h-4 cursor-se-resize"
@@ -4380,41 +4427,46 @@ export function NetworkTopology({
           </div>
         </div>
       </div>
-      <NetworkTopologyContextMenu
-        contextMenu={contextMenu}
-        contextMenuRef={contextMenuRef}
-        isDark={isDark}
-        language={language}
-        noteFonts={noteFonts}
-        notes={notes}
-        devices={devices}
-        selectedDeviceIds={selectedDeviceIds}
-        clipboardLength={clipboard.length}
-        noteClipboardLength={noteClipboard.length}
-        canUndo={canUndo}
-        canRedo={canRedo}
-        onClose={() => setContextMenu(null)}
-        onUpdateNoteStyle={updateNoteStyle}
-        onNoteCut={handleNoteTextCut}
-        onNoteCopy={handleNoteTextCopy}
-        onNotePaste={handleNoteTextPaste}
-        onNoteDeleteText={handleNoteTextDelete}
-        onNoteSelectAllText={handleNoteTextSelectAll}
-        onDuplicateNote={duplicateNote}
-        onPasteNotes={pasteNotes}
-        onUndo={onUndo || (() => { })}
-        onRedo={onRedo || (() => { })}
-        onSelectAll={selectAllDevices}
-        onOpenDevice={(device) => handleDeviceDoubleClick(device)}
-        onCutDevices={cutDevice}
-        onCopyDevices={copyDevice}
-        onPasteDevice={pasteDevice || undefined}
-        onDeleteDevices={(ids) => ids.forEach((id) => deleteDevice(id))}
-        onStartConfig={startDeviceConfig}
-        onStartPing={(id) => setPingSource(id)}
-        onSaveToHistory={onUndo ? (() => { }) : (() => { })} // Dummy if we have onUndo from parent which implies automated history
-        onClearDeviceSelection={() => setSelectedDeviceIds([])}
-      />
+      {contextMenu && (
+        <div className="z-[9999] absolute" style={{ left: 0, top: 0 }}>
+          <NetworkTopologyContextMenu
+            contextMenu={contextMenu}
+            contextMenuRef={contextMenuRef}
+            isDark={isDark}
+            language={language}
+            noteFonts={noteFonts}
+            notes={notes}
+            devices={devices}
+            note={notes.find(n => n.id === contextMenu?.noteId)}
+            selectedDeviceIds={selectedDeviceIds}
+            clipboardLength={clipboard.length}
+            noteClipboardLength={noteClipboard.length}
+            canUndo={canUndo}
+            canRedo={canRedo}
+            onClose={() => setContextMenu(null)}
+            onUpdateNoteStyle={updateNoteStyle}
+            onNoteCut={handleNoteTextCut}
+            onNoteCopy={handleNoteTextCopy}
+            onNotePaste={handleNoteTextPaste}
+            onNoteDeleteText={handleNoteTextDelete}
+            onNoteSelectAllText={handleNoteTextSelectAll}
+            onDuplicateNote={duplicateNote}
+            onPasteNotes={pasteNotes}
+            onUndo={onUndo || (() => { })}
+            onRedo={onRedo || (() => { })}
+            onSelectAll={selectAllDevices}
+            onOpenDevice={(device) => handleDeviceDoubleClick(device)}
+            onCutDevices={cutDevice}
+            onCopyDevices={copyDevice}
+            onPasteDevice={pasteDevice || undefined}
+            onDeleteDevices={(ids) => ids.forEach((id) => deleteDevice(id))}
+            onStartConfig={startDeviceConfig}
+            onStartPing={(id) => setPingSource(id)}
+            onSaveToHistory={onUndo ? (() => { }) : (() => { })}
+            onClearDeviceSelection={() => setSelectedDeviceIds([])}
+          />
+        </div>
+      )}
       {/* Device Configuration Modal (Name & IP) */}
       {configuringDevice && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" onClick={cancelDeviceConfig}>

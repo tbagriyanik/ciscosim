@@ -65,6 +65,9 @@ export interface CanvasNote {
   font: string;
   fontSize: 10 | 12 | 16 | 20;
   opacity: 0.25 | 0.5 | 0.75 | 1;
+  bold?: boolean;
+  italic?: boolean;
+  underline?: boolean;
 }
 
 export interface SelectedPortRef {
