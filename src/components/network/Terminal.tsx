@@ -373,11 +373,11 @@ export function Terminal({
         </DialogContent>
       </Dialog>
       <div className="flex flex-col flex-1 gap-4 overflow-hidden h-full">
-        <Card className={`${cardBg} shadow-xl border-t-4 border-t-cyan-500 rounded-xl overflow-hidden flex flex-col flex-1 min-h-0`}>
+        <Card className={`${cardBg} shadow-xl rounded-xl overflow-hidden flex flex-col flex-1 min-h-0`}>
           <CardHeader className={`py-3 px-5 border-b ${isDark ? 'border-slate-800/50 bg-slate-800/20' : 'border-slate-200 bg-slate-50'}`}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="p-1.5 rounded-lg bg-cyan-500/10 text-cyan-500">
+                <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-500">
                   <TerminalIcon className="w-4 h-4" />
                 </div>
                 <CardTitle className="text-sm font-black tracking-tight flex items-center gap-2">

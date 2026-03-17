@@ -1605,8 +1605,8 @@ export default function Home() {
                       initial={{ opacity: 0.5, y: -2 }}
                       animate={{ opacity: 1, y: 0 }}
                       className={`text-[10px] font-black tabular-nums px-1.5 py-0.5 rounded-full ${totalScore >= maxScore * 0.7 ? 'bg-emerald-500/10 text-emerald-400' :
-                          totalScore >= maxScore * 0.4 ? 'bg-amber-500/10 text-amber-400' :
-                            'bg-rose-500/10 text-rose-400'
+                        totalScore >= maxScore * 0.4 ? 'bg-amber-500/10 text-amber-400' :
+                          'bg-rose-500/10 text-rose-400'
                         }`}
                     >
                       {Math.round((totalScore / maxScore) * 100)}%
@@ -1619,8 +1619,8 @@ export default function Home() {
                         animate={{ width: `${(totalScore / maxScore) * 100}%` }}
                         transition={{ type: "spring", stiffness: 50, damping: 15 }}
                         className={`h-full rounded-full bg-gradient-to-r shadow-[0_0_8px_rgba(0,0,0,0.2)] ${totalScore >= maxScore * 0.7 ? 'from-emerald-500 via-teal-400 to-emerald-400' :
-                            totalScore >= maxScore * 0.4 ? 'from-amber-500 via-orange-400 to-amber-400' :
-                              'from-rose-500 via-pink-500 to-rose-400'
+                          totalScore >= maxScore * 0.4 ? 'from-amber-500 via-orange-400 to-amber-400' :
+                            'from-rose-500 via-pink-500 to-rose-400'
                           }`}
                       />
                     </div>
@@ -1885,8 +1885,8 @@ export default function Home() {
                 <Button
                   variant="ghost"
                   className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg border transition-all ${isDark
-                      ? 'bg-slate-900 border-slate-800 text-cyan-400 hover:text-cyan-300'
-                      : 'bg-white border-slate-200 text-cyan-700 hover:text-cyan-800'
+                    ? 'bg-slate-900 border-slate-800 text-cyan-400 hover:text-cyan-300'
+                    : 'bg-white border-slate-200 text-cyan-700 hover:text-cyan-800'
                     }`}
                 >
                   <div className="flex items-center gap-2">
@@ -1996,12 +1996,12 @@ export default function Home() {
                 // Unified Color Mapping
                 const tabColors: Record<string, string> = {
                   topology: 'text-blue-500 hover:text-blue-500',
-                  cmd: 'text-blue-500 hover:text-blue-500',
+                  cmd: 'text-emerald-500 hover:text-emerald-500',
                   terminal: 'text-emerald-500 hover:text-emerald-600',
                   ports: 'text-cyan-500 hover:text-cyan-600',
                   vlan: 'text-purple-500 hover:text-purple-600',
                   security: 'text-amber-500 hover:text-amber-600',
-                };                const colorClass = tabColors[tab.id] || 'text-slate-500 hover:text-slate-600';
+                }; const colorClass = tabColors[tab.id] || 'text-slate-500 hover:text-slate-600';
 
                 return (
                   <Tooltip key={tab.id}>
@@ -2009,8 +2009,8 @@ export default function Home() {
                       <button
                         onClick={() => setActiveTab(tab.id)}
                         className={`flex items-center gap-2 px-3 lg:px-5 py-3 rounded-t-xl text-sm font-semibold transition-all border-x border-t min-w-[50px] lg:min-w-[120px] justify-center ${isActive
-                            ? `${isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-300'} ${colorClass.split(' ')[0]} shadow-[0_-4px_0_0_currentColor]`
-                            : `${isDark ? 'bg-slate-900/50 border-transparent' : 'bg-slate-200/50 border-transparent'} ${colorClass} hover:bg-slate-200/30`
+                          ? `${isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-300'} ${colorClass.split(' ')[0]} shadow-[0_-4px_0_0_currentColor]`
+                          : `${isDark ? 'bg-slate-900/50 border-transparent' : 'bg-slate-200/50 border-transparent'} ${colorClass} hover:bg-slate-200/30`
                           }`}
                       >
                         <span className={`transition-transform duration-300 ${isActive ? 'scale-110' : ''}`}>
@@ -2055,7 +2055,7 @@ export default function Home() {
           } ${showProjectPicker || showOnboarding ? 'hidden' : ''}`}>
           {tabs.map((tab, index) => {
             const isActive = activeTab === tab.id;
-            
+
             // Shared Color Mapping
             const tabColors: Record<string, string> = {
               topology: 'text-blue-500 hover:text-blue-500',

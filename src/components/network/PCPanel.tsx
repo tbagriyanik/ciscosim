@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Laptop, Monitor, Terminal as TerminalIcon, X, CornerDownLeft, Command, Globe, Network, ShieldCheck, History, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Search, Copy } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from "@/hooks/use-toast";
 
 // PC Icon component matching the main screen
@@ -801,7 +802,7 @@ export function PCPanel({
         {/* Header */}
         <div className={`px-5 py-3 flex items-center justify-between border-b ${isDark ? 'border-slate-800/50 bg-slate-800/20' : 'border-slate-200 bg-slate-50'}`}>
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-blue-500/10 text-blue-500">
+            <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-500">
               <PCIcon />
             </div>
             <div>
@@ -810,48 +811,65 @@ export function PCPanel({
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setSearchOpen(true)}
-              className="h-8 w-8 rounded-lg text-slate-500 hover:text-cyan-400 transition-colors"
-              title={t.search}
-              aria-label={t.search}
-            >
-              <Search className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleCopyAll}
-              className="h-8 w-8 rounded-lg text-slate-500 hover:text-cyan-400 transition-colors"
-              title={t.copy}
-              aria-label={t.copy}
-            >
-              <Copy className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => onTogglePower?.(deviceId)}
-              className={`h-8 w-8 rounded-lg transition-all ${isPcPoweredOff ? 'text-rose-500 hover:bg-rose-500/10' : 'text-emerald-500 hover:bg-emerald-500/10'}`}
-              title={t.power}
-              aria-label={t.power}
-              disabled={!onTogglePower}
-            >
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 2v10" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 5.636a9 9 0 1 1-12.728 0" />
-              </svg>
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={onClose}
-              className="h-8 w-8 rounded-lg hover:bg-rose-500/10 hover:text-rose-500 transition-all"
-            >
-              <X className="w-4 h-4" />
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setSearchOpen(true)}
+                  className="h-8 w-8 rounded-lg text-slate-500 hover:text-emerald-400 transition-colors"
+                  aria-label={t.search}
+                >
+                  <Search className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{t.search}</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleCopyAll}
+                  className="h-8 w-8 rounded-lg text-slate-500 hover:text-emerald-400 transition-colors"
+                  aria-label={t.copy}
+                >
+                  <Copy className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{t.copy}</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => onTogglePower?.(deviceId)}
+                  className={`h-8 w-8 rounded-lg transition-all ${isPcPoweredOff ? 'text-rose-500 hover:bg-rose-500/10' : 'text-emerald-500 hover:bg-emerald-500/10'}`}
+                  aria-label={t.power}
+                  disabled={!onTogglePower}
+                >
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 2v10" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 5.636a9 9 0 1 1-12.728 0" />
+                  </svg>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{t.power}</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={onClose}
+                  className="h-8 w-8 rounded-lg hover:bg-rose-500/10 hover:text-rose-500 transition-all"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{t.close}</TooltipContent>
+            </Tooltip>
           </div>
         </div>
 
@@ -871,7 +889,7 @@ export function PCPanel({
             variant={activeTab === 'terminal' ? 'secondary' : 'ghost'}
             size="sm"
             onClick={() => setActiveTab('terminal')}
-            className={`h-9 px-4 text-xs font-black tracking-wider uppercase transition-all gap-2 ${activeTab === 'terminal' ? 'bg-blue-500/10 text-blue-400' : 'text-slate-500'
+            className={`h-9 px-4 text-xs font-black tracking-wider uppercase transition-all gap-2 ${activeTab === 'terminal' ? 'bg-emerald-500/10 text-emerald-500' : 'text-slate-500 hover:text-emerald-500'
               }`}
           >
             <TerminalIcon className="w-3.5 h-3.5" />
@@ -883,9 +901,9 @@ export function PCPanel({
         <div className={`flex-1 flex flex-col overflow-hidden ${terminalBg} relative min-h-0`}>
           {activeTab === 'terminal' && !isConsoleConnected && (
             <div className={`absolute inset-0 z-20 flex flex-col items-center justify-center ${isDark ? 'bg-black/90' : 'bg-white/90'} backdrop-blur-md gap-2 p-2 text-center animate-in fade-in duration-500 overflow-y-auto`}>
-              <div className={`p-3 rounded-xl ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-xl'} border max-w-xs w-full border-t-2 border-t-blue-500 my-auto`}>
+              <div className={`p-3 rounded-xl ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-xl'} border max-w-xs w-full border-t-2 border-t-emerald-500 my-auto`}>
                 <div className={`w-10 h-10 rounded-lg ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-slate-100 border-slate-200'} flex items-center justify-center mx-auto mb-2 border shadow-inner group`}>
-                  <PCIcon className="w-5 h-5 text-blue-500 transition-transform group-hover:scale-110" />
+                  <PCIcon className="w-5 h-5 text-emerald-500 transition-transform group-hover:scale-110" />
                 </div>
                 <h3 className={`text-sm font-black ${isDark ? 'text-white' : 'text-slate-900'} mb-1 uppercase tracking-tight`}>{t.consoleTerminal}</h3>
                 <p className={`text-xs font-bold ${isDark ? 'text-slate-500' : 'text-slate-400'} mb-3 leading-relaxed px-1`}>
@@ -899,7 +917,7 @@ export function PCPanel({
                     onClick={handleConnect}
                     size="sm"
                     className={`rounded-lg font-black uppercase tracking-widest gap-2 h-8 ${consoleDevice
-                        ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/20 active:scale-95'
+                        ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-500/20 active:scale-95'
                         : isDark ? 'bg-slate-800 text-slate-600' : 'bg-slate-200 text-slate-400'
                       } cursor-not-allowed`}
                   >
