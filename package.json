@@ -2,6 +2,7 @@
   "name": "network-simulator-2026",
   "version": "0.2.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev -p 3000",
     "build": "next build && shx cp -r .next/static .next/standalone/.next/ && shx cp -r public .next/standalone/",

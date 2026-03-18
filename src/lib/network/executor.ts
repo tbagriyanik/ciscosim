@@ -2666,8 +2666,9 @@ function cmdSwitchportPortSecurityMac(state: SwitchState, input: string): Comman
   } else {
     port.portSecurity = {
       enabled: true,
-      maximum: 1,
+      maxMac: 1,
       violation: 'shutdown',
+      stickyMac: false,
       macAddress: normalizedMac
     };
   }
