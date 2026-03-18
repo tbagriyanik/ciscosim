@@ -78,7 +78,7 @@ import { exampleProjects } from '@/lib/network/exampleProjects';
 
 import { DeviceIcon } from '@/components/network/DeviceIcon';
 
-type TabType = 'topology' | 'cmd' | 'terminal' | 'ports' | 'vlan' | 'security';
+type TabType = 'topology' | 'cmd' | 'terminal' | 'tasks';
 
 // PC Output type for PCPanel
 interface PCOutputLine {
@@ -122,26 +122,10 @@ const ALL_TABS: TabDefinition[] = [
     showFor: ['switch', 'router']
   },
   {
-    id: 'ports',
-    labelKey: 'ports',
-    icon: <Database className="w-4 h-4" />,
-    tasks: portTasks,
-    color: 'from-yellow-500 to-orange-500',
-    showFor: ['switch', 'router']
-  },
-  {
-    id: 'vlan',
-    labelKey: 'vlanStatus',
-    icon: <Layers className="w-4 h-4" />,
-    tasks: vlanTasks,
-    color: 'from-purple-500 to-pink-500',
-    showFor: ['switch', 'router']
-  },
-  {
-    id: 'security',
-    labelKey: 'securityControls',
+    id: 'tasks',
+    labelKey: 'tasks',
     icon: <ShieldCheck className="w-4 h-4" />,
-    tasks: securityTasks,
+    tasks: [...portTasks, ...vlanTasks, ...securityTasks],
     color: 'from-red-500 to-rose-500',
     showFor: ['switch', 'router']
   },
@@ -466,9 +450,7 @@ export default function Home() {
   const maxScore = [...topologyTasks, ...portTasks, ...vlanTasks, ...securityTasks].reduce((acc, task) => acc + task.weight, 0);
 
   // Per-tab task completion counts for badges
-  const completedPortTasks = portTasks.filter(task => getTaskStatus(task, state, taskContext)).length;
-  const completedVlanTasks = vlanTasks.filter(task => getTaskStatus(task, state, taskContext)).length;
-  const completedSecurityTasks = securityTasks.filter(task => getTaskStatus(task, state, taskContext)).length;
+  const completedTasks = portTasks.filter(task => getTaskStatus(task, state, taskContext)).length + vlanTasks.filter(task => getTaskStatus(task, state, taskContext)).length + securityTasks.filter(task => getTaskStatus(task, state, taskContext)).length;
 
   const [selectedDevice, setSelectedDevice] = useState<'pc' | 'switch' | 'router' | null>(null);
   const [showPCPanel, setShowPCPanel] = useState(false);
@@ -1363,12 +1345,8 @@ export default function Home() {
           return 'PC komut satırı ile ping, ipconfig vb. komutları çalıştır.';
         case 'terminal':
           return 'Switch / router CLI üzerinden yapılandırma komutlarını çalıştır.';
-        case 'ports':
-          return 'Port durumlarını ve bağlantıları incele, fiziksel katmanı gör.';
-        case 'vlan':
-          return 'VLAN ekle, ata ve VLAN yapılandırmasını yönet.';
-        case 'security':
-          return 'Şifreler, güvenlik özellikleri ve erişim kontrollerini yönet.';
+        case 'tasks':
+          return 'Port, VLAN ve güvenlik görevlerini tamamlayarak puan kazan.';
       }
     } else {
       switch (tabId) {
@@ -1378,12 +1356,8 @@ export default function Home() {
           return 'Use the PC command line to run ping, ipconfig and more.';
         case 'terminal':
           return 'Configure switches/routers using the CLI terminal.';
-        case 'ports':
-          return 'Inspect port status and physical layer connections.';
-        case 'vlan':
-          return 'Create and assign VLANs, manage VLAN configuration.';
-        case 'security':
-          return 'Manage passwords, security features and access control.';
+        case 'tasks':
+          return 'Complete port, VLAN, and security tasks to earn points.';
       }
     }
   }, [language]);
@@ -2061,9 +2035,7 @@ export default function Home() {
                   topology: 'text-blue-500 hover:text-blue-500',
                   cmd: 'text-emerald-500 hover:text-emerald-500',
                   terminal: 'text-emerald-500 hover:text-emerald-600',
-                  ports: 'text-cyan-500 hover:text-cyan-600',
-                  vlan: 'text-purple-500 hover:text-purple-600',
-                  security: 'text-amber-500 hover:text-amber-600',
+                  tasks: 'text-red-500 hover:text-red-600',
                 }; const colorClass = tabColors[tab.id] || 'text-slate-500 hover:text-slate-600';
 
                 return (
@@ -2079,25 +2051,13 @@ export default function Home() {
                         <span className={`transition-transform duration-300 ${isActive ? 'scale-110' : ''}`}>
                           {tab.id === 'topology' ? <Network className="w-4 h-4" /> :
                             (tab.id === 'cmd' || tab.id === 'terminal') ? <TerminalIcon className="w-4 h-4" /> :
-                              tab.id === 'ports' ? <Database className="w-4 h-4" /> :
-                                tab.id === 'vlan' ? <Layers className="w-4 h-4" /> :
-                                  <ShieldCheck className="w-4 h-4" />}
+                              <ShieldCheck className="w-4 h-4" />}
                         </span>
                         <span className="hidden lg:inline flex items-center gap-1.5">
                           {tab.label}
-                          {tab.id === 'ports' && (
-                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400">
-                              {completedPortTasks}/{portTasks.length}
-                            </span>
-                          )}
-                          {tab.id === 'vlan' && (
-                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-purple-500/10 text-purple-300">
-                              {completedVlanTasks}/{vlanTasks.length}
-                            </span>
-                          )}
-                          {tab.id === 'security' && (
-                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-400">
-                              {completedSecurityTasks}/{securityTasks.length}
+                          {tab.id === 'tasks' && (
+                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-red-500/10 text-red-300">
+                              {completedTasks}/{ALL_TABS.find(t => t.id === 'tasks')?.tasks.length}
                             </span>
                           )}
                         </span>
@@ -2123,9 +2083,7 @@ export default function Home() {
               topology: 'text-blue-500 hover:text-blue-500',
               cmd: 'text-blue-500 hover:text-blue-500',
               terminal: 'text-emerald-500 hover:text-emerald-600',
-              ports: 'text-cyan-500 hover:text-cyan-600',
-              vlan: 'text-purple-500 hover:text-purple-600',
-              security: 'text-amber-500 hover:text-amber-600',
+              tasks: 'text-red-500 hover:text-red-600',
             };
             const colorClass = tabColors[tab.id] || 'text-slate-500 hover:text-slate-600';
 
@@ -2147,9 +2105,7 @@ export default function Home() {
                     <div className={`relative z-10 transition-transform duration-200 ${isActive ? 'scale-110' : ''}`}>
                       {tab.id === 'topology' ? <Network className="w-4 h-4" /> :
                         (tab.id === 'cmd' || tab.id === 'terminal') ? <TerminalIcon className="w-4 h-4" /> :
-                          tab.id === 'ports' ? <Database className="w-4 h-4" /> :
-                            tab.id === 'vlan' ? <Layers className="w-4 h-4" /> :
-                              <ShieldCheck className="w-4 h-4" />}
+                          <ShieldCheck className="w-4 h-4" />}
                     </div>
                     <span className="mt-0.5 text-[9px] font-semibold leading-tight relative z-10 sm:inline">
                       {tab.label}
@@ -2406,8 +2362,8 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Portlar Sekmesi */}
-            {activeTab === 'ports' && (
+            {/* Tasks Sekmesi */}
+            {activeTab === 'tasks' && (
               <div className="grid lg:grid-cols-3 gap-4 flex-1 overflow-y-auto custom-scrollbar">
                 <div className="lg:col-span-2">
                   <PortPanel
@@ -2422,23 +2378,6 @@ export default function Home() {
                     onTogglePower={toggleDevicePower}
                     topologyConnections={topologyConnections || undefined}
                   />
-                </div>
-                <div>
-                  <TaskCard
-                    tasks={portTasks}
-                    state={state}
-                    context={taskContext}
-                    color="from-yellow-500 to-orange-500"
-                    isDark={isDark}
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* VLAN Sekmesi */}
-            {activeTab === 'vlan' && (
-              <div className="grid lg:grid-cols-3 gap-4 flex-1 overflow-y-auto custom-scrollbar">
-                <div className="lg:col-span-2">
                   <VlanPanel
                     vlans={state.vlans}
                     ports={state.ports}
@@ -2452,23 +2391,6 @@ export default function Home() {
                     activeDeviceType={activeDeviceType}
                     isDevicePoweredOff={topologyDevices.some(d => d.id === activeDeviceId && d.status === 'offline')}
                   />
-                </div>
-                <div>
-                  <TaskCard
-                    tasks={vlanTasks}
-                    state={state}
-                    context={taskContext}
-                    color="from-purple-500 to-pink-500"
-                    isDark={isDark}
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* Güvenlik Sekmesi */}
-            {activeTab === 'security' && (
-              <div className="grid lg:grid-cols-3 gap-4 flex-1 overflow-y-auto custom-scrollbar">
-                <div className="lg:col-span-2">
                   <SecurityPanel
                     security={state.security}
                     t={t}
@@ -2480,7 +2402,7 @@ export default function Home() {
                 </div>
                 <div>
                   <TaskCard
-                    tasks={securityTasks}
+                    tasks={[...portTasks, ...vlanTasks, ...securityTasks]}
                     state={state}
                     context={taskContext}
                     color="from-red-500 to-rose-500"

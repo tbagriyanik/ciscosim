@@ -254,6 +254,7 @@ export interface Translations {
   search: string;
   copy: string;
   power: string;
+  tasks: string;
 }
 
 const translations: Record<Language, Translations> = {
@@ -474,6 +475,7 @@ const translations: Record<Language, Translations> = {
     search: 'Ara',
     copy: 'Kopyala',
     power: 'Güç',
+	 tasks: 'Görevler',
   },
   en: {
     title: 'Network Simulator 2026',
@@ -692,6 +694,7 @@ const translations: Record<Language, Translations> = {
     search: 'Search',
     copy: 'Copy',
     power: 'Power',
+	 tasks: 'Tasks',
   }
 };
 

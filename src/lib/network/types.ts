@@ -40,6 +40,7 @@ export interface Port {
     maxMac: number;
     violation: 'protect' | 'restrict' | 'shutdown';
     stickyMac: boolean;
+    macAddress?: string;
   };
   ipv6Address?: string;         // For CCNA 1 v7 support
   ipv6Prefix?: number;
