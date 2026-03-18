@@ -1,5 +1,6 @@
 'use client';
 
+import { useTopologyCanvas } from '@/hooks/useTopologyCanvas';
 import { useState, useRef, useEffect, useCallback, useMemo, MouseEvent as ReactMouseEvent, TouchEvent as ReactTouchEvent } from 'react';
 import { CableType, CableInfo, getCableTypeLabel, isCableCompatible } from '@/lib/network/types';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -79,6 +80,14 @@ export function NetworkTopology({
   onUndo,
   onRedo,
 }: NetworkTopologyProps) {
+  // Hook'u en başa alarak visualState'in NetworkTopology scope'unda olmasını sağla
+  // Initialize hook
+  const { containerRef, canvasRef, visualState, dragState, resetView: canvasReset, updateTransform, updateElementTransform } = useTopologyCanvas({ 
+      x: panProp?.x || 0, 
+      y: panProp?.y || 0, 
+      zoom: zoomProp || DEFAULT_ZOOM 
+  });
+
   const { language, t } = useLanguage();
   const { theme } = useTheme();
   const isDark = theme === 'dark';
@@ -176,12 +185,25 @@ export function NetworkTopology({
     return map;
   }, [devices, connections]);
 
-  const [zoom, setZoom] = useState(zoomProp || DEFAULT_ZOOM);
-  const [pan, setPan] = useState(panProp || { x: 0, y: 0 });
-  
-  // Separate visual pan for smooth panning - only updated when NOT actively panning
-  const [visualPan, setVisualPan] = useState(panProp || { x: 0, y: 0 });
+  // Use visualState from hook instead of local zoom/pan states
+  const zoom = visualState.current.zoom;
+  const setZoom = (val: number | ((prev: number) => number)) => {
+    visualState.current.zoom = typeof val === 'function' ? val(visualState.current.zoom) : val;
+  };
 
+  const pan = { x: visualState.current.x, y: visualState.current.y };
+  const setPan = (val: { x: number, y: number } | ((prev: { x: number, y: number }) => { x: number, y: number })) => {
+    const newVal = typeof val === 'function' ? val({ x: visualState.current.x, y: visualState.current.y }) : val;
+    visualState.current.x = newVal.x;
+    visualState.current.y = newVal.y;
+  };
+
+  // Separate visual pan for smooth panning - synced with hook
+  const visualPan = { x: visualState.current.x, y: visualState.current.y };
+  const setVisualPan = (val: { x: number, y: number }) => {
+    visualState.current.x = val.x;
+    visualState.current.y = val.y;
+  };
   // Tooltip states
   const [portTooltip, setPortTooltip] = useState<{
     deviceId: string;
@@ -472,7 +494,7 @@ export function NetworkTopology({
   } | null>(null);
 
   // Refs
-  const canvasRef = useRef<HTMLDivElement | null>(null);
+  // canvasRef removed: now managed by useTopologyCanvas hook
   const deviceCounterRef = useRef<{ pc: number; switch: number; router: number }>({ pc: 0, switch: 0, router: 0 });
   const pingAnimationRef = useRef<number | null>(null);
 
@@ -1619,21 +1641,35 @@ export function NetworkTopology({
       const newX = (touch.clientX - rect.left - pan.x - touchDragOffset.x) / zoom;
       const newY = (touch.clientY - rect.top - pan.y - touchDragOffset.y) / zoom;
 
-      const canvasDims = getCanvasDimensions();
-      setDevices((prev) =>
-        prev.map((d) =>
-          d.id === touchDraggedDevice
-            ? { ...d, x: Math.max(50, Math.min(newX, canvasDims.width - 120)), y: Math.max(50, Math.min(newY, canvasDims.height - 150)) }
-            : d
-        )
-      );
+      // Virtual drag: update DOM directly
+      updateElementTransform(touchDraggedDevice, newX, newY);
+      
+      // Store temp coordinates in dragState for final commit
+      dragState.current = { 
+        id: touchDraggedDevice, 
+        offset: { x: newX, y: newY } 
+      };
     }
-  }, [touchDraggedDevice, touchDragOffset, touchDragStartPos, isTouchDragging, pan, zoom, getDistance]);
+  }, [touchDraggedDevice, touchDragOffset, touchDragStartPos, isTouchDragging, pan, zoom, getDistance, updateElementTransform, dragState]);
 
   // Handle device touch end - for mobile dragging
   const handleDeviceTouchEnd = useCallback(() => {
-    // If we weren't dragging, treat it as a tap (select)
-    if (touchDraggedDevice && !isTouchDragging) {
+    // If we were dragging, commit the final coordinates to React state
+    if (isTouchDragging && dragState.current.id) {
+      const { id, offset } = dragState.current;
+      const canvasDims = getCanvasDimensions();
+      setDevices((prev) =>
+        prev.map((d) =>
+          d.id === id
+            ? { ...d, x: Math.max(50, Math.min(offset.x, canvasDims.width - 120)), y: Math.max(50, Math.min(offset.y, canvasDims.height - 150)) }
+            : d
+        )
+      );
+      // Reset DOM transform for the element
+      const el = document.getElementById(`node-${id}`);
+      if (el) el.style.transform = '';
+    } else if (touchDraggedDevice && !isTouchDragging) {
+      // If we weren't dragging, treat it as a tap (select)
       const device = devices.find(d => d.id === touchDraggedDevice);
       if (device) {
         setSelectedDeviceIds([device.id]);
@@ -1644,7 +1680,8 @@ export function NetworkTopology({
     setTouchDraggedDevice(null);
     setTouchDragStartPos(null);
     setIsTouchDragging(false);
-  }, [touchDraggedDevice, isTouchDragging, devices, onDeviceSelect]);
+    dragState.current = { id: null, offset: { x: 0, y: 0 } };
+  }, [touchDraggedDevice, isTouchDragging, devices, onDeviceSelect, getCanvasDimensions]);
 
   // Canvas-level touch handlers (pan, pinch, long-press for context)
   const handleTouchStart = useCallback((e: ReactTouchEvent) => {
@@ -2243,31 +2280,17 @@ export function NetworkTopology({
   }, [connections, devices, notes, onTopologyChange]);
 
   // Reset view
-  const resetView = useCallback(() => {
-    // Force a port-status refresh too. This fixes cases where panels/canvas can get stale after bulk actions.
-    setDevices((prev) => recomputePortStatuses(prev, connectionsRef.current));
-
-    const nextZoom = DEFAULT_ZOOM;
-
-    // If there are no objects, keep the origin.
-    if (devices.length === 0 && notes.length === 0) {
-      setZoom(nextZoom);
-      setPan({ x: 0, y: 0 });
-      return;
-    }
-
-    // Pan to the top-leftmost object (min x/y) so it is visible even if nothing is near the origin.
-    const PADDING = 40;
-    const minDeviceX = devices.reduce((acc, d) => Math.min(acc, d.x), Infinity);
-    const minDeviceY = devices.reduce((acc, d) => Math.min(acc, d.y), Infinity);
-    const minNoteX = notes.reduce((acc, n) => Math.min(acc, n.x), Infinity);
-    const minNoteY = notes.reduce((acc, n) => Math.min(acc, n.y), Infinity);
-    const minX = Math.min(minDeviceX, minNoteX);
-    const minY = Math.min(minDeviceY, minNoteY);
-
+  const handleResetView = useCallback(() => {
+    // Reset canvas to default scale (100%) via hook
+    canvasReset();
+    
+    // Set zoom to 1.0 (100%)
+    const nextZoom = 1.0;
     setZoom(nextZoom);
-    setPan({ x: PADDING - minX * nextZoom, y: PADDING - minY * nextZoom });
-  }, [devices, notes, recomputePortStatuses]);
+    
+    // Force a port-status refresh
+    setDevices((prev) => recomputePortStatuses(prev, connectionsRef.current));
+  }, [canvasReset, recomputePortStatuses]);
 
   // Toggle Fullscreen
   const toggleFullscreen = useCallback(() => {
@@ -2492,7 +2515,7 @@ export function NetworkTopology({
       if (e.altKey && !e.ctrlKey && !e.metaKey) {
         if (key === 'r') {
           e.preventDefault();
-          resetView();
+          handleResetView();
         }
       }
 
@@ -2503,7 +2526,7 @@ export function NetworkTopology({
       window.removeEventListener('keydown', handleKeyDown);
 
     };
-  }, [selectedDeviceIds, selectedNoteIds, deleteDevice, commitNotesChange, configuringDevice, cancelDeviceConfig, selectAllDevices, devices, notes, onDeviceDelete, isDrawingConnection, isPaletteOpen, onUndo, onRedo, copyDevice, cutDevice, pasteDevice, pingSource, showPortSelector, toggleFullscreen, isFullscreen, resetView, startDeviceConfig]);
+  }, [selectedDeviceIds, selectedNoteIds, deleteDevice, commitNotesChange, configuringDevice, cancelDeviceConfig, selectAllDevices, devices, notes, onDeviceDelete, isDrawingConnection, isPaletteOpen, onUndo, onRedo, copyDevice, cutDevice, pasteDevice, pingSource, showPortSelector, toggleFullscreen, isFullscreen, handleResetView, startDeviceConfig]);
 
   // Find path between devices using BFS
   const findPath = useCallback((sourceId: string, targetId: string): string[] | null => {
@@ -3938,12 +3961,8 @@ export function NetworkTopology({
             >
               <g
                 ref={svgGroupRef as React.RefObject<SVGGElement>}
-                style={{
-                  transform: `translate3d(${visualPan.x}px, ${visualPan.y}px, 0) scale(${zoom})`,
-                  transformOrigin: '0 0',
-                  willChange: 'transform'
-                }}
               >
+
                 {/* Clip path for canvas boundaries */}
                 <defs>
                   <clipPath id="canvasClip">
@@ -4406,7 +4425,7 @@ export function NetworkTopology({
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
-                  onClick={resetView}
+                  onClick={handleResetView}
                   className={`px-2 py-1 text-xs rounded flex items-center gap-1 ${isDark
                     ? 'hover:bg-slate-700 text-slate-300'
                     : 'hover:bg-slate-100 text-slate-600'

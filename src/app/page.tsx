@@ -493,7 +493,7 @@ export default function Home() {
           devices: topologyDevices,
           connections: topologyConnections,
           notes: topologyNotes,
-		  zoom,
+          zoom,
           pan,
         },
         cableInfo,
@@ -709,7 +709,7 @@ export default function Home() {
 
   const resetTopologyView = useCallback(() => {
     const nextZoom = 1.0;
-    const PADDING = 40;
+    const PADDING = 10;
     setZoom(nextZoom);
 
     if (topologyDevices.length === 0 && topologyNotes.length === 0) {
