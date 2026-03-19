@@ -2533,7 +2533,7 @@ export function NetworkTopology({
         <div className="flex items-center justify-between gap-2 overflow-x-auto no-scrollbar">
           <div className="flex items-center gap-2 sm:gap-4 shrink-0">
             <h3 className={`text-sm font-bold flex items-center gap-2 ${isDark ? 'text-white' : 'text-slate-800'}`}>
-              <span className="hidden xl:inline">{language === 'tr' ? 'Ağ Topolojisi' : 'Network Topology'}</span>
+              <span className="hidden">{language === 'tr' ? 'Ağ Topolojisi' : 'Network Topology'}</span>
             </h3>
 
             {/* MD/LG Screen Quick Tools */}

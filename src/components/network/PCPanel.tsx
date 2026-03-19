@@ -106,7 +106,7 @@ export function PCPanel({
   const inputBg = isDark ? 'bg-black/50' : 'bg-white';
   const inputBorder = isDark ? 'border-slate-800' : 'border-slate-300';
 
-  const [activeTab, setActiveTab] = useState<PCActiveTab>('terminal');
+  const [activeTab, setActiveTab] = useState<PCActiveTab>('desktop');
   const [input, setInput] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -694,6 +694,19 @@ export function PCPanel({
     setConsolePasswordInput('');
   };
 
+  const handleClearOutput = useCallback(() => {
+    if (activeTab === 'desktop') {
+      setPcOutput([]);
+      return;
+    }
+
+    if (activeTab === 'terminal') {
+      // Clear only the local console view; do not send a device command.
+      setPcOutput([]);
+      return;
+    }
+  }, [activeTab]);
+
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       executeCommand();
@@ -722,12 +735,7 @@ export function PCPanel({
       handleTabComplete(e.currentTarget);
     } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'l') {
       e.preventDefault();
-      if (activeTab === 'desktop') {
-        setPcOutput([]);
-      } else if (activeTab === 'terminal' && connectedDeviceId && onExecuteDeviceCommand) {
-        // For terminal, execute 'clear' command to clear the output
-        onExecuteDeviceCommand(connectedDeviceId, 'clear');
-      }
+      handleClearOutput();
     } else {
       // Reset tab cycle on any other key press
       setTabCycleIndex(-1);
@@ -884,7 +892,7 @@ export function PCPanel({
               <p className="text-xs font-bold text-slate-500 mt-1.5 uppercase tracking-widest">{pcIP} • {pcMAC}</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className={`flex items-center gap-1 p-1 rounded-xl border ${isDark ? 'bg-slate-900/60 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
             {activeTab === 'desktop' && (
               <>
                 <Tooltip>
@@ -893,7 +901,7 @@ export function PCPanel({
                       variant="ghost"
                       size="icon"
                       onClick={() => setSearchOpen(true)}
-                      className="h-8 w-8 rounded-lg text-slate-500 hover:text-emerald-400 transition-colors"
+                      className={`h-8 w-8 rounded-lg ui-hover-surface ${isDark ? 'text-slate-300 hover:text-emerald-400' : 'text-slate-600 hover:text-emerald-600'}`}
                       aria-label={t.search}
                     >
                       <Search className="w-4 h-4" />
@@ -907,7 +915,7 @@ export function PCPanel({
                       variant="ghost"
                       size="icon"
                       onClick={handleCopyAll}
-                      className="h-8 w-8 rounded-lg text-slate-500 hover:text-emerald-400 transition-colors"
+                      className={`h-8 w-8 rounded-lg ui-hover-surface ${isDark ? 'text-slate-300 hover:text-emerald-400' : 'text-slate-600 hover:text-emerald-600'}`}
                       aria-label={t.copy}
                     >
                       <Copy className="w-4 h-4" />
@@ -923,7 +931,7 @@ export function PCPanel({
                   variant="ghost"
                   size="icon"
                   onClick={() => onTogglePower?.(deviceId)}
-                  className={`h-8 w-8 rounded-lg transition-all ${isPcPoweredOff ? 'text-rose-500 hover:bg-rose-500/10' : 'text-emerald-500 hover:bg-emerald-500/10'}`}
+                  className={`h-8 w-8 rounded-lg ui-hover-surface transition-all ${isPcPoweredOff ? 'text-rose-500 hover:text-rose-400' : 'text-emerald-500 hover:text-emerald-400'}`}
                   aria-label={t.power}
                   disabled={!onTogglePower}
                 >
@@ -941,7 +949,7 @@ export function PCPanel({
                   variant="ghost"
                   size="icon"
                   onClick={onClose}
-                  className="h-8 w-8 rounded-lg hover:bg-rose-500/10 hover:text-rose-500 transition-all"
+                  className={`h-8 w-8 rounded-lg ui-hover-surface text-slate-300 hover:text-rose-500`}
                 >
                   <X className="w-4 h-4" />
                 </Button>

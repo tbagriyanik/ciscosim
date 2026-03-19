@@ -745,6 +745,16 @@ export default function Home() {
     setPan({ x: PADDING - minX * nextZoom, y: PADDING - minY * nextZoom });
   }, [topologyDevices, topologyNotes]);
 
+  const switchTabOrTopology = useCallback((tabId: TabType) => {
+    const targetTab = ALL_TABS.find(tab => tab.id === tabId);
+    if (!targetTab) return;
+
+    const deviceVisible = activeDeviceId && topologyDevices.some(d => d.id === activeDeviceId);
+    const isCompatible = tabId === 'topology' || (deviceVisible && targetTab.showFor.includes(activeDeviceType));
+
+    setActiveTab(isCompatible ? tabId : 'topology');
+  }, [activeDeviceId, activeDeviceType, topologyDevices, setActiveTab]);
+
   const applyDeviceSelection = useCallback((device: 'pc' | 'switch' | 'router', deviceId?: string) => {
     setSelectedDevice(device);
     if (!deviceId) return;
@@ -770,7 +780,7 @@ export default function Home() {
     applyDeviceSelection(device, deviceId);
     if (!deviceId) return;
 
-    setActiveTab('topology');
+    switchTabOrTopology('topology');
     if (topologyContainerRef.current) {
       resetTopologyView();
       focusDeviceInTopology(deviceId);
@@ -778,7 +788,7 @@ export default function Home() {
     } else {
       pendingFocusDeviceRef.current = deviceId;
     }
-  }, [applyDeviceSelection, focusDeviceInTopology, resetTopologyView, setActiveTab]);
+  }, [applyDeviceSelection, focusDeviceInTopology, resetTopologyView, switchTabOrTopology]);
 
   useLayoutEffect(() => {
     if (activeTab !== 'topology') return;
@@ -828,18 +838,10 @@ export default function Home() {
   };
 
   const handleClearTerminal = () => {
-    setConfirmDialog({
-      show: true,
-      message: t.clearTerminalConfirm,
-      action: 'clear',
-      onConfirm: () => {
-        setConfirmDialog(null);
-        setDeviceOutputs(prev => {
-          const newMap = new Map(prev);
-          newMap.set(activeDeviceId, []);
-          return newMap;
-        });
-      }
+    setDeviceOutputs(prev => {
+      const newMap = new Map(prev);
+      newMap.set(activeDeviceId, []);
+      return newMap;
     });
   };
 
@@ -1487,13 +1489,13 @@ export default function Home() {
         }
 
         // Tab shortcuts Ctrl+1 to Ctrl+5
-        if (['1', '2', '3', '4', '5'].includes(key)) {
-          const index = parseInt(key) - 1;
-          if (tabs[index]) {
-            e.preventDefault();
-            setActiveTab(tabs[index].id);
+          if (['1', '2', '3', '4', '5'].includes(key)) {
+            const index = parseInt(key) - 1;
+            if (tabs[index]) {
+              e.preventDefault();
+              switchTabOrTopology(tabs[index].id);
+            }
           }
-        }
       }
 
       // Shift Shortcuts
@@ -1637,7 +1639,7 @@ export default function Home() {
                 <div className="p-1 flex items-center justify-center">
                   <img src="/favicon.png" alt="Logo" className="w-7 h-7 object-contain" />
                 </div>
-                <div className="hidden sm:flex flex-col">
+              <div className="hidden lg:flex flex-col">
                   <h1 className="text-lg font-bold tracking-tight bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent leading-none">
                     {t.title}
                   </h1>
@@ -1865,7 +1867,7 @@ export default function Home() {
                                 variant={isActive ? "secondary" : "ghost"}
                             className={`w-full justify-start gap-3 h-9 px-3 text-xs font-bold ui-hover-surface ${isActive ? 'bg-cyan-500/10 text-cyan-400' : 'text-slate-400'}`}
                                 onClick={() => {
-                                  setActiveTab(tab.id);
+                                switchTabOrTopology(tab.id);
                                   setShowMobileMenu(false);
                                 }}
                               >
@@ -1905,7 +1907,7 @@ export default function Home() {
           {/* Desktop Tabs & Device Selector */}
           <div className="flex items-end gap-1 mt-4 pt-1 overflow-x-auto no-scrollbar">
             {/* Mobile-only Quick Action Tools (Add, Zoom & Connect) */}
-            <div className="flex sm:hidden items-center gap-1.5 mr-auto">
+            <div className="flex lg:hidden items-center gap-1.5 mr-auto">
               {activeTab === 'topology' && (
                 <div className={`flex items-center gap-1 p-1 rounded-xl border ${isDark ? 'bg-slate-900/40 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
                   {/* Add Button (Device, Cable, Note) */}
@@ -2060,7 +2062,7 @@ export default function Home() {
             </DropdownMenu>
 
             {/* Main Tabs (Adaptive: Icons on small, Icon+Text on large) */}
-            <div className="hidden sm:flex items-end gap-1">
+            <div className="hidden lg:flex items-end gap-1">
               {tabs.map((tab, index) => {
                 const isActive = activeTab === tab.id;
                 // Unified Color Mapping
@@ -2075,7 +2077,7 @@ export default function Home() {
                   <Tooltip key={tab.id}>
                     <TooltipTrigger asChild>
                       <button
-                        onClick={() => setActiveTab(tab.id)}
+                        onClick={() => switchTabOrTopology(tab.id)}
                           className={`flex items-center gap-2 px-3 lg:px-5 py-3 rounded-t-xl text-sm font-semibold transition-all border-x border-t min-w-[50px] lg:min-w-[120px] justify-center ui-hover-surface ${isActive
                             ? `${isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-300'} ${colorClass.split(' ')[0]} shadow-[0_-4px_0_0_currentColor]`
                             : `${isDark ? 'bg-slate-900/50 border-transparent' : 'bg-slate-200/50 border-transparent'} ${colorClass}`
@@ -2107,7 +2109,7 @@ export default function Home() {
           </div>
         </header>
         {/* Mobile Bottom Tab Bar (Icons Only) */}
-        <div className={`sm:hidden fixed bottom-0 left-0 right-0 z-50 border-t backdrop-blur-xl flex items-center justify-around px-2 py-1 mobile-top-nav ${isDark ? 'bg-slate-900/95 border-slate-800 text-slate-400' : 'bg-white/95 border-slate-200 text-slate-500'
+        <div className={`lg:hidden fixed bottom-0 left-0 right-0 z-50 border-t backdrop-blur-xl flex items-center justify-around px-2 py-1 mobile-top-nav ${isDark ? 'bg-slate-900/95 border-slate-800 text-slate-400' : 'bg-white/95 border-slate-200 text-slate-500'
           } ${showProjectPicker || showOnboarding ? 'hidden' : ''}`}>
           {tabs.map((tab, index) => {
             const isActive = activeTab === tab.id;
@@ -2124,7 +2126,7 @@ export default function Home() {
               <Tooltip key={tab.id}>
                 <TooltipTrigger asChild>
                   <button
-                    onClick={() => setActiveTab(tab.id)}
+                    onClick={() => switchTabOrTopology(tab.id)}
                       className={`flex flex-col items-center justify-center min-h-[40px] flex-1 px-3 py-1.5 rounded-xl transition-all relative ui-hover-surface ${isActive ? 'text-blue-500' : `${colorClass} active:scale-95`
                         }`}
                   >
@@ -2140,7 +2142,7 @@ export default function Home() {
                         (tab.id === 'cmd' || tab.id === 'terminal') ? <TerminalIcon className="w-4 h-4" /> :
                           <ShieldCheck className="w-4 h-4" />}
                     </div>
-                    <span className="mt-0.5 text-[9px] font-semibold leading-tight relative z-10 sm:inline">
+                    <span className="mt-0.5 text-[9px] font-semibold leading-tight relative z-10 lg:inline">
                       {tab.label}
                     </span>
                   </button>
@@ -2448,13 +2450,13 @@ export default function Home() {
         </main>
 
         {/* Footer - Save Status & Hints */}
-        <footer className={`hidden sm:block relative border-t backdrop-blur-xl transition-all ${isDark ? 'bg-slate-900/95 border-slate-800' : 'bg-white/95 border-slate-200'
+        <footer className={`hidden lg:block relative border-t backdrop-blur-xl transition-all ${isDark ? 'bg-slate-900/95 border-slate-800' : 'bg-white/95 border-slate-200'
           } ${showProjectPicker || showOnboarding ? 'hidden' : ''}`}>
           <div className="w-full px-5 py-2">
             <div className="flex items-center justify-between gap-4">
               {/* Save Status */}
               <div className="flex items-center gap-3">
-                <div className={`hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg border ${isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-100 border-slate-200'
+                <div className={`hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-lg border ${isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-100 border-slate-200'
                   }`}>
                   <span className={`flex items-center gap-1.5 text-xs font-semibold ${hasUnsavedChanges ? 'text-amber-400' : 'text-emerald-400'
                     }`}>
@@ -2472,7 +2474,7 @@ export default function Home() {
                 </div>
 
                 {/* Quick Hints */}
-                <div className={`hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg border ${isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-100 border-slate-200'
+                <div className={`hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-lg border ${isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-100 border-slate-200'
                   }`}>
                   <span className={`text-[11px] font-medium ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
                     {language === 'tr' ? 'İpuçları:' : 'Tips:'}
@@ -2514,7 +2516,7 @@ export default function Home() {
 
               {/* Lab Progress */}
               {totalScore > 0 && (
-                <div className={`hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg border ${isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-100 border-slate-200'
+                <div className={`hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-lg border ${isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-100 border-slate-200'
                   }`}>
                   <span className={`text-[11px] font-bold uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-600'}`}>
                     {t.labProgress}

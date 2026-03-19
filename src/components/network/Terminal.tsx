@@ -385,14 +385,14 @@ export function Terminal({
                   <span className="text-xs px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 font-mono border border-slate-700">{t.cli}</span>
                 </CardTitle>
               </div>
-              <div className="flex items-center gap-2">
+              <div className={`flex items-center gap-1 p-1 rounded-xl border ${isDark ? 'bg-slate-900/60 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
                       variant="ghost"
                       size="icon"
                       onClick={() => setSearchOpen(true)}
-                      className="h-8 w-8 rounded-lg text-slate-500 hover:text-cyan-400 transition-colors"
+                      className={`h-8 w-8 rounded-lg ui-hover-surface ${isDark ? 'text-slate-300 hover:text-cyan-400' : 'text-slate-600 hover:text-cyan-600'}`}
                       aria-label={t.search}
                       title={t.search}
                     >
@@ -409,7 +409,7 @@ export function Terminal({
                       variant="ghost"
                       size="icon"
                       onClick={handleCopyAll}
-                      className="h-8 w-8 rounded-lg text-slate-500 hover:text-cyan-400 transition-colors"
+                      className={`h-8 w-8 rounded-lg ui-hover-surface ${isDark ? 'text-slate-300 hover:text-cyan-400' : 'text-slate-600 hover:text-cyan-600'}`}
                       aria-label={t.copy}
                       title={t.copy}
                     >
@@ -426,7 +426,7 @@ export function Terminal({
                       variant="ghost"
                       size="icon"
                       onClick={() => onTogglePower?.(deviceId)}
-                      className={`h-8 w-8 rounded-lg transition-all ${isPoweredOff ? 'text-rose-500 hover:bg-rose-500/10' : 'text-emerald-500 hover:bg-emerald-500/10'}`}
+                      className={`h-8 w-8 rounded-lg ui-hover-surface transition-all ${isPoweredOff ? 'text-rose-500 hover:text-rose-400' : 'text-emerald-500 hover:text-emerald-400'}`}
                       aria-label={language === 'tr' ? 'Güç' : 'Power'}
                       disabled={!onTogglePower}
                     >
@@ -447,7 +447,7 @@ export function Terminal({
                     variant="ghost"
                     size="icon"
                     onClick={onClose}
-                    className="h-8 w-8 rounded-lg text-slate-500 hover:text-cyan-400 transition-colors"
+                    className={`h-8 w-8 rounded-lg ui-hover-surface ${isDark ? 'text-slate-300 hover:text-cyan-400' : 'text-slate-600 hover:text-cyan-600'}`}
                     aria-label={t.close}
                     title={t.close}
                   >
@@ -458,7 +458,7 @@ export function Terminal({
                   variant="ghost"
                   size="sm"
                   onClick={onClear}
-                  className="h-8 px-2.5 text-xs font-bold text-slate-500 hover:text-rose-400 transition-colors gap-1.5"
+                  className={`h-8 px-2.5 text-xs font-bold ui-hover-surface gap-1.5 ${isDark ? 'text-slate-300 hover:text-rose-400' : 'text-slate-600 hover:text-rose-600'}`}
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                   <span className="hidden sm:inline">{t.clearTerminalBtn}</span>
