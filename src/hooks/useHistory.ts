@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { SwitchState, CableInfo } from '@/lib/network/types';
 import { CanvasDevice, CanvasConnection, CanvasNote } from '@/components/network/networkTopology.types';
 import { TerminalOutput } from '@/components/network/Terminal';
@@ -33,7 +33,7 @@ export function useHistory(initialState: ProjectState) {
   const pushState = useCallback((newState: ProjectState) => {
     setState(prev => {
       const newItems = prev.items.slice(0, prev.index + 1);
-      
+
       // Deep copy maps and objects
       const stateToPush: ProjectState = {
         ...newState,
@@ -49,7 +49,7 @@ export function useHistory(initialState: ProjectState) {
 
       // Optimization: don't push if it's the same as current present
       const currentPresent = prev.items[prev.index];
-      if (currentPresent && 
+      if (currentPresent &&
           JSON.stringify(stateToPush.topologyDevices) === JSON.stringify(currentPresent.topologyDevices) &&
           JSON.stringify(stateToPush.topologyConnections) === JSON.stringify(currentPresent.topologyConnections) &&
           JSON.stringify(stateToPush.topologyNotes) === JSON.stringify(currentPresent.topologyNotes)) {
@@ -57,9 +57,9 @@ export function useHistory(initialState: ProjectState) {
       }
 
       newItems.push(stateToPush);
-      
+
       let nextIndex = newItems.length - 1;
-      
+
       // Limit history size
       if (newItems.length > 50) {
         newItems.shift();
@@ -74,35 +74,22 @@ export function useHistory(initialState: ProjectState) {
   }, []);
 
   const undo = useCallback(() => {
-    let result: ProjectState | null = null;
     setState(prev => {
       if (prev.index > 0) {
-        const nextIndex = prev.index - 1;
-        result = prev.items[nextIndex];
-        return { ...prev, index: nextIndex };
+        return { ...prev, index: prev.index - 1 };
       }
       return prev;
     });
-    // Since setState is async, we can't easily return the state here 
-    // without a ref or some other trick. 
-    // But in our current architecture, the caller calls undo() and 
-    // expects the state back to apply it.
-    // Let's use a workaround: return the state from the items array 
-    // using the index BEFORE the update, but the caller already has 'state' in scope.
-    if (state.index > 0) {
-      return state.items[state.index - 1];
-    }
-    return null;
-  }, [state]);
+  }, []);
 
   const redo = useCallback(() => {
-    if (state.index < state.items.length - 1) {
-      const nextIndex = state.index + 1;
-      setState(prev => ({ ...prev, index: nextIndex }));
-      return state.items[nextIndex];
-    }
-    return null;
-  }, [state]);
+    setState(prev => {
+      if (prev.index < prev.items.length - 1) {
+        return { ...prev, index: prev.index + 1 };
+      }
+      return prev;
+    });
+  }, []);
 
   const resetHistory = useCallback((newState: ProjectState) => {
     setState({
@@ -111,12 +98,21 @@ export function useHistory(initialState: ProjectState) {
     });
   }, []);
 
+  // Current state based on index - useful for applying undo/redo
+  const currentState = useMemo(() => {
+    return state.items[state.index] || null;
+  }, [state.items, state.index]);
+
+  const canUndo = useMemo(() => state.index > 0, [state.index]);
+  const canRedo = useMemo(() => state.index < state.items.length - 1, [state.index, state.items.length]);
+
   return {
     pushState,
     undo,
     redo,
-    canUndo: state.index > 0,
-    canRedo: state.index < state.items.length - 1,
-    resetHistory
+    canUndo,
+    canRedo,
+    resetHistory,
+    currentState
   };
 }

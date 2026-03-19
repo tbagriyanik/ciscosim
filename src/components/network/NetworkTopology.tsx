@@ -10,7 +10,7 @@ import { CanvasDevice, CanvasConnection, CanvasNote } from './networkTopology.ty
 import { DeviceIcon } from './DeviceIcon';
 import { ConnectionLine } from './ConnectionLine';
 import { DeviceNode } from './DeviceNode';
-import { Laptop, Monitor, Network, Plus } from "lucide-react";
+import { Laptop, Monitor, Network, Plus, Pencil } from "lucide-react";
 
 interface NetworkTopologyProps {
   cableInfo: CableInfo;
@@ -834,7 +834,7 @@ export function NetworkTopology({
 
     // Estimate menu dimensions (approximate)
     const menuWidth = 180;
-    const menuHeight = deviceId ? 400 : 200; // Device menu is taller
+    const menuHeight = deviceId ? 400 : 200;
 
     // Clamp coordinates to stay within viewport
     let x = e.clientX;
@@ -853,7 +853,7 @@ export function NetworkTopology({
     y = Math.max(10, y);
 
     window.dispatchEvent(new CustomEvent('close-menus-broadcast', { detail: { source: 'topology' } }));
-    openContextMenu(e.clientX, e.clientY, deviceId || null);
+    openContextMenu(x, y, deviceId || null);
   }, [openContextMenu]);
 
   // Handle device touch start - for mobile dragging
@@ -2997,6 +2997,14 @@ export function NetworkTopology({
             }`}
           style={{ left: contextMenu.x, top: contextMenu.y }}
           onClick={(e) => e.stopPropagation()}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && contextMenu.deviceId) {
+              const device = devices.find((d) => d.id === contextMenu.deviceId);
+              if (device) handleDeviceDoubleClick(device);
+              setContextMenu(null);
+            }
+          }}
+          tabIndex={0}
         >
           {/* Device-specific actions */}
           {contextMenu.deviceId && (
@@ -3015,6 +3023,7 @@ export function NetworkTopology({
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 0 0 -2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4M14 4h6m0 0v6m0-6L10 14" />
                 </svg>
                 {language === 'tr' ? 'Aç' : 'Open'}
+                <span className={`ml-auto text-[10px] opacity-40 font-mono ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Enter</span>
               </button>
 
               <div className={`h-px ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`} />
@@ -3052,19 +3061,6 @@ export function NetworkTopology({
                 </svg>
                 {language === 'tr' ? 'Kes' : 'Cut'}
                 {!isMobile && <span className={`ml-auto text-[10px] opacity-40 font-mono ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Ctrl+X</span>}
-              </button>
-
-              {/* Configure */}
-              <button
-                onClick={() => { startDeviceConfig(contextMenu.deviceId!); }}
-                className={`w-full px-4 py-2 text-sm text-left flex items-center gap-2 ${isDark ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-slate-100 text-slate-600'
-                  }`}
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 0 0 -2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 0 0 -1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 0 0 1.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 1 1 -6 0 3 3 0 016 0z" />
-                </svg>
-                {language === 'tr' ? 'Yapılandır' : 'Configure'}
               </button>
 
               <div className={`h-px ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`} />
@@ -3479,11 +3475,13 @@ export function NetworkTopology({
               >
                 <g transform={`translate(${screenX}, ${screenY})`}>
                   {/* Trail effect */}
-                  <circle r="8" fill="#06b6d4" opacity={0.15} className="animate-ping" />
-                  <circle r="5" fill="#06b6d4" opacity={0.3} />
-                  {/* Envelope icon */}
-                  <rect x="-12" y="-8" width="24" height="16" rx="2" fill="#06b6d4" stroke="#0891b2" strokeWidth="1.5" />
-                  <path d="M-9 -5 L0 3 L9 -5" fill="none" stroke="white" strokeWidth="2" />
+                  <circle r="10" fill="#06b6d4" opacity={0.4} className="svg-ping" />
+                  <circle r="6" fill="#06b6d4" opacity={0.6} className="svg-ping" style={{ animationDelay: '0.2s' }} />
+                  {/* Envelope icon with glow */}
+                  <g className="envelope-glow">
+                    <rect x="-14" y="-10" width="28" height="20" rx="3" fill="#06b6d4" stroke="#0891b2" strokeWidth="2" />
+                    <path d="M-10 -5 L0 5 L10 -5" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+                  </g>
                 </g>
               </svg>
             );

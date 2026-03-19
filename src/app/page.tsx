@@ -53,7 +53,7 @@ import {
 import { TaskCard } from '@/components/network/TaskCard';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { ChevronDown, Menu, Plus, Save, FolderOpen, Languages, Sun, Moon, Network, ShieldCheck, Database, Info, File, Layers, Terminal as TerminalIcon, Undo2, Redo2, Link2 } from "lucide-react";
+import { ChevronDown, Menu, Plus, Save, FolderOpen, Languages, Sun, Moon, Network, ShieldCheck, Database, Info, File, Layers, Terminal as TerminalIcon, Undo2, Redo2, Link2, Pencil, StickyNote } from "lucide-react";
 
 import { Button } from '@/components/ui/button';
 import {
@@ -305,7 +305,7 @@ export default function Home() {
     activeTab
   }), [topologyDevices, topologyConnections, topologyNotes, deviceStates, deviceOutputs, pcOutputs, pcHistories, cableInfo, activeDeviceId, activeDeviceType, zoom, pan, activeTab]);
 
-  const { pushState, undo, redo, canUndo, canRedo, resetHistory } = useHistory(getCurrentState());
+  const { pushState, undo, redo, canUndo, canRedo, resetHistory, currentState } = useHistory(getCurrentState());
 
   // Undo/redo must only work while topology tab is active.
   const activeTabRef = useRef<TabType>('topology');
@@ -337,16 +337,30 @@ export default function Home() {
   const handleUndo = useCallback(() => {
     if (activeTabRef.current !== 'topology') return;
     isApplyingHistoryRef.current = true;
-    const prevState = undo();
-    if (prevState) applyProjectState(prevState);
-  }, [undo, applyProjectState]);
+    undo();
+    // Apply state after undo - use setTimeout to ensure state index is updated first
+    setTimeout(() => {
+      const prevState = currentState;
+      if (prevState) {
+        applyProjectState(prevState);
+      }
+      isApplyingHistoryRef.current = false;
+    }, 0);
+  }, [undo, currentState, applyProjectState]);
 
   const handleRedo = useCallback(() => {
     if (activeTabRef.current !== 'topology') return;
     isApplyingHistoryRef.current = true;
-    const nextState = redo();
-    if (nextState) applyProjectState(nextState);
-  }, [redo, applyProjectState]);
+    redo();
+    // Apply state after redo - use setTimeout to ensure state index is updated first
+    setTimeout(() => {
+      const nextState = currentState;
+      if (nextState) {
+        applyProjectState(nextState);
+      }
+      isApplyingHistoryRef.current = false;
+    }, 0);
+  }, [redo, currentState, applyProjectState]);
 
   // Track changes and push to history
   // We need to debouncing this or use a ref to track if we're in the middle of an undo/redo
@@ -1495,6 +1509,13 @@ export default function Home() {
         } else if (saveDialog?.show) {
           e.preventDefault();
           saveDialog.onConfirm(true);
+        } else if (activeTab === 'topology' && activeDeviceId && !activeDeviceId.startsWith('note-')) {
+          // Open selected device with Enter key
+          e.preventDefault();
+          const device = topologyDevices.find(d => d.id === activeDeviceId);
+          if (device) {
+            handleDeviceDoubleClick(device.type, device.id);
+          }
         }
       }
     };
