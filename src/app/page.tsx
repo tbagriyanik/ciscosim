@@ -338,34 +338,33 @@ export default function Home() {
   }, [setTopologyDevices, setTopologyConnections, setTopologyNotes, setDeviceStates, setDeviceOutputs, setPcOutputs, setPcHistories, setCableInfo, setActiveDeviceId, setActiveDeviceType, setZoom, setPan, setActiveTab]);
 
   const isApplyingHistoryRef = useRef(false);
+  const pendingHistoryActionRef = useRef<'undo' | 'redo' | null>(null);
+  const lastAppliedHistoryStateRef = useRef<ProjectState | null>(null);
 
   const handleUndo = useCallback(() => {
     if (activeTabRef.current !== 'topology') return;
     isApplyingHistoryRef.current = true;
+    pendingHistoryActionRef.current = 'undo';
     undo();
-    // Apply state after undo - use setTimeout to ensure state index is updated first
-    setTimeout(() => {
-      const prevState = currentState;
-      if (prevState) {
-        applyProjectState(prevState);
-      }
-      isApplyingHistoryRef.current = false;
-    }, 0);
-  }, [undo, currentState, applyProjectState]);
+  }, [undo]);
 
   const handleRedo = useCallback(() => {
     if (activeTabRef.current !== 'topology') return;
     isApplyingHistoryRef.current = true;
+    pendingHistoryActionRef.current = 'redo';
     redo();
-    // Apply state after redo - use setTimeout to ensure state index is updated first
-    setTimeout(() => {
-      const nextState = currentState;
-      if (nextState) {
-        applyProjectState(nextState);
-      }
-      isApplyingHistoryRef.current = false;
-    }, 0);
-  }, [redo, currentState, applyProjectState]);
+  }, [redo]);
+
+  useEffect(() => {
+    if (!isApplyingHistoryRef.current) return;
+    if (!currentState) return;
+    if (lastAppliedHistoryStateRef.current === currentState) return;
+
+    applyProjectState(currentState);
+    lastAppliedHistoryStateRef.current = currentState;
+    isApplyingHistoryRef.current = false;
+    pendingHistoryActionRef.current = null;
+  }, [currentState, applyProjectState]);
 
   // Track changes and push to history
   // We need to debouncing this or use a ref to track if we're in the middle of an undo/redo
@@ -1695,7 +1694,7 @@ export default function Home() {
                 <div className={`flex items-center gap-1 px-2 py-1.5 rounded-xl border ${isDark ? 'bg-slate-800/40 border-slate-800' : 'bg-slate-100 border-slate-200'}`}>
                   {/* Undo/Redo Group */}
                   {activeTab === 'topology' && (
-                    <div className="hidden items-center gap-1 sm:flex">
+                    <div className="hidden items-center gap-1 sm:hidden">
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-blue-500 transition-colors" onClick={handleUndo} disabled={hasHydrated && !canUndo}>
