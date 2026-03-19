@@ -1639,7 +1639,7 @@ export default function Home() {
                 <div className="p-1 flex items-center justify-center">
                   <img src="/favicon.png" alt="Logo" className="w-7 h-7 object-contain" />
                 </div>
-              <div className="hidden lg:flex flex-col">
+                <div className="hidden md:flex flex-col">
                   <h1 className="text-lg font-bold tracking-tight bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent leading-none">
                     {t.title}
                   </h1>
@@ -1907,7 +1907,7 @@ export default function Home() {
           {/* Desktop Tabs & Device Selector */}
           <div className="flex items-end gap-1 mt-4 pt-1 overflow-x-auto no-scrollbar">
             {/* Mobile-only Quick Action Tools (Add, Zoom & Connect) */}
-            <div className="flex lg:hidden items-center gap-1.5 mr-auto">
+            <div className="flex md:hidden items-center gap-1.5 mr-auto">
               {activeTab === 'topology' && (
                 <div className={`flex items-center gap-1 p-1 rounded-xl border ${isDark ? 'bg-slate-900/40 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
                   {/* Add Button (Device, Cable, Note) */}
@@ -2062,7 +2062,7 @@ export default function Home() {
             </DropdownMenu>
 
             {/* Main Tabs (Adaptive: Icons on small, Icon+Text on large) */}
-            <div className="hidden lg:flex items-end gap-1">
+            <div className="hidden md:flex items-end gap-1">
               {tabs.map((tab, index) => {
                 const isActive = activeTab === tab.id;
                 // Unified Color Mapping
@@ -2088,7 +2088,7 @@ export default function Home() {
                             (tab.id === 'cmd' || tab.id === 'terminal') ? <TerminalIcon className="w-4 h-4" /> :
                               <ShieldCheck className="w-4 h-4" />}
                         </span>
-                        <span className="hidden lg:inline flex items-center gap-1.5">
+                        <span className="hidden md:inline-flex items-center gap-1.5">
                           {tab.label}
                           {tab.id === 'tasks' && (
                             <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-red-500/10 text-red-300">
@@ -2109,7 +2109,7 @@ export default function Home() {
           </div>
         </header>
         {/* Mobile Bottom Tab Bar (Icons Only) */}
-        <div className={`lg:hidden fixed bottom-0 left-0 right-0 z-50 border-t backdrop-blur-xl flex items-center justify-around px-2 py-1 mobile-top-nav ${isDark ? 'bg-slate-900/95 border-slate-800 text-slate-400' : 'bg-white/95 border-slate-200 text-slate-500'
+        <div className={`md:hidden fixed bottom-0 left-0 right-0 z-50 border-t backdrop-blur-xl flex items-center justify-around px-2 py-1 mobile-top-nav ${isDark ? 'bg-slate-900/95 border-slate-800 text-slate-400' : 'bg-white/95 border-slate-200 text-slate-500'
           } ${showProjectPicker || showOnboarding ? 'hidden' : ''}`}>
           {tabs.map((tab, index) => {
             const isActive = activeTab === tab.id;
@@ -2142,7 +2142,7 @@ export default function Home() {
                         (tab.id === 'cmd' || tab.id === 'terminal') ? <TerminalIcon className="w-4 h-4" /> :
                           <ShieldCheck className="w-4 h-4" />}
                     </div>
-                    <span className="mt-0.5 text-[9px] font-semibold leading-tight relative z-10 lg:inline">
+                    <span className="mt-0.5 text-[9px] font-semibold leading-tight relative z-10 md:inline">
                       {tab.label}
                     </span>
                   </button>
@@ -2450,13 +2450,13 @@ export default function Home() {
         </main>
 
         {/* Footer - Save Status & Hints */}
-        <footer className={`hidden lg:block relative border-t backdrop-blur-xl transition-all ${isDark ? 'bg-slate-900/95 border-slate-800' : 'bg-white/95 border-slate-200'
+        <footer className={`hidden md:block relative border-t backdrop-blur-xl transition-all ${isDark ? 'bg-slate-900/95 border-slate-800' : 'bg-white/95 border-slate-200'
           } ${showProjectPicker || showOnboarding ? 'hidden' : ''}`}>
           <div className="w-full px-5 py-2">
             <div className="flex items-center justify-between gap-4">
               {/* Save Status */}
               <div className="flex items-center gap-3">
-                <div className={`hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-lg border ${isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-100 border-slate-200'
+                <div className={`hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg border ${isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-100 border-slate-200'
                   }`}>
                   <span className={`flex items-center gap-1.5 text-xs font-semibold ${hasUnsavedChanges ? 'text-amber-400' : 'text-emerald-400'
                     }`}>
@@ -2474,7 +2474,7 @@ export default function Home() {
                 </div>
 
                 {/* Quick Hints */}
-                <div className={`hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-lg border ${isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-100 border-slate-200'
+                <div className={`hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg border ${isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-100 border-slate-200'
                   }`}>
                   <span className={`text-[11px] font-medium ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
                     {language === 'tr' ? 'İpuçları:' : 'Tips:'}
@@ -2516,7 +2516,7 @@ export default function Home() {
 
               {/* Lab Progress */}
               {totalScore > 0 && (
-                <div className={`hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-lg border ${isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-100 border-slate-200'
+                <div className={`hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg border ${isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-100 border-slate-200'
                   }`}>
                   <span className={`text-[11px] font-bold uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-600'}`}>
                     {t.labProgress}
