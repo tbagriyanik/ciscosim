@@ -1,0 +1,522 @@
+import type { CommandHandler } from './commandTypes';
+
+// Show komutları (show running-config, show vlan, show ip route, vs.)
+
+export const showHandlers: Record<string, CommandHandler> = {
+  'show running-config': cmdShowRunningConfig,
+  'show version': cmdShowVersion,
+  'show interfaces': cmdShowInterfaces,
+  'show interface': cmdShowInterface,
+  'show ip interface brief': cmdShowIpInterfaceBrief,
+  'show vlan': cmdShowVlan,
+  'show mac address-table': cmdShowMacAddressTable,
+  'show cdp neighbors': cmdShowCdpNeighbors,
+  'show ip route': cmdShowIpRoute,
+  'show clock': cmdShowClock,
+  'show flash': cmdShowFlash,
+  'show boot': cmdShowBoot,
+  'show spanning-tree': cmdShowSpanningTree,
+  'show port-security': cmdShowPortSecurity,
+};
+
+/**
+ * Show Running Configuration
+ */
+function cmdShowRunningConfig(
+  state: any,
+  input: string,
+  ctx: any
+): any {
+  let output = '\nBuilding configuration...\n\n';
+  output += 'Current configuration : 1024 bytes\n\n';
+  output += '!\n';
+  output += `version 15.0\n`;
+  output += `hostname ${state.hostname || 'Switch'}\n`;
+
+  // Boot system
+  output += 'boot system flash:c2960-lanbase-mz.150-2.SE4.bin\n';
+  output += '!\n';
+
+  // Service passwords-encryption
+  if (state.security?.passwordEncryption) {
+    output += 'service password-encryption\n';
+  }
+  output += '!\n';
+
+  // Spanning-tree mode
+  output += `spanning-tree mode ${state.spanningTree?.mode || 'pvst'}\n`;
+  output += '!\n';
+
+  // VLANs
+  const vlanIds = Object.keys(state.vlans || {}).filter(v => v !== '1');
+  if (vlanIds.length > 0) {
+    vlanIds.forEach(vlanId => {
+      const vlan = state.vlans[vlanId];
+      output += `vlan ${vlanId}\n`;
+      output += ` name ${vlan?.name || `VLAN${vlanId}`}\n`;
+      output += ` state ${vlan?.state || 'active'}\n`;
+      output += '!\n';
+    });
+  }
+
+  // Interfaces
+  Object.keys(state.ports || {}).forEach(portName => {
+    const port = state.ports[portName];
+    output += `interface ${portName}\n`;
+
+    if (port.description) {
+      output += ` description ${port.description}\n`;
+    }
+
+    if (port.mode === 'trunk') {
+      output += ' switchport mode trunk\n';
+      if (port.nativeVlan) {
+        output += ` switchport trunk native vlan ${port.nativeVlan}\n`;
+      }
+      if (port.allowedVlans) {
+        output += ` switchport trunk allowed vlan ${port.allowedVlans}\n`;
+      }
+    } else {
+      output += ` switchport access vlan ${port.accessVlan || 1}\n`;
+    }
+
+    if (port.speed && port.speed !== 'auto') {
+      output += ` speed ${port.speed}\n`;
+    }
+
+    if (port.duplex && port.duplex !== 'auto') {
+      output += ` duplex ${port.duplex}\n`;
+    }
+
+    if (port.shutdown) {
+      output += ' shutdown\n';
+    }
+
+    if (port.ipAddress && port.subnetMask) {
+      output += ` ip address ${port.ipAddress} ${port.subnetMask}\n`;
+    }
+
+    if (port.spanningTree?.portfast) {
+      output += ' spanning-tree portfast\n';
+    }
+
+    if (port.spanningTree?.bpduguard) {
+      output += ' spanning-tree bpduguard enable\n';
+    }
+
+    output += '!\n';
+  });
+
+  // Line console
+  output += 'line console 0\n';
+  if (state.security?.consoleLine?.password) {
+    output += ` password ${state.security.consoleLine.password}\n`;
+  }
+  if (state.security?.consoleLine?.login) {
+    output += ' login\n';
+  }
+  output += '!\n';
+
+  // Line vty
+  output += 'line vty 0 4\n';
+  if (state.security?.vtyLine?.password) {
+    output += ` password ${state.security.vtyLine.password}\n`;
+  }
+  if (state.security?.vtyLine?.transport) {
+    output += ` transport input ${state.security.vtyLine.transport}\n`;
+  }
+  output += ' login\n';
+  output += '!\n';
+
+  // Enable secret
+  if (state.security?.enableSecret) {
+    output += `enable secret ${state.security.enableSecret}\n`;
+  } else if (state.security?.enablePassword) {
+    output += `enable password ${state.security.enablePassword}\n`;
+  }
+
+  output += 'end\n';
+
+  return { success: true, output };
+}
+
+/**
+ * Show Version
+ */
+function cmdShowVersion(
+  state: any,
+  input: string,
+  ctx: any
+): any {
+  let output = '\nCisco IOS Software, C2960 Software (C2960-LANBASE-M), Version 15.0(2)SE4\n';
+  output += 'Technical Support: http://www.cisco.com/techsupport\n';
+  output += 'Copyright (c) 1986-2024 by Cisco Systems, Inc.\n\n';
+  output += 'ROM: Bootstrap program is C2960 boot loader\n';
+  output += 'BOOTLDR: C2960 Boot Loader (C2960-HBOOT-M) Version 12.2(25)FX\n\n';
+  output += `Switch uptime is ${state.uptime || '1 day, 2 hours, 3 minutes'}\n`;
+  output += 'System image file is "flash:c2960-lanbase-mz.150-2.SE4.bin"\n\n';
+  output += 'cisco WS-C2960-24TT-L (PowerPC405) processor (revision C0) with 65536K bytes of memory.\n';
+  output += 'Processor board ID FOC1234X5YZ\n';
+  output += 'Last reload reason: power-on\n\n';
+  output += '24 FastEthernet/IEEE 802.3 interface(s)\n';
+  output += '2 Gigabit Ethernet/IEEE 802.3 interface(s)\n\n';
+  output += '64K bytes of flash-simulated non-volatile configuration memory.\n';
+  output += 'Base ethernet MAC Address       : 00:1A:2B:3C:4D:5E\n';
+  output += 'Motherboard assembly number   : 73-10000-01\n';
+  output += 'Model number                  : WS-C2960-24TT-L\n';
+  output += '!\n';
+
+  return { success: true, output };
+}
+
+/**
+ * Show Interfaces
+ */
+function cmdShowInterfaces(
+  state: any,
+  input: string,
+  ctx: any
+): any {
+  let output = '';
+
+  Object.keys(state.ports || {}).forEach(portName => {
+    const port = state.ports[portName];
+    output += `${portName} is ${port.shutdown ? 'administratively down' : 'up'}, line protocol is ${port.shutdown ? 'down' : 'up'}\n`;
+    output += `  Hardware is Fast Ethernet, address is ${port.macAddress || '0000.0000.0000'}\n`;
+    output += `  Description: ${port.description || ''}\n`;
+    output += `  MTU 1500 bytes, BW 100000 Kbit/sec\n`;
+    output += `  Full-duplex, ${port.speed || 'auto'}Mb/s\n`;
+    output += `  input flow-control is off, output flow-control is unsupported\n`;
+    output += `  ARP type: ARPA, ARP Timeout ${port.arpTimeout || '04:00:00'}\n`;
+    output += `  Last input never, last output never, output hang never\n`;
+    output += `  Queueing strategy: fifo\n`;
+    output += `  Output queue 0/40, 0 drops; input queue 0/75, 0 drops\n`;
+    output += `  5 minute input rate 0 bits/sec, 0 packets/sec\n`;
+    output += `  5 minute output rate 0 bits/sec, 0 packets/sec\n`;
+    output += `     0 packets input, 0 bytes, 0 no buffer\n`;
+    output += `     Received 0 broadcasts, 0 runts, 0 giants, 0 throttles\n`;
+    output += `     0 input errors, 0 CRC, 0 frame, 0 overrun, 0 ignored\n`;
+    output += `     0 watchdog, 0 multicast, 0 pause input\n`;
+    output += `     0 packets output, 0 bytes, 0 underruns\n`;
+    output += `     0 output errors, 0 collisions, 1 interface resets\n`;
+    output += `     0 unknown protocol, 0 dropped\n`;
+    output += `     0 babbles, 0 late collision, 0 deferred\n`;
+    output += `     0 lost carrier, 0 no carrier, 0 PAUSE output\n`;
+    output += '!\n\n';
+  });
+
+  return { success: true, output };
+}
+
+/**
+ * Show Interface (specific)
+ */
+function cmdShowInterface(
+  state: any,
+  input: string,
+  ctx: any
+): any {
+  // This would need to parse the interface name from input
+  // For now, delegate to show interfaces
+  return cmdShowInterfaces(state, input, ctx);
+}
+
+/**
+ * Show IP Interface Brief
+ */
+function cmdShowIpInterfaceBrief(
+  state: any,
+  input: string,
+  ctx: any
+): any {
+  let output = '\nInterface              IP-Address      OK? Method Status                Protocol\n';
+
+  Object.keys(state.ports || {}).forEach(portName => {
+    const port = state.ports[portName];
+    const status = port.shutdown ? 'administratively down' : 'up';
+    const protocol = port.shutdown ? 'down' : 'up';
+
+    if (port.ipAddress && port.subnetMask) {
+      output += `${portName.padEnd(22)} ${port.ipAddress.padEnd(15)} YES manual ${status.padEnd(23)} ${protocol}\n`;
+    } else {
+      output += `${portName.padEnd(22)} unassigned      YES unset  ${status.padEnd(23)} ${protocol}\n`;
+    }
+  });
+
+  output += '!\n';
+  return { success: true, output };
+}
+
+/**
+ * Show VLAN
+ */
+function cmdShowVlan(
+  state: any,
+  input: string,
+  ctx: any
+): any {
+  let output = '\n\nVLAN Name                             Status    Ports\n';
+  output += '---- -------------------------------- --------- -------------------------------\n';
+
+  // Default VLAN 1
+  output += '1    default                          active    ';
+  const vlan1Ports = Object.keys(state.ports || {}).filter(p => {
+    const port = state.ports[p];
+    return !port.accessVlan || port.accessVlan === '1';
+  });
+  output += vlan1Ports.join(', ') || '-';
+  output += '\n';
+
+  // Other VLANs
+  Object.keys(state.vlans || {}).forEach(vlanId => {
+    if (vlanId !== '1') {
+      const vlan = state.vlans[vlanId];
+      const vlanName = (vlan?.name || `VLAN${vlanId}`).padEnd(32);
+      const vlanStatus = vlan?.state || 'active';
+      const vlanPorts = Object.keys(state.ports || {}).filter(p => {
+        const port = state.ports[p];
+        return port.accessVlan === vlanId;
+      });
+
+      output += `${vlanId.padEnd(4)}${vlanName}${vlanStatus.padEnd(10)}${vlanPorts.join(', ') || '-'}\n`;
+    }
+  });
+
+  output += '\n\nVLAN Type  SAID       MTU   Parent RingNo BridgeNo Stp  BrdgMode Trans1 Trans2\n';
+  output += '---- ----- ---------- ----- ------ ------ -------- ---- -------- ------ ------\n';
+  output += '1    enet  100001     1500  -      -      -        -    -        0      0\n';
+
+  Object.keys(state.vlans || {}).forEach(vlanId => {
+    if (vlanId !== '1') {
+      output += `${vlanId.padEnd(4)}enet  ${100000 + parseInt(vlanId)}         1500  -      -      -        -    -        0      0\n`;
+    }
+  });
+
+  output += '!\n';
+  return { success: true, output };
+}
+
+/**
+ * Show MAC Address Table
+ */
+function cmdShowMacAddressTable(
+  state: any,
+  input: string,
+  ctx: any
+): any {
+  let output = '\n\nMac Address Table\n';
+  output += '-------------------------------------------\n\n';
+  output += 'Vlan    Mac Address       Type        Ports\n';
+  output += '----    -----------       --------    -----\n';
+
+  // Show learned MAC addresses
+  if (state.macTable && state.macTable.length > 0) {
+    state.macTable.forEach((entry: any) => {
+      output += `${String(entry.vlan).padEnd(8)}${entry.mac.padEnd(18)}DYNAMIC     ${entry.port}\n`;
+    });
+  } else {
+    output += 'All    0000.0000.0000    STATIC      CPU\n';
+  }
+
+  output += '!\n';
+  return { success: true, output };
+}
+
+/**
+ * Show CDP Neighbors
+ */
+function cmdShowCdpNeighbors(
+  state: any,
+  input: string,
+  ctx: any
+): any {
+  let output = '\nCapability Codes: R - Router, T - Trans Bridge, B - Source Route Bridge\n';
+  output += '                  S - Switch, H - Host, I - IGMP, r - Repeater, P - Phone\n\n';
+  output += 'Device ID        Local Intrfce     Holdtme    Capability  Platform  Port ID\n';
+
+  // Show CDP neighbors if available
+  if (state.cdpNeighbors && state.cdpNeighbors.length > 0) {
+    state.cdpNeighbors.forEach((neighbor: any) => {
+      output += `${neighbor.deviceId.padEnd(16)}${neighbor.localInterface.padEnd(18)}${String(neighbor.holdTime).padEnd(12)}${neighbor.capability.padEnd(12)}${neighbor.platform.padEnd(11)}${neighbor.remoteInterface}\n`;
+    });
+  } else {
+    output += 'No CDP neighbors found\n';
+  }
+
+  output += '!\n';
+  return { success: true, output };
+}
+
+/**
+ * Show IP Route
+ */
+function cmdShowIpRoute(
+  state: any,
+  input: string,
+  ctx: any
+): any {
+  let output = '\n';
+
+  if (!state.ipRouting) {
+    output += '% IP routing is not enabled\n';
+    return { success: true, output };
+  }
+
+  output += 'Codes: L - local, C - connected, S - static, R - RIP, M - mobile, B - BGP\n';
+  output += '       D - EIGRP, EX - EIGRP external, O - OSPF, IA - OSPF inter area\n';
+  output += '       N1 - OSPF NSSA external type 1, N2 - OSPF NSSA external type 2\n';
+  output += 'Gateway of last resort is not set\n\n';
+
+  // Connected routes
+  const hasConnectedRoutes = false;
+  Object.keys(state.ports || {}).forEach(portName => {
+    const port = state.ports[portName];
+    if (port.ipAddress && port.subnetMask) {
+      output += `C     ${port.ipAddress}/${getPrefixLength(port.subnetMask)} is directly connected, ${portName}\n`;
+    }
+  });
+
+  // Static routes
+  if (state.staticRoutes && state.staticRoutes.length > 0) {
+    state.staticRoutes.forEach((route: any) => {
+      output += `S*    ${route.network}/${route.mask} [1/0] via ${route.nextHop}${route.interface ? ` ${route.interface}` : ''}\n`;
+    });
+  }
+
+  if (!hasConnectedRoutes && (!state.staticRoutes || state.staticRoutes.length === 0)) {
+    output += 'No routes in routing table\n';
+  }
+
+  output += '!\n';
+  return { success: true, output };
+}
+
+/**
+ * Show Clock
+ */
+function cmdShowClock(
+  state: any,
+  input: string,
+  ctx: any
+): any {
+  const now = new Date();
+  return {
+    success: true,
+    output: `\n*${now.toTimeString().split(' ')[0]} UTC ${now.toLocaleDateString()}\n`
+  };
+}
+
+/**
+ * Show Flash
+ */
+function cmdShowFlash(
+  state: any,
+  input: string,
+  ctx: any
+): any {
+  let output = '\n-#- --length-- -----date/time------ path\n';
+  output += '1     616      Mar 01 2024 00:00:00 +00:00  vlan.dat\n';
+  output += '2     1599     Mar 01 2024 00:00:00 +00:00  config.text\n';
+  output += '3     1464     Mar 01 2024 00:00:00 +00:00  private-config.text\n';
+  output += '4     3024     Mar 01 2024 00:00:00 +00:00  c2960-lanbase-mz.150-2.SE4.bin\n';
+  output += '\n32505856 bytes available (29720576 bytes used)\n';
+
+  return { success: true, output };
+}
+
+/**
+ * Show Boot
+ */
+function cmdShowBoot(
+  state: any,
+  input: string,
+  ctx: any
+): any {
+  let output = '\nBOOT path-list      : flash:c2960-lanbase-mz.150-2.SE4.bin\n';
+  output += 'Config file         : flash:config.text\n';
+  output += 'Private Config file : flash:private-config.text\n';
+  output += 'Enable Break        : no\n';
+  output += 'Manual Boot         : no\n';
+  output += 'Allow new Feature   : yes\n';
+  output += 'Auto Boot           : no\n';
+
+  return { success: true, output };
+}
+
+/**
+ * Show Spanning Tree
+ */
+function cmdShowSpanningTree(
+  state: any,
+  input: string,
+  ctx: any
+): any {
+  let output = '\nVLAN0001\n';
+  output += '  Spanning tree enabled protocol ieee\n';
+  output += '  Root ID    Priority    32769\n';
+  output += '             Address     0000.0000.0000\n';
+  output += '             Cost        19\n';
+  output += '             Port        1 (FastEthernet0/1)\n';
+  output += '             Hello Time   2 sec  Max Age 20 sec  Forward Delay 15 sec\n\n';
+  output += '  Bridge ID  Priority    32769  (priority 32768 sys-id-ext 1)\n';
+  output += '             Address     001A.2B3C.4D5E\n';
+  output += '             Hello Time   2 sec  Max Age 20 sec  Forward Delay 15 sec\n';
+  output += '             Aging Time  300\n\n';
+
+  output += 'Interface           Role Sts Cost      Prio.Nbr Type\n';
+  output += '------------------- ---- --- --------- -------- --------------------------------\n';
+
+  Object.keys(state.ports || {}).forEach(portName => {
+    const port = state.ports[portName];
+    if (!port.shutdown) {
+      output += `${portName.padEnd(19)}Desg FWD 19         128.1    Shr P2p\n`;
+    }
+  });
+
+  output += '!\n';
+  return { success: true, output };
+}
+
+/**
+ * Show Port Security
+ */
+function cmdShowPortSecurity(
+  state: any,
+  input: string,
+  ctx: any
+): any {
+  let output = '\nSecure Port  MaxSecureAddr  CurrentAddr  SecurityViolation  Security Action\n';
+  output += '-----------------------------------------------------------------------\n';
+
+  Object.keys(state.ports || {}).forEach(portName => {
+    const port = state.ports[portName];
+    if (port.portSecurity?.enabled) {
+      output += `${portName.padEnd(12)}${String(port.portSecurity.maxAddresses).padEnd(15)}${String(port.portSecurity.currentAddresses).padEnd(13)}${String(port.portSecurity.violations).padEnd(20)}${port.portSecurity.violationAction || 'Shutdown'}\n`;
+    }
+  });
+
+  output += '!\n';
+  return { success: true, output };
+}
+
+/**
+ * Helper function to get prefix length from subnet mask
+ */
+function getPrefixLength(subnetMask: string): number {
+  const parts = subnetMask.split('.').map(Number);
+  let count = 0;
+
+  for (const part of parts) {
+    if (part === 255) count += 8;
+    else if (part === 254) { count += 7; break; }
+    else if (part === 252) { count += 6; break; }
+    else if (part === 248) { count += 5; break; }
+    else if (part === 240) { count += 4; break; }
+    else if (part === 224) { count += 3; break; }
+    else if (part === 192) { count += 2; break; }
+    else if (part === 128) { count += 1; break; }
+    else break;
+  }
+
+  return count;
+}

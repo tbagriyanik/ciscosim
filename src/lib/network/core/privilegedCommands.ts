@@ -1,0 +1,249 @@
+import type { CommandHandler } from './commandTypes';
+
+// Privileged EXEC komutları (ping, telnet, write, copy, erase, reload, debug, vs.)
+
+export const privilegedHandlers: Record<string, CommandHandler> = {
+    'ping': cmdPing,
+    'telnet': cmdTelnet,
+    'write memory': cmdWriteMemory,
+    'copy running-config startup-config': cmdCopyRunningStartup,
+    'erase startup-config': cmdEraseStartupConfig,
+    'erase nvram': cmdEraseNvram,
+    'reload': cmdReload,
+    'ip route': cmdIpRoute,
+    'no ip route': cmdNoIpRoute,
+    'debug': cmdDebug,
+    'undebug all': cmdUndebugAll,
+};
+
+/**
+ * Ping - Test connectivity
+ */
+function cmdPing(state: any, input: string, ctx: any): any {
+    if (state.currentMode !== 'privileged') {
+        return { success: false, error: '% Invalid command at this mode' };
+    }
+
+    const match = input.match(/^ping\s+([0-9.]+|[\w.-]+)(?:\s+(\d+))?(?:\s+(\d+))?$/i);
+    if (!match) {
+        return { success: false, error: '% Invalid ping command. Use: ping <host> [size] [count]' };
+    }
+
+    const host = match[1];
+    const size = match[2] || '56';
+    const count = match[3] || '5';
+
+    let output = `\nType escape sequence to abort.\n`;
+    output += `Sending ${count}, ${size}-byte ICMP Echos to ${host}, timeout is 2 seconds:\n`;
+
+    // Simulate ping results (80% success rate for demo)
+    const successCount = Math.random() > 0.2 ? parseInt(count) : 0;
+    const failCount = parseInt(count) - successCount;
+
+    for (let i = 0; i < successCount; i++) {
+        output += '!';
+    }
+    for (let i = 0; i < failCount; i++) {
+        output += '.';
+    }
+    output += '\n';
+
+    output += `\nSuccess rate is ${Math.round((successCount / parseInt(count)) * 100)} percent (${successCount}/${count})`;
+    if (successCount > 0) {
+        output += `, round-trip min/avg/max = 1/2/8 ms`;
+    }
+    output += '\n';
+
+    return { success: true, output };
+}
+
+/**
+ * Telnet - Connect to remote device
+ */
+function cmdTelnet(state: any, input: string, ctx: any): any {
+    if (state.currentMode !== 'privileged') {
+        return { success: false, error: '% Invalid command at this mode' };
+    }
+
+    const match = input.match(/^telnet\s+([0-9.]+|[\w.-]+)(?:\s+(\d+))?$/i);
+    if (!match) {
+        return { success: false, error: '% Invalid telnet command' };
+    }
+
+    const host = match[1];
+    const port = match[2] || '23';
+
+    return {
+        success: true,
+        output: `Trying ${host} ${port} ...\nOpen\n\nUser Access Verification\n\nPassword: `,
+        requiresTelnetPassword: true,
+        telnetTarget: { host, port }
+    };
+}
+
+/**
+ * Write Memory - Save configuration
+ */
+function cmdWriteMemory(state: any, input: string, ctx: any): any {
+    if (state.currentMode !== 'privileged') {
+        return { success: false, error: '% Invalid command at this mode' };
+    }
+
+    return {
+        success: true,
+        output: 'Building configuration...\n[OK]\n',
+        saveConfig: true
+    };
+}
+
+/**
+ * Copy Running-Config Startup-Config
+ */
+function cmdCopyRunningStartup(state: any, input: string, ctx: any): any {
+    if (state.currentMode !== 'privileged') {
+        return { success: false, error: '% Invalid command at this mode' };
+    }
+
+    return {
+        success: true,
+        output: 'Destination filename [startup-config]?\nBuilding configuration...\n[OK]\n',
+        saveConfig: true
+    };
+}
+
+/**
+ * Erase Startup-Config
+ */
+function cmdEraseStartupConfig(state: any, input: string, ctx: any): any {
+    if (state.currentMode !== 'privileged') {
+        return { success: false, error: '% Invalid command at this mode' };
+    }
+
+    return {
+        success: true,
+        output: 'Erasing the nvram filesystem will remove startup configuration files.\nErase of nvram: complete\n',
+        eraseConfig: true
+    };
+}
+
+/**
+ * Erase NVRAM
+ */
+function cmdEraseNvram(state: any, input: string, ctx: any): any {
+    if (state.currentMode !== 'privileged') {
+        return { success: false, error: '% Invalid command at this mode' };
+    }
+
+    return {
+        success: true,
+        output: 'Erasing the nvram filesystem will remove all configuration files.\nErase of nvram: complete\n',
+        eraseConfig: true
+    };
+}
+
+/**
+ * Reload - Reboot device
+ */
+function cmdReload(state: any, input: string, ctx: any): any {
+    if (state.currentMode !== 'privileged') {
+        return { success: false, error: '% Invalid command at this mode' };
+    }
+
+    return {
+        success: true,
+        output: 'Proceed with reload? [confirm]',
+        requiresReloadConfirm: true
+    };
+}
+
+/**
+ * IP Route - Add static route
+ */
+function cmdIpRoute(state: any, input: string, ctx: any): any {
+    if (state.currentMode !== 'privileged') {
+        return { success: false, error: '% Invalid command at this mode' };
+    }
+
+    const match = input.match(/^ip\s+route\s+([0-9.]+)\s+([0-9.]+)\s+([0-9.]+|\w+)$/i);
+    if (!match) {
+        return { success: false, error: '% Invalid ip route command. Use: ip route <network> <mask> <next-hop|interface>' };
+    }
+
+    const [, network, mask, nextHop] = match;
+
+    const newStaticRoutes = [...(state.staticRoutes || [])];
+    newStaticRoutes.push({ network, mask, nextHop });
+
+    return {
+        success: true,
+        newState: {
+            staticRoutes: newStaticRoutes,
+            ipRouting: true,
+            isLayer3Switch: true
+        }
+    };
+}
+
+/**
+ * No IP Route - Remove static route
+ */
+function cmdNoIpRoute(state: any, input: string, ctx: any): any {
+    if (state.currentMode !== 'privileged') {
+        return { success: false, error: '% Invalid command at this mode' };
+    }
+
+    const match = input.match(/^no\s+ip\s+route\s+([0-9.]+)\s+([0-9.]+)\s+([0-9.]+|\w+)$/i);
+    if (!match) {
+        return { success: false, error: '% Invalid no ip route command' };
+    }
+
+    const [, network, mask, nextHop] = match;
+
+    const newStaticRoutes = (state.staticRoutes || []).filter(
+        (route: any) => !(route.network === network && route.mask === mask && route.nextHop === nextHop)
+    );
+
+    return {
+        success: true,
+        newState: { staticRoutes: newStaticRoutes }
+    };
+}
+
+/**
+ * Debug - Enable debugging
+ */
+function cmdDebug(state: any, input: string, ctx: any): any {
+    if (state.currentMode !== 'privileged') {
+        return { success: false, error: '% Invalid command at this mode' };
+    }
+
+    const match = input.match(/^debug\s+(.+)$/i);
+    if (!match) {
+        return { success: false, error: '% Invalid debug command' };
+    }
+
+    const debugType = match[1].toLowerCase();
+    const newDebugs = { ...(state.debugs || {}) };
+    newDebugs[debugType] = true;
+
+    return {
+        success: true,
+        output: `${debugType} debugging is on`,
+        newState: { debugs: newDebugs }
+    };
+}
+
+/**
+ * Undebug All
+ */
+function cmdUndebugAll(state: any, input: string, ctx: any): any {
+    if (state.currentMode !== 'privileged') {
+        return { success: false, error: '% Invalid command at this mode' };
+    }
+
+    return {
+        success: true,
+        output: 'All possible debugging has been turned off',
+        newState: { debugs: {} }
+    };
+}
