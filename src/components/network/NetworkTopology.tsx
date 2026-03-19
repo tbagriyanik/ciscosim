@@ -101,7 +101,7 @@ export function NetworkTopology({
   activeDeviceId,
   deviceStates,
 }: NetworkTopologyProps) {
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   const { theme } = useTheme();
   const isDark = theme === 'dark';
 
@@ -2461,7 +2461,7 @@ export function NetworkTopology({
         {/* Device Buttons */}
         <div className="px-4 py-3 flex items-center justify-between border-b border-slate-800/50">
           <div className={`text-[10px] font-bold tracking-widest ${isDark ? 'text-slate-500' : 'text-slate-400'} whitespace-nowrap`}>
-            {language === 'tr' ? 'Cihazlar' : 'Devices'}
+            {t.devices}
           </div>
           <div className="flex gap-2">
             {(['pc', 'switch', 'router'] as const).map((type) => (
@@ -2479,7 +2479,7 @@ export function NetworkTopology({
                   <div className="scale-75">{DEVICE_ICONS[type]}</div>
                 </div>
                 <span className={`text-xs font-bold ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-                  {type === 'pc' ? 'PC' : type.charAt(0).toUpperCase() + type.slice(1)}
+                  {type === 'pc' ? t.addPcShort : type === 'switch' ? t.addSwitchShort : t.addRouterShort}
                 </span>
               </button>
             ))}
@@ -2489,7 +2489,7 @@ export function NetworkTopology({
         {/* Cable Type Selector */}
         <div className="px-4 py-3 flex items-center justify-between">
           <div className={`text-[10px] font-bold tracking-widest ${isDark ? 'text-slate-500' : 'text-slate-400'} whitespace-nowrap`}>
-            {language === 'tr' ? 'Kablonuz' : 'Cable'}
+            {t.cable}
           </div>
           <div className="flex gap-1.5">
             {(['straight', 'crossover', 'console'] as CableType[]).map((type) => (
@@ -2507,11 +2507,7 @@ export function NetworkTopology({
                   }`}
               >
                 <div className={`w-2.5 h-2.5 rounded-full ${CABLE_COLORS[type].bg}`} />
-                {type === 'straight'
-                  ? language === 'tr' ? 'Düz' : 'Str'
-                  : type === 'crossover'
-                    ? language === 'tr' ? 'Çap' : 'Cro'
-                    : language === 'tr' ? 'Kon' : 'Con'}
+                {type === 'straight' ? t.straight : type === 'crossover' ? t.crossover : t.console}
               </button>
             ))}
           </div>
@@ -2535,7 +2531,7 @@ export function NetworkTopology({
           <svg className="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
           </svg>
-          <span className="text-xs text-slate-300">{language === 'tr' ? 'Ekle' : 'Add'}</span>
+          <span className="text-xs text-slate-300">{t.add}</span>
         </button>
 
         {/* Cable Type */}
@@ -2545,11 +2541,7 @@ export function NetworkTopology({
         >
           <div className={`w-4 h-4 rounded ${CABLE_COLORS[cableInfo.cableType].bg}`} />
           <span className="text-xs text-slate-300">
-            {cableInfo.cableType === 'straight'
-              ? language === 'tr' ? 'Düz' : 'Straight'
-              : cableInfo.cableType === 'crossover'
-                ? language === 'tr' ? 'Çapraz' : 'X-over'
-                : language === 'tr' ? 'Konsol' : 'Console'}
+            {cableInfo.cableType === 'straight' ? t.straight : cableInfo.cableType === 'crossover' ? t.crossover : t.console}
           </span>
         </button>
 
@@ -2675,9 +2667,7 @@ export function NetworkTopology({
                         >
                           <div className={`w-2.5 h-2.5 rounded-full ${CABLE_COLORS[type].bg}`} />
                           <span className="text-[10px] font-bold">
-                            {type === 'straight' ? (language === 'tr' ? 'Düz' : 'Str') :
-                              type === 'crossover' ? (language === 'tr' ? 'Çap' : 'Cro') :
-                                (language === 'tr' ? 'Kon' : 'Con')}
+                            {type === 'straight' ? t.straight : type === 'crossover' ? t.crossover : t.console}
                           </span>
                         </button>
                       </TooltipTrigger>
@@ -2806,7 +2796,7 @@ export function NetworkTopology({
               <div className="p-6 space-y-8">
                 {/* Devices Section */}
                 <div className="space-y-4">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Devices</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">{t.devices}</p>
                   <div className="grid grid-cols-3 gap-3">
                     {(['pc', 'switch', 'router'] as const).map((type) => (
                       <button
@@ -2818,7 +2808,9 @@ export function NetworkTopology({
                         <div className={type === 'pc' ? 'text-blue-500' : type === 'switch' ? 'text-emerald-500' : 'text-purple-500'}>
                           {type === 'pc' ? <Laptop className="w-6 h-6" /> : type === 'switch' ? <Monitor className="w-6 h-6" /> : <Network className="w-6 h-6" />}
                         </div>
-                        <span className="text-xs font-bold capitalize">{type}</span>
+                        <span className="text-xs font-bold capitalize">
+                          {type === 'pc' ? t.addPcShort : type === 'switch' ? t.addSwitchShort : t.addRouterShort}
+                        </span>
                       </button>
                     ))}
                   </div>
@@ -2826,7 +2818,7 @@ export function NetworkTopology({
 
                 {/* Cables Section */}
                 <div className="space-y-4">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Cable Types</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">{t.cableTypes}</p>
                   <div className="grid grid-cols-3 gap-3">
                     {(['straight', 'crossover', 'console'] as CableType[]).map((type) => (
                       <button
@@ -2838,7 +2830,9 @@ export function NetworkTopology({
                           }`}
                       >
                         <div className={`w-4 h-4 rounded-full ${CABLE_COLORS[type].bg}`} />
-                        <span className="text-xs font-bold capitalize">{type}</span>
+                        <span className="text-xs font-bold capitalize">
+                          {type === 'straight' ? t.straight : type === 'crossover' ? t.crossover : t.console}
+                        </span>
                       </button>
                     ))}
                   </div>
@@ -3909,7 +3903,7 @@ export function NetworkTopology({
                           : isDark ? 'text-slate-500 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600'
                           }`}
                       >
-                        {type === 'straight' ? 'Direct' : type === 'crossover' ? 'X-Over' : 'Cons'}
+                        {type === 'straight' ? t.straight : type === 'crossover' ? t.crossover : t.console}
                       </button>
                     ))}
                   </div>
@@ -3919,7 +3913,7 @@ export function NetworkTopology({
                   <div className="flex items-center gap-3 ml-auto px-4 py-2 rounded-xl bg-cyan-500/5 border border-cyan-500/20 text-cyan-500">
                     <div className="w-1.5 h-1.5 rounded-full bg-cyan-500 animate-pulse" />
                     <span className="text-[10px] font-black tracking-widest">
-                      Link from: {devices.find(d => d.id === selectedSourcePort.deviceId)?.name} ({selectedSourcePort.portId})
+                      {t.linkFrom}: {devices.find(d => d.id === selectedSourcePort.deviceId)?.name} ({selectedSourcePort.portId})
                     </span>
                   </div>
                 )}
@@ -3950,7 +3944,7 @@ export function NetworkTopology({
                         </span>
                       </div>
                       <div className={`text-[10px] font-bold tracking-widest ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                        {availablePorts.length} ports free
+                        {availablePorts.length} {t.freePorts}
                       </div>
                     </div>
 
@@ -4109,7 +4103,7 @@ export function NetworkTopology({
             {/* Modal Navigation */}
             <div className={`px-8 py-6 border-t ${isDark ? 'border-slate-800/50 bg-slate-800/30' : 'border-slate-100 bg-slate-50/50'} flex justify-between items-center`}>
               <div className={`text-[10px] font-bold tracking-widest ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
-                {portSelectorStep === 'source' ? 'Step 1: Root' : 'Step 2: Destination'}
+                {portSelectorStep === 'source' ? t.step1 : t.step2}
               </div>
               <button
                 onClick={() => {

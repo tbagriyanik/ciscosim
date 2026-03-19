@@ -80,7 +80,7 @@ export function NetworkTopologyPortSelectorModal({
                       ? `${CABLE_COLORS[type].bg} text-white shadow-lg shadow-black/10`
                       : isDark ? 'text-slate-500 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600'}`}
                   >
-                    {t[type]}
+                    {type === 'straight' ? t.straight : type === 'crossover' ? t.crossover : t.console}
                   </button>
                 ))}
               </div>
@@ -123,7 +123,7 @@ export function NetworkTopologyPortSelectorModal({
                     </span>
                   </div>
                   <div className={`text-xs font-bold tracking-widest ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                    {language === 'tr' ? `${device.ports.filter(p => p.status === 'disconnected').length} boş port` : `${device.ports.filter(p => p.status === 'disconnected').length} ports free`}
+                    {device.ports.filter(p => p.status === 'disconnected').length} {t.freePorts}
                   </div>
                 </div>
 

@@ -246,6 +246,7 @@ export interface Translations {
   selectTargetPort: string;
   step1: string;
   step2: string;
+  freePorts: string;
   noFreePorts: string;
   noFreePortsMessage: string;
   reloadPage: string;
@@ -467,6 +468,7 @@ const translations: Record<Language, Translations> = {
     selectTargetPort: 'Hedef Portu Seç',
     step1: 'Adım 1: Kaynak',
     step2: 'Adım 2: Hedef',
+    freePorts: 'boş port',
     noFreePorts: 'Boş Port Yok',
     noFreePortsMessage: 'Lütfen, önce bazı kabloları çıkarın.',
     reloadPage: 'Sayfayı Yenile',
@@ -475,7 +477,7 @@ const translations: Record<Language, Translations> = {
     search: 'Ara',
     copy: 'Kopyala',
     power: 'Güç',
-	 tasks: 'Görevler',
+    tasks: 'Görevler',
   },
   en: {
     title: 'Network Simulator 2026',
@@ -686,6 +688,7 @@ const translations: Record<Language, Translations> = {
     selectTargetPort: 'Select Target Port',
     step1: 'Step 1: Source',
     step2: 'Step 2: Destination',
+    freePorts: 'free ports',
     noFreePorts: 'No Free Ports',
     noFreePortsMessage: 'Please, disconnect some cables first.',
     reloadPage: 'Reload page',
@@ -694,7 +697,7 @@ const translations: Record<Language, Translations> = {
     search: 'Search',
     copy: 'Copy',
     power: 'Power',
-	 tasks: 'Tasks',
+    tasks: 'Tasks',
   }
 };
 
