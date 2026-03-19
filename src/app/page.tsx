@@ -1553,7 +1553,7 @@ export default function Home() {
   }, []);
 
   return (
-    <div className={`min-h-screen flex flex-col ${isAppLoading ? 'bg-slate-950 overflow-hidden' : (isDark ? 'bg-slate-950' : 'bg-slate-50')} transition-colors duration-700`}>
+    <div className={`fixed inset-0 flex flex-col ${isAppLoading ? 'bg-slate-950 overflow-hidden' : (isDark ? 'bg-slate-950' : 'bg-slate-50')} transition-colors duration-700`}>
       {/* App Loading Screen */}
       {isAppLoading && (
         <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-slate-950">
@@ -1596,10 +1596,10 @@ export default function Home() {
         initial={{ opacity: 0 }}
         animate={{ opacity: showContent ? 1 : 0 }}
         transition={{ duration: 0.5 }}
-        className="flex flex-col flex-1"
+        className="flex flex-col flex-1 inset-0"
       >
         {/* Header */}
-        <header className={`${isDark ? 'bg-slate-900/95 border-slate-800' : 'bg-white/90 border-slate-200'} backdrop-blur-xl border-b px-5 py-3 sticky top-0 z-50 pb-0`}>
+        <header className={`${isDark ? 'bg-slate-900/95 border-slate-800' : 'bg-white/90 border-slate-200'} backdrop-blur-xl border-b px-5 py-3 flex-shrink-0 z-50 pb-0`}>
           <div className="w-full">
             <div className="flex items-center justify-between">
               {/* Logo & Title */}
@@ -2253,13 +2253,13 @@ export default function Home() {
         </AlertDialog>
 
         {/* Main Content with matching top background */}
-        <main className={`flex-1 overflow-hidden flex flex-col ${isDark ? 'bg-slate-950' : 'bg-slate-100'}`}>
-          <div className="w-full p-5 pb-0 sm:pb-5 flex-1 flex flex-col">
+        <main className={`flex-1 overflow-hidden flex flex-col ${isDark ? 'bg-slate-950' : 'bg-slate-100'} ${activeTab === 'topology' ? 'p-0' : 'p-5 pb-0 sm:pb-5'}`}>
+          <div className={`w-full flex-1 flex flex-col ${activeTab === 'topology' ? '' : 'p-5 pb-0 sm:pb-5'}`}>
             {/* Tab Content */}
             {activeTab === 'topology' && (
               <div className="flex-1 flex flex-col h-full min-h-0 overflow-hidden">
                 {/* Network Topology fills remaining space */}
-                <div ref={topologyContainerRef} className="flex-1 w-full flex flex-col min-h-[500px] topology-print-area">
+                <div ref={topologyContainerRef} className="flex-1 w-full flex flex-col min-h-0 topology-print-area">
                   <NetworkTopology
                     key={topologyKey}
                     cableInfo={cableInfo}
