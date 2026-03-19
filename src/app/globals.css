@@ -360,6 +360,18 @@ svg text {
   vector-effect: non-scaling-stroke;
 }
 
+/* Keep topology canvas wrapper stretched to available height */
+.topology-print-area {
+  height: 100%;
+  min-height: 100%;
+}
+
+@media (max-width: 640px) {
+  .topology-print-area {
+    min-height: calc(100dvh - 7.5rem);
+  }
+}
+
 /* Print Styles - Only Topology */
 @media print {
   @page {

@@ -1910,34 +1910,42 @@ export default function Home() {
               {activeTab === 'topology' && (
                 <div className={`flex items-center gap-1 p-1 rounded-xl border ${isDark ? 'bg-slate-900/40 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
                   {/* Add Button (Device, Cable, Note) */}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-9 w-9 text-emerald-500 hover:bg-emerald-500/10"
-                    onClick={() => {
-                      const event = new CustomEvent('trigger-topology-palette');
-                      window.dispatchEvent(event);
-                    }}
-                    title={t.add}
-                  >
-                    <Plus className="w-5 h-5" />
-                  </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-9 w-9 text-emerald-500 hover:bg-emerald-500/10"
+                        onClick={() => {
+                          const event = new CustomEvent('trigger-topology-palette');
+                          window.dispatchEvent(event);
+                        }}
+                      >
+                        <Plus className="w-5 h-5" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>{language === 'tr' ? 'Cihaz veya Kablo Ekle' : 'Add Device or Cable'}</TooltipContent>
+                  </Tooltip>
 
                   <div className={`w-px h-4 ${isDark ? 'bg-slate-800' : 'bg-slate-200'} mx-0.5`} />
 
                   {/* Connect Button */}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-9 w-9 text-cyan-500 hover:bg-cyan-500/10"
-                    onClick={() => {
-                      const event = new CustomEvent('trigger-topology-connect');
-                      window.dispatchEvent(event);
-                    }}
-                    title={t.connect}
-                  >
-                    <Link2 className="w-5 h-5" />
-                  </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-9 w-9 text-cyan-500 hover:bg-cyan-500/10"
+                        onClick={() => {
+                          const event = new CustomEvent('trigger-topology-connect');
+                          window.dispatchEvent(event);
+                        }}
+                      >
+                        <Link2 className="w-5 h-5" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>{language === 'tr' ? 'Cihazları Bagla' : 'Connect Devices'}</TooltipContent>
+                  </Tooltip>
                 </div>
               )}
             </div>
@@ -2280,12 +2288,12 @@ export default function Home() {
 
         {/* Main Content with matching top background */}
         <main className={`flex-1 overflow-hidden flex flex-col ${isDark ? 'bg-slate-950' : 'bg-slate-100'}`}>
-          <div className="w-full p-5 pb-20 sm:pb-5 flex-1 flex flex-col">
+          <div className="w-full p-5 pb-16 sm:pb-5 flex-1 flex flex-col">
             {/* Tab Content */}
             {activeTab === 'topology' && (
               <div className="flex-1 flex flex-col h-full min-h-0 overflow-hidden">
                 {/* Network Topology fills remaining space */}
-                <div ref={topologyContainerRef} className="flex-1 w-full h-full flex flex-col min-h-0 topology-print-area">
+                <div ref={topologyContainerRef} className="flex-1 w-full h-full flex flex-col min-h-300 topology-print-area">
                   <NetworkTopology
                     key={topologyKey}
                     cableInfo={cableInfo}

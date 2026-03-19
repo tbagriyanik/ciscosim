@@ -6,6 +6,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { CanvasDevice, CanvasConnection, CanvasNote } from './networkTopology.types';
 import { DeviceIcon } from './DeviceIcon';
 import { ConnectionLine } from './ConnectionLine';
@@ -1592,6 +1593,12 @@ export function NetworkTopology({
           toggleFullscreen();
         }
       }
+
+      // Alt+R to reset zoom/pan view
+      if (e.altKey && !e.ctrlKey && !e.metaKey && key === 'r') {
+        e.preventDefault();
+        resetView();
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
@@ -1599,7 +1606,7 @@ export function NetworkTopology({
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('close-menus-broadcast', handleCloseBroadcast);
     };
-  }, [selectedDeviceIds, deleteDevice, configuringDevice, cancelDeviceConfig, selectAllDevices, saveToHistory, devices, onDeviceDelete, isDrawingConnection, isPaletteOpen, handleUndo, handleRedo, copyDevice, cutDevice, pasteDevice, pingSource, showPortSelector, toggleFullscreen, isFullscreen]);
+  }, [selectedDeviceIds, deleteDevice, configuringDevice, cancelDeviceConfig, selectAllDevices, saveToHistory, devices, onDeviceDelete, isDrawingConnection, isPaletteOpen, handleUndo, handleRedo, copyDevice, cutDevice, pasteDevice, pingSource, showPortSelector, toggleFullscreen, isFullscreen, resetView]);
 
   // Find path between devices using BFS
   const findPath = useCallback((sourceId: string, targetId: string): string[] | null => {
@@ -2481,43 +2488,55 @@ export function NetworkTopology({
               <div className={`flex items-center gap-2 p-1 rounded-xl border ${isDark ? 'bg-slate-900/40 border-slate-700/30' : 'bg-blue-50/50 border-blue-100/50'}`}>
                 {/* Devices Group */}
                 <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => addDevice('pc')}
-                    title="Add PC"
-                    className={`p-1.5 rounded-lg transition-all ${isDark ? 'hover:bg-slate-700 text-blue-500' : 'hover:bg-slate-100 text-blue-600'}`}
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 0 0 2-2V5a2 2 0 0 0 -2-2H5a2 2 0 0 0 -2 2v10a2 2 0 0 0 2 2z" />
-                    </svg>
-                  </button>
-                  <button
-                    onClick={() => addDevice('switch')}
-                    title="Add Switch"
-                    className={`p-1.5 rounded-lg transition-all ${isDark ? 'hover:bg-slate-700 text-emerald-500' : 'hover:bg-slate-100 text-emerald-600'}`}
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 12h14M5 12a2 2 0 0 1 -2-2V6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1 -2 2M5 12a2 2 0 0 0 -2 2v4a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4a2 2 0 0 0 -2-2m-2-4h.01M17 16h.01" />
-                    </svg>
-                  </button>
-                  <button
-                    onClick={() => addDevice('router')}
-                    title="Add Router"
-                    className={`p-1.5 rounded-lg transition-all ${isDark ? 'hover:bg-slate-700 text-purple-500' : 'hover:bg-slate-100 text-purple-600'}`}
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <circle cx="12" cy="12" r="9" strokeWidth={1.5} />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 5v14M5 12h14M12 5l-2 2m2-2l2 2m-2 12l-2-2m2 2l2-2M5 12l2-2m-2 2l2 2M19 12l-2-2m2 2l-2 2" />
-                    </svg>
-                  </button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={() => addDevice('pc')}
+                        className={`p-1.5 rounded-lg transition-all ${isDark ? 'hover:bg-slate-700 text-blue-500' : 'hover:bg-slate-100 text-blue-600'}`}
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 0 0 2-2V5a2 2 0 0 0 -2-2H5a2 2 0 0 0 -2 2v10a2 2 0 0 0 2 2z" />
+                        </svg>
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>{language === 'tr' ? 'PC Ekle' : 'Add PC'}</TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={() => addDevice('switch')}
+                        className={`p-1.5 rounded-lg transition-all ${isDark ? 'hover:bg-slate-700 text-emerald-500' : 'hover:bg-slate-100 text-emerald-600'}`}
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 12h14M5 12a2 2 0 0 1 -2-2V6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1 -2 2M5 12a2 2 0 0 0 -2 2v4a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4a2 2 0 0 0 -2-2m-2-4h.01M17 16h.01" />
+                        </svg>
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>{language === 'tr' ? 'Switch Ekle' : 'Add Switch'}</TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={() => addDevice('router')}
+                        className={`p-1.5 rounded-lg transition-all ${isDark ? 'hover:bg-slate-700 text-purple-500' : 'hover:bg-slate-100 text-purple-600'}`}
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <circle cx="12" cy="12" r="9" strokeWidth={1.5} />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 5v14M5 12h14M12 5l-2 2m2-2l2 2m-2 12l-2-2m2 2l2-2M5 12l2-2m-2 2l2 2M19 12l-2-2m2 2l-2 2" />
+                        </svg>
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>{language === 'tr' ? 'Router Ekle' : 'Add Router'}</TooltipContent>
+                  </Tooltip>
                 </div>
 
                 {/* Cable Types Group */}
                 <div className="flex items-center gap-1">
                   {(['straight', 'crossover', 'console'] as CableType[]).map((type) => (
+                    <Tooltip key={type}>
+                      <TooltipTrigger asChild>
                     <button
-                      key={type}
                       onClick={() => onCableChange({ ...cableInfo, cableType: type })}
-                      title={type.charAt(0).toUpperCase() + type.slice(1)}
                       className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg transition-all ${cableInfo.cableType === type
                         ? `${CABLE_COLORS[type].bg} text-white`
                         : isDark ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-slate-100 text-slate-600'}`}
@@ -2529,6 +2548,15 @@ export function NetworkTopology({
                             (language === 'tr' ? 'Kon' : 'Con')}
                       </span>
                     </button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {type === 'straight'
+                          ? (language === 'tr' ? 'Düz Kablo' : 'Straight Cable')
+                          : type === 'crossover'
+                            ? (language === 'tr' ? 'Çapraz Kablo' : 'Crossover Cable')
+                            : (language === 'tr' ? 'Konsol Kablosu' : 'Console Cable')}
+                      </TooltipContent>
+                    </Tooltip>
                   ))}
                 </div>
               </div>
@@ -2542,7 +2570,6 @@ export function NetworkTopology({
               <button
                 onClick={() => setIsPaletteOpen(true)}
                 className="hidden"
-                title={language === 'tr' ? 'Cihaz Ekle' : 'Add Device'}
               >
                 {language === 'tr' ? 'Ekle' : 'Add'}
               </button>
@@ -2555,7 +2582,6 @@ export function NetworkTopology({
                   setSelectedSourcePort(null);
                 }}
                 className="hidden"
-                title={language === 'tr' ? 'Cihazları Bağla' : 'Connect Devices'}
               >
                 {language === 'tr' ? 'Bağla' : 'Connect'}
               </button>
@@ -2571,7 +2597,7 @@ export function NetworkTopology({
                 <button
                   onClick={resetView}
                   className={`px-2 h-7 rounded-lg text-[11px] font-mono ${isDark ? 'hover:bg-slate-700 text-slate-200' : 'hover:bg-slate-100 text-slate-700'}`}
-                  title={language === 'tr' ? 'Sıfırla' : 'Reset'}
+                  title={`${language === 'tr' ? 'Sıfırla' : 'Reset'} (Alt+R)`}
                 >
                   {Math.round(zoom * 100)}%
                 </button>
@@ -2912,15 +2938,20 @@ export function NetworkTopology({
               +
             </button>
             <div className={`w-px h-5 ${isDark ? 'bg-slate-600' : 'bg-slate-300'} mx-1`} />
-            <button
-              onClick={resetView}
-              className={`px-2 py-1 text-xs rounded ${isDark
-                ? 'hover:bg-slate-700 text-slate-300'
-                : 'hover:bg-slate-100 text-slate-600'
-                }`}
-            >
-              {language === 'tr' ? 'Sıfırla' : 'Reset'}
-            </button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={resetView}
+                  className={`px-2 py-1 text-xs rounded ${isDark
+                    ? 'hover:bg-slate-700 text-slate-300'
+                    : 'hover:bg-slate-100 text-slate-600'
+                    }`}
+                >
+                  {language === 'tr' ? 'Sıfırla' : 'Reset'}
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>{`${language === 'tr' ? 'Sıfırla' : 'Reset'} (Alt+R)`}</TooltipContent>
+            </Tooltip>
           </div>
 
           {/* Zoom Controls - Desktop Only - Top Right */}
@@ -2968,28 +2999,37 @@ export function NetworkTopology({
               +
             </button>
             <div className={`w-px h-5 ${isDark ? 'bg-slate-600' : 'bg-slate-300'} mx-1`} />
-            <button
-              onClick={resetView}
-              className={`px-2 py-1 text-xs rounded ${isDark
-                ? 'hover:bg-slate-700 text-slate-300'
-                : 'hover:bg-slate-100 text-slate-600'
-                }`}
-            >
-              {language === 'tr' ? 'Sıfırla' : 'Reset'}
-            </button>
-            <button
-              onClick={toggleFullscreen}
-              className={`px-2 py-1 text-xs rounded flex items-center gap-1 ${isDark
-                ? 'hover:bg-slate-700 text-slate-300'
-                : 'hover:bg-slate-100 text-slate-600'
-                }`}
-              title="Ctrl+F"
-            >
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
-              </svg>
-              {isFullscreen ? (language === 'tr' ? 'Küçült' : 'Exit') : (language === 'tr' ? 'Tam Ekran' : 'Full Screen')}
-            </button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={resetView}
+                  className={`px-2 py-1 text-xs rounded ${isDark
+                    ? 'hover:bg-slate-700 text-slate-300'
+                    : 'hover:bg-slate-100 text-slate-600'
+                    }`}
+                >
+                  {language === 'tr' ? 'Sıfırla' : 'Reset'}
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>{`${language === 'tr' ? 'Sıfırla' : 'Reset'} (Alt+R)`}</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={toggleFullscreen}
+                  className={`px-2 py-1 text-xs rounded flex items-center gap-1 ${isDark
+                    ? 'hover:bg-slate-700 text-slate-300'
+                    : 'hover:bg-slate-100 text-slate-600'
+                    }`}
+                >
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                  </svg>
+                  {isFullscreen ? (language === 'tr' ? 'Kucult' : 'Exit') : (language === 'tr' ? 'Tam Ekran' : 'Full Screen')}
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>Ctrl+F</TooltipContent>
+            </Tooltip>
           </div>
 
           {/* Minimap - Desktop Only - Below Zoom Controls */}
@@ -3955,3 +3995,5 @@ export function NetworkTopology({
     </div>
   );
 }
+
+
