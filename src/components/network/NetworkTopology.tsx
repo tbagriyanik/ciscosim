@@ -509,6 +509,23 @@ export function NetworkTopology({
     return () => window.removeEventListener('popstate', handlePopState);
   }, [isPaletteOpen, configuringDevice, pingSource, showPortSelector, contextMenu, cancelDeviceConfig, isFullscreen]);
 
+  // Allow page-level header buttons (next to the device selector) to control topology UI on mobile.
+  useEffect(() => {
+    const openPalette = () => setIsPaletteOpen(true);
+    const openConnect = () => {
+      setShowPortSelector(true);
+      setPortSelectorStep('source');
+      setSelectedSourcePort(null);
+    };
+
+    window.addEventListener('trigger-topology-palette', openPalette as EventListener);
+    window.addEventListener('trigger-topology-connect', openConnect as EventListener);
+    return () => {
+      window.removeEventListener('trigger-topology-palette', openPalette as EventListener);
+      window.removeEventListener('trigger-topology-connect', openConnect as EventListener);
+    };
+  }, []);
+
   // Handle right-click context menu with viewport clamping
   const openContextMenu = useCallback((clientX: number, clientY: number, deviceId: string | null = null) => {
     // Estimate menu dimensions (approximate)
@@ -2369,7 +2386,7 @@ export function NetworkTopology({
 
   // Render Mobile Bottom Action Bar
   const renderMobileBottomBar = () => (
-    <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-slate-900 border-t border-slate-700 px-2 py-2 safe-area-bottom">
+    <div className="md:hidden fixed bottom-14 left-0 right-0 z-40 bg-slate-900 border-t border-slate-700 px-2 py-2 safe-area-bottom">
       <div className="flex items-center justify-around gap-1">
         {/* Add Device */}
         <button
@@ -2451,19 +2468,16 @@ export function NetworkTopology({
     >
       {/* Header with Tools */}
       <div
-        className={`px-4 py-2 border-b shrink-0 ${isDark ? 'border-slate-700/50 bg-slate-800/80' : 'border-slate-200/50 bg-white/80'} backdrop-blur-md sticky top-0 z-40`}
+        className={`px-4 py-0 border-b shrink-0 ${isDark ? 'border-slate-700/50 bg-slate-800/80' : 'border-slate-200/50 bg-white/80'} backdrop-blur-md sticky top-0 z-40`}
       >
         <div className="flex items-center justify-between gap-2 overflow-x-auto no-scrollbar">
           <div className="flex items-center gap-2 sm:gap-4 shrink-0">
             <h3 className={`text-sm font-bold flex items-center gap-2 ${isDark ? 'text-white' : 'text-slate-800'}`}>
-              <svg className="w-5 h-5 text-cyan-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 0 0 2-2V7a2 2 0 0 0 -2-2H7a2 2 0 0 0 -2 2v10a2 2 0 0 0 2 2zM9 9h6v6H9V9z" />
-              </svg>
               <span className="hidden xl:inline">{language === 'tr' ? 'Ağ Topolojisi' : 'Network Topology'}</span>
             </h3>
 
             {/* MD/LG Screen Quick Tools */}
-            <div className="hidden md:flex items-center pl-4 border-l border-slate-700/30">
+            <div className="hidden md:flex items-center ">
               <div className={`flex items-center gap-2 p-1 rounded-xl border ${isDark ? 'bg-slate-900/40 border-slate-700/30' : 'bg-blue-50/50 border-blue-100/50'}`}>
                 {/* Devices Group */}
                 <div className="flex items-center gap-1">
@@ -2497,9 +2511,6 @@ export function NetworkTopology({
                   </button>
                 </div>
 
-                {/* Separator */}
-                <div className={`w-px h-6 ${isDark ? 'bg-slate-700/50' : 'bg-slate-300'} mx-1`} />
-
                 {/* Cable Types Group */}
                 <div className="flex items-center gap-1">
                   {(['straight', 'crossover', 'console'] as CableType[]).map((type) => (
@@ -2526,39 +2537,47 @@ export function NetworkTopology({
 
           <div className="flex items-center gap-1.5 sm:gap-2">
             {/* Mobile Toolset */}
-            <div className={`flex md:hidden items-center gap-1 p-1 rounded-xl border ${isDark ? 'bg-slate-900/30 border-slate-700/20' : 'bg-blue-50/50 border-blue-100/50'}`}>
-              {/* Add Device Toggle */}
+            <div className="hidden">
+              {/* Add */}
               <button
                 onClick={() => setIsPaletteOpen(true)}
-                className={`p-1.5 rounded-lg ${isDark ? 'hover:bg-slate-700 text-cyan-400' : 'hover:bg-slate-100 text-cyan-600'}`}
+                className="hidden"
                 title={language === 'tr' ? 'Cihaz Ekle' : 'Add Device'}
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v6m-3-3h6" />
-                </svg>
+                {language === 'tr' ? 'Ekle' : 'Add'}
               </button>
 
-              {/* Cable Select Toggle */}
+              {/* Connect */}
               <button
-                onClick={() => setIsPaletteOpen(true)}
-                className={`p-1.5 rounded-lg flex items-center gap-1 ${isDark ? 'hover:bg-slate-700' : 'hover:bg-slate-100'}`}
-                title={language === 'tr' ? 'Kablo Seç' : 'Select Cable'}
+                onClick={() => {
+                  setShowPortSelector(true);
+                  setPortSelectorStep('source');
+                  setSelectedSourcePort(null);
+                }}
+                className="hidden"
+                title={language === 'tr' ? 'Cihazları Bağla' : 'Connect Devices'}
               >
-                <div className={`w-3.5 h-3.5 rounded-full ${CABLE_COLORS[cableInfo.cableType].bg}`} />
+                {language === 'tr' ? 'Bağla' : 'Connect'}
               </button>
 
               {/* Zoom Controls */}
-              <div className="flex items-center gap-0.5 ml-1">
+              <div className="flex items-center gap-0.5">
                 <button
-                  onClick={() => setZoom(z => Math.max(MIN_ZOOM, z - 0.25))}
-                  className={`w-7 h-7 flex items-center justify-center rounded-lg ${isDark ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-slate-100 text-slate-600'}`}
+                  onClick={() => setZoom((z) => Math.max(MIN_ZOOM, z - 0.25))}
+                  className={`w-7 h-7 flex items-center justify-center rounded-lg ${isDark ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-slate-100 text-slate-700'}`}
                 >
                   <span className="text-lg font-bold">−</span>
                 </button>
                 <button
-                  onClick={() => setZoom(z => Math.min(MAX_ZOOM, z + 0.25))}
-                  className={`w-7 h-7 flex items-center justify-center rounded-lg ${isDark ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-slate-100 text-slate-600'}`}
+                  onClick={resetView}
+                  className={`px-2 h-7 rounded-lg text-[11px] font-mono ${isDark ? 'hover:bg-slate-700 text-slate-200' : 'hover:bg-slate-100 text-slate-700'}`}
+                  title={language === 'tr' ? 'Sıfırla' : 'Reset'}
+                >
+                  {Math.round(zoom * 100)}%
+                </button>
+                <button
+                  onClick={() => setZoom((z) => Math.min(MAX_ZOOM, z + 0.25))}
+                  className={`w-7 h-7 flex items-center justify-center rounded-lg ${isDark ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-slate-100 text-slate-700'}`}
                 >
                   <span className="text-lg font-bold">+</span>
                 </button>
@@ -2571,7 +2590,7 @@ export function NetworkTopology({
                 setPortSelectorStep('source');
                 setSelectedSourcePort(null);
               }}
-              className={`flex items-center gap-1.5 px-3 sm:px-4 py-1.5 rounded-xl text-xs font-semibold shadow-sm transition-all ${isDark
+              className={`hidden md:flex items-center gap-1.5 px-3 sm:px-4 py-1.5 rounded-xl text-xs font-semibold shadow-sm transition-all ${isDark
                 ? 'bg-cyan-600 hover:bg-cyan-700 text-white'
                 : 'bg-cyan-500 hover:bg-cyan-600 text-white'
                 }`}
@@ -2848,9 +2867,65 @@ export function NetworkTopology({
             </svg>
           </div>
 
+          {/* Zoom Controls - Mobile Float - Top Right */}
+          <div
+            className={`md:hidden absolute top-[10px] right-[10px] items-center gap-1 px-2 py-1 rounded-lg ${isDark ? 'bg-slate-800/90' : 'bg-white/90'
+              } shadow-lg flex`}
+          >
+            <button
+              onClick={() => setZoom((z) => {
+                const newZoom = Math.max(MIN_ZOOM, z - 0.25);
+                if (!canvasRef.current) return newZoom;
+                const rect = canvasRef.current.getBoundingClientRect();
+                const cursorX = rect.width / 2;
+                const cursorY = rect.height / 2;
+                setPan(prevPan => ({
+                  x: cursorX - (cursorX - prevPan.x) * (newZoom / z),
+                  y: cursorY - (cursorY - prevPan.y) * (newZoom / z)
+                }));
+                return newZoom;
+              })}
+              className={`w-7 h-7 flex items-center justify-center rounded ${isDark ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-slate-100 text-slate-600'
+                }`}
+            >
+              −
+            </button>
+            <span className={`text-xs font-mono w-12 text-center ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+              {Math.round(zoom * 100)}%
+            </span>
+            <button
+              onClick={() => setZoom((z) => {
+                const newZoom = Math.min(MAX_ZOOM, z + 0.25);
+                if (!canvasRef.current) return newZoom;
+                const rect = canvasRef.current.getBoundingClientRect();
+                const cursorX = rect.width / 2;
+                const cursorY = rect.height / 2;
+                setPan(prevPan => ({
+                  x: cursorX - (cursorX - prevPan.x) * (newZoom / z),
+                  y: cursorY - (cursorY - prevPan.y) * (newZoom / z)
+                }));
+                return newZoom;
+              })}
+              className={`w-7 h-7 flex items-center justify-center rounded ${isDark ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-slate-100 text-slate-600'
+                }`}
+            >
+              +
+            </button>
+            <div className={`w-px h-5 ${isDark ? 'bg-slate-600' : 'bg-slate-300'} mx-1`} />
+            <button
+              onClick={resetView}
+              className={`px-2 py-1 text-xs rounded ${isDark
+                ? 'hover:bg-slate-700 text-slate-300'
+                : 'hover:bg-slate-100 text-slate-600'
+                }`}
+            >
+              {language === 'tr' ? 'Sıfırla' : 'Reset'}
+            </button>
+          </div>
+
           {/* Zoom Controls - Desktop Only - Top Right */}
           <div
-            className={`hidden md:flex absolute top-2 right-2 items-center gap-1 px-2 py-1 rounded-lg ${isDark ? 'bg-slate-800/90' : 'bg-white/90'
+            className={`hidden md:flex absolute top-[10px] right-[10px] items-center gap-1 px-2 py-1 rounded-lg ${isDark ? 'bg-slate-800/90' : 'bg-white/90'
               } shadow-lg`}
           >
             <button

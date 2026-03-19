@@ -157,6 +157,11 @@ export default function Home() {
   } = useDeviceManager();
 
   const [isAppLoading, setIsLoading] = useState(true);
+  const [hasHydrated, setHasHydrated] = useState(false);
+
+  useEffect(() => {
+    setHasHydrated(true);
+  }, []);
   const [showContent, setShowContent] = useState(false);
 
   // Define tab state first to avoid temporal deadzone errors in callbacks
@@ -1693,7 +1698,7 @@ export default function Home() {
                     <div className="hidden items-center gap-1 sm:flex">
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-blue-500 transition-colors" onClick={handleUndo} disabled={!canUndo}>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-blue-500 transition-colors" onClick={handleUndo} disabled={hasHydrated && !canUndo}>
                             <Undo2 className={`w-4 h-4 ${!canUndo ? 'opacity-30' : ''}`} />
                           </Button>
                         </TooltipTrigger>
@@ -1701,7 +1706,7 @@ export default function Home() {
                       </Tooltip>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-blue-500 transition-colors" onClick={handleRedo} disabled={!canRedo}>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-blue-500 transition-colors" onClick={handleRedo} disabled={hasHydrated && !canRedo}>
                             <Redo2 className={`w-4 h-4 ${!canRedo ? 'opacity-30' : ''}`} />
                           </Button>
                         </TooltipTrigger>
@@ -2275,12 +2280,12 @@ export default function Home() {
 
         {/* Main Content with matching top background */}
         <main className={`flex-1 overflow-hidden flex flex-col ${isDark ? 'bg-slate-950' : 'bg-slate-100'}`}>
-          <div className="w-full p-5 pb-0 sm:pb-5 flex-1 flex flex-col">
+          <div className="w-full p-5 pb-20 sm:pb-5 flex-1 flex flex-col">
             {/* Tab Content */}
             {activeTab === 'topology' && (
               <div className="flex-1 flex flex-col h-full min-h-0 overflow-hidden">
                 {/* Network Topology fills remaining space */}
-                <div ref={topologyContainerRef} className="flex-1 w-full flex flex-col min-h-[500px] topology-print-area">
+                <div ref={topologyContainerRef} className="flex-1 w-full h-full flex flex-col min-h-0 topology-print-area">
                   <NetworkTopology
                     key={topologyKey}
                     cableInfo={cableInfo}
