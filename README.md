@@ -43,9 +43,9 @@ A modern, production-ready, and highly interactive web-based Network NOS simulat
 - **Styling**: [Tailwind CSS 4](https://tailwindcss.com/) with custom animations and glassmorphism
 - **UI Components**: [shadcn/ui](https://ui.shadcn.com/) (Radix UI) & [Lucide React](https://lucide.dev/)
 - **Animations**: [Framer Motion](https://www.framer.com/motion/) & CSS keyframes
-- **State Management**: [Zustand](https://docs.pmnd.rs/zustand) & [TanStack Query](https://tanstack.com/query)
-- **Database**: [Prisma ORM](https://www.prisma.io/) with SQLite support
+- **State Management**: [Zustand](https://docs.pmnd.rs/zustand) for global state, Context API for theme/language
 - **Drag & Drop**: [@dnd-kit](https://dnd-kit.com/) for interactive device palette
+- **Storage**: localStorage-based persistence with custom offline storage manager
 
 ## 📁 Project Structure
 

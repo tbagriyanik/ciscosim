@@ -7,15 +7,14 @@ const DYNAMIC_CACHE = 'netsim-dynamic-v1';
 const STATIC_ASSETS = [
   '/',
   '/manifest.json',
-  // Add your icon files here when you create them
-  // '/icon-192x192.png',
-  // '/icon-512x512.png',
+  '/icon-192x192.svg',
+  '/icon-512x512.svg',
 ];
 
 // Install event - cache static assets
 self.addEventListener('install', (event) => {
   console.log('Service Worker: Installing...');
-  
+
   event.waitUntil(
     caches.open(STATIC_CACHE)
       .then((cache) => {
@@ -29,7 +28,7 @@ self.addEventListener('install', (event) => {
 // Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
   console.log('Service Worker: Activating...');
-  
+
   event.waitUntil(
     caches.keys()
       .then((cacheNames) => {
@@ -92,7 +91,7 @@ self.addEventListener('fetch', (event) => {
             if (event.request.destination === 'document') {
               return caches.match('/');
             }
-            
+
             // For other requests, just fail
             return new Response('Offline', {
               status: 503,
@@ -112,16 +111,16 @@ function shouldCacheDynamic(request) {
     'style',
     'image'
   ];
-  
+
   return cacheableTypes.includes(request.destination) ||
-         request.url.includes('.css') ||
-         request.url.includes('.js') ||
-         request.url.includes('.png') ||
-         request.url.includes('.jpg') ||
-         request.url.includes('.jpeg') ||
-         request.url.includes('.gif') ||
-         request.url.includes('.svg') ||
-         request.url.includes('.ico');
+    request.url.includes('.css') ||
+    request.url.includes('.js') ||
+    request.url.includes('.png') ||
+    request.url.includes('.jpg') ||
+    request.url.includes('.jpeg') ||
+    request.url.includes('.gif') ||
+    request.url.includes('.svg') ||
+    request.url.includes('.ico');
 }
 
 // Handle background sync for when connection is restored
@@ -137,10 +136,10 @@ async function syncData() {
     // Get all offline data from IndexedDB or localStorage
     // and send to server
     console.log('Service Worker: Syncing data...');
-    
+
     // This would be implemented based on your specific sync needs
     // For example, syncing saved projects, settings, etc.
-    
+
     return true;
   } catch (error) {
     console.error('Service Worker: Sync failed', error);
@@ -152,11 +151,11 @@ async function syncData() {
 self.addEventListener('push', (event) => {
   if (event.data) {
     const data = event.data.json();
-    
+
     const options = {
       body: data.body,
-      icon: '/icon-192x192.png',
-      badge: '/icon-192x192.png',
+      icon: '/icon-192x192.svg',
+      badge: '/icon-192x192.svg',
       vibrate: [100, 50, 100],
       data: {
         dateOfArrival: Date.now(),

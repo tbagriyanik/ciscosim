@@ -4,12 +4,11 @@
 
 - **Framework**: Next.js (React-based) with TypeScript
 - **Styling**: Tailwind CSS with custom components
-- **State Management**: Zustand (global state) + Context API
-- **Database**: Prisma ORM with SQLite
-- **UI Components**: Custom-built components (no third-party libraries)
-- **Network**: Custom network topology visualization with D3.js
-- **Build Tools**: Vite (Next.js dev server)
-- **Testing**: Jest + React Testing Library
+- **State Management**: Zustand (global state) + Context API (theme/language)
+- **Storage**: localStorage-based offline storage manager
+- **UI Components**: Custom-built components using shadcn/ui (Radix UI)
+- **Network**: Custom SVG-based network topology visualization
+- **Build Tools**: Next.js built-in build system
 - **Deployment**: Caddy server with automatic SSL
 
 ## Library Usage Rules
@@ -25,29 +24,26 @@
 - No Material-UI, Ant Design, or similar component libraries
 
 ### 3. Network Operations
-- **Axios** for HTTP requests (with custom interceptors)
-- No fetch API or other HTTP clients
-- Custom network topology visualization using D3.js
+- No HTTP client library required (using Next.js API routes)
+- Custom network topology visualization using SVG
 
-### 4. Database Operations
-- **Prisma** for all database interactions
-- SQLite for development (production uses PostgreSQL)
-- No raw SQL queries allowed
+### 4. Storage Operations
+- **localStorage** for offline persistence via custom storage manager
+- No database currently implemented
 
 ### 5. Utilities
 - **Custom utilities** in `src/lib/utils.ts` (no lodash/underscore)
 - **Custom hooks** in `src/hooks/` (no react-use-* libraries)
-- **Custom types** in `src/lib/types.ts` (no external type definitions)
+- **Custom types** in component-specific type files (no external type definitions)
 
 ### 6. Testing
-- **Jest** for unit tests
-- **React Testing Library** for component tests
-- No Cypress or other E2E testing tools
+- Testing infrastructure not yet implemented
+- Future: Jest + React Testing Library
 
 ### 7. Deployment
 - **Caddy** as web server (no Nginx or Apache)
 - Automatic SSL via Let's Encrypt
-- No custom server-side rendering (Next.js SSG/ISR only)
+- Next.js standalone mode for production deployment
 
 ### 8. Security
 - **No external libraries** for security (use built-in Next.js features)

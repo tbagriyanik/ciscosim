@@ -1,0 +1,49 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background gradient -->
+  <defs>
+    <linearGradient id="bgGradientLarge" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f172a;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1e293b;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="networkGradientLarge" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#06b6d4;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#3b82f6;stop-opacity:1" />
+    </linearGradient>
+    <filter id="glowLarge">
+      <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="512" height="512" rx="64" fill="url(#bgGradientLarge)"/>
+  
+  <!-- Network nodes and connections -->
+  <g filter="url(#glowLarge)">
+    <!-- Center node (switch/router) -->
+    <circle cx="256" cy="256" r="50" fill="url(#networkGradientLarge)"/>
+    
+    <!-- Top node (PC) -->
+    <circle cx="256" cy="140" r="35" fill="#06b6d4"/>
+    <line x1="256" y1="175" x2="256" y2="206" stroke="#06b6d4" stroke-width="6"/>
+    
+    <!-- Bottom left node (PC) -->
+    <circle cx="140" cy="350" r="35" fill="#3b82f6"/>
+    <line x1="190" y1="310" x2="206" y2="290" stroke="#3b82f6" stroke-width="6"/>
+    
+    <!-- Bottom right node (PC) -->
+    <circle cx="372" cy="350" r="35" fill="#8b5cf6"/>
+    <line x1="322" y1="310" x2="306" y2="290" stroke="#8b5cf6" stroke-width="6"/>
+    
+    <!-- Connection lines from center -->
+    <line x1="256" y1="206" x2="256" y2="206" stroke="url(#networkGradientLarge)" stroke-width="6" opacity="0.3"/>
+    <line x1="206" y1="290" x2="206" y2="290" stroke="url(#networkGradientLarge)" stroke-width="6" opacity="0.3"/>
+    <line x1="306" y1="290" x2="306" y2="290" stroke="url(#networkGradientLarge)" stroke-width="6" opacity="0.3"/>
+  </g>
+  
+  <!-- Text "N" for Network -->
+  <text x="256" y="276" font-family="Arial, sans-serif" font-size="48" font-weight="bold" fill="white" text-anchor="middle">N</text>
+</svg>
