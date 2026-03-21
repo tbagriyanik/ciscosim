@@ -103,10 +103,16 @@
     overscroll-behavior: none;
   }
 
-  button,
+  button:not(:disabled),
   a,
-  [role="button"] {
+  [role="button"]:not(:disabled) {
     touch-action: manipulation;
+    cursor: pointer !important;
+  }
+
+  button:disabled,
+  [role="button"][aria-disabled="true"] {
+    cursor: not-allowed;
   }
 
   :focus-visible {

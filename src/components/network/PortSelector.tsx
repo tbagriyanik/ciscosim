@@ -77,7 +77,7 @@ export function PortSelector({ devices, cableInfo, onConnect, onClose }: PortSel
                   className={`p-1.5 rounded-lg ${isDark ? 'hover:bg-slate-700' : 'hover:bg-slate-200'}`}
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 0 0 -5.656 0l-4 4a4 4 0 1 0 5.656 5.656l1.102-1.101m-.758-4.899a4 4 0 0 0 5.656 0l4-4a4 4 0 0 0 -5.656-5.656l-1.1 1.1" />
                   </svg>
                 </button>
               )}
@@ -109,10 +109,10 @@ export function PortSelector({ devices, cableInfo, onConnect, onClose }: PortSel
                     key={type}
                     onClick={() => setSelectedCableType(type)}
                     className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${selectedCableType === type
-                        ? `${CABLE_COLORS[type].bg} text-white`
-                        : isDark
-                          ? 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      ? `${CABLE_COLORS[type].bg} text-white`
+                      : isDark
+                        ? 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                       }`}
                   >
                     <div className={`w-2.5 h-2.5 rounded ${CABLE_COLORS[type].bg}`} />
@@ -167,8 +167,8 @@ export function PortSelector({ devices, cableInfo, onConnect, onClose }: PortSel
                         }
                       }}
                       className={`px-3 py-2 rounded-lg text-sm font-mono transition-all ${isDark
-                          ? 'bg-slate-600 hover:bg-cyan-600 text-slate-200 hover:text-white'
-                          : 'bg-white hover:bg-cyan-500 text-slate-700 hover:text-white border border-slate-200'
+                        ? 'bg-slate-600 hover:bg-cyan-600 text-slate-200 hover:text-white'
+                        : 'bg-white hover:bg-cyan-500 text-slate-700 hover:text-white border border-slate-200'
                         }`}
                     >
                       {port.label}
