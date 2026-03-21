@@ -230,7 +230,6 @@ export function NetworkTopology({
   const snapToGridRef = useRef(true);
   const isDrawingConnectionRef = useRef(false);
   const panAnimationFrameRef = useRef<number | null>(null);
-  const historyRef2 = useRef<{ history: { devices: CanvasDevice[]; connections: CanvasConnection[] }[]; index: number }>({ history: [], index: -1 });
 
   // ─── Touch performance refs ───
   const isTouchDraggingRef = useRef(false);
@@ -257,57 +256,64 @@ export function NetworkTopology({
   // Clipboard state for copy/cut/paste
   const [clipboard, setClipboard] = useState<CanvasDevice[]>([]);
 
-  // Undo/Redo history
-  const [history, setHistory] = useState<{ devices: CanvasDevice[]; connections: CanvasConnection[] }[]>([]);
+  // Undo/Redo history - ref-based, no stale closure
+  const historyRef = useRef<{ devices: CanvasDevice[]; connections: CanvasConnection[] }[]>([]);
+  const historyIndexRef = useRef<number>(-1);
   const [historyIndex, setHistoryIndex] = useState(-1);
+  const [historyLength, setHistoryLength] = useState(0);
 
   // Always-fresh refs: updated on every render so event handlers never get stale values
   const latestDevicesRef = useRef<CanvasDevice[]>([]);
   const latestConnectionsRef = useRef<CanvasConnection[]>([]);
 
-  // Save state to history for undo — uses always-fresh refs, zero stale-closure risk
-  // Does NOT need devices/connections/historyIndex in its dep array
+  // Save CURRENT state to history (call BEFORE making changes)
   const saveToHistory = useCallback(() => {
-    setHistory(prevHistory => {
-      const newState = {
-        devices: [...latestDevicesRef.current],
-        connections: [...latestConnectionsRef.current],
-      };
-      const idx = historyRef2.current.index;
-      const truncated = prevHistory.slice(0, idx + 1);
-      truncated.push(newState);
-      const next = truncated.slice(-50);
-      historyRef2.current.history = next;
-      const newIndex = next.length - 1;
-      historyRef2.current.index = newIndex;
-      setHistoryIndex(newIndex);
-      return next;
-    });
+    const snapshot = {
+      devices: JSON.parse(JSON.stringify(latestDevicesRef.current)),
+      connections: JSON.parse(JSON.stringify(latestConnectionsRef.current)),
+    };
+    // Truncate redo stack
+    const truncated = historyRef.current.slice(0, historyIndexRef.current + 1);
+    // Deduplicate: skip if identical to last entry
+    const last = truncated[truncated.length - 1];
+    if (last &&
+      JSON.stringify(last.devices) === JSON.stringify(snapshot.devices) &&
+      JSON.stringify(last.connections) === JSON.stringify(snapshot.connections)) {
+      return;
+    }
+    truncated.push(snapshot);
+    if (truncated.length > 100) truncated.shift();
+    historyRef.current = truncated;
+    historyIndexRef.current = truncated.length - 1;
+    setHistoryIndex(historyIndexRef.current);
+    setHistoryLength(truncated.length);
   }, []);
 
   // Undo
   const handleUndo = useCallback(() => {
-    if (historyIndex > 0) {
-      const prevState = history[historyIndex - 1];
-      if (prevState && prevState.devices && prevState.connections) {
-        setDevices(prevState.devices);
-        setConnections(prevState.connections);
-        setHistoryIndex(prev => prev - 1);
+    if (historyIndexRef.current > 0) {
+      historyIndexRef.current -= 1;
+      const state = historyRef.current[historyIndexRef.current];
+      if (state) {
+        setDevices(JSON.parse(JSON.stringify(state.devices)));
+        setConnections(JSON.parse(JSON.stringify(state.connections)));
+        setHistoryIndex(historyIndexRef.current);
       }
     }
-  }, [history, historyIndex]);
+  }, []);
 
   // Redo
   const handleRedo = useCallback(() => {
-    if (historyIndex < history.length - 1) {
-      const nextState = history[historyIndex + 1];
-      if (nextState && nextState.devices && nextState.connections) {
-        setDevices(nextState.devices);
-        setConnections(nextState.connections);
-        setHistoryIndex(prev => prev + 1);
+    if (historyIndexRef.current < historyRef.current.length - 1) {
+      historyIndexRef.current += 1;
+      const state = historyRef.current[historyIndexRef.current];
+      if (state) {
+        setDevices(JSON.parse(JSON.stringify(state.devices)));
+        setConnections(JSON.parse(JSON.stringify(state.connections)));
+        setHistoryIndex(historyIndexRef.current);
       }
     }
-  }, [history, historyIndex]);
+  }, []);
 
   // Configuration state (Name, IP, etc.)
   const [configuringDevice, setConfiguringDevice] = useState<string | null>(null);
@@ -795,7 +801,7 @@ export function NetworkTopology({
 
       // Save to history if we were actually dragging a device
       if (isActuallyDraggingRef.current && draggedDeviceRef.current) {
-        saveToHistory();
+        // history already saved at drag start; no-op here
       }
 
       setIsPanning(false);
@@ -898,9 +904,9 @@ export function NetworkTopology({
         }
       }
 
-      // Save to history if we were dragging
+      // Save to history if we were dragging (already saved at touch start)
       if (currentIsTouchDragging && currentTouchDraggedDevice) {
-        saveToHistory();
+        // no-op: saved at touch start
       }
 
       setTouchDraggedDevice(null);
@@ -941,6 +947,9 @@ export function NetworkTopology({
     const rect = canvasRef.current.getBoundingClientRect();
     const device = devices.find((d) => d.id === deviceId);
     if (!device) return;
+
+    // Save current state before drag starts (for undo)
+    saveToHistory();
 
     // Reset drag tracking
     wasDraggingRef.current = false;
@@ -1051,6 +1060,9 @@ export function NetworkTopology({
     const rect = canvasRef.current.getBoundingClientRect();
     const device = devices.find((d) => d.id === deviceId);
     if (!device) return;
+
+    // Save current state before touch drag starts (for undo)
+    saveToHistory();
 
     // Cancel any pending long press timer from canvas touch
     if (longPressTimer) {
@@ -1329,11 +1341,7 @@ export function NetworkTopology({
           break;
         case 'Delete':
         case 'Backspace':
-          if (selectedDeviceIds.length > 0) {
-            e.preventDefault();
-            selectedDeviceIds.forEach(id => onDeviceDelete?.(id));
-            setSelectedDeviceIds([]);
-          }
+          // Handled by window keydown listener
           break;
       }
     };
@@ -1844,7 +1852,12 @@ export function NetworkTopology({
             setPortSelectorStep('source');
             setSelectedSourcePort(null);
           }
-          if (selectedDeviceIds.length > 0) setSelectedDeviceIds([]);
+          if (selectedDeviceIds.length > 0) {
+            const firstId = selectedDeviceIds[0];
+            const firstDevice = devices.find(d => d.id === firstId);
+            setSelectedDeviceIds([firstId]);
+            if (firstDevice) onDeviceSelect(firstDevice.type === 'router' ? 'router' : firstDevice.type, firstId);
+          }
         }
       }
     };
@@ -1877,7 +1890,9 @@ export function NetworkTopology({
 
       // Delete selected device(s)
       if (e.key === 'Delete' || e.key === 'Backspace') {
-        if (selectedDeviceIds.length > 0) {
+        const tag = (document.activeElement as HTMLElement)?.tagName?.toLowerCase();
+        const isEditable = tag === 'input' || tag === 'textarea' || (document.activeElement as HTMLElement)?.isContentEditable;
+        if (!isEditable && selectedDeviceIds.length > 0) {
           saveToHistory();
           selectedDeviceIds.forEach(id => deleteDevice(id));
           setSelectedDeviceIds([]);
@@ -3178,7 +3193,12 @@ export function NetworkTopology({
                 </span>
                 <div className="flex gap-1">
                   <button
-                    onClick={() => setSelectedDeviceIds(prev => prev.length > 0 ? [prev[0]] : [])}
+                    onClick={() => {
+                      const firstId = selectedDeviceIds[0];
+                      const firstDevice = devices.find(d => d.id === firstId);
+                      setSelectedDeviceIds(firstId ? [firstId] : []);
+                      if (firstDevice) onDeviceSelect(firstDevice.type === 'router' ? 'router' : firstDevice.type, firstId);
+                    }}
                     className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${isDark ? 'bg-slate-700 hover:bg-slate-600 text-slate-200' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'}`}
                   >
                     {language === 'tr' ? 'İptal' : 'Cancel'}
@@ -3790,8 +3810,8 @@ export function NetworkTopology({
           {/* Redo */}
           <button
             onClick={() => { handleRedo(); setContextMenu(null); }}
-            disabled={historyIndex >= history.length - 1}
-            className={`w-full px-4 py-2 text-sm text-left flex items-center gap-2 ${historyIndex < history.length - 1
+            disabled={historyIndex >= historyLength - 1}
+            className={`w-full px-4 py-2 text-sm text-left flex items-center gap-2 ${historyIndex < historyLength - 1
               ? isDark ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-slate-100 text-slate-600'
               : isDark ? 'text-slate-600 cursor-not-allowed' : 'text-slate-300 cursor-not-allowed'
               }`}
