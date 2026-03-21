@@ -22,6 +22,7 @@ export interface Port {
   name: string;            // description
   status: PortStatus;
   vlan: number;
+  accessVlan?: number | string;
   mode: PortMode;
   voiceVlan?: VoiceVlanMode;
   duplex: DuplexMode;

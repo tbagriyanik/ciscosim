@@ -8,6 +8,7 @@ export const showHandlers: Record<string, CommandHandler> = {
   'show interfaces': cmdShowInterfaces,
   'show interface': cmdShowInterface,
   'show ip interface brief': cmdShowIpInterfaceBrief,
+  'show vlan brief': cmdShowVlan,
   'show vlan': cmdShowVlan,
   'show mac address-table': cmdShowMacAddressTable,
   'show cdp neighbors': cmdShowCdpNeighbors,
@@ -262,7 +263,7 @@ function cmdShowVlan(
   output += '1    default                          active    ';
   const vlan1Ports = Object.keys(state.ports || {}).filter(p => {
     const port = state.ports[p];
-    return !port.accessVlan || port.accessVlan === '1';
+    return String(port.accessVlan || port.vlan || 1) === '1';
   });
   output += vlan1Ports.join(', ') || '-';
   output += '\n';
@@ -279,6 +280,15 @@ function cmdShowVlan(
       });
 
       output += `${vlanId.padEnd(4)}${vlanName}${vlanStatus.padEnd(10)}${vlanPorts.join(', ') || '-'}\n`;
+    }
+  });
+
+  const knownVlanIds = Object.keys(state.vlans || {});
+  Object.values(state.ports || {}).forEach((port: any) => {
+    const vlanId = String(port.accessVlan || port.vlan || 1);
+    if (!knownVlanIds.includes(vlanId) && vlanId !== '1') {
+      const vlanName = `VLAN${vlanId}`.padEnd(32);
+      output += `${vlanId.padEnd(4)}${vlanName}${'active'.padEnd(10)}${port.id}\n`;
     }
   });
 

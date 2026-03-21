@@ -125,8 +125,9 @@ export function createInitialState(mac?: string): SwitchState {
   
   // VLAN'lara portları ata
   Object.values(ports).forEach(port => {
-    if (!port.shutdown && vlans[port.vlan]) {
-      vlans[port.vlan].ports.push(port.id.toUpperCase());
+    const vlanId = Number((port as any).accessVlan || port.vlan || 1);
+    if (!port.shutdown && vlans[vlanId]) {
+      vlans[vlanId].ports.push(port.id.toUpperCase());
     }
   });
   

@@ -8,6 +8,8 @@ import { Translations } from '@/contexts/LanguageContext';
 import { Database } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
+const getPortVlan = (port: Port): number => Number(port.accessVlan || port.vlan || 1);
+
 // Connection type for topology
 interface TopologyConnection {
   id: string;
@@ -136,7 +138,7 @@ export function PortPanel({ ports, t, theme, deviceName, deviceModel, activeDevi
                 variant={port.mode === 'trunk' ? 'default' : 'secondary'}
                 className={`text-[10px] px-1.5 py-0 mt-1 font-bold ${port.mode === 'trunk' ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/20' : isDark ? 'bg-slate-700 text-slate-400' : 'bg-slate-200 text-slate-500'}`}
               >
-                {port.mode === 'trunk' ? 'TRUNK' : (port.vlan ? `V${port.vlan}` : t.unassigned)}
+                {port.mode === 'trunk' ? 'TRUNK' : `V${getPortVlan(port)}`}
               </Badge>
             </div>
           </TooltipTrigger>
@@ -201,7 +203,7 @@ export function PortPanel({ ports, t, theme, deviceName, deviceModel, activeDevi
               variant={port.mode === 'trunk' ? 'default' : 'secondary'}
               className={`text-sm px-2 py-0.5 h-auto mt-0.5 transition-all duration-200 ${port.mode === 'trunk' ? 'bg-purple-500/20 text-purple-400 border-purple-500/30' : ''}`}
             >
-              {port.mode === 'trunk' ? 'Trunk' : (port.vlan ? `V${port.vlan}` : t.unassigned)}
+              {port.mode === 'trunk' ? 'Trunk' : `V${getPortVlan(port)}`}
             </Badge>
           </div>
         </TooltipTrigger>
@@ -219,7 +221,7 @@ export function PortPanel({ ports, t, theme, deviceName, deviceModel, activeDevi
               <span className={isDark ? 'text-slate-500' : 'text-slate-400'}>{t.mode}:</span> <span className="capitalize">{port.mode}</span>
             </div>
             <div className={isDark ? 'text-slate-300' : 'text-slate-600'}>
-              <span className={isDark ? 'text-slate-500' : 'text-slate-400'}>VLAN:</span> {port.mode === 'trunk' ? 'Trunk' : port.vlan || t.unassigned}
+              <span className={isDark ? 'text-slate-500' : 'text-slate-400'}>VLAN:</span> {port.mode === 'trunk' ? 'Trunk' : getPortVlan(port)}
             </div>
             <div className={isDark ? 'text-slate-300' : 'text-slate-600'}>
               <span className={isDark ? 'text-slate-500' : 'text-slate-400'}>{t.speed}:</span> {port.speed === 'auto' ? 'Auto' : port.speed + ' Mbps'}

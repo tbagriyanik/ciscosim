@@ -11,7 +11,7 @@ import { CanvasDevice, CanvasConnection, CanvasNote } from './networkTopology.ty
 import { DeviceIcon } from './DeviceIcon';
 import { ConnectionLine } from './ConnectionLine';
 import { DeviceNode } from './DeviceNode';
-import { Plus } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 
 interface NetworkTopologyProps {
   cableInfo: CableInfo;
@@ -704,6 +704,7 @@ export function NetworkTopology({
 
           const clientX = e.clientX;
           const clientY = e.clientY;
+          const ctrlKey = e.ctrlKey;
 
           dragAnimationFrameRef.current = requestAnimationFrame(() => {
             if (!canvasRef.current) { dragAnimationFrameRef.current = null; return; }
@@ -749,7 +750,7 @@ export function NetworkTopology({
                 let newX = initialPos.x + dx;
                 let newY = initialPos.y + dy;
 
-                if (currentSnapToGrid) {
+                if (currentSnapToGrid && ctrlKey) {
                   newX = Math.round(newX / 20) * 20;
                   newY = Math.round(newY / 20) * 20;
                 }
@@ -1469,9 +1470,60 @@ export function NetworkTopology({
   } | null>(null);
   const portTooltipTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const getLivePort = useCallback((deviceId: string, portId: string) => {
+    const deviceState = deviceStates?.get(deviceId);
+    if (deviceState?.ports?.[portId]) {
+      return deviceState.ports[portId];
+    }
+    const device = devices.find(d => d.id === deviceId);
+    return device?.ports.find(p => p.id === portId);
+  }, [deviceStates, devices]);
+
+  const getLiveDeviceVlan = useCallback((device: CanvasDevice) => {
+    if (device.type !== 'pc') return null;
+    if (typeof device.vlan === 'number' && device.vlan > 0) {
+      return device.vlan;
+    }
+
+    const connectedPort = connections.find(conn => conn.sourceDeviceId === device.id || conn.targetDeviceId === device.id);
+    if (!connectedPort) return 1;
+
+    const otherDeviceId = connectedPort.sourceDeviceId === device.id ? connectedPort.targetDeviceId : connectedPort.sourceDeviceId;
+    const otherPortId = connectedPort.sourceDeviceId === device.id ? connectedPort.targetPort : connectedPort.sourcePort;
+    const otherPort = getLivePort(otherDeviceId, otherPortId);
+
+    if (!otherPort) return 1;
+    if (otherPort.mode === 'trunk') return 'Trunk';
+    return Number((otherPort as any).accessVlan || otherPort.vlan || 1);
+  }, [connections, getLivePort]);
+
+  const getLivePortVlanText = useCallback((deviceId: string, portId: string) => {
+    const device = devices.find(d => d.id === deviceId);
+    const livePort = getLivePort(deviceId, portId);
+    if (!device || !livePort) return '1';
+
+    if (device.type === 'pc') {
+      const conn = connections.find(c =>
+        (c.sourceDeviceId === deviceId && c.sourcePort === portId) ||
+        (c.targetDeviceId === deviceId && c.targetPort === portId)
+      );
+      if (!conn) return '1';
+
+      const peerDeviceId = conn.sourceDeviceId === deviceId ? conn.targetDeviceId : conn.sourceDeviceId;
+      const peerPortId = conn.sourceDeviceId === deviceId ? conn.targetPort : conn.sourcePort;
+      const peerPort = getLivePort(peerDeviceId, peerPortId);
+      if (!peerPort) return '1';
+      if (peerPort.mode === 'trunk') return 'Trunk';
+      return String((peerPort as any).accessVlan || peerPort.vlan || 1);
+    }
+
+    if (livePort.mode === 'trunk') return 'Trunk';
+    return String((livePort as any).accessVlan || livePort.vlan || 1);
+  }, [connections, devices, getLivePort]);
+
   const showPortTooltip = useCallback((e: ReactMouseEvent | MouseEvent, deviceId: string, portId: string) => {
     const device = devices.find(d => d.id === deviceId);
-    const port = device?.ports.find(p => p.id === portId);
+    const port = getLivePort(deviceId, portId);
     if (!device || !port) return;
 
     if (portTooltipTimerRef.current) {
@@ -1489,7 +1541,7 @@ export function NetworkTopology({
     portTooltipTimerRef.current = setTimeout(() => {
       setPortTooltip(prev => prev ? { ...prev, visible: false } : null);
     }, 1500);
-  }, [devices]);
+  }, [devices, getLivePort]);
 
   const handlePortHover = useCallback((e: ReactMouseEvent, deviceId: string, portId: string) => {
     showPortTooltip(e, deviceId, portId);
@@ -1533,10 +1585,32 @@ export function NetworkTopology({
         let portChanged = false;
         const updatedPorts = device.ports.map(port => {
           const simulatorPort = deviceState.ports[port.id];
-          if (simulatorPort && simulatorPort.shutdown !== port.shutdown) {
-            portChanged = true;
-            hasChanges = true;
-            return { ...port, shutdown: simulatorPort.shutdown };
+          if (simulatorPort) {
+            const nextPort = {
+              ...port,
+              status: simulatorPort.status ?? port.status,
+              vlan: simulatorPort.vlan ?? port.vlan,
+              accessVlan: simulatorPort.accessVlan ?? (port as any).accessVlan,
+              mode: simulatorPort.mode ?? port.mode,
+              name: simulatorPort.name ?? port.name,
+              speed: simulatorPort.speed ?? port.speed,
+              duplex: simulatorPort.duplex ?? port.duplex,
+              shutdown: simulatorPort.shutdown ?? port.shutdown,
+            };
+            const changed =
+              nextPort.status !== port.status ||
+              nextPort.vlan !== port.vlan ||
+              nextPort.accessVlan !== (port as any).accessVlan ||
+              nextPort.mode !== port.mode ||
+              nextPort.name !== port.name ||
+              nextPort.speed !== port.speed ||
+              nextPort.duplex !== port.duplex ||
+              nextPort.shutdown !== port.shutdown;
+            if (changed) {
+              portChanged = true;
+              hasChanges = true;
+              return nextPort;
+            }
           }
           return port;
         });
@@ -2201,16 +2275,7 @@ export function NetworkTopology({
             }}
           >
             {/* Subtle background rectangle instead of circle */}
-            <rect x="-8" y="-9" width="16" height="18" rx="3" fill={isDark ? '#0f172a' : '#ffffff'} opacity="0.9" className="drop-shadow-sm" />
-            <g transform="translate(0, 0)">
-              <path
-                d="M -5 -3 H 5 M -3.5 -3 V 5.5 A 1 1 0 0 0 -2.5 6.5 H 2.5 A 1 1 0 0 0 3.5 5.5 V -3 M -1.5 -3 V -5 H 1.5 V -3"
-                stroke="#ef4444"
-                fill="none"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-              />
-            </g>
+            <Trash2 className="w-4 h-4 text-red-500" width={15} />
           </g>
         )}
 
@@ -2389,6 +2454,13 @@ export function NetworkTopology({
         {device.type === 'pc' && (
           <text x={deviceWidth / 2} y={70} fill={isDark ? '#94a3b8' : '#64748b'} fontSize="10" textAnchor="middle" fontFamily="monospace" className="select-none pointer-events-none">
             {device.ip}
+          </text>
+        )}
+
+        {/* Device VLAN */}
+        {device.type === 'pc' && (
+          <text x={deviceWidth / 2} y={81} fill={isDark ? '#38bdf8' : '#0f766e'} fontSize="9" textAnchor="middle" fontFamily="monospace" className="select-none pointer-events-none">
+            VLAN {String(getLiveDeviceVlan(device))}
           </text>
         )}
 
@@ -2890,7 +2962,7 @@ export function NetworkTopology({
                           : isDark ? 'bg-slate-700 text-slate-300 hover:bg-slate-600' : 'bg-white text-slate-600 hover:bg-slate-100'
                           }`}
                       >
-                        <div className={`w-4 h-4 rounded-full ${isDark && cableInfo.cableType !== type ? 'bg-slate-600' : ''}`} style={cableInfo.cableType !== type ? {backgroundColor: CABLE_COLORS[type].primary} : {}} />
+                        <div className={`w-4 h-4 rounded-full ${isDark && cableInfo.cableType !== type ? 'bg-slate-600' : ''}`} style={cableInfo.cableType !== type ? { backgroundColor: CABLE_COLORS[type].primary } : {}} />
                         <span className="text-[10px] font-bold capitalize">
                           {type === 'straight' ? t.straight : type === 'crossover' ? t.crossover : t.console}
                         </span>
@@ -4173,19 +4245,24 @@ export function NetworkTopology({
               }`}
           >
             <div className="flex items-center gap-2 mb-1">
-              <div className={`w-2 h-2 rounded-full ${
-                (() => {
-                  const dev = devices.find(d => d.id === portTooltip.deviceId);
-                  const prt = dev?.ports.find(p => p.id === portTooltip.portId);
-                  return dev?.status === 'offline' || prt?.shutdown ? 'bg-red-500' : prt?.status === 'connected' ? 'bg-green-500' : 'bg-slate-400';
-                })()
-              }`} />
+              <div className={`w-2 h-2 rounded-full ${(() => {
+                const dev = devices.find(d => d.id === portTooltip.deviceId);
+                const prt = dev?.ports.find(p => p.id === portTooltip.portId);
+                return dev?.status === 'offline' || prt?.shutdown ? 'bg-red-500' : prt?.status === 'connected' ? 'bg-green-500' : 'bg-slate-400';
+              })()
+                }`} />
               <span className="text-[10px] font-black tracking-widest uppercase opacity-60">
                 {portTooltip.portId}
               </span>
             </div>
 
             <div className="space-y-0.5">
+              <div className="text-xs font-bold">
+                VLAN:{' '}
+                <span className="text-cyan-500">
+                  {getLivePortVlanText(portTooltip.deviceId, portTooltip.portId)}
+                </span>
+              </div>
               <div className="text-xs font-bold">
                 {language === 'tr' ? 'Durum:' : 'Status:'}{' '}
                 <span className={
@@ -4209,7 +4286,7 @@ export function NetworkTopology({
                     }
                     return language === 'tr' ? 'Bağlı Değil (Down)' : 'Not Connected (Down)';
                   })()
-                }
+                  }
                 </span>
               </div>
 

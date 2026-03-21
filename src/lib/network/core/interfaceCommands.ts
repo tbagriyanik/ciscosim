@@ -214,7 +214,12 @@ function cmdSwitchportAccessVlan(state: any, input: string, ctx: any): any {
   }
 
   const vlanId = match[1];
-  const newPorts = applyToSelectedPorts(state, (port: any) => ({ ...port, accessVlan: vlanId, mode: 'access' }));
+  const newPorts = applyToSelectedPorts(state, (port: any) => ({
+    ...port,
+    accessVlan: vlanId,
+    vlan: Number(vlanId),
+    mode: 'access',
+  }));
 
   return {
     success: true,

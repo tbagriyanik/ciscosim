@@ -91,8 +91,9 @@ export function ConfigPanel({ state, onExecuteCommand, isDevicePoweredOff = fals
         config += ` switchport mode trunk\\n`;
       } else {
         config += ` switchport mode access\\n`;
-        if (port.vlan !== 1) {
-          config += ` switchport access vlan ${port.vlan}\\n`;
+        const vlanId = Number((port as any).accessVlan || port.vlan || 1);
+        if (vlanId !== 1) {
+          config += ` switchport access vlan ${vlanId}\\n`;
         }
       }
       config += `!\\n`;
