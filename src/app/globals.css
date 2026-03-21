@@ -233,23 +233,6 @@
   animation: led-blink 1.5s ease-in-out infinite;
 }
 
-/* Ping Envelope Pulse Animation - Chrome optimized */
-@keyframes ping-pulse {
-  0% {
-    r: 12;
-    opacity: 0.8;
-  }
-  100% {
-    r: 18;
-    opacity: 0;
-  }
-}
-
-.ping-pulse {
-  animation: ping-pulse 1s ease-out infinite;
-  will-change: r, opacity;
-}
-
 /* Progress bar animation */
 @keyframes progress-shimmer {
   0% {

@@ -3178,7 +3178,7 @@ export function NetworkTopology({
                 </span>
                 <div className="flex gap-1">
                   <button
-                    onClick={() => setSelectedDeviceIds([])}
+                    onClick={() => setSelectedDeviceIds(prev => prev.length > 0 ? [prev[0]] : [])}
                     className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${isDark ? 'bg-slate-700 hover:bg-slate-600 text-slate-200' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'}`}
                   >
                     {language === 'tr' ? 'İptal' : 'Cancel'}
@@ -3318,111 +3318,13 @@ export function NetworkTopology({
                   {/* Temporary connection line */}
                   {renderTempConnection()}
 
-                  {/* Ping Animation - rendered inside SVG for proper pan/zoom */}
-                  {pingAnimation && (() => {
-                    const { path, currentHopIndex, progress, success } = pingAnimation;
-                    if (!path || path.length < 2 || success !== null) return null;
-
-                    // Get current hop devices
-                    const fromDevice = devices.find(d => d.id === path[currentHopIndex]);
-                    const toDevice = devices.find(d => d.id === path[currentHopIndex + 1]);
-                    if (!fromDevice || !toDevice) return null;
-
-                    // Find connection between these devices
-                    const conn = connections.find(
-                      c => (c.sourceDeviceId === fromDevice.id && c.targetDeviceId === toDevice.id) ||
-                        (c.sourceDeviceId === toDevice.id && c.targetDeviceId === fromDevice.id)
-                    );
-
-                    // Get port positions
-                    let source: { x: number; y: number };
-                    let target: { x: number; y: number };
-
-                    if (conn) {
-                      source = getPortPosition(fromDevice, conn.sourceDeviceId === fromDevice.id ? conn.sourcePort : conn.targetPort);
-                      target = getPortPosition(toDevice, conn.sourceDeviceId === toDevice.id ? conn.sourcePort : conn.targetPort);
-                    } else {
-                      source = getDeviceCenter(fromDevice);
-                      target = getDeviceCenter(toDevice);
-                    }
-
-                    // Calculate control points
-                    const midX = (source.x + target.x) / 2;
-                    const midY = (source.y + target.y) / 2;
-
-                    const sameDeviceConnections = connections.filter(
-                      c => (c.sourceDeviceId === fromDevice.id && c.targetDeviceId === toDevice.id) ||
-                        (c.sourceDeviceId === toDevice.id && c.targetDeviceId === fromDevice.id)
-                    );
-                    const sameConnIndex = conn ? sameDeviceConnections.findIndex(c => c.id === conn.id) : 0;
-                    const totalSameConns = sameDeviceConnections.length;
-                    const maxOffset = 20;
-                    const offset = totalSameConns > 1
-                      ? (sameConnIndex - (totalSameConns - 1) / 2) * (maxOffset / Math.max(totalSameConns - 1, 1))
-                      : 0;
-
-                    const dx = target.x - source.x;
-                    const dy = target.y - source.y;
-                    const len = Math.sqrt(dx * dx + dy * dy) || 1;
-                    const perpX = -dy / len * offset;
-                    const perpY = dx / len * offset;
-
-                    const controlPoint1 = {
-                      x: midX + perpX,
-                      y: source.y + perpY + Math.abs(offset) * 0.5
-                    };
-                    const controlPoint2 = {
-                      x: midX + perpX,
-                      y: target.y + perpY - Math.abs(offset) * 0.5
-                    };
-
-                    // Calculate position on bezier curve
-                    const t = progress;
-                    const t2 = t * t;
-                    const t3 = t2 * t;
-                    const mt = 1 - t;
-                    const mt2 = mt * mt;
-                    const mt3 = mt2 * mt;
-
-                    const bezierX = mt3 * source.x + 3 * mt2 * t * controlPoint1.x + 3 * mt * t2 * controlPoint2.x + t3 * target.x;
-                    const bezierY = mt3 * source.y + 3 * mt2 * t * controlPoint1.y + 3 * mt * t2 * controlPoint2.y + t3 * target.y;
-
-                    // Calculate tangent for perpendicular offset
-                    const tangentDx = -3 * mt2 * source.x + 3 * (mt2 - 2 * mt * t) * controlPoint1.x + 3 * (2 * mt * t - t2) * controlPoint2.x + 3 * t2 * target.x;
-                    const tangentDy = -3 * mt2 * source.y + 3 * (mt2 - 2 * mt * t) * controlPoint1.y + 3 * (2 * mt * t - t2) * controlPoint2.y + 3 * t2 * target.y;
-                    const tangentLen = Math.sqrt(tangentDx * tangentDx + tangentDy * tangentDy) || 1;
-
-                    const envelopeOffsetX = tangentDy / tangentLen * 20;
-                    const envelopeOffsetY = -tangentDx / tangentLen * 20;
-
-                    const envelopeX = bezierX + envelopeOffsetX;
-                    const envelopeY = bezierY + envelopeOffsetY;
-
-                    return (
-                      <g key="ping-animation" opacity={0.9}>
-                        {/* Envelope icon */}
-                        <g transform={`translate(${envelopeX}, ${envelopeY})`}>
-                          {/* Outer glow */}
-                          <circle cx="0" cy="0" r="12" fill="#06b6d4" opacity="0.2" />
-
-                          {/* Envelope body */}
-                          <rect x="-10" y="-7" width="20" height="14" rx="2" fill="#06b6d4" stroke="#0891b2" strokeWidth="1.5" />
-
-                          {/* Envelope flap */}
-                          <path d="M-8 -3 L0 4 L8 -3" fill="none" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-
-                          {/* Pulse animation - CSS based for Chrome compatibility */}
-                          <circle cx="0" cy="0" r="12" fill="none" stroke="#06b6d4" strokeWidth="1" className="ping-pulse" />
-                        </g>
-                      </g>
-                    );
-                  })()}
+                  {/* Temporary connection line */}
+                  {renderTempConnection()}
 
                   {/* Connection interaction handles (Trash icons) */}
                   {connections.map((conn) => renderConnectionHandle(conn))}
 
-                  {/* Devices */}
-                  {devicesSortedForRender.map((device) => {
+                  {/* Devices */}                  {devicesSortedForRender.map((device) => {
                     const isCurrentlyDragging = (draggedDevice === device.id && isActuallyDragging) ||
                       (touchDraggedDevice === device.id && isTouchDragging);
                     return (
@@ -3444,6 +3346,76 @@ export function NetworkTopology({
                       />
                     );
                   })}
+
+                  {/* Ping Animation - rendered LAST for top z-order */}
+                  {pingAnimation && (() => {
+                    const { path, currentHopIndex, progress, success } = pingAnimation;
+                    if (!path || path.length < 2 || success !== null) return null;
+
+                    const fromDevice = devices.find(d => d.id === path[currentHopIndex]);
+                    const toDevice = devices.find(d => d.id === path[currentHopIndex + 1]);
+                    if (!fromDevice || !toDevice) return null;
+
+                    const conn = connections.find(
+                      c => (c.sourceDeviceId === fromDevice.id && c.targetDeviceId === toDevice.id) ||
+                        (c.sourceDeviceId === toDevice.id && c.targetDeviceId === fromDevice.id)
+                    );
+
+                    let source: { x: number; y: number };
+                    let target: { x: number; y: number };
+
+                    if (conn) {
+                      source = getPortPosition(fromDevice, conn.sourceDeviceId === fromDevice.id ? conn.sourcePort : conn.targetPort);
+                      target = getPortPosition(toDevice, conn.sourceDeviceId === toDevice.id ? conn.sourcePort : conn.targetPort);
+                    } else {
+                      source = getDeviceCenter(fromDevice);
+                      target = getDeviceCenter(toDevice);
+                    }
+
+                    const midX = (source.x + target.x) / 2;
+                    const sameDeviceConnections = connections.filter(
+                      c => (c.sourceDeviceId === fromDevice.id && c.targetDeviceId === toDevice.id) ||
+                        (c.sourceDeviceId === toDevice.id && c.targetDeviceId === fromDevice.id)
+                    );
+                    const sameConnIndex = conn ? sameDeviceConnections.findIndex(c => c.id === conn.id) : 0;
+                    const totalSameConns = sameDeviceConnections.length;
+                    const maxOffset = 20;
+                    const offset = totalSameConns > 1
+                      ? (sameConnIndex - (totalSameConns - 1) / 2) * (maxOffset / Math.max(totalSameConns - 1, 1))
+                      : 0;
+
+                    const dx = target.x - source.x;
+                    const dy = target.y - source.y;
+                    const len = Math.sqrt(dx * dx + dy * dy) || 1;
+                    const perpX = -dy / len * offset;
+                    const perpY = dx / len * offset;
+
+                    const controlPoint1 = { x: midX + perpX, y: source.y + perpY + Math.abs(offset) * 0.5 };
+                    const controlPoint2 = { x: midX + perpX, y: target.y + perpY - Math.abs(offset) * 0.5 };
+
+                    const t = progress;
+                    const t2 = t * t; const t3 = t2 * t;
+                    const mt = 1 - t; const mt2 = mt * mt; const mt3 = mt2 * mt;
+
+                    const bezierX = mt3 * source.x + 3 * mt2 * t * controlPoint1.x + 3 * mt * t2 * controlPoint2.x + t3 * target.x;
+                    const bezierY = mt3 * source.y + 3 * mt2 * t * controlPoint1.y + 3 * mt * t2 * controlPoint2.y + t3 * target.y;
+
+                    const tangentDx = -3 * mt2 * source.x + 3 * (mt2 - 2 * mt * t) * controlPoint1.x + 3 * (2 * mt * t - t2) * controlPoint2.x + 3 * t2 * target.x;
+                    const tangentDy = -3 * mt2 * source.y + 3 * (mt2 - 2 * mt * t) * controlPoint1.y + 3 * (2 * mt * t - t2) * controlPoint2.y + 3 * t2 * target.y;
+                    const tangentLen = Math.sqrt(tangentDx * tangentDx + tangentDy * tangentDy) || 1;
+
+                    const envelopeX = bezierX + (tangentDy / tangentLen * 20);
+                    const envelopeY = bezierY + (-tangentDx / tangentLen * 20);
+
+                    return (
+                      <g key="ping-animation" opacity={0.9}>
+                        <g transform={`translate(${envelopeX}, ${envelopeY})`}>
+                          <rect x="-10" y="-7" width="20" height="14" rx="2" fill="#06b6d4" stroke="#0891b2" strokeWidth="1.5" />
+                          <path d="M-8 -3 L0 4 L8 -3" fill="none" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        </g>
+                      </g>
+                    );
+                  })()}
 
                 </g>
 
