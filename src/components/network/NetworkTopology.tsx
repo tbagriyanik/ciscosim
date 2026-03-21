@@ -1480,6 +1480,10 @@ export function NetworkTopology({
     return device?.ports.find(p => p.id === portId);
   }, [deviceStates, devices]);
 
+  const hasPortMode = (port: ReturnType<typeof getLivePort>): port is NonNullable<ReturnType<typeof getLivePort>> & { mode: 'access' | 'trunk' | 'routed' } => {
+    return !!port && typeof port === 'object' && 'mode' in port;
+  };
+
   const getLiveDeviceVlan = useCallback((device: CanvasDevice) => {
     if (device.type !== 'pc') return null;
     if (typeof device.vlan === 'number' && device.vlan > 0) {
@@ -1494,7 +1498,7 @@ export function NetworkTopology({
     const otherPort = getLivePort(otherDeviceId, otherPortId);
 
     if (!otherPort) return 1;
-    if (otherPort.mode === 'trunk') return 'Trunk';
+    if (hasPortMode(otherPort) && otherPort.mode === 'trunk') return 'Trunk';
     return Number((otherPort as any).accessVlan || otherPort.vlan || 1);
   }, [connections, getLivePort]);
 
@@ -1514,11 +1518,11 @@ export function NetworkTopology({
       const peerPortId = conn.sourceDeviceId === deviceId ? conn.targetPort : conn.sourcePort;
       const peerPort = getLivePort(peerDeviceId, peerPortId);
       if (!peerPort) return '1';
-      if (peerPort.mode === 'trunk') return 'Trunk';
+      if (hasPortMode(peerPort) && peerPort.mode === 'trunk') return 'Trunk';
       return String((peerPort as any).accessVlan || peerPort.vlan || 1);
     }
 
-    if (livePort.mode === 'trunk') return 'Trunk';
+    if (hasPortMode(livePort) && livePort.mode === 'trunk') return 'Trunk';
     return String((livePort as any).accessVlan || livePort.vlan || 1);
   }, [connections, devices, getLivePort]);
 

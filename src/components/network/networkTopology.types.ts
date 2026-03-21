@@ -1,6 +1,21 @@
 import { CableInfo, CableType, SwitchState } from '@/lib/network/types';
 
 export type DeviceType = 'pc' | 'switch' | 'router';
+export type CanvasPortMode = 'access' | 'trunk' | 'routed';
+export type CanvasPortStatus = 'connected' | 'disconnected' | 'notconnect' | 'blocked' | 'disabled';
+
+export interface CanvasPort {
+  id: string;
+  label: string;
+  status: CanvasPortStatus;
+  shutdown?: boolean;
+  vlan?: number;
+  accessVlan?: number | string;
+  mode?: CanvasPortMode;
+  name?: string;
+  speed?: '10' | '100' | '1000' | 'auto';
+  duplex?: 'half' | 'full' | 'auto';
+}
 
 export interface NetworkTopologyProps {
   cableInfo: CableInfo;
@@ -41,7 +56,7 @@ export interface CanvasDevice {
   x: number;
   y: number;
   status: 'online' | 'offline' | 'error';
-  ports: { id: string; label: string; status: 'connected' | 'disconnected' | 'notconnect' | 'blocked' | 'disabled'; shutdown?: boolean }[];
+  ports: CanvasPort[];
 }
 
 export interface CanvasConnection {
