@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useEffect, type RefObject } from 'react';
-import { 
-  Trash2, Undo2, Redo2, Scissors, Copy, ClipboardPaste, 
-  MousePointer2, ExternalLink, Mail, Shield, Layers, 
-  Database, Terminal as TerminalIcon, CheckSquare
+import {
+  Trash2, Undo2, Redo2, Scissors, Copy, ClipboardPaste,
+  MousePointer2, ExternalLink, Mail, Shield, Layers,
+  Database, Terminal as TerminalIcon, CheckSquare, Power
 } from 'lucide-react';
 import { NOTE_COLORS, NOTE_FONT_SIZES, NOTE_OPACITY } from './networkTopology.constants';
 import { CanvasDevice, CanvasNote, ContextMenuState } from './networkTopology.types';
@@ -42,6 +42,7 @@ interface NetworkTopologyContextMenuProps {
   onDeleteDevices: (ids: string[]) => void;
   onStartConfig: (id: string) => void;
   onStartPing: (id: string) => void;
+  onTogglePowerDevices: (ids: string[]) => void;
   onSaveToHistory: () => void;
   onClearDeviceSelection: () => void;
 }
@@ -78,6 +79,7 @@ export default function NetworkTopologyContextMenu({
   onDeleteDevices,
   onStartConfig,
   onStartPing,
+  onTogglePowerDevices,
   onSaveToHistory,
   onClearDeviceSelection,
   note
@@ -96,6 +98,7 @@ export default function NetworkTopologyContextMenu({
       case 'select': return <CheckSquare className="w-4 h-4" />;
       case 'open': return <ExternalLink className="w-4 h-4" />;
       case 'ping': return <Mail className="w-4 h-4" />;
+      case 'power': return <Power className="w-4 h-4" />;
       default: return null;
     }
   };
@@ -110,11 +113,10 @@ export default function NetworkTopologyContextMenu({
     <button
       onClick={onClick}
       disabled={disabled}
-      className={`w-full flex items-center justify-between px-3 py-2 text-xs font-semibold transition-colors ${
-        disabled
-          ? 'opacity-30 cursor-not-allowed'
-          : isDark ? 'text-slate-200 hover:bg-slate-700/80 hover:text-cyan-400' : 'text-slate-700 hover:bg-slate-50 hover:text-cyan-600'
-      }`}
+      className={`w-full flex items-center justify-between px-3 py-2 text-xs font-semibold transition-colors ${disabled
+        ? 'opacity-30 cursor-not-allowed'
+        : isDark ? 'text-slate-200 hover:bg-slate-700/80 hover:text-cyan-400' : 'text-slate-700 hover:bg-slate-50 hover:text-cyan-600'
+        }`}
     >
       <div className="flex items-center gap-3">
         {icon && <span className="opacity-80 group-hover:opacity-100">{renderIcon(icon)}</span>}
@@ -166,73 +168,70 @@ export default function NetworkTopologyContextMenu({
                 className={`w-4 h-4 rounded border ${note?.color === c ? 'ring-2 ring-cyan-500' : 'border-black/10'}`}
                 style={{ backgroundColor: c, outline: note?.color === c ? '2px solid cyan' : 'none' }}
                 title={c}
-                />
-                ))}
-                </div>
+              />
+            ))}
+          </div>
 
-                <div className="space-y-1">
-                <div className="text-[10px] uppercase tracking-widest text-slate-500">
-                {language === 'tr' ? 'Yazı Tipi' : 'Font'}
-                </div>
-                <div className="grid grid-cols-1 gap-1">
-                {noteFonts.map((f) => (
+          <div className="space-y-1">
+            <div className="text-[10px] uppercase tracking-widest text-slate-500">
+              {language === 'tr' ? 'Yazı Tipi' : 'Font'}
+            </div>
+            <div className="grid grid-cols-1 gap-1">
+              {noteFonts.map((f) => (
                 <button
                   key={f}
                   onClick={() => { onUpdateNoteStyle(contextMenu.noteId!, { font: f }); onClose(); }}
-                  className={`px-2 py-1 rounded text-left text-[11px] ${
-                    note?.font === f 
-                      ? (isDark ? 'bg-slate-600 text-white border-cyan-500 border' : 'bg-slate-200 text-black border-cyan-500 border')
-                      : (isDark ? 'hover:bg-slate-700 text-slate-200' : 'hover:bg-slate-100 text-slate-700')
-                  }`}
+                  className={`px-2 py-1 rounded text-left text-[11px] ${note?.font === f
+                    ? (isDark ? 'bg-slate-600 text-white border-cyan-500 border' : 'bg-slate-200 text-black border-cyan-500 border')
+                    : (isDark ? 'hover:bg-slate-700 text-slate-200' : 'hover:bg-slate-100 text-slate-700')
+                    }`}
                   style={{ fontFamily: f }}
                 >
                   {f}
                 </button>
-                ))}
-                </div>
-                </div>
+              ))}
+            </div>
+          </div>
 
-                <div className="space-y-1">
-                <div className="text-[10px] uppercase tracking-widest text-slate-500">
-                {language === 'tr' ? 'Boyut' : 'Size'}
-                </div>
-                <div className="flex gap-1">
-                {NOTE_FONT_SIZES.map((s) => (
+          <div className="space-y-1">
+            <div className="text-[10px] uppercase tracking-widest text-slate-500">
+              {language === 'tr' ? 'Boyut' : 'Size'}
+            </div>
+            <div className="flex gap-1">
+              {NOTE_FONT_SIZES.map((s) => (
                 <button
                   key={s}
                   onClick={() => { onUpdateNoteStyle(contextMenu.noteId!, { fontSize: s }); onClose(); }}
-                  className={`px-2 py-1 rounded text-[11px] ${
-                    note?.fontSize === s 
-                      ? (isDark ? 'bg-slate-600 text-white border-cyan-500 border' : 'bg-slate-200 text-black border-cyan-500 border')
-                      : (isDark ? 'hover:bg-slate-700 text-slate-200' : 'hover:bg-slate-100 text-slate-700')
-                  }`}
+                  className={`px-2 py-1 rounded text-[11px] ${note?.fontSize === s
+                    ? (isDark ? 'bg-slate-600 text-white border-cyan-500 border' : 'bg-slate-200 text-black border-cyan-500 border')
+                    : (isDark ? 'hover:bg-slate-700 text-slate-200' : 'hover:bg-slate-100 text-slate-700')
+                    }`}
                 >
                   {s}px
                 </button>
-                ))}
-                </div>
-                </div>
+              ))}
+            </div>
+          </div>
 
-                <div className="space-y-1">
-                <div className="text-[10px] uppercase tracking-widest text-slate-500">
-                {language === 'tr' ? 'Saydamlık' : 'Opacity'}
-                </div>
-                <div className="flex gap-1">
-                {NOTE_OPACITY.map((o) => (
+          <div className="space-y-1">
+            <div className="text-[10px] uppercase tracking-widest text-slate-500">
+              {language === 'tr' ? 'Saydamlık' : 'Opacity'}
+            </div>
+            <div className="flex gap-1">
+              {NOTE_OPACITY.map((o) => (
                 <button
                   key={o}
                   onClick={() => { onUpdateNoteStyle(contextMenu.noteId!, { opacity: o }); onClose(); }}
-                  className={`px-2 py-1 rounded text-[11px] ${
-                    note?.opacity === o 
-                      ? (isDark ? 'bg-slate-600 text-white border-cyan-500 border' : 'bg-slate-200 text-black border-cyan-500 border')
-                      : (isDark ? 'hover:bg-slate-700 text-slate-200' : 'hover:bg-slate-100 text-slate-700')
-                  }`}
+                  className={`px-2 py-1 rounded text-[11px] ${note?.opacity === o
+                    ? (isDark ? 'bg-slate-600 text-white border-cyan-500 border' : 'bg-slate-200 text-black border-cyan-500 border')
+                    : (isDark ? 'hover:bg-slate-700 text-slate-200' : 'hover:bg-slate-100 text-slate-700')
+                    }`}
                 >
                   {Math.round(o * 100)}%
                 </button>
-                ))}
-                </div>
-                </div>
+              ))}
+            </div>
+          </div>
           <div className="pt-1 border-t border-slate-700/30">
             {renderMenuItem({
               label: language === 'tr' ? 'Çoğalt' : 'Duplicate',
@@ -390,6 +389,12 @@ export default function NetworkTopologyContextMenu({
                   label: language === 'tr' ? 'Ping' : 'Ping',
                   icon: 'ping',
                   onClick: () => { onStartPing(contextMenu.deviceId!); onClose(); },
+                  disabled: !device
+                })}
+                {renderMenuItem({
+                  label: language === 'tr' ? 'Güç Aç/Kapat' : 'Power ON/OFF',
+                  icon: 'power',
+                  onClick: () => { onSaveToHistory(); onTogglePowerDevices(targets); onClose(); },
                   disabled: !device
                 })}
               </>

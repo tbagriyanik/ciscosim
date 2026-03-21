@@ -475,6 +475,21 @@ export function NetworkTopology({
     }
   }, [saveToHistory, onDeviceDelete]);
 
+  // Toggle power for devices (bulk operation)
+  const togglePowerDevices = useCallback((deviceIds: string[]) => {
+    setDevices((prev) =>
+      prev.map((d) => {
+        if (deviceIds.includes(d.id)) {
+          return {
+            ...d,
+            status: d.status === 'online' ? 'offline' : 'online'
+          };
+        }
+        return d;
+      })
+    );
+  }, []);
+
   // Select all devices
   const selectAllDevices = useCallback(() => {
     const allIds = devices.map(d => d.id);
@@ -4028,6 +4043,23 @@ export function NetworkTopology({
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 0 0 2.22 0L21 8M5 19h14a2 2 0 0 0 2-2V7a2 2 0 0 0 -2-2H5a2 2 0 0 0 -2 2v10a2 2 0 0 0 2 2z" />
                 </svg>
                 {language === 'tr' ? 'Ping At' : 'Send Ping'}
+              </button>
+
+              {/* Power Toggle */}
+              <button
+                onClick={() => {
+                  const targets = selectedDeviceIds.includes(contextMenu.deviceId!) ? selectedDeviceIds : [contextMenu.deviceId!];
+                  saveToHistory();
+                  togglePowerDevices(targets);
+                  setContextMenu(null);
+                }}
+                className={`w-full px-4 py-2 text-sm text-left flex items-center gap-2 ${isDark ? 'hover:bg-slate-700 text-amber-400' : 'hover:bg-slate-100 text-amber-600'
+                  }`}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18a6 6 0 1 0 0-12 6 6 0 0 0 0 12zM12 2v6" />
+                </svg>
+                {language === 'tr' ? 'Güç Aç/Kapat' : 'Power ON/OFF'}
               </button>
 
               <div className={`h-px ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`} />
