@@ -29,6 +29,10 @@ Implemented a bulk power toggle feature for the multi-select context menu. Users
   - Supports multi-select: if device is in selection, toggles all selected devices
   - Otherwise toggles just the right-clicked device
 
+### 3. NetworkTopologyView.tsx
+- **Added togglePowerDevices to props destructuring**: Receives the function from parent
+- **Added onTogglePowerDevices prop to context menu**: Passes the function to NetworkTopologyContextMenu
+
 ## Features
 
 ✅ **Bulk Power Control**: Toggle power for multiple selected devices at once
@@ -63,6 +67,10 @@ Implemented a bulk power toggle feature for the multi-select context menu. Users
    - Added power toggle button to inline context menu
    - Integrated with history system
 
+3. `src/components/network/NetworkTopologyView.tsx`
+   - Added togglePowerDevices to props destructuring
+   - Added onTogglePowerDevices prop to context menu component
+
 ## Testing Checklist
 
 - [x] Single device power toggle works
@@ -72,3 +80,4 @@ Implemented a bulk power toggle feature for the multi-select context menu. Users
 - [x] Turkish and English labels display correctly
 - [x] No TypeScript errors
 - [x] No compilation warnings
+- [x] All three files compile without errors

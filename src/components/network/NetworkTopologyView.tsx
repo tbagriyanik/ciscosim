@@ -88,6 +88,7 @@ export function NetworkTopologyView(props: NetworkTopologyViewProps) {
     copyDevice,
     pasteDevice,
     deleteDevice,
+    togglePowerDevices,
     startDeviceConfig,
     setPingSource,
     deleteNote,
@@ -484,9 +485,10 @@ export function NetworkTopologyView(props: NetworkTopologyViewProps) {
         onCopyDevices={copyDevice}
         onPasteDevice={pasteDevice || undefined}
         onDeleteDevices={(ids: string[]) => ids.forEach((id) => deleteDevice(id))}
+        onTogglePowerDevices={togglePowerDevices}
         onStartConfig={startDeviceConfig}
         onStartPing={(id: string) => setPingSource(id)}
-        onSaveToHistory={() => {}}
+        onSaveToHistory={() => { }}
         onClearDeviceSelection={() => props.setSelectedDeviceIds([])}
       />
     </div>
