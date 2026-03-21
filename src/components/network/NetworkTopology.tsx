@@ -2245,15 +2245,15 @@ export function NetworkTopology({
 
     const deviceFill = isDark
       ? (device.type === 'pc'
-        ? '#012a56'
+        ? '#1e3a5f'
         : device.type === 'switch'
-          ? '#1a3a2f'
-          : '#2d2347')
+          ? '#14532d'
+          : '#4c1d95')
       : (device.type === 'pc'
-        ? '#bfd9fb'
+        ? '#dbeafe'
         : device.type === 'switch'
-          ? '#bcf7dc'
-          : '#d2caf7');
+          ? '#dcfce7'
+          : '#ede9fe');
 
     // Calculate device height based on number of ports (8 per row for switch/router)
     const portsPerRow = device.type === 'pc' ? 2 : 8;
@@ -2269,7 +2269,7 @@ export function NetworkTopology({
       ? '#ef4444'
       : (hasConnection
         ? '#22c55e'
-        : (device.type === 'pc' ? '#3b82f6' : device.type === 'switch' ? '#10b981' : '#a855f7'));
+        : (device.type === 'pc' ? '#3b82f6' : device.type === 'switch' ? '#22c55e' : '#a855f7'));
 
     return (
       <g
@@ -2589,7 +2589,7 @@ export function NetworkTopology({
                   }`}
               >
                 <div className={
-                  type === 'pc' ? 'text-blue-500' : type === 'switch' ? 'text-emerald-500' : 'text-purple-500'
+                  type === 'pc' ? 'text-blue-500' : type === 'switch' ? 'text-green-500' : 'text-purple-500'
                 }>
                   <div className="scale-75">{DEVICE_ICONS[type]}</div>
                 </div>
@@ -2848,7 +2848,7 @@ export function NetworkTopology({
                         className={`flex flex-col items-center gap-2 p-4 rounded-2xl border transition-all ${isDark ? 'bg-slate-800 border-slate-700 active:bg-slate-700' : 'bg-slate-50 border-slate-200 active:bg-slate-100'
                           }`}
                       >
-                        <div className={type === 'pc' ? 'text-blue-500' : type === 'switch' ? 'text-emerald-500' : 'text-purple-500'}>
+                        <div className={type === 'pc' ? 'text-blue-500' : type === 'switch' ? 'text-green-500' : 'text-purple-500'}>
                           {type === 'pc' ? <Laptop className="w-6 h-6" /> : type === 'switch' ? <Monitor className="w-6 h-6" /> : <Network className="w-6 h-6" />}
                         </div>
                         <span className="text-xs font-bold capitalize">
