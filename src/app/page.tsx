@@ -258,24 +258,23 @@ export default function Home() {
   const toggleDevicePower = useCallback((deviceId: string) => {
     setTopologyDevices((prev) => {
       const current = prev.find(d => d.id === deviceId);
-      const nextStatus = current?.status === 'offline' ? 'online' : 'offline';
-      // Keep the topology canvas in sync without forcing a full remount.
+      const nextStatus: 'online' | 'offline' = current?.status === 'offline' ? 'online' : 'offline';
       window.dispatchEvent(new CustomEvent('trigger-topology-toggle-power', { detail: { deviceId, nextStatus } }));
 
-      // Keep sidebar/panels in sync too: links touching an offline device are inactive.
-      // Otherwise panels may keep showing stale "connected" LEDs after power toggles.
-      setTopologyConnections((prevConnections) => {
-        const nextDevices = prev.map((d) => (d.id === deviceId ? { ...d, status: nextStatus } : d));
-        const byId = new Map(nextDevices.map(d => [d.id, d] as const));
-        return prevConnections.map((c) => {
+      const nextDevices = prev.map((d) => (d.id === deviceId ? { ...d, status: nextStatus } : d));
+      const byId = new Map(nextDevices.map(d => [d.id, d] as const));
+
+      setTopologyConnections((prevConnections) =>
+        prevConnections.map((c) => {
           if (c.sourceDeviceId !== deviceId && c.targetDeviceId !== deviceId) return c;
           if (nextStatus === 'offline') return { ...c, active: false };
           const peerId = c.sourceDeviceId === deviceId ? c.targetDeviceId : c.sourceDeviceId;
           const peer = byId.get(peerId);
           return { ...c, active: peer?.status !== 'offline' };
-        });
-      });
-      return prev.map((d) => (d.id === deviceId ? { ...d, status: nextStatus } : d));
+        })
+      );
+
+      return nextDevices;
     });
   }, []);
 
@@ -416,7 +415,7 @@ export default function Home() {
         isApplyingHistoryRef.current = false;
       }
     }
-  }, [topologyDevices, topologyConnections, topologyNotes, deviceStates, activeDeviceId, isAppLoading, pushState]); // Removed getCurrentState from deps as it's not stable
+  }, [topologyDevices, topologyConnections, topologyNotes, deviceStates, deviceOutputs, pcOutputs, pcHistories, cableInfo, activeDeviceId, activeDeviceType, zoom, pan, activeTab, isAppLoading, pushState]);
 
   // Initial App Loading State
   // No longer needed here as it's declared earlier
@@ -931,145 +930,100 @@ export default function Home() {
       setSelectedDevice(null);
     }
 
-    // 1. Identify connections and ports to disconnect FIRST
-    const connectionsToRemove = topologyConnections.filter(conn =>
-      conn.sourceDeviceId === deviceId || conn.targetDeviceId === deviceId
-    );
+    // 1. Identify connections and ports to disconnect FIRST (capture current state)
+    setTopologyConnections(prevConnections => {
+      const connectionsToRemove = prevConnections.filter(conn =>
+        conn.sourceDeviceId === deviceId || conn.targetDeviceId === deviceId
+      );
 
-    const portsToDisconnect = connectionsToRemove.map(conn => {
-      if (conn.sourceDeviceId === deviceId) {
-        return { deviceId: conn.targetDeviceId, portId: conn.targetPort };
-      } else {
-        return { deviceId: conn.sourceDeviceId, portId: conn.sourcePort };
-      }
-    });
-
-    // 2. Release ports on OTHER devices in simulation state (deviceStates)
-    setDeviceStates(prev => {
-      const newMap = new Map(prev);
-
-      // Reset ports on other devices that were connected to the one being deleted
-      portsToDisconnect.forEach(p => {
-        const targetState = newMap.get(p.deviceId);
-        if (targetState && targetState.ports) {
-          const updatedPorts = { ...targetState.ports };
-          const portToReset = updatedPorts[p.portId];
-          if (portToReset) {
-            updatedPorts[p.portId] = {
-              ...portToReset,
-              status: 'notconnect'
-            };
-            newMap.set(p.deviceId, {
-              ...targetState,
-              ports: updatedPorts
-            });
-          }
+      const portsToDisconnect = connectionsToRemove.map(conn => {
+        if (conn.sourceDeviceId === deviceId) {
+          return { deviceId: conn.targetDeviceId, portId: conn.targetPort };
+        } else {
+          return { deviceId: conn.sourceDeviceId, portId: conn.sourcePort };
         }
       });
 
-      // Delete the device itself
-      newMap.delete(deviceId);
-      return newMap;
-    });
+      const remainingConnections = prevConnections.filter(conn =>
+        conn.sourceDeviceId !== deviceId && conn.targetDeviceId !== deviceId
+      );
 
-    // 3. Clear other state maps
-    setDeviceOutputs(prev => {
-      const newMap = new Map(prev);
-      newMap.delete(deviceId);
-      return newMap;
-    });
-
-    setPcOutputs(prev => {
-      const newMap = new Map(prev);
-      newMap.delete(deviceId);
-      return newMap;
-    });
-
-    // 4. Update topology: Remove connections
-    const remainingConnections = topologyConnections.filter(conn =>
-      conn.sourceDeviceId !== deviceId && conn.targetDeviceId !== deviceId
-    );
-    setTopologyConnections(remainingConnections);
-
-    // 5. Update EVERYTHING: Full sync of all ports on all remaining devices
-    setTopologyDevices(prev => {
-      const remainingDevices = prev.filter(d => d.id !== deviceId);
-
-      return remainingDevices.map(device => {
-        const updatedPorts = device.ports.map(port => {
-          // Check if this port is used in ANY remaining connection
-          const isActuallyConnected = remainingConnections.some(conn =>
-            (conn.sourceDeviceId === device.id && conn.sourcePort === port.id) ||
-            (conn.targetDeviceId === device.id && conn.targetPort === port.id)
-          );
-
-          return {
-            ...port,
-            status: isActuallyConnected ? 'connected' as const : 'disconnected' as const
-          };
-        });
-
-        return { ...device, ports: updatedPorts };
-      });
-    });
-
-    // Also sync the internal simulation state (deviceStates) for ALL devices
-    setDeviceStates(prev => {
-      const newMap = new Map(prev);
-      newMap.delete(deviceId); // Remove deleted device
-
-      // Update all remaining devices
-      newMap.forEach((state, id) => {
-        if (state.ports) {
-          const updatedPorts = { ...state.ports };
-          let changed = false;
-
-          Object.keys(updatedPorts).forEach(portId => {
-            const isActuallyConnected = remainingConnections.some(conn =>
-              (conn.sourceDeviceId === id && conn.sourcePort === portId) ||
-              (conn.targetDeviceId === id && conn.targetPort === portId)
-            );
-
-            const expectedStatus = isActuallyConnected ? 'connected' : 'notconnect';
-            if (updatedPorts[portId].status !== expectedStatus) {
-              updatedPorts[portId] = {
-                ...updatedPorts[portId],
-                status: expectedStatus as any
+      // 2. Release ports on OTHER devices in simulation state (deviceStates)
+      setDeviceStates(prev => {
+        const newMap = new Map(prev);
+        portsToDisconnect.forEach(p => {
+          const targetState = newMap.get(p.deviceId);
+          if (targetState && targetState.ports) {
+            const updatedPorts = { ...targetState.ports };
+            const portToReset = updatedPorts[p.portId];
+            if (portToReset) {
+              updatedPorts[p.portId] = {
+                ...portToReset,
+                status: 'notconnect'
               };
-              changed = true;
+              newMap.set(p.deviceId, {
+                ...targetState,
+                ports: updatedPorts
+              });
             }
-          });
-
-          if (changed) {
-            newMap.set(id, { ...state, ports: updatedPorts });
           }
-        }
+        });
+        newMap.delete(deviceId);
+        return newMap;
       });
 
-      return newMap;
+      // 3. Clear other state maps
+      setDeviceOutputs(prev => {
+        const newMap = new Map(prev);
+        newMap.delete(deviceId);
+        return newMap;
+      });
+
+      setPcOutputs(prev => {
+        const newMap = new Map(prev);
+        newMap.delete(deviceId);
+        return newMap;
+      });
+
+      // 4. Update topology: Update ports on remaining devices based on remaining connections
+      setTopologyDevices(prev => {
+        return prev.filter(d => d.id !== deviceId).map(device => {
+          const updatedPorts = device.ports.map(port => {
+            const isActuallyConnected = remainingConnections.some(conn =>
+              (conn.sourceDeviceId === device.id && conn.sourcePort === port.id) ||
+              (conn.targetDeviceId === device.id && conn.targetPort === port.id)
+            );
+            return {
+              ...port,
+              status: isActuallyConnected ? 'connected' as const : 'disconnected' as const
+            };
+          });
+          return { ...device, ports: updatedPorts };
+        });
+      });
+
+      return remainingConnections;
     });
 
     // If the deleted device was the active one, switch to another device
     if (activeDeviceId === deviceId) {
-      // Find another device to switch to (from current topologyDevices)
-      const currentDevices = topologyDevices?.filter(d => d.id !== deviceId) || [];
-      if (currentDevices.length > 0) {
-        const nextDevice = currentDevices[0];
-        setActiveDeviceId(nextDevice.id);
-        setActiveDeviceType(nextDevice.type as 'pc' | 'switch' | 'router');
-
-        // Switch to topology tab when device changes
-        setActiveTab('topology');
-      } else {
-        // No devices left, reset to default state
-        setActiveDeviceId('');
-        setActiveDeviceType('switch');
-        // Reset to topology tab
-        setActiveTab('topology');
-      }
+      setTopologyDevices(prev => {
+        const currentDevices = prev.filter(d => d.id !== deviceId);
+        if (currentDevices.length > 0) {
+          const nextDevice = currentDevices[0];
+          setActiveDeviceId(nextDevice.id);
+          setActiveDeviceType(nextDevice.type as 'pc' | 'switch' | 'router');
+          setActiveTab('topology');
+        } else {
+          setActiveDeviceId('');
+          setActiveDeviceType('switch');
+          setActiveTab('topology');
+        }
+        return prev;
+      });
     }
     setHasUnsavedChanges(true);
-  }, [activeDeviceId, topologyDevices, topologyConnections, showPCDeviceId, selectedDevice, setDeviceStates, setDeviceOutputs, setPcOutputs, setShowPCPanel, setShowPCDeviceId, setSelectedDevice, setActiveDeviceId, setActiveDeviceType, setActiveTab, setHasUnsavedChanges]);
+  }, [activeDeviceId, showPCDeviceId, selectedDevice, setDeviceStates, setDeviceOutputs, setPcOutputs, setShowPCPanel, setShowPCDeviceId, setSelectedDevice, setActiveDeviceId, setActiveDeviceType, setActiveTab, setHasUnsavedChanges]);
 
   const handleUpdateHistory = useCallback((deviceId: string, history: string[]) => {
     setDeviceStates(prev => {
@@ -2450,7 +2404,7 @@ export default function Home() {
         </main>
 
         {/* Footer - Save Status & Hints */}
-        <footer className={`hidden md:block relative border-t backdrop-blur-xl transition-all ${isDark ? 'bg-slate-900/95 border-slate-800' : 'bg-white/95 border-slate-200'
+        <footer className={`hidden md:block sticky bottom-0 border-t backdrop-blur-xl transition-all ${isDark ? 'bg-slate-900/95 border-slate-800' : 'bg-white/95 border-slate-200'
           } ${showProjectPicker || showOnboarding ? 'hidden' : ''}`}>
           <div className="w-full px-5 py-2">
             <div className="flex items-center justify-between gap-4">
@@ -2483,11 +2437,8 @@ export default function Home() {
                     {activeTab === 'topology' && (
                       <>
                         <kbd className={`px-1.5 py-0.5 rounded text-[10px] font-mono ${isDark ? 'bg-slate-700 text-slate-300' : 'bg-slate-200 text-slate-700'
-                          }`}>Ctrl+Z</kbd>
-                        <span className="mx-1">{language === 'tr' ? 'Geri' : 'Undo'}</span>
-                        <kbd className={`px-1.5 py-0.5 rounded text-[10px] font-mono ${isDark ? 'bg-slate-700 text-slate-300' : 'bg-slate-200 text-slate-700'
-                          }`}>Ctrl+Y</kbd>
-                        <span className="mx-1">{language === 'tr' ? 'İleri' : 'Redo'}</span>
+                          }`}>Ctrl+F</kbd>
+                        <span className="mx-1">{language === 'tr' ? 'Tam Ekran' : 'Fullscreen'}</span>
                         <kbd className={`px-1.5 py-0.5 rounded text-[10px] font-mono ${isDark ? 'bg-slate-700 text-slate-300' : 'bg-slate-200 text-slate-700'
                           }`}>Ctrl+S</kbd>
                         <span className="mx-1">{language === 'tr' ? 'Kaydet' : 'Save'}</span>

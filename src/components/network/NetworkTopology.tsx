@@ -11,7 +11,7 @@ import { CanvasDevice, CanvasConnection, CanvasNote } from './networkTopology.ty
 import { DeviceIcon } from './DeviceIcon';
 import { ConnectionLine } from './ConnectionLine';
 import { DeviceNode } from './DeviceNode';
-import { Laptop, Monitor, Network, Plus, Pencil } from "lucide-react";
+import { Laptop, Monitor, Network, Plus } from "lucide-react";
 
 interface NetworkTopologyProps {
   cableInfo: CableInfo;
@@ -259,7 +259,6 @@ export function NetworkTopology({
   // Undo/Redo history
   const [history, setHistory] = useState<{ devices: CanvasDevice[]; connections: CanvasConnection[] }[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
-  const historyRef = useRef({ history, historyIndex });
 
   // Always-fresh refs: updated on every render so event handlers never get stale values
   const latestDevicesRef = useRef<CanvasDevice[]>([]);
@@ -1698,30 +1697,6 @@ export function NetworkTopology({
         }
       }
 
-      // Close context menu on ESC (Duplicate logic above, but being thorough)
-      if (key === 'escape') {
-        setContextMenu(null);
-        // Also cancel config if active
-        if (configuringDevice) {
-          cancelDeviceConfig();
-        }
-        // Cancel select all mode
-        if (selectedDeviceIds.length > 0) {
-          setSelectedDeviceIds([]);
-        }
-        // Close Ping Source
-        if (pingSource) {
-          setPingSource(null);
-        }
-        // Close Port Selector
-        if (showPortSelector) {
-          setShowPortSelector(false);
-          setPortSelectorStep('source');
-          setSelectedSourcePort(null);
-        }
-        return;
-      }
-
       // Don't handle other keys if a modal is open
       if (configuringDevice) {
         return;
@@ -2826,87 +2801,15 @@ export function NetworkTopology({
           </div>
 
           <div className="flex items-center gap-1.5 sm:gap-2">
-            {/* Mobile Toolset */}
-            <div className="hidden">
-              {/* Add */}
-              <button
-                onClick={() => setIsPaletteOpen(true)}
-                className="hidden"
-              >
-                {language === 'tr' ? 'Ekle' : 'Add'}
-              </button>
 
-              {/* Connect */}
-              <button
-                onClick={() => {
-                  setShowPortSelector(true);
-                  setPortSelectorStep('source');
-                  setSelectedSourcePort(null);
-                }}
-                className="hidden"
-              >
-                {language === 'tr' ? 'Bağla' : 'Connect'}
-              </button>
-
-              {/* Zoom Controls */}
-              <div className="flex items-center gap-0.5">
-                <button
-                  onClick={() => setZoom((z) => Math.max(MIN_ZOOM, z - 0.25))}
-                  className={`w-7 h-7 flex items-center justify-center rounded-lg ui-hover-surface ${isDark ? 'text-slate-300 hover:text-slate-100' : 'text-slate-700 hover:text-slate-900'}`}
-                >
-                  <span className="text-lg font-bold">−</span>
-                </button>
-                <button
-                  onClick={resetView}
-                  className={`px-2 h-7 rounded-lg text-[11px] font-mono ui-hover-surface transition-all duration-200 ${isDark ? 'text-slate-200 hover:text-slate-100 bg-slate-700/50' : 'text-slate-700 hover:text-slate-900 bg-blue-50'}`}
-                  title={`${language === 'tr' ? 'Sıfırla' : 'Reset'} (Alt+R)`}
-                >
-                  {Math.round(zoom * 100)}%
-                </button>
-                <button
-                  onClick={() => setZoom((z) => Math.min(MAX_ZOOM, z + 0.25))}
-                  className={`w-7 h-7 flex items-center justify-center rounded-lg ui-hover-surface ${isDark ? 'text-slate-300 hover:text-slate-100' : 'text-slate-700 hover:text-slate-900'}`}
-                >
-                  <span className="text-lg font-bold">+</span>
-                </button>
-              </div>
-
-              {/* Snap to Grid Toggle */}
-              <div className={`flex items-center gap-1 px-2 py-1 rounded-lg border ${isDark ? 'bg-slate-900/40 border-slate-700/30' : 'bg-blue-50/50 border-blue-100/50'}`}>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button
-                      onClick={() => setSnapToGrid(!snapToGrid)}
-                      className={`flex items-center gap-1.5 px-2 py-1.5 rounded-md transition-all ${snapToGrid
-                        ? isDark
-                          ? 'bg-emerald-500/20 text-emerald-400'
-                          : 'bg-emerald-100 text-emerald-700'
-                        : isDark
-                          ? 'text-slate-400 hover:text-slate-300'
-                          : 'text-slate-500 hover:text-slate-700'
-                        }`}
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
-                      </svg>
-                      <span className="text-xs font-bold hidden lg:inline">{language === 'tr' ? 'Izgara' : 'Grid'}</span>
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent>{snapToGrid ? (language === 'tr' ? 'Izgaraya Hizala Açık' : 'Snap to Grid On') : (language === 'tr' ? 'Izgaraya Hizala Kapalı' : 'Snap to Grid Off')}</TooltipContent>
-                </Tooltip>
-                {snapToGrid && (
-                  <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                )}
-              </div>
-            </div>
-
+            {/* Desktop Connect Button */}
             <button
               onClick={() => {
                 setShowPortSelector(true);
                 setPortSelectorStep('source');
                 setSelectedSourcePort(null);
               }}
-              className={`hidden md:flex items-center gap-1.5 px-3 sm:px-4 py-1.5 rounded-xl text-xs font-semibold shadow-sm transition-all ${isDark
+              className={`cursor-pointer hidden md:flex items-center gap-1.5 px-3 sm:px-4 py-1.5 rounded-xl text-xs font-semibold shadow-sm transition-all ${isDark
                 ? 'bg-cyan-600 hover:bg-cyan-700 text-white'
                 : 'bg-cyan-500 hover:bg-cyan-600 text-white'
                 }`}
@@ -3211,10 +3114,10 @@ export function NetworkTopology({
             </svg>
           </div>
 
-          {/* Zoom Controls - Mobile Float - Top Right */}
+          {/* Zoom Controls - Mobile Float - Above Footer */}
           <div
-            className={`md:hidden absolute top-[10px] right-[10px] items-center gap-1 px-2 py-1 rounded-lg ${isDark ? 'bg-slate-800/90' : 'bg-white/90'
-              } shadow-lg flex`}
+            className={`fixed bottom-[60px] right-[10px] items-center gap-1 px-2 py-1 rounded-lg ${isDark ? 'bg-slate-800/90' : 'bg-white/90'
+              } shadow-lg flex z-40`}
           >
             <button
               onClick={() => setZoom((z) => {
@@ -3272,10 +3175,9 @@ export function NetworkTopology({
             </Tooltip>
           </div>
 
-          {/* Zoom Controls - Desktop Only - Top Right */}
+          {/* Zoom Controls - Desktop Only - Hidden (now in footer) */}
           <div
-            className={`hidden md:flex absolute top-[10px] right-[10px] items-center gap-1 px-2 py-1 rounded-lg ${isDark ? 'bg-slate-800/90' : 'bg-white/90'
-              } shadow-lg`}
+            className={`hidden`}
           >
             <button
               onClick={() => setZoom((z) => {
@@ -3350,11 +3252,9 @@ export function NetworkTopology({
             </Tooltip>
           </div>
 
-          {/* Minimap (Preview) - Desktop Only - Bottom Right */}
+          {/* Minimap (Preview) - Hidden */}
           <div
-            className={`hidden md:block absolute bottom-2 right-2 w-32 h-20 rounded border cursor-pointer ${isDark ? 'border-slate-700 bg-slate-800/90' : 'border-slate-200 bg-white/90'
-              } shadow-lg overflow-hidden z-30`}
-            title={language === 'tr' ? 'Harita üzerinden gezinmek için tıklayın' : 'Click on map to navigate'}
+            className={`hidden`}
           >
             <svg
               width="100%"
@@ -3402,26 +3302,8 @@ export function NetworkTopology({
             </svg>
           </div>
 
-          {/* Instructions - Above Minimap */}
-          <div
-            className={`absolute bottom-[92px] right-2 text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-400'} max-w-48 text-right hidden md:block`}
-          >
-            {language === 'tr'
-              ? 'Tek tık: seç, Çift tık: terminal, Sürükle: taşı'
-              : 'Click: select, Double-click: terminal, Drag: move'}
-          </div>
-
-          {/* Mobile Instructions - Bottom Right (No Minimap) */}
-          <div
-            className={`absolute bottom-2 right-2 text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-400'} max-w-48 text-right md:hidden`}
-          >
-            {language === 'tr'
-              ? 'Dokun: seç, Çift dokun: terminal, Sürükle: taşı, Basılı tut: sil'
-              : 'Tap: select, Double-tap: terminal, Drag: move, Long-press: delete'}
-          </div>
         </div>
       </div>
-
 
       {/* Context Menu */}
       {contextMenu && (
