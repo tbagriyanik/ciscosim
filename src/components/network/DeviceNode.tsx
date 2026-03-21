@@ -53,21 +53,42 @@ export const DeviceNode = memo(function DeviceNode({
     </g>
   );
 }, (prevProps, nextProps) => {
-  return (
-    prevProps.device.x === nextProps.device.x &&
-    prevProps.device.y === nextProps.device.y &&
-    prevProps.device.name === nextProps.device.name &&
-    prevProps.device.status === nextProps.device.status &&
-    prevProps.device.ip === nextProps.device.ip &&
-    prevProps.device.ports.length === nextProps.device.ports.length &&
-    // Check if any port status or shutdown state changed
-    prevProps.device.ports.every((p, i) => 
-      p.status === nextProps.device.ports[i].status && 
-      p.shutdown === nextProps.device.ports[i].shutdown
-    ) &&
-    prevProps.isSelected === nextProps.isSelected &&
-    prevProps.isActive === nextProps.isActive &&
-    prevProps.isDragging === nextProps.isDragging &&
-    prevProps.isDark === nextProps.isDark
-  );
+  // Cihaz konumu, adı, durumu, IP değişmişse re-render et
+  if (
+    prevProps.device.x !== nextProps.device.x ||
+    prevProps.device.y !== nextProps.device.y ||
+    prevProps.device.name !== nextProps.device.name ||
+    prevProps.device.status !== nextProps.device.status ||
+    prevProps.device.ip !== nextProps.device.ip
+  ) {
+    return false; // Re-render et
+  }
+
+  // Port sayısı değişmişse re-render et
+  if (prevProps.device.ports.length !== nextProps.device.ports.length) {
+    return false; // Re-render et
+  }
+
+  // Port durumu veya shutdown state değişmişse re-render et
+  for (let i = 0; i < prevProps.device.ports.length; i++) {
+    if (
+      prevProps.device.ports[i].status !== nextProps.device.ports[i].status ||
+      prevProps.device.ports[i].shutdown !== nextProps.device.ports[i].shutdown
+    ) {
+      return false; // Re-render et
+    }
+  }
+
+  // UI state değişmişse re-render et
+  if (
+    prevProps.isSelected !== nextProps.isSelected ||
+    prevProps.isActive !== nextProps.isActive ||
+    prevProps.isDragging !== nextProps.isDragging ||
+    prevProps.isDark !== nextProps.isDark
+  ) {
+    return false; // Re-render et
+  }
+
+  // Hiçbir şey değişmemişse re-render etme
+  return true;
 });

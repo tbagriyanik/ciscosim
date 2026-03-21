@@ -1390,22 +1390,28 @@ export function NetworkTopology({
 
       setConnections((prev) => [...prev, newConnection]);
 
-      // Update port status
+      // Update port status - her iki cihazda da
       setDevices((prev) =>
         prev.map((d) => {
+          // Source device port'unu güncelle
           if (d.id === connectionStart.deviceId) {
             return {
               ...d,
               ports: d.ports.map((p) =>
-                p.id === connectionStart.portId ? { ...p, status: 'connected' as const } : p
+                p.id === connectionStart.portId
+                  ? { ...p, status: 'connected' as const }
+                  : p
               ),
             };
           }
+          // Target device port'unu güncelle
           if (d.id === deviceId) {
             return {
               ...d,
               ports: d.ports.map((p) =>
-                p.id === portId ? { ...p, status: 'connected' as const } : p
+                p.id === portId
+                  ? { ...p, status: 'connected' as const }
+                  : p
               ),
             };
           }
@@ -1650,9 +1656,26 @@ export function NetworkTopology({
         const updatedPorts = device.ports.map(port => {
           const simulatorPort = deviceState.ports[port.id];
           if (simulatorPort) {
+            // Check if this port has an active connection in the topology
+            const hasActiveConnection = connections.some(
+              conn => (conn.sourceDeviceId === device.id && conn.sourcePort === port.id) ||
+                (conn.targetDeviceId === device.id && conn.targetPort === port.id)
+            );
+
+            // Translate simulator status → UI status
+            // Simulator: 'connected' | 'notconnect' | 'disabled' | 'blocked'
+            // UI:        'connected' | 'disconnected'
+            let uiStatus: 'connected' | 'disconnected';
+            if (hasActiveConnection) {
+              uiStatus = 'connected';
+            } else {
+              // If no active connection, port must be disconnected regardless of simulator state
+              uiStatus = 'disconnected';
+            }
+
             const nextPort = {
               ...port,
-              status: simulatorPort.status ?? port.status,
+              status: uiStatus,
               vlan: simulatorPort.vlan ?? port.vlan,
               accessVlan: simulatorPort.accessVlan ?? (port as any).accessVlan,
               mode: simulatorPort.mode ?? port.mode,
@@ -1683,7 +1706,7 @@ export function NetworkTopology({
       });
       return hasChanges ? updatedDevices : prev;
     });
-  }, [deviceStates]); // ← only deviceStates, NOT devices (prevents infinite loop)
+  }, [deviceStates, connections]); // ← added connections to check for active connections
 
 
   // Delete connection
@@ -1691,13 +1714,15 @@ export function NetworkTopology({
     saveToHistory();
     const conn = connections.find((c) => c.id === connectionId);
     if (conn) {
+      // Port durumlarını güncelle - her iki cihazda da
       setDevices((prev) =>
         prev.map((d) => {
+          // Source veya target device ise port'ları güncelle
           if (d.id === conn.sourceDeviceId || d.id === conn.targetDeviceId) {
             return {
               ...d,
               ports: d.ports.map((p) => {
-                // Kablo çıkarıldığında her iki port da disconnected olmalı
+                // Bu bağlantıya ait portları disconnected yap
                 if (p.id === conn.sourcePort || p.id === conn.targetPort) {
                   return { ...p, status: 'disconnected' as const };
                 }
@@ -3005,20 +3030,17 @@ export function NetworkTopology({
                 </div>
 
                 {/* Cable Types Group */}
-                <div className="flex items-center gap-1">
+                <div className={`flex p-1 rounded-xl border ${isDark ? 'bg-slate-800/50 border-slate-800' : 'bg-slate-100 border-slate-200'}`}>
                   {(['straight', 'crossover', 'console'] as CableType[]).map((type) => (
                     <Tooltip key={type}>
                       <TooltipTrigger asChild>
                         <button
                           onClick={() => onCableChange({ ...cableInfo, cableType: type })}
-                          className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg transition-all ui-hover-surface ${cableInfo.cableType === type
-                            ? `${CABLE_COLORS[type].bg} text-white`
-                            : isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-600 hover:text-slate-800'}`}
+                          className={`px-3 py-1.5 rounded-lg text-[10px] font-black tracking-widest transition-all duration-300 ${cableInfo.cableType === type
+                            ? `${CABLE_COLORS[type].bg} text-white shadow-lg shadow-black/10`
+                            : isDark ? 'text-slate-500 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600'}`}
                         >
-                          <div className={`w-2.5 h-2.5 rounded-full ${CABLE_COLORS[type].bg}`} />
-                          <span className="text-[10px] font-bold">
-                            {type === 'straight' ? t.straight : type === 'crossover' ? t.crossover : t.console}
-                          </span>
+                          {type === 'straight' ? t.straight : type === 'crossover' ? t.crossover : t.console}
                         </button>
                       </TooltipTrigger>
                       <TooltipContent>
@@ -4025,8 +4047,8 @@ export function NetworkTopology({
         </div>
       )}
 
-      {/* Success/Error Toast */}
-      {pingAnimation?.success !== null && (
+      {/* Success/Error Toast - sadece ping tamamlandığında göster */}
+      {pingAnimation && pingAnimation.success !== null && (
         <div className="fixed bottom-20 left-1/2 transform -translate-x-1/2 z-50">
           <div className={`px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 ${pingAnimation?.success
             ? 'bg-green-600 text-white'
