@@ -1167,7 +1167,9 @@ export function PCPanel({
                     {line.type === 'command' && (
                       <div className="flex items-start gap-3">
                         <span className="text-emerald-500 shrink-0 font-black opacity-50 select-none">
-                          {activeTab === 'desktop' ? 'C:\\>' : (line.prompt || '>')}
+                          {activeTab === 'desktop'
+                            ? `${internalPcHostname} C:\\>`
+                            : (line.prompt || '>')}
                         </span>
                         <span className={cmdColor}>{highlightText(line.content)}</span>
                       </div>
@@ -1224,7 +1226,7 @@ export function PCPanel({
                 <div className={`flex items-center gap-3 px-4 py-2.5 ${inputBg} rounded-xl border ${inputBorder} flex-1 focus-within:border-blue-500/50 transition-all group`}>
                   <span className="text-emerald-500 font-black text-xs select-none shrink-0 opacity-50 group-focus-within:opacity-100 transition-opacity">
                     {activeTab === 'desktop'
-                      ? 'C:\\>'
+                      ? `${internalPcHostname} C:\\>`
                       : (isConsoleConnected ? (activeConsoleOutput.findLast(l => l.prompt !== undefined)?.prompt || '>') : 'OFFLINE>')}
                   </span>
                   <input

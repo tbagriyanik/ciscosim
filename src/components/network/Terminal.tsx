@@ -41,6 +41,7 @@ interface TerminalProps {
   language: string;
   onUpdateHistory?: (deviceId: string, history: string[]) => void;
   confirmDialog?: { show: boolean; onConfirm: () => void } | null;
+  onRequestFocus?: () => void;
 }
 
 export function Terminal({
@@ -61,7 +62,8 @@ export function Terminal({
   theme,
   language,
   onUpdateHistory,
-  confirmDialog
+  confirmDialog,
+  onRequestFocus
 }: TerminalProps) {
   const [input, setInput] = useState('');
   const [history, setHistory] = useState<string[]>(() => state.commandHistory || []);
@@ -88,6 +90,9 @@ export function Terminal({
   const [passwordInput, setPasswordInput] = useState('');
   const commandQueueRef = useRef<string[]>([]);
   const isProcessingQueueRef = useRef(false);
+  const isReloadConfirmationPending = output.some(
+    (line) => line.type === 'output' && /Proceed with reload\? \[confirm\]/i.test(line.content)
+  );
 
   // Advanced Command Help Tree for Network
   const networkHelp: Record<string, Record<string, string[]>> = {
@@ -141,6 +146,19 @@ export function Terminal({
   }, []);
 
   useEffect(() => {
+    setInput('');
+    setHistoryIndex(-1);
+    setTabCycleIndex(-1);
+    setLastTabInput('');
+    setSearchOpen(false);
+    setSearchQuery('');
+    setPasswordInput('');
+    setShowPasswordPrompt(false);
+    commandQueueRef.current = [];
+    isProcessingQueueRef.current = false;
+  }, [deviceId]);
+
+  useEffect(() => {
     if (state.awaitingPassword) {
       setShowPasswordPrompt(true);
       setPasswordInput('');
@@ -153,7 +171,12 @@ export function Terminal({
 
   const handleSubmit = async (cmdToExecute?: string) => {
     const command = (cmdToExecute || input).trim();
-    if (!command || isInputDisabled) return;
+    if (!command || isInputDisabled) {
+      if (isReloadConfirmationPending && !isInputDisabled) {
+        await onCommand('confirm');
+      }
+      return;
+    }
 
     // Add to history if not duplicate of last
     if (history[0] !== command) {
@@ -174,6 +197,16 @@ export function Terminal({
     e.preventDefault();
     await handleSubmit();
   };
+
+  const focusTerminalInput = useCallback(() => {
+    requestAnimationFrame(() => {
+      if (terminalRef.current) {
+        terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
+      }
+      inputRef.current?.focus();
+    });
+    onRequestFocus?.();
+  }, [onRequestFocus]);
 
   const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -279,6 +312,10 @@ export function Terminal({
         return;
       }
       e.preventDefault();
+      if (isReloadConfirmationPending && !input.trim()) {
+        onCommand('confirm');
+        return;
+      }
       handleSubmit();
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
@@ -370,7 +407,10 @@ export function Terminal({
 
   return (
     <TooltipProvider>
-      <Dialog open={searchOpen} onOpenChange={setSearchOpen}>
+      <Dialog open={searchOpen} onOpenChange={(open) => {
+        setSearchOpen(open);
+        if (!open) focusTerminalInput();
+      }}>
         <DialogContent className={`${isDark ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white'} sm:max-w-md`}>
           <DialogHeader>
             <DialogTitle>{language === 'tr' ? 'Terminalde ara' : 'Search terminal'}</DialogTitle>
@@ -407,6 +447,7 @@ export function Terminal({
         onOpenChange={(open) => {
           if (!open && state.awaitingPassword) return;
           setShowPasswordPrompt(open);
+          if (!open) focusTerminalInput();
         }}
       >
         <DialogContent showCloseButton={false} className={`${isDark ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white'} sm:max-w-sm`}>
@@ -528,6 +569,7 @@ export function Terminal({
           <CardContent className="p-0 flex-1 flex flex-col overflow-hidden relative min-h-0">
             <div
               ref={terminalRef}
+              data-terminal-scroll
               className={`flex-1 overflow-y-auto p-6 font-mono text-sm leading-relaxed scroll-smooth custom-scrollbar ${isPoweredOff ? 'bg-black' : terminalBg}`}
             >
               {!isPoweredOff && <div className="space-y-2">
@@ -569,8 +611,9 @@ export function Terminal({
                   <span className="text-cyan-500 font-bold text-xs select-none shrink-0 group-focus-within:opacity-100 transition-opacity">
                     {prompt}
                   </span>
-                  <input
-                    ref={inputRef}
+                    <input
+                      data-terminal-input
+                      ref={inputRef}
                     type="text"
                     value={input}
                     onChange={(e) => setInput(e.target.value)}

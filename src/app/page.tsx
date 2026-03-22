@@ -859,6 +859,17 @@ export default function Home() {
     });
   };
 
+  const focusActiveTerminalInput = useCallback(() => {
+    requestAnimationFrame(() => {
+      const el = document.querySelector('[data-terminal-input]') as HTMLInputElement | null;
+      const terminal = document.querySelector('[data-terminal-scroll]') as HTMLDivElement | null;
+      if (terminal) {
+        terminal.scrollTop = terminal.scrollHeight;
+      }
+      el?.focus();
+    });
+  }, []);
+
   // Handle device double click (Open terminal or PC panel)
   const handleDeviceDoubleClick = useCallback((device: 'pc' | 'switch' | 'router', deviceId: string) => {
     // Determine actual device type
@@ -2225,7 +2236,12 @@ export default function Home() {
         </Dialog>
 
         {/* Global Dialogs (AlertDialog for better z-index and standard behavior) */}
-        <AlertDialog open={!!confirmDialog} onOpenChange={(open) => !open && setConfirmDialog(null)}>
+        <AlertDialog open={!!confirmDialog} onOpenChange={(open) => {
+          if (!open) {
+            setConfirmDialog(null);
+            focusActiveTerminalInput();
+          }
+        }}>
           <AlertDialogContent className={`${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white'}`}>
             <AlertDialogHeader>
               <AlertDialogTitle className={isDark ? 'text-white' : 'text-slate-900'}>
@@ -2240,7 +2256,10 @@ export default function Home() {
                 {t.cancel}
               </AlertDialogCancel>
               <AlertDialogAction
-                onClick={() => confirmDialog?.onConfirm()}
+                onClick={() => {
+                  confirmDialog?.onConfirm();
+                  focusActiveTerminalInput();
+                }}
                 className="bg-cyan-600 hover:bg-cyan-700 text-white"
               >
                 {t.continue}
@@ -2249,7 +2268,12 @@ export default function Home() {
           </AlertDialogContent>
         </AlertDialog>
 
-        <AlertDialog open={!!saveDialog} onOpenChange={(open) => !open && setSaveDialog(null)}>
+        <AlertDialog open={!!saveDialog} onOpenChange={(open) => {
+          if (!open) {
+            setSaveDialog(null);
+            focusActiveTerminalInput();
+          }
+        }}>
           <AlertDialogContent className={`${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white'}`}>
             <AlertDialogHeader>
               <AlertDialogTitle className={isDark ? 'text-white' : 'text-slate-900'}>
@@ -2262,13 +2286,19 @@ export default function Home() {
             <AlertDialogFooter>
               <Button
                 variant="outline"
-                onClick={() => saveDialog?.onConfirm(false)}
+                onClick={() => {
+                  saveDialog?.onConfirm(false);
+                  focusActiveTerminalInput();
+                }}
                 className={isDark ? 'bg-slate-800 text-white border-slate-700 hover:bg-slate-700' : ''}
               >
                 {t.dontSave}
               </Button>
               <AlertDialogAction
-                onClick={() => saveDialog?.onConfirm(true)}
+                onClick={() => {
+                  saveDialog?.onConfirm(true);
+                  focusActiveTerminalInput();
+                }}
                 className="bg-cyan-600 hover:bg-cyan-700 text-white"
               >
                 {t.saveLabel}
@@ -2342,7 +2372,7 @@ export default function Home() {
               <div className="grid lg:grid-cols-4 gap-4 flex-1 overflow-hidden">
                 <div className="lg:col-span-3 flex flex-col gap-4 overflow-hidden">
                   <Terminal
-                    key={"terminal"}
+                    key={`terminal-${activeDeviceId}`}
                     deviceId={activeDeviceId}
                     // use same display name as the dropdown (hostname or topology name)
                     deviceName={
@@ -2365,9 +2395,15 @@ export default function Home() {
                     t={t}
                     theme={theme}
                     language={language}
-                    onUpdateHistory={handleUpdateHistory}
-                    confirmDialog={confirmDialog}
-                  />
+                  onUpdateHistory={handleUpdateHistory}
+                  confirmDialog={confirmDialog}
+                  onRequestFocus={() => {
+                    requestAnimationFrame(() => {
+                      const el = document.querySelector('input[placeholder="' + t.typeCommand + '"]') as HTMLInputElement | null;
+                      el?.focus();
+                    });
+                  }}
+                />
                   <QuickCommands
                     currentMode={state.currentMode}
                     onExecuteCommand={handleCommand}

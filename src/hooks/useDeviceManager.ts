@@ -39,15 +39,26 @@ export function useDeviceManager() {
         const isRouter = deviceId.includes('router');
         const baseState = isRouter ? createInitialRouterState() : createInitialState();
 
-        // Get existing hostname to preserve it
+        // Get existing state to preserve saved configuration and identity
         const existingState = deviceStates.get(deviceId);
-        const hostname = existingState?.hostname || (isRouter ? 'Router' : 'Switch');
+        const startupConfig = existingState?.startupConfig;
+        const defaultHostname = isRouter ? 'Router' : 'Switch';
+        const hostname = startupConfig ? (existingState?.hostname || defaultHostname) : defaultHostname;
 
-        const reloadedState: SwitchState = {
+        const baseIdentityState: SwitchState = {
           ...baseState,
           hostname,
           macAddress: existingState?.macAddress || baseState.macAddress,
-          version: existingState?.version || baseState.version,
+          version: existingState?.version || baseState.version
+        };
+
+        const restoredState = startupConfig
+          ? applyStartupConfig(baseIdentityState, startupConfig)
+          : baseIdentityState;
+
+        const reloadedState: SwitchState = {
+          ...restoredState,
+          startupConfig,
           currentMode: 'user',
           currentInterface: undefined,
           selectedInterfaces: undefined,
@@ -70,12 +81,8 @@ export function useDeviceManager() {
 
         setDeviceOutputs(prev => new Map(prev).set(deviceId, bootOutputs));
       } else {
-        // Power off: clear device state and outputs
-        setDeviceStates(prev => {
-          const next = new Map(prev);
-          next.delete(deviceId);
-          return next;
-        });
+        // Power off: keep saved state so configuration survives future power cycles
+        // Only clear the visible terminal output.
         setDeviceOutputs(prev => {
           const next = new Map(prev);
           next.set(deviceId, []);
@@ -322,19 +329,34 @@ export function useDeviceManager() {
           setDeviceStates(prev => {
             const next = new Map(prev);
             const current = next.get(deviceId);
-            if (current) next.set(deviceId, { ...current, startupConfig: undefined });
+            if (current) {
+              next.set(deviceId, {
+                ...current,
+                startupConfig: undefined,
+                commandHistory: [],
+                historyIndex: -1,
+                awaitingPassword: false,
+                passwordContext: undefined,
+              });
+            }
             return next;
           });
+          setDeviceOutputs(prev => new Map(prev).set(deviceId, []));
         }
         if (result.reloadDevice) {
+          if ((result as any).requiresReloadConfirm) {
+            setDeviceStates(prev => new Map(prev).set(deviceId, { ...deviceState, awaitingReloadConfirm: true } as any));
+            return;
+          }
           const baseState = deviceId.includes('router') ? createInitialRouterState() : createInitialState();
+          const hasStartupConfig = !!deviceState.startupConfig;
           const baseIdentityState = {
             ...baseState,
-            hostname: deviceState.hostname,
+            hostname: hasStartupConfig ? deviceState.hostname : baseState.hostname,
             macAddress: deviceState.macAddress,
             version: deviceState.version
           };
-          const appliedState = deviceState.startupConfig
+          const appliedState = hasStartupConfig
             ? applyStartupConfig(baseIdentityState, deviceState.startupConfig)
             : baseIdentityState;
           const reloadedState = {
@@ -346,6 +368,7 @@ export function useDeviceManager() {
             currentLine: undefined,
             currentVlan: undefined,
             awaitingPassword: false,
+            awaitingReloadConfirm: false,
             commandHistory: [],
             historyIndex: -1
           };

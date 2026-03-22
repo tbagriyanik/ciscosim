@@ -155,6 +155,7 @@ export interface CommandResult {
   requiresConfirmation?: boolean;    // Onay gerekiyor mu?
   confirmationMessage?: string;      // Onay mesajı
   confirmationAction?: string;       // Onay sonrası yapılacak işlem
+  requiresReloadConfirm?: boolean;   // Reload sonrası Enter ile onay gerekiyor mu?
   telnetTarget?: string;             // Telnet bağlantı hedef IP
   reloadDevice?: boolean;            // Cihazı sıfırla
 }
