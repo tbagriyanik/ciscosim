@@ -248,6 +248,7 @@ export function PCPanel({
   // Console connection state
   const [isConsoleConnected, setIsConsoleConnected] = useState(false);
   const [connectedDeviceId, setConnectedDeviceId] = useState<string | null>(null);
+  const [consoleConnectionTime, setConsoleConnectionTime] = useState<number>(0);
 
   const outputRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -392,8 +393,10 @@ export function PCPanel({
   // Synchronized Console Output from Global State
   const activeConsoleOutput = useMemo(() => {
     if (!isConsoleConnected || !connectedDeviceId || !deviceOutputs) return [];
-    return deviceOutputs.get(connectedDeviceId) || [];
-  }, [isConsoleConnected, connectedDeviceId, deviceOutputs]);
+    const allOutput = deviceOutputs.get(connectedDeviceId) || [];
+    // Sadece bağlantı zamanından sonraki output'u göster
+    return allOutput.filter((line: any) => (line.timestamp || 0) >= consoleConnectionTime);
+  }, [isConsoleConnected, connectedDeviceId, deviceOutputs, consoleConnectionTime]);
 
   const handleCopyAll = useCallback(async () => {
     try {
@@ -488,6 +491,7 @@ export function PCPanel({
 
     setIsConsoleConnected(true);
     setConnectedDeviceId(consoleDevice.id);
+    setConsoleConnectionTime(Date.now());
 
     if (onExecuteDeviceCommand) {
       // Internal "connect" signal to trigger console authentication flow if configured.
@@ -609,7 +613,30 @@ export function PCPanel({
       } else if (cmd === 'ftp') {
         addLocalOutput('output', `Connected to ${args[0] || 'server'}.\n220 OS FTP Service\nUser (anonymous):`);
       } else if (cmd === 'ssh') {
-        addLocalOutput('output', `OpenSSH_9.2p1, OpenSSL 3.0.8\nusage: ssh [-46AaCfGgKkMNnqsTtVvXxYy] [-B bind_interface] [-b bind_address]...`);
+        if (!args[0]) {
+          addLocalOutput('output', `OpenSSH_9.2p1, OpenSSL 3.0.8\nusage: ssh [-46AaCfGgKkMNnqsTtVvXxYy] [-B bind_interface] [-b bind_address]...\n           [-c cipher_spec] [-D [bind_address:]port] [-E log_file]\n           [-F configfile] [-I pkcs11] [-J [user@]host[:port]]\n           [-L address] [-l login_name] [-m macspec] [-O ctl_cmd]\n           [-o option] [-p port] [-Q query_option] [-R address]\n           [-S ctl_path] [-W host:port] [-w local_tun[:remote_tun]]\n           [-X|-x] [-Y] [-Z] [-b bind_address] [-c cipher_spec]\n           [-D [bind_address:]port] [-E log_file] [-F configfile]\n           [-I pkcs11] [-J [user@]host[:port]] [-L address]\n           [-l login_name] [-m macspec] [-O ctl_cmd] [-o option]\n           [-p port] [-Q query_option] [-R address] [-S ctl_path]\n           [-W host:port] [-w local_tun[:remote_tun]] [-X|-x] [-Y] [-Z]\n           [user@]hostname [command]`);
+        } else {
+          const target = args[0];
+          const result = checkConnectivity(deviceId, target, topologyDevices as any, topologyConnections as any, deviceStates);
+          if (result.success) {
+            const targetDevice = (topologyDevices as any)?.find((d: any) => d.ip === target);
+            if (targetDevice && targetDevice.type !== 'pc') {
+              addLocalOutput('output', `Trying ${target}...\nConnected to ${targetDevice.name}.\nEscape character is '^]'.\n\n**** Connected to ${targetDevice.name} (${target}) via SSH ****\n`);
+              // Set console connection state
+              setIsConsoleConnected(true);
+              setConnectedDeviceId(targetDevice.id);
+              setConsoleConnectionTime(Date.now());
+              // Execute console connect command on target device
+              if (onExecuteDeviceCommand) {
+                onExecuteDeviceCommand(targetDevice.id, '__CONSOLE_CONNECT__').then(() => { });
+              }
+            } else {
+              addLocalOutput('error', `ssh: connect to host ${target} port 22: Connection refused`);
+            }
+          } else {
+            addLocalOutput('error', `ssh: Could not resolve hostname ${target}: Name or service not known`);
+          }
+        }
       } else if (cmd === 'telnet') {
         addLocalOutput('output', `Connecting To ${args[0] || 'host'}...Could not open connection to the host, on port 23: Connect failed`);
       } else if (cmd === 'python') {
@@ -1160,7 +1187,27 @@ export function PCPanel({
                     ref={inputRef}
                     type="text"
                     value={input}
-                    onChange={(e) => setInput(e.target.value)}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      // Yapıştırılan metinde newline varsa, komutları ayrı ayrı işle
+                      if (value.includes('\n')) {
+                        const lines = value.split('\n').filter(line => line.trim());
+                        if (lines.length > 0) {
+                          // Input'u temizle
+                          setInput('');
+                          // Komutları sırayla gönder
+                          let delay = 0;
+                          lines.forEach((line) => {
+                            setTimeout(() => {
+                              executeCommand(line);
+                            }, delay);
+                            delay += 150; // Her komut arasında 150ms bekle
+                          });
+                        }
+                      } else {
+                        setInput(value);
+                      }
+                    }}
                     disabled={activeTab === 'desktop' ? isCmdInputDisabled : isConsoleInputDisabled}
                     className={`flex-1 bg-transparent border-none outline-none ${cmdColor} font-mono text-[13px] placeholder:text-slate-500 w-full`}
                     placeholder={activeTab === 'terminal' && !isConsoleConnected ? t.waitingForConnection : (activeTab === 'desktop' ? (isCmdInputDisabled ? connectionErrorText : t.typeCommand) : (isConsoleInputDisabled && isConsoleConnected ? connectionErrorText : t.typeCommand))}

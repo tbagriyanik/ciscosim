@@ -19,6 +19,7 @@ export interface TerminalOutput {
   type: 'command' | 'output' | 'error' | 'success' | 'password-prompt';
   content: string;
   prompt?: string;
+  timestamp?: number;
 }
 
 interface TerminalProps {
@@ -476,13 +477,13 @@ export function Terminal({
                   <div key={line.id || index} className="animate-in fade-in slide-in-from-left-1 duration-200">
                     {line.type === 'command' ? (
                       <div className="flex gap-2.5 text-cyan-500 font-bold group">
-                        <span className="shrink-0 opacity-50 select-none">{line.prompt || prompt}</span>
+                        <span className="shrink-0 opacity-50 select-none">{prompt}</span>
                         <span className={cmdColor}>{highlightText(line.content)}</span>
                       </div>
                     ) : (
                       <div className={`whitespace-pre-wrap ${line.type === 'error' ? 'text-rose-500 font-medium' :
-                          line.type === 'success' ? 'text-emerald-600' :
-                            textColor
+                        line.type === 'success' ? 'text-emerald-600' :
+                          textColor
                         }`}>
                         {highlightText(line.content)}
                       </div>
@@ -498,8 +499,8 @@ export function Terminal({
               </div>
             </div>
 
-            {/* Input Area */}
-            <div className={`p-3 border-t ${isDark ? 'border-slate-800 bg-slate-900/50' : 'bg-slate-50 border-slate-200'}`}>
+            {/* Input Area - Always Visible */}
+            <div className={`shrink-0 p-3 border-t ${isDark ? 'border-slate-800 bg-slate-900/50' : 'bg-slate-50 border-slate-200'}`}>
               {isConnectionError && (
                 <div className="mb-2 px-3 py-2 rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-500 text-xs font-bold tracking-wider">
                   {connectionErrorMessage || (language === 'tr' ? 'Bağlantı hatası' : 'Connection error')}
@@ -514,7 +515,27 @@ export function Terminal({
                     ref={inputRef}
                     type="text"
                     value={input}
-                    onChange={(e) => setInput(e.target.value)}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      // Yapıştırılan metinde newline varsa, komutları ayrı ayrı işle
+                      if (value.includes('\n')) {
+                        const lines = value.split('\n').filter(line => line.trim());
+                        if (lines.length > 0) {
+                          // İlk satırı input'a koy ve gönder
+                          setInput('');
+                          // Komutları sırayla gönder
+                          let delay = 0;
+                          lines.forEach((line) => {
+                            setTimeout(() => {
+                              handleSubmit(line);
+                            }, delay);
+                            delay += 150; // Her komut arasında 150ms bekle
+                          });
+                        }
+                      } else {
+                        setInput(value);
+                      }
+                    }}
                     onKeyDown={handleKeyDown}
                     disabled={isInputDisabled}
                     className={`flex-1 bg-transparent border-none outline-none ${cmdColor} font-mono text-[13px] placeholder:text-slate-500 w-full`}
@@ -530,8 +551,8 @@ export function Terminal({
                   disabled={isInputDisabled || !input.trim()}
                   size="icon"
                   className={`shrink-0 h-10 w-10 rounded-lg transition-all shadow-lg ${input.trim()
-                      ? 'bg-cyan-600 hover:bg-cyan-500 text-white shadow-cyan-500/20 active:scale-95 cursor-pointer'
-                      : 'bg-slate-800 text-slate-600 cursor-not-allowed opacity-50'
+                    ? 'bg-cyan-600 hover:bg-cyan-500 text-white shadow-cyan-500/20 active:scale-95 cursor-pointer'
+                    : 'bg-slate-800 text-slate-600 cursor-not-allowed opacity-50'
                     }`}
                 >
                   <CornerDownLeft className="w-5 h-5" />
@@ -558,8 +579,8 @@ export function Terminal({
                     key={i}
                     onClick={() => handleSubmit(cmd)}
                     className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all border ${isDark
-                        ? 'bg-slate-800 border-slate-700 text-slate-300 active:bg-cyan-500/20 active:text-cyan-400'
-                        : 'bg-white border-slate-200 text-slate-600 active:bg-cyan-50'
+                      ? 'bg-slate-800 border-slate-700 text-slate-300 active:bg-cyan-500/20 active:text-cyan-400'
+                      : 'bg-white border-slate-200 text-slate-600 active:bg-cyan-50'
                       }`}
                   >
                     {cmd}

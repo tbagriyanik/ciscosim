@@ -148,15 +148,16 @@ export function useDeviceManager() {
       }
 
       const newOutputs: TerminalOutput[] = [];
+      const now = Date.now();
       if (!isInternalCommand && !deviceState.awaitingPassword) {
-        newOutputs.push({ id: Date.now().toString(), type: 'command', content: command, prompt: devicePrompt });
+        newOutputs.push({ id: now.toString(), type: 'command', content: command, prompt: devicePrompt, timestamp: now });
       }
 
       if (success) {
         if (result.requiresPassword && result.passwordPrompt) {
-          newOutputs.push({ id: `${Date.now()}-pw`, type: 'password-prompt', content: result.passwordPrompt });
+          newOutputs.push({ id: `${now}-pw`, type: 'password-prompt', content: result.passwordPrompt, timestamp: now });
         } else if (result.output) {
-          newOutputs.push({ id: `${Date.now()}-out`, type: 'output', content: result.output });
+          newOutputs.push({ id: `${now}-out`, type: 'output', content: result.output, timestamp: now });
         }
         if (newState) {
           const shouldPropagateVlans = !!topologyConnections && !!topologyDevices && /^(no\s+)?vlan\s+\d+/i.test(command.trim());
@@ -283,18 +284,18 @@ export function useDeviceManager() {
         if (result.telnetTarget && topologyDevices) {
           const targetDevice = topologyDevices.find(d => d.ip === result.telnetTarget);
           if (targetDevice && targetDevice.type !== 'pc') {
-            newOutputs.push({ id: `${Date.now()}-telnet`, type: 'output', content: ` Open\n\n**** Connected to ${targetDevice.name} (${result.telnetTarget}) via VTY ****\n` });
+            newOutputs.push({ id: `${now}-telnet`, type: 'output', content: ` Open\n\n**** Connected to ${targetDevice.name} (${result.telnetTarget}) via VTY ****\n`, timestamp: now });
             const targetType = targetDevice.type as 'switch' | 'router';
             getOrCreateDeviceState(targetDevice.id, targetType, targetDevice.name);
             getOrCreateDeviceOutputs(targetDevice.id);
             setActiveDeviceId(targetDevice.id);
             setActiveDeviceType(targetType);
           } else {
-            newOutputs.push({ id: `${Date.now()}-telnet-fail`, type: 'error', content: `\n% Connection timed out; remote host not responding\n` });
+            newOutputs.push({ id: `${now}-telnet-fail`, type: 'error', content: `\n% Connection timed out; remote host not responding\n`, timestamp: now });
           }
         }
       } else {
-        newOutputs.push({ id: `${Date.now()}-err`, type: 'error', content: error || 'Unknown error' });
+        newOutputs.push({ id: `${now}-err`, type: 'error', content: error || 'Unknown error', timestamp: now });
         if (newState) {
           setDeviceStates(prev => new Map(prev).set(deviceId, { ...deviceState, ...newState }));
         }
@@ -312,7 +313,7 @@ export function useDeviceManager() {
           variant: 'destructive',
         });
       }
-      setDeviceOutputs(prev => new Map(prev).set(deviceId, [...(prev.get(deviceId) || []), { id: `${Date.now()}-sys-err`, type: 'error', content: `System error: ${errorMsg}` }]));
+      setDeviceOutputs(prev => new Map(prev).set(deviceId, [...(prev.get(deviceId) || []), { id: `${Date.now()}-sys-err`, type: 'error', content: `System error: ${errorMsg}`, timestamp: Date.now() }]));
     } finally {
       setIsLoading(false);
     }
