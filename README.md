@@ -1,96 +1,211 @@
-# 🚀 Network Simulator 2026 Pro
+# 🚀 Network Simulator 2026
 
-A modern, production-ready, and highly interactive web-based Network NOS simulator designed for students and network enthusiasts to practice Network configuration in a safe environment.
+Öğrenciler ve ağ meraklıları için tasarlanmış, modern ve etkileşimli bir web tabanlı Network simülatörü.
 
-![Version](https://img.shields.io/badge/version-0.2.0-blue)
-![Tech Stack](https://img.shields.io/badge/stack-Next.js%2016%20|%20TS%20|%20Tailwind%204-green)
+![Version](https://img.shields.io/badge/version-1.0.0-blue)
+![Tech Stack](https://img.shields.io/badge/stack-Next.js%2016%20|%20React%2019%20|%20TypeScript%20|%20Tailwind%204-green)
+![License](https://img.shields.io/badge/license-MIT-blue)
 
-## ✨ Key Features
+## ✨ Temel Özellikler
 
-### 🌐 Interactive Network Topology
-- **Device Palette**: Drag and drop PC, Switch, and Router devices onto the canvas.
-- **Canvas Control**: Smooth zoom and pan functionality with mouse wheel and drag interactions.
-- **Cabling System**: Support for Straight-through, Crossover, and Console cables with compatibility checks.
-- **Visual Feedback**: Animated data flows, port labels, and device status indicators.
-- **Minimap**: Quick navigation for complex network layouts.
+### 🌐 İnteraktif Network Topolojisi
+- **Cihaz Yönetimi**: PC, Switch ve Router cihazlarını kanvasa sürükle-bırak
+- **Zoom & Pan**: Smooth zoom ve pan işlemleri
+- **Kablo Sistemi**: Straight-through, Crossover ve Console kablolar
+- **Bağlantı Yönetimi**: Cihazlar arasında bağlantı oluştur ve yönet
+- **Görsel Geri Bildirim**: Cihaz durumu göstergeleri ve port etiketleri
 
-### 💻 Realistic CLI & PC Terminal
-- **Network NOS Simulation**: Authentic CLI experience with support for `user`, `privileged`, `config`, `interface`, and `line` modes.
-- **Smart Suggestions**: Ghost text (inline suggestions) for command completion and tab-completion support.
-- **Multi-Device Support**: Independent CLI states and command history for every device in the topology.
-- **PC Command Prompt**: Dedicated terminal for PCs with network commands like `ping`, `ipconfig`, and `help`.
+### 💻 Network CLI Simülasyonu
+- **Komut Desteği**: enable, configure, interface, show komutları
+- **Mod Sistemi**: User, Privileged, Config, Interface modları
+- **Komut Geçmişi**: Her cihaz için bağımsız komut geçmişi
+- **Hata Kontrolü**: Geçersiz komutlar için hata mesajları
 
-### 🔌 Physical Device Visualization
-- **Port Panel**: Realistic Network 2960-style port density view.
-- **Live LEDs**: Status LEDs (Green/Orange/Gray) reflecting real-time port states (Connected/Blocked/Shutdown).
-- **Trunk Indicators**: Visual badges for ports configured in trunk mode.
+### 🔌 Fiziksel Cihaz Görselleştirmesi
+- **Port Paneli**: Gerçekçi port gösterimi
+- **LED Göstergeleri**: Bağlantı durumunu gösteren renkli LED'ler
+- **Port Durumu**: Connected, Disconnected, Shutdown durumları
 
-### 🛠️ Configuration Capabilities
-- **VLAN Management**: Create, name, and assign ports to VLANs with a dedicated status panel.
-- **Security Features**: Configure `enable secret`, console/VTY security, `service password-encryption`, and SSH access.
-- **Port Configuration**: Manage `description`, `speed`, `duplex`, and `shutdown` states.
-- **Running-Config**: Real-time generation and viewing of the current device configuration.
+### 🛠️ Konfigürasyon Özellikleri
+- **VLAN Yönetimi**: VLAN oluştur ve portları ata
+- **IP Konfigürasyonu**: IP adresi, subnet ve gateway ayarları
+- **Interface Yönetimi**: Port hızı, duplex ve shutdown ayarları
+- **Routing**: IP routing ve statik route yönetimi
 
-### 🏆 Task & Achievement System
-- **Interactive Labs**: Pre-defined task groups for Topology, Ports, VLANs, and Security.
-- **Real-time Tracking**: Progress bars and animated task cards that update as you configure.
-- **Educational Tips**: Integrated hints and tips for each task to guide the learning process.
+### 📝 Not Sistemi
+- **Not Ekleme**: Kanvasa not ekle
+- **Not Sürükleme**: Notları kanvas üzerinde sürükle
+- **Not Yeniden Boyutlandırma**: Notları yeniden boyutlandır
+- **Not Stil Özelleştirmesi**: Renk, yazı tipi, boyut ve opaklık ayarları
+- **Undo/Redo**: Tüm işlemler için geri al/yinele desteği
 
-## 🛠️ Technology Stack
+### 🔍 Ping ve Bağlantı Kontrolü
+- **Ping Atma**: Cihazlar arasında ping at
+- **Detaylı Diagnostics**: Ping başarısızlığında hata nedeni göster
+- **Subnet Doğrulama**: Farklı subnet'te ping kontrolü
+- **Routing Kontrolü**: Router routing kontrolü
 
-- **Framework**: [Next.js 16](https://nextjs.org/) (App Router) with [React 19](https://react.dev/)
-- **Language**: [TypeScript 5](https://www.typescriptlang.org/) for end-to-end type safety
-- **Styling**: [Tailwind CSS 4](https://tailwindcss.com/) with custom animations and glassmorphism
-- **UI Components**: [shadcn/ui](https://ui.shadcn.com/) (Radix UI) & [Lucide React](https://lucide.dev/)
-- **Animations**: [Framer Motion](https://www.framer.com/motion/) & CSS keyframes
-- **State Management**: [Zustand](https://docs.pmnd.rs/zustand) for global state, Context API for theme/language
-- **Drag & Drop**: [@dnd-kit](https://dnd-kit.com/) for interactive device palette
-- **Storage**: localStorage-based persistence with custom offline storage manager
+### ⚡ Gelişmiş Özellikler
+- **Bulk Power Control**: Seçili cihazların gücünü toplu aç/kapat
+- **Multi-Select**: Birden fazla cihaz seç
+- **Keyboard Shortcuts**: Ctrl+Z (Undo), Ctrl+Y (Redo), vb.
+- **Dark/Light Mode**: Koyu ve açık tema desteği
+- **Turkish/English**: Türkçe ve İngilizce dil desteği
+- **Offline Storage**: Çevrimdışı veri saklama
 
-## 📁 Project Structure
+## 🛠️ Teknoloji Stack
+
+- **Framework**: [Next.js 16](https://nextjs.org/) + [React 19](https://react.dev/)
+- **Dil**: [TypeScript 5](https://www.typescriptlang.org/)
+- **Styling**: [Tailwind CSS 4](https://tailwindcss.com/)
+- **UI Components**: [shadcn/ui](https://ui.shadcn.com/) + [Lucide React](https://lucide.dev/)
+- **State Management**: [Zustand](https://docs.pmnd.rs/zustand) + Context API
+- **Storage**: localStorage + Custom offline storage
+
+## 📁 Proje Yapısı
 
 ```
 src/
-├── app/                  # Next.js App Router (Pages & API)
-├── components/           # UI Components
-│   ├── network/            # Specialized Simulator Components
-│   │   ├── NetworkTopology.tsx  # SVG-based network canvas
-│   │   ├── Terminal.tsx         # Network CLI implementation
-│   │   ├── PortPanel.tsx       # Physical device visualization
+├── app/                      # Next.js App Router
+│   ├── api/                  # API routes
+│   ├── layout.tsx            # Root layout
+│   └── page.tsx              # Main page
+├── components/
+│   ├── network/              # Network simulator components
+│   │   ├── NetworkTopology.tsx       # Main canvas
+│   │   ├── Terminal.tsx              # CLI interface
+│   │   ├── DeviceNode.tsx            # Device visualization
+│   │   ├── PortPanel.tsx             # Port management
 │   │   └── ...
-│   └── ui/               # shadcn/ui base components
-├── lib/                  # Core Logic
-│   └── network/            # Simulator Engine
-│       ├── parser.ts     # NOS Command Parser
-│       ├── executor.ts   # NOS Command Executor
-│       ├── types.ts      # State and Type definitions
-│       └── taskDefinitions.ts # Lab task engine
-├── contexts/             # Theme and Language (TR/EN) contexts
-└── hooks/                # Custom React hooks
+│   └── ui/                   # shadcn/ui components
+├── lib/
+│   └── network/              # Network logic
+│       ├── parser.ts         # Command parser
+│       ├── executor.ts       # Command executor
+│       ├── connectivity.ts   # Connectivity checker
+│       ├── routing.ts        # Routing logic
+│       └── types.ts          # Type definitions
+├── contexts/                 # React contexts
+│   ├── ThemeContext.tsx      # Dark/Light mode
+│   └── LanguageContext.tsx   # TR/EN language
+└── hooks/                    # Custom hooks
+
+kiro/                         # Project documentation
+├── POWER_TOGGLE_IMPLEMENTATION.md
+├── PING_DIAGNOSTICS_IMPLEMENTATION.md
+├── SUBNET_VALIDATION_IMPLEMENTATION.md
+├── NOTE_SYSTEM_SUMMARY.md
+└── ...
 ```
 
-## 🚀 Quick Start
+## 🚀 Hızlı Başlangıç
+
+### Kurulum
 
 ```bash
-# Install dependencies
-bun install
+# Bağımlılıkları yükle
+npm install
 
-# Start development server
-bun run dev
+# Geliştirme sunucusunu başlat
+npm run dev
 
-# Build for production
-bun run build
+# Production build
+npm run build
 
-# Start production server
-bun start
+# Production sunucusunu başlat
+npm start
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to start your simulation.
+Tarayıcıda açın: [http://localhost:3000](http://localhost:3000)
 
-## 🌍 Internationalization
+Detaylı kurulum talimatları için [INSTALL.md](INSTALL.md) dosyasını okuyun.
 
-The simulator fully supports both **Turkish (TR)** and **English (EN)** languages, including UI elements, task descriptions, and helpful tips.
+## 📚 Belgelendirme
+
+Detaylı belgelendirme `kiro/` klasöründe bulunur:
+
+### Sistem Özellikleri
+- **POWER_TOGGLE_IMPLEMENTATION.md** - Bulk power ON/OFF toggle
+- **PING_DIAGNOSTICS_IMPLEMENTATION.md** - Detaylı ping hata nedenleri
+- **PING_ERROR_DISPLAY_IMPLEMENTATION.md** - Canvas üzerinde hata gösterimi
+- **SUBNET_VALIDATION_IMPLEMENTATION.md** - Subnet doğrulama ve routing
+- **NOTE_SYSTEM_SUMMARY.md** - Not sistemi özeti
+- **NOTE_DRAG_RESIZE_FEATURES.md** - Not drag ve resize özellikleri
+
+### Proje Belgeleri
+- **AI_RULES.md** - AI kuralları
+- **IMPLEMENTATION_CHECKLIST.md** - Uygulama kontrol listesi
+- **CLEANUP_RECOMMENDATIONS.md** - Temizlik önerileri
+
+## 🎯 Kullanım Örnekleri
+
+### Cihaz Ekleme
+1. Sol panelden PC, Switch veya Router seç
+2. Kanvasa sürükle
+3. Cihaz otomatik eklenir
+
+### Bağlantı Oluşturma
+1. Cihazın portuna tıkla
+2. Başka bir cihazın portuna tıkla
+3. Bağlantı otomatik oluşturulur
+
+### Ping Atma
+1. Cihaza sağ tıkla
+2. "Ping At" seç
+3. Hedef cihaza tıkla
+4. Ping animasyonu başlar
+
+### Not Ekleme
+1. "Not Ekle" butonuna tıkla
+2. Not kanvasa eklenir
+3. Notu sürükle, yeniden boyutlandır, stil özelleştir
+
+## 🌍 Dil Desteği
+
+- ✅ **Türkçe** - Tam destek
+- ✅ **English** - Full support
+
+Dil seçimi sağ üst köşedeki dil seçicisinden yapılır.
+
+## 🎨 Tema Desteği
+
+- ✅ **Dark Mode** - Koyu tema
+- ✅ **Light Mode** - Açık tema
+
+Tema seçimi sağ üst köşedeki tema seçicisinden yapılır.
+
+## 📊 Sistem Gereksinimleri
+
+- **Node.js**: 18.0 veya üzeri
+- **npm**: 9.0 veya üzeri (veya bun)
+- **Tarayıcı**: Modern tarayıcı (Chrome, Firefox, Safari, Edge)
+
+## 🐛 Sorun Giderme
+
+Sorunlar için [INSTALL.md](INSTALL.md) dosyasındaki "Sorun Giderme" bölümünü kontrol edin.
+
+## 📝 Lisans
+
+MIT License - Detaylar için [LICENSE](LICENSE) dosyasını kontrol edin.
+
+## 🤝 Katkıda Bulunma
+
+Katkılar memnuniyetle karşılanır. Lütfen:
+
+1. Fork yapın
+2. Feature branch oluşturun (`git checkout -b feature/AmazingFeature`)
+3. Commit yapın (`git commit -m 'Add some AmazingFeature'`)
+4. Push yapın (`git push origin feature/AmazingFeature`)
+5. Pull Request açın
+
+## 📞 İletişim
+
+Sorular veya öneriler için lütfen issue açın.
 
 ---
 
-Built for the next generation of network engineers. 🚀
+**Ağ mühendislerinin yeni nesli için tasarlanmıştır.** 🚀
+
+**Sürüm**: 1.0.0  
+**Son Güncelleme**: 2026-03-22  
+**Durum**: Production Ready ✅

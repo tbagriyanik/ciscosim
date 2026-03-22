@@ -1,83 +1,199 @@
-# Installation Instructions
+# Kurulum Talimatları - Network Simulator
 
-## Quick Start
+## 🚀 Hızlı Başlangıç
 
-### 1. Install Dependencies
+### 1. Bağımlılıkları Yükle
 
-Due to PowerShell execution policy restrictions, use one of these methods:
-
-**Option A: Using CMD (Recommended)**
-```cmd
-cd f:\netsim2026\ciscosim
+```bash
 npm install
 ```
 
-**Option B: Enable PowerShell Scripts Temporarily**
-```powershell
-Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+veya
+
+```bash
 bun install
 ```
 
-### 2. Required Packages
-
-The following packages have been added to `package.json` but need to be installed:
-
-- `zustand` - State management
-- `@dnd-kit/core` - Drag and drop functionality  
-- `@dnd-kit/modifiers` - DnD modifiers
-
-Install them with:
-```bash
-npm install zustand @dnd-kit/core @dnd-kit/modifiers
-```
-
-### 3. Development Server
-
-After installing dependencies:
+### 2. Geliştirme Sunucusunu Başlat
 
 ```bash
 npm run dev
-# or
+```
+
+veya
+
+```bash
 bun run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000)
+Tarayıcıda açın: [http://localhost:3000](http://localhost:3000)
 
-## PWA Icons
+## 📋 Sistem Gereksinimleri
 
-SVG icons have been created in the `public/` folder:
-- `/icon-192x192.svg`
-- `/icon-512x512.svg`
+- **Node.js**: 18.0 veya üzeri
+- **npm**: 9.0 veya üzeri (veya bun)
+- **Tarayıcı**: Modern tarayıcı (Chrome, Firefox, Safari, Edge)
 
-These are used instead of PNG files for better scalability and smaller file size.
+## 📦 Yüklü Paketler
 
-## Troubleshooting
+### Core Dependencies
+- **Next.js 16** - React framework
+- **React 19** - UI library
+- **TypeScript** - Type safety
+- **Tailwind CSS** - Styling
 
-### PowerShell Execution Policy Error
+### UI Components
+- **shadcn/ui** - Component library
+- **Radix UI** - Headless UI components
+- **Lucide React** - Icons
 
-If you see: `cannot be loaded because running scripts is disabled on this system`
+### State Management
+- **Zustand** - State management
+- **React Context** - Global context
 
-**Solution 1:** Use CMD instead of PowerShell
+### Utilities
+- **clsx** - Conditional classnames
+- **class-variance-authority** - CSS class variants
 
-**Solution 2:** Temporarily bypass policy:
+## 🔧 Yapılandırma
+
+### TypeScript
+```bash
+npm run type-check
+```
+
+### Linting
+```bash
+npm run lint
+```
+
+### Build
+```bash
+npm run build
+```
+
+## 🐛 Sorun Giderme
+
+### PowerShell Execution Policy Hatası
+
+Eğer şu hatayı alırsanız:
+```
+cannot be loaded because running scripts is disabled on this system
+```
+
+**Çözüm 1:** CMD kullanın
+```cmd
+npm install
+```
+
+**Çözüm 2:** PowerShell'de bypass yapın
 ```powershell
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+npm install
 ```
 
-**Solution 3:** Run npm/bun directly from node_modules:
-```powershell
-.\node_modules\.bin\npm install
-```
+### Bağımlılık Hatası
 
-### Missing Dependencies
-
-If you get module not found errors:
+Eğer modül bulunamadı hatası alırsanız:
 ```bash
-# Clear cache and reinstall
 rm -rf node_modules package-lock.json
 npm install
 ```
 
-## Next Steps
+### Port 3000 Zaten Kullanılıyorsa
 
-After installation, the app should work immediately. The Zustand store will automatically persist topology and device state to localStorage.
+```bash
+npm run dev -- -p 3001
+```
+
+## 📚 Proje Yapısı
+
+```
+src/
+├── app/              # Next.js app directory
+├── components/       # React components
+│   └── network/      # Network simulator components
+├── contexts/         # React contexts
+├── hooks/            # Custom hooks
+├── lib/              # Utility functions
+│   └── network/      # Network logic
+└── styles/           # Global styles
+
+public/              # Static files
+kiro/                # Project documentation
+```
+
+## 🎯 Özellikler
+
+### Network Simulator
+- ✅ Cihaz yönetimi (PC, Switch, Router)
+- ✅ Bağlantı yönetimi
+- ✅ VLAN konfigürasyonu
+- ✅ IP routing
+- ✅ Ping ve connectivity kontrol
+
+### Not Sistemi
+- ✅ Not ekleme/silme
+- ✅ Not sürükleme ve yeniden boyutlandırma
+- ✅ Not stil özelleştirmesi
+- ✅ Undo/Redo desteği
+
+### Gelişmiş Özellikler
+- ✅ Zoom ve pan
+- ✅ Multi-select
+- ✅ Keyboard shortcuts
+- ✅ Dark/Light mode
+- ✅ Turkish/English support
+- ✅ Offline storage
+
+## 📖 Belgelendirme
+
+Detaylı belgelendirme `kiro/` klasöründe bulunur:
+
+- **POWER_TOGGLE_IMPLEMENTATION.md** - Bulk power control
+- **PING_DIAGNOSTICS_IMPLEMENTATION.md** - Ping diagnostics
+- **SUBNET_VALIDATION_IMPLEMENTATION.md** - Subnet validation
+- **NOTE_SYSTEM_SUMMARY.md** - Note system features
+
+## 🚀 Deployment
+
+### Vercel'e Deploy
+
+```bash
+npm run build
+vercel deploy
+```
+
+### Docker ile Deploy
+
+```dockerfile
+FROM node:18-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+RUN npm run build
+EXPOSE 3000
+CMD ["npm", "start"]
+```
+
+## 📞 Destek
+
+Sorunlar için `kiro/` klasöründeki belgelendirmeyi kontrol edin.
+
+## 📝 Lisans
+
+MIT License
+
+## ✅ Kontrol Listesi
+
+Kurulum sonrası kontrol edin:
+
+- [ ] npm install başarılı
+- [ ] npm run dev çalışıyor
+- [ ] http://localhost:3000 açılıyor
+- [ ] Network simulator yükleniyor
+- [ ] Cihaz ekleyebiliyorsunuz
+- [ ] Bağlantı oluşturabiliyorsunuz
+- [ ] Ping atabiliyorsunuz
+- [ ] Not ekleyebiliyorsunuz
