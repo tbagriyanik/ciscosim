@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback, useMemo, MouseEvent as ReactMouseEvent, TouchEvent as ReactTouchEvent } from 'react';
 import { SwitchState, CableType, CableInfo, isCableCompatible } from '@/lib/network/types';
-import { checkDeviceConnectivity } from '@/lib/network/connectivity';
+import { checkDeviceConnectivity, getPingDiagnostics } from '@/lib/network/connectivity';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -396,6 +396,7 @@ export function NetworkTopology({
     progress: number;
     success: boolean | null;
     frame: number; // Frame counter for smooth animations
+    error?: string; // Error message if ping failed
   } | null>(null);
 
   // Refs
@@ -2423,8 +2424,18 @@ export function NetworkTopology({
       cancelAnimationFrame(pingAnimationRef.current);
     }
 
+    const targetDevice = devices.find(d => d.id === targetId);
+    const targetIp = targetDevice?.ip || deviceStates?.get(targetId)?.ports['vlan1']?.ipAddress || '';
+
+    // Get detailed diagnostics
+    const diagnostics = getPingDiagnostics(sourceId, targetIp, devices, connections, deviceStates);
+
     const connectivity = checkDeviceConnectivity(sourceId, targetId, devices, connections, deviceStates);
     if (!connectivity.success) {
+      const errorMessage = diagnostics.reasons.length > 0
+        ? diagnostics.reasons[0]
+        : 'Ping başarısız';
+
       setPingAnimation({
         sourceId,
         targetId,
@@ -2432,9 +2443,11 @@ export function NetworkTopology({
         currentHopIndex: 0,
         progress: 1,
         success: false,
-        frame: 0
+        frame: 0,
+        error: errorMessage
       });
-      setTimeout(() => setPingAnimation(null), 2500);
+
+      setTimeout(() => setPingAnimation(null), 3000);
       return;
     }
 
@@ -2450,9 +2463,11 @@ export function NetworkTopology({
         currentHopIndex: 0,
         progress: 1,
         success: false,
-        frame: 0
+        frame: 0,
+        error: 'Fiziksel bağlantı yok'
       });
-      setTimeout(() => setPingAnimation(null), 2500);
+
+      setTimeout(() => setPingAnimation(null), 3000);
       return;
     }
 
@@ -2494,7 +2509,7 @@ export function NetworkTopology({
         } else {
           // Animation complete - show success
           setPingAnimation(prev => prev ? { ...prev, success: true } : null);
-          setTimeout(() => setPingAnimation(null), 2500);
+          setTimeout(() => setPingAnimation(null), 3000);
         }
       }
     };
@@ -3985,7 +4000,41 @@ export function NetworkTopology({
 
                   {/* Ping Animation - rendered LAST for top z-order */}
                   {pingAnimation && (() => {
-                    const { path, currentHopIndex, progress, success } = pingAnimation;
+                    const { path, currentHopIndex, progress, success, error } = pingAnimation;
+
+                    // Show error message if ping failed
+                    if (success === false && error) {
+                      return (
+                        <g key="ping-error" opacity={0.95}>
+                          <foreignObject x="20" y="20" width="300" height="auto">
+                            <div className={`p-3 rounded-lg shadow-lg border ${isDark ? 'bg-red-500/20 border-red-500/50' : 'bg-red-50 border-red-200'}`}>
+                              <div className={`text-sm font-bold ${isDark ? 'text-red-300' : 'text-red-700'}`}>
+                                Ping başarısız
+                              </div>
+                              <div className={`text-xs mt-1 ${isDark ? 'text-red-200' : 'text-red-600'}`}>
+                                {error}
+                              </div>
+                            </div>
+                          </foreignObject>
+                        </g>
+                      );
+                    }
+
+                    // Show success message if ping succeeded
+                    if (success === true) {
+                      return (
+                        <g key="ping-success" opacity={0.95}>
+                          <foreignObject x="20" y="20" width="300" height="auto">
+                            <div className={`p-3 rounded-lg shadow-lg border ${isDark ? 'bg-emerald-500/20 border-emerald-500/50' : 'bg-emerald-50 border-emerald-200'}`}>
+                              <div className={`text-sm font-bold ${isDark ? 'text-emerald-300' : 'text-emerald-700'}`}>
+                                Ping başarılı
+                              </div>
+                            </div>
+                          </foreignObject>
+                        </g>
+                      );
+                    }
+
                     if (!path || path.length < 2 || success !== null) return null;
 
                     const fromDevice = devices.find(d => d.id === path[currentHopIndex]);
@@ -5180,6 +5229,18 @@ export function NetworkTopology({
             </div>
           </div>
         )}
+
+      {/* Toast Notification */}
+      {toast && (
+        <div
+          className={`fixed bottom-4 left-4 px-4 py-3 rounded-lg shadow-lg text-sm font-medium transition-all duration-300 z-40 ${toast.type === 'success'
+            ? isDark ? 'bg-emerald-500/20 border border-emerald-500/50 text-emerald-300' : 'bg-emerald-50 border border-emerald-200 text-emerald-700'
+            : isDark ? 'bg-red-500/20 border border-red-500/50 text-red-300' : 'bg-red-50 border border-red-200 text-red-700'
+            }`}
+        >
+          {toast.message}
+        </div>
+      )}
     </div>
   );
 }

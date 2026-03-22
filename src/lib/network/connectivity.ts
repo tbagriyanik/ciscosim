@@ -142,6 +142,39 @@ export function checkConnectivity(
     curr = parent.get(curr);
   }
 
+  // 2.5. Check subnet compatibility (Layer 3)
+  const sourceDeviceForSubnet = devices.find(d => d.id === sourceId);
+  if (sourceDeviceForSubnet && targetDevice) {
+    const sourceIp = sourceDeviceForSubnet.ip;
+    const sourceSubnet = sourceDeviceForSubnet.subnet || '255.255.255.0';
+    const targetIp_check = targetDevice.ip;
+    const targetSubnet = targetDevice.subnet || '255.255.255.0';
+
+    // Check if source and target are in the same subnet
+    const isInSameSubnet = isIpInSubnet(sourceIp, targetIp_check, sourceSubnet);
+
+    if (!isInSameSubnet) {
+      // Different subnets - check if there's a router with routing enabled
+      let hasRouter = false;
+      for (const deviceId of path) {
+        const device = devices.find(d => d.id === deviceId);
+        const state = deviceStates?.get(deviceId);
+        if (device?.type === 'router' && state?.ipRouting) {
+          hasRouter = true;
+          break;
+        }
+      }
+
+      if (!hasRouter) {
+        return {
+          success: false,
+          hops: path.map(id => devices.find(d => d.id === id)?.name || id),
+          error: `Subnet uyumsuzluğu: Kaynak ${sourceIp}/${sourceSubnet}, Hedef ${targetIp_check}/${targetSubnet}. Router ile routing gerekli.`
+        };
+      }
+    }
+  }
+
   // 3. Validate endpoint VLANs when PCs are involved (PC VLAN must match adjacent switch access VLAN).
   if (deviceStates && path.length >= 2) {
     for (let i = 0; i < path.length - 1; i++) {
@@ -363,6 +396,148 @@ export function checkDeviceConnectivity(
   }
 
   return checkConnectivity(sourceId, targetIp, devices, connections, deviceStates);
+}
+
+/**
+ * Detailed ping diagnostics - checks all conditions and returns specific failure reasons
+ */
+export function getPingDiagnostics(
+  sourceId: string,
+  targetIp: string,
+  devices: CanvasDevice[],
+  connections: CanvasConnection[],
+  deviceStates?: Map<string, SwitchState>
+): { success: boolean; reasons: string[] } {
+  const reasons: string[] = [];
+  const sourceDevice = devices.find(d => d.id === sourceId);
+  const targetDevice = devices.find(d => d.ip === targetIp);
+
+  // 1. Check source device exists and is powered on
+  if (!sourceDevice) {
+    reasons.push('Kaynak cihaz bulunamadı');
+    return { success: false, reasons };
+  }
+
+  if (sourceDevice.status === 'offline') {
+    reasons.push('Kaynak cihaz kapalı (offline)');
+    return { success: false, reasons };
+  }
+
+  // 2. Check source has IP address
+  const sourceIp = sourceDevice.ip || deviceStates?.get(sourceId)?.ports['vlan1']?.ipAddress;
+  if (!sourceIp) {
+    reasons.push('Kaynak cihazın IP adresi yok');
+    return { success: false, reasons };
+  }
+
+  // 3. Check target device exists
+  if (!targetDevice) {
+    reasons.push('Hedef IP adresi bulunamadı');
+    return { success: false, reasons };
+  }
+
+  if (targetDevice.status === 'offline') {
+    reasons.push('Hedef cihaz kapalı (offline)');
+    return { success: false, reasons };
+  }
+
+  // 4. Check target has IP address
+  if (!targetIp) {
+    reasons.push('Hedef cihazın IP adresi yok');
+    return { success: false, reasons };
+  }
+
+  // 5. Check subnet compatibility
+  const sourceSubnet = sourceDevice.subnet || '255.255.255.0';
+  const targetSubnet = targetDevice.subnet || '255.255.255.0';
+
+  const isSourceInSameSubnet = isIpInSubnet(sourceIp, targetIp, sourceSubnet);
+  const isTargetInSameSubnet = isIpInSubnet(targetIp, sourceIp, targetSubnet);
+
+  if (!isSourceInSameSubnet && !isTargetInSameSubnet) {
+    reasons.push(`Subnet uyumsuzluğu: Kaynak ${sourceIp}/${sourceSubnet}, Hedef ${targetIp}/${targetSubnet}. Router ile routing gerekli.`);
+    return { success: false, reasons };
+  }
+
+  // 6. Check gateway configuration if different subnets
+  if (!isSourceInSameSubnet) {
+    if (!sourceDevice.gateway) {
+      reasons.push("Kaynak cihazın gateway'i yok (farklı subnet)");
+    }
+  }
+
+  if (!isTargetInSameSubnet) {
+    if (!targetDevice.gateway) {
+      reasons.push("Hedef cihazın gateway'i yok (farklı subnet)");
+    }
+  }
+
+  // 7. Check physical connectivity
+  const result = checkConnectivity(sourceId, targetIp, devices, connections, deviceStates);
+  if (!result.success) {
+    if (result.error) {
+      reasons.push(result.error);
+    } else {
+      reasons.push('Fiziksel bağlantı yok');
+    }
+    return { success: false, reasons };
+  }
+
+  // 8. Check interfaces are up
+  const sourceConn = connections.find(c => c.sourceDeviceId === sourceId || c.targetDeviceId === sourceId);
+  if (sourceConn) {
+    const sourcePortId = sourceConn.sourceDeviceId === sourceId ? sourceConn.sourcePort : sourceConn.targetPort;
+    if (isPortShutdown(sourceId, sourcePortId, devices, deviceStates)) {
+      reasons.push(`Kaynak interface kapalı: ${sourcePortId}`);
+      return { success: false, reasons };
+    }
+  }
+
+  const targetConn = connections.find(c => c.sourceDeviceId === targetDevice.id || c.targetDeviceId === targetDevice.id);
+  if (targetConn) {
+    const targetPortId = targetConn.sourceDeviceId === targetDevice.id ? targetConn.sourcePort : targetConn.targetPort;
+    if (isPortShutdown(targetDevice.id, targetPortId, devices, deviceStates)) {
+      reasons.push(`Hedef interface kapalı: ${targetPortId}`);
+      return { success: false, reasons };
+    }
+  }
+
+  // 9. Check VLAN configuration
+  if (sourceDevice.vlan && targetDevice.vlan && sourceDevice.vlan !== targetDevice.vlan) {
+    reasons.push(`VLAN uyumsuzluğu: Kaynak VLAN ${sourceDevice.vlan}, Hedef VLAN ${targetDevice.vlan}`);
+    return { success: false, reasons };
+  }
+
+  // 10. Check routing if needed
+  if (!isSourceInSameSubnet || !isTargetInSameSubnet) {
+    const sourceState = deviceStates?.get(sourceId);
+    if (!sourceState?.ipRouting) {
+      reasons.push('Kaynak cihazda IP routing etkin değil');
+      return { success: false, reasons };
+    }
+  }
+
+  return { success: true, reasons };
+}
+
+/**
+ * Check if an IP is in a subnet
+ */
+function isIpInSubnet(ip: string, targetIp: string, subnet: string): boolean {
+  try {
+    const ipParts = ip.split('.').map(Number);
+    const targetParts = targetIp.split('.').map(Number);
+    const subnetParts = subnet.split('.').map(Number);
+
+    for (let i = 0; i < 4; i++) {
+      const ipMasked = ipParts[i] & subnetParts[i];
+      const targetMasked = targetParts[i] & subnetParts[i];
+      if (ipMasked !== targetMasked) return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function isPortShutdown(deviceId: string, portId: string, devices: CanvasDevice[], deviceStates?: Map<string, SwitchState>): boolean {
