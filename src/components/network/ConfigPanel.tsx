@@ -19,7 +19,7 @@ const TIMESTAMP = '2026-02-26 22:00:00';
 
 export function ConfigPanel({ state, onExecuteCommand, isDevicePoweredOff = false, t, theme }: ConfigPanelProps) {
   const [isSaving, setIsSaving] = useState(false);
-  
+
   const isDark = theme === 'dark';
 
   const generateConfig = (): string => {
@@ -30,21 +30,21 @@ export function ConfigPanel({ state, onExecuteCommand, isDevicePoweredOff = fals
     config += `no service pad\\n`;
     config += `service timestamps debug datetime msec\\n`;
     config += `service timestamps log datetime msec\\n`;
-    
+
     if (state.security.servicePasswordEncryption) {
       config += `service password-encryption\\n`;
     }
-    
+
     config += `!\\n`;
     config += `hostname ${state.hostname}\\n`;
     config += `! base mac-address ${state.macAddress}\\n`;
     config += `!\\n`;
-    
+
     if (state.bannerMOTD) {
       config += `banner motd #${state.bannerMOTD}#\\n`;
       config += `!\\n`;
     }
-    
+
     if (state.security.enableSecret) {
       if (state.security.enableSecretEncrypted) {
         config += `enable secret 5 $1$xxxx$xxxxxxxxxxxxxxxx\\n`;
@@ -56,14 +56,20 @@ export function ConfigPanel({ state, onExecuteCommand, isDevicePoweredOff = fals
       config += `enable password ${state.security.enablePassword}\\n`;
     }
     config += `!\\n`;
-    
+
     state.security.users.forEach(user => {
       config += `username ${user.username} privilege ${user.privilege} secret ${user.password}\\n`;
     });
     if (state.security.users.length > 0) {
       config += `!\\n`;
     }
-    
+
+    // IP Routing
+    if (state.ipRouting) {
+      config += `ip routing\\n`;
+      config += `!\\n`;
+    }
+
     Object.values(state.vlans).forEach(vlan => {
       if (vlan.id >= 2 && vlan.id <= 1001) {
         config += `vlan ${vlan.id}\\n`;
@@ -71,8 +77,13 @@ export function ConfigPanel({ state, onExecuteCommand, isDevicePoweredOff = fals
         config += `!\\n`;
       }
     });
-    
+
     Object.values(state.ports).forEach(port => {
+      // Skip VLAN interfaces - they're handled separately
+      if (port.id.toLowerCase().startsWith('vlan')) {
+        return;
+      }
+
       const portUpper = port.id.toUpperCase().replace('FA', 'FastEthernet').replace('GI', 'GigabitEthernet');
       config += `interface ${portUpper}\\n`;
       if (port.name) {
@@ -96,14 +107,47 @@ export function ConfigPanel({ state, onExecuteCommand, isDevicePoweredOff = fals
           config += ` switchport access vlan ${vlanId}\\n`;
         }
       }
+      if (port.ipAddress && port.subnetMask) {
+        config += ` ip address ${port.ipAddress} ${port.subnetMask}\\n`;
+      }
       config += `!\\n`;
     });
-    
-    config += `interface Vlan1\\n`;
-    config += ` no ip address\\n`;
+
+    // VLAN interfaces with IP addresses
+    Object.keys(state.ports || {}).forEach(portName => {
+      if (portName.toLowerCase().startsWith('vlan')) {
+        const port = state.ports[portName];
+        const vlanNum = portName.toLowerCase().replace('vlan', '');
+
+        // Skip Vlan1 if it doesn't have an IP address - it's handled at the end
+        if (vlanNum === '1' && (!port.ipAddress || !port.subnetMask)) {
+          return;
+        }
+
+        config += `interface Vlan${vlanNum}\\n`;
+        if (port.ipAddress && port.subnetMask) {
+          config += ` ip address ${port.ipAddress} ${port.subnetMask}\\n`;
+        }
+        if (!port.shutdown) {
+          config += ` no shutdown\\n`;
+        } else {
+          config += ` shutdown\\n`;
+        }
+        config += `!\\n`;
+      }
+    });
+
+    // Default Vlan1 configuration (only if not already configured above)
+    const vlan1Port = state.ports['vlan1'];
+    if (!vlan1Port || !vlan1Port.ipAddress || !vlan1Port.subnetMask) {
+      config += `interface Vlan1\\n`;
+      config += ` no ip address\\n`;
+      config += ` shutdown\\n`;
+      config += `!\\n`;
+    }
     config += ` shutdown\\n`;
     config += `!\\n`;
-    
+
     config += `line con 0\\n`;
     if (state.security.consoleLine.password) {
       config += ` password ${state.security.consoleLine.password}\\n`;
@@ -112,24 +156,22 @@ export function ConfigPanel({ state, onExecuteCommand, isDevicePoweredOff = fals
       config += ` login\\n`;
     }
     config += `!\\n`;
-    
-    config += `line vty 0 4\\n`;
+
+    config += `line vty 0 15\\n`;
     if (state.security.vtyLines.password) {
       config += ` password ${state.security.vtyLines.password}\\n`;
     }
     if (state.security.vtyLines.login) {
       config += ` login\\n`;
     }
-    if (state.security.vtyLines.transportInput.length > 0 && 
-        state.security.vtyLines.transportInput[0] !== 'all') {
+    if (state.security.vtyLines.transportInput.length > 0 &&
+      state.security.vtyLines.transportInput[0] !== 'all') {
       config += ` transport input ${state.security.vtyLines.transportInput.join(' ')}\\n`;
     }
-    config += `line vty 5 15\\n`;
-    config += ` login\\n`;
     config += `!\\n`;
-    
+
     config += `end\\n`;
-    
+
     return config;
   };
 
@@ -144,7 +186,7 @@ export function ConfigPanel({ state, onExecuteCommand, isDevicePoweredOff = fals
   };
 
   const configText = generateConfig();
-  
+
   const cardBg = isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200';
   const innerBg = isDark ? 'bg-slate-900' : 'bg-slate-900';
   const textPrimary = isDark ? 'text-white' : 'text-white';
@@ -175,7 +217,7 @@ export function ConfigPanel({ state, onExecuteCommand, isDevicePoweredOff = fals
             {configText.replace(/\\n/g, '\n')}
           </pre>
         </ScrollArea>
-        
+
         <div className={`mt-2 text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'} flex items-center gap-2`}>
           <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-green-500 animate-pulse" />
           {t.realTimeUpdate}

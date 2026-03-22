@@ -77,8 +77,8 @@ function cmdPassword(state: any, input: string, ctx: any): any {
       password: match[1]
     };
   } else if (state.currentLine.startsWith('vty')) {
-    newSecurity.vtyLine = {
-      ...newSecurity.vtyLine,
+    newSecurity.vtyLines = {
+      ...newSecurity.vtyLines,
       password: match[1]
     };
   }
@@ -105,8 +105,8 @@ function cmdLogin(state: any, input: string, ctx: any): any {
       login: true
     };
   } else if (state.currentLine.startsWith('vty')) {
-    newSecurity.vtyLine = {
-      ...newSecurity.vtyLine,
+    newSecurity.vtyLines = {
+      ...newSecurity.vtyLines,
       login: true
     };
   }
@@ -133,9 +133,9 @@ function cmdTransportInput(state: any, input: string, ctx: any): any {
   const newSecurity = { ...state.security };
 
   if (state.currentLine.startsWith('vty')) {
-    newSecurity.vtyLine = {
-      ...newSecurity.vtyLine,
-      transport: match[1].toLowerCase()
+    newSecurity.vtyLines = {
+      ...newSecurity.vtyLines,
+      transportInput: [match[1].toLowerCase()]
     };
   }
 
@@ -192,8 +192,8 @@ function cmdExecTimeout(state: any, input: string, ctx: any): any {
       execTimeout: { minutes, seconds }
     };
   } else if (state.currentLine.startsWith('vty')) {
-    newSecurity.vtyLine = {
-      ...newSecurity.vtyLine,
+    newSecurity.vtyLines = {
+      ...newSecurity.vtyLines,
       execTimeout: { minutes, seconds }
     };
   }

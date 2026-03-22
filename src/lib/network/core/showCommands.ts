@@ -119,14 +119,16 @@ function cmdShowRunningConfig(
   output += '!\n';
 
   // Line vty
-  output += 'line vty 0 4\n';
-  if (state.security?.vtyLine?.password) {
-    output += ` password ${state.security.vtyLine.password}\n`;
+  output += 'line vty 0 15\n';
+  if (state.security?.vtyLines?.password) {
+    output += ` password ${state.security.vtyLines.password}\n`;
   }
-  if (state.security?.vtyLine?.transport) {
-    output += ` transport input ${state.security.vtyLine.transport}\n`;
+  if (state.security?.vtyLines?.login) {
+    output += ` login\n`;
   }
-  output += ' login\n';
+  if (state.security?.vtyLines?.transportInput && state.security.vtyLines.transportInput.length > 0) {
+    output += ` transport input ${state.security.vtyLines.transportInput.join(' ')}\n`;
+  }
   output += '!\n';
 
   // Enable secret
@@ -184,6 +186,9 @@ function cmdShowInterfaces(
     const port = state.ports[portName];
     output += `${portName} is ${port.shutdown ? 'administratively down' : 'up'}, line protocol is ${port.shutdown ? 'down' : 'up'}\n`;
     output += `  Hardware is Fast Ethernet, address is ${port.macAddress || '0000.0000.0000'}\n`;
+    if (port.ipAddress && port.subnetMask) {
+      output += `  Internet address is ${port.ipAddress}/${port.subnetMask}\n`;
+    }
     output += `  Description: ${port.description || ''}\n`;
     output += `  MTU 1500 bytes, BW 100000 Kbit/sec\n`;
     output += `  Full-duplex, ${port.speed || 'auto'}Mb/s\n`;
