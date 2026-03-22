@@ -325,14 +325,17 @@ export function NetworkTopologyView(props: NetworkTopologyViewProps) {
               ))}
 
               {/* Ping Animation Overlay */}
-              <PingAnimationOverlay
-                pingAnimation={pingAnimation}
-                devices={devices}
-                connections={connections}
-                getPortPosition={getPortPosition}
-                getDeviceCenter={props.getDeviceCenter}
-                language={language}
-              />
+              {pingAnimation && (
+                <PingAnimationOverlay
+                  key={`ping-${pingAnimation.frame}`}
+                  pingAnimation={pingAnimation}
+                  devices={devices}
+                  connections={connections}
+                  getPortPosition={getPortPosition}
+                  getDeviceCenter={props.getDeviceCenter}
+                  language={language}
+                />
+              )}
             </g>
 
             <rect
