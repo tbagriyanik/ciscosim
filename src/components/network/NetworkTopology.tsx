@@ -1989,17 +1989,21 @@ export function NetworkTopology({
       clearTimeout(portTooltipTimerRef.current);
     }
 
-    setPortTooltip({
-      deviceId,
-      portId,
-      x: e.clientX,
-      y: e.clientY,
-      visible: true,
-    });
-
+    // 500ms sonra tooltip'i göster
     portTooltipTimerRef.current = setTimeout(() => {
-      setPortTooltip(prev => prev ? { ...prev, visible: false } : null);
-    }, 1500);
+      setPortTooltip({
+        deviceId,
+        portId,
+        x: e.clientX,
+        y: e.clientY,
+        visible: true,
+      });
+
+      // 1500ms sonra tooltip'i gizle
+      portTooltipTimerRef.current = setTimeout(() => {
+        setPortTooltip(prev => prev ? { ...prev, visible: false } : null);
+      }, 1500);
+    }, 500);
   }, [devices, getLivePort]);
 
   const handlePortHover = useCallback((e: ReactMouseEvent, deviceId: string, portId: string) => {
@@ -3651,7 +3655,7 @@ export function NetworkTopology({
           {/* Canvas */}
           <div
             ref={canvasRef}
-            className="w-full h-full flex-1 min-h-[500px] overflow-hidden cursor-grab active:cursor-grabbing relative touch-none select-none"
+            className="w-full h-full flex-1 min-h-[500px] overflow-hidden cursor-grab active:cursor-grabbing relative touch-none select-none print:overflow-visible print:h-auto print:min-h-full topology-print-area"
             role="application"
             aria-label={language === 'tr' ? 'Ağ topolojisi tuvali. Cihazları sürükleyerek taşıyabilirsiniz.' : 'Network topology canvas. You can drag devices to move them.'}
             tabIndex={0}
@@ -3671,7 +3675,7 @@ export function NetworkTopology({
             <svg
               width="100%"
               height="100%"
-              className="block select-none"
+              className="block select-none print:w-full print:h-auto"
             >
               <g
                 style={{
@@ -3967,9 +3971,17 @@ export function NetworkTopology({
                             }}
                             onKeyDown={(e) => {
                               e.stopPropagation();
+                              // ESC tuşu ile context menu'yü kapat
+                              if (e.key === 'Escape' && contextMenu?.noteId === note.id) {
+                                setContextMenu(null);
+                              }
                             }}
                             onContextMenu={(e) => handleNoteTextContextMenu(e as unknown as ReactMouseEvent, note.id)}
                             onBlur={() => {
+                              // Textarea'nın dışında tıklanınca context menu'yü kapat
+                              if (contextMenu?.noteId === note.id) {
+                                setContextMenu(null);
+                              }
                               if (onTopologyChange) {
                                 onTopologyChange(devices, connections, notes);
                               }
@@ -4271,12 +4283,13 @@ export function NetworkTopology({
 
           {/* Minimap (Preview) - Hidden */}
           <div
-            className={`hidden`}
+            className={`hidden print:block print:w-full print:h-auto`}
           >
             <svg
               width="100%"
               height="100%"
               viewBox={`0 0 ${getCanvasDimensions().width} ${getCanvasDimensions().height}`}
+              className="print:w-full print:h-auto"
               onClick={(e) => {
                 const rect = e.currentTarget.getBoundingClientRect();
                 const canvasDims = getCanvasDimensions();
@@ -4288,34 +4301,134 @@ export function NetworkTopology({
                 setPan({ x: newPanX, y: newPanY });
               }}
             >
-              {/* Mini devices */}
-              {devicesSortedForRender.map((device) => (
-                <rect
-                  key={device.id}
-                  x={device.x}
-                  y={device.y}
-                  width={device.type === 'pc' ? 85 : 100}
-                  height={device.type === 'pc' ? 85 : 120}
-                  fill={
-                    device.type === 'pc'
-                      ? '#3b82f6'
-                      : device.type === 'switch'
-                        ? '#10b981'
-                        : '#a855f7'
-                  }
-                  opacity={0.6}
-                />
-              ))}
-              {/* Viewport indicator */}
+              {/* Canvas background */}
+              <defs>
+                <linearGradient id="printCanvasBgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#ffffff" />
+                  <stop offset="100%" stopColor="#f5f5f5" />
+                </linearGradient>
+              </defs>
+
+              {/* Background */}
               <rect
-                x={-pan.x / zoom}
-                y={-pan.y / zoom}
-                width={getCanvasDimensions().width / zoom}
-                height={getCanvasDimensions().height / zoom}
-                fill="none"
-                stroke={isDark ? '#06b6d4' : '#0891b2'}
-                strokeWidth={2}
+                x="0"
+                y="0"
+                width={getCanvasDimensions().width}
+                height={getCanvasDimensions().height}
+                fill="url(#printCanvasBgGradient)"
               />
+
+              {/* Connections */}
+              {connections.map((conn) => {
+                const sourceDevice = devices.find(d => d.id === conn.sourceDeviceId);
+                const targetDevice = devices.find(d => d.id === conn.targetDeviceId);
+                if (!sourceDevice || !targetDevice) return null;
+
+                const sourceX = sourceDevice.x + (sourceDevice.type === 'pc' ? 45 : 50);
+                const sourceY = sourceDevice.y + (sourceDevice.type === 'pc' ? 45 : 60);
+                const targetX = targetDevice.x + (targetDevice.type === 'pc' ? 45 : 50);
+                const targetY = targetDevice.y + (targetDevice.type === 'pc' ? 45 : 60);
+
+                return (
+                  <line
+                    key={conn.id}
+                    x1={sourceX}
+                    y1={sourceY}
+                    x2={targetX}
+                    y2={targetY}
+                    stroke={conn.cableType === 'straight' ? '#3b82f6' : conn.cableType === 'crossover' ? '#f97316' : '#06b6d4'}
+                    strokeWidth="2"
+                    opacity="0.7"
+                  />
+                );
+              })}
+
+              {/* Devices */}
+              {devicesSortedForRender.map((device) => {
+                const deviceWidth = device.type === 'pc' ? 90 : device.type === 'router' ? 90 : 130;
+                const deviceHeight = device.type === 'pc' ? 99 : 80;
+                const color = device.type === 'pc' ? '#3b82f6' : device.type === 'switch' ? '#22c55e' : '#a855f7';
+
+                return (
+                  <g key={device.id}>
+                    {/* Device box */}
+                    <rect
+                      x={device.x}
+                      y={device.y}
+                      width={deviceWidth}
+                      height={deviceHeight}
+                      fill={color}
+                      opacity="0.1"
+                      stroke={color}
+                      strokeWidth="2"
+                      rx="4"
+                    />
+
+                    {/* Device label */}
+                    <text
+                      x={device.x + deviceWidth / 2}
+                      y={device.y + deviceHeight / 2}
+                      textAnchor="middle"
+                      dominantBaseline="middle"
+                      fontSize="12"
+                      fontWeight="bold"
+                      fill={color}
+                    >
+                      {device.name}
+                    </text>
+
+                    {/* IP address if exists */}
+                    {device.ip && (
+                      <text
+                        x={device.x + deviceWidth / 2}
+                        y={device.y + deviceHeight / 2 + 16}
+                        textAnchor="middle"
+                        dominantBaseline="middle"
+                        fontSize="10"
+                        fill="#666"
+                      >
+                        {device.ip}
+                      </text>
+                    )}
+                  </g>
+                );
+              })}
+
+              {/* Notes */}
+              {notes.map((note) => (
+                <g key={note.id}>
+                  {/* Note background */}
+                  <rect
+                    x={note.x}
+                    y={note.y}
+                    width={note.width}
+                    height={note.height}
+                    fill={note.color}
+                    opacity={note.opacity}
+                    stroke="#999"
+                    strokeWidth="1"
+                    rx="4"
+                  />
+
+                  {/* Note text */}
+                  <text
+                    x={note.x + 8}
+                    y={note.y + 20}
+                    fontSize={note.fontSize}
+                    fill="#000000"
+                    fontFamily={note.font}
+                    fontWeight={note.bold ? 'bold' : 'normal'}
+                    fontStyle={note.italic ? 'italic' : 'normal'}
+                    textDecoration={note.underline ? 'underline' : 'none'}
+                  >
+                    {note.text.split('\n').map((line, i) => (
+                      <tspan key={i} x={note.x + 8} dy={i === 0 ? 0 : note.fontSize + 2}>
+                        {line}
+                      </tspan>
+                    ))}
+                  </text>
+                </g>
+              ))}
             </svg>
           </div>
 
@@ -4459,22 +4572,6 @@ export function NetworkTopology({
 
               <div className={`h-px ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`} />
 
-              {/* Copy */}
-              <button
-                onClick={() => {
-                  const targets = selectedDeviceIds.includes(contextMenu.deviceId!) ? selectedDeviceIds : [contextMenu.deviceId!];
-                  copyDevice(targets);
-                  setContextMenu(null);
-                }}
-                className={`w-full px-4 py-2 text-sm text-left flex items-center gap-2 ${isDark ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-slate-100 text-slate-600'
-                  }`}
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 0 1 -2-2V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2m-6 12h8a2 2 0 0 0 2-2v-8a2 2 0 0 0 -2-2h-8a2 2 0 0 0 -2 2v8a2 2 0 0 0 2 2z" />
-                </svg>
-                {language === 'tr' ? 'Kopyala' : 'Copy'}
-                {!isMobile && <span className={`ml-auto text-[10px] opacity-40 font-mono ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Ctrl+C</span>}
-              </button>
 
               {/* Cut */}
               <button
@@ -4494,8 +4591,22 @@ export function NetworkTopology({
                 {!isMobile && <span className={`ml-auto text-[10px] opacity-40 font-mono ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Ctrl+X</span>}
               </button>
 
-              <div className={`h-px ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`} />
-
+              {/* Copy */}
+              <button
+                onClick={() => {
+                  const targets = selectedDeviceIds.includes(contextMenu.deviceId!) ? selectedDeviceIds : [contextMenu.deviceId!];
+                  copyDevice(targets);
+                  setContextMenu(null);
+                }}
+                className={`w-full px-4 py-2 text-sm text-left flex items-center gap-2 ${isDark ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-slate-100 text-slate-600'
+                  }`}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 0 1 -2-2V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2m-6 12h8a2 2 0 0 0 2-2v-8a2 2 0 0 0 -2-2h-8a2 2 0 0 0 -2 2v8a2 2 0 0 0 2 2z" />
+                </svg>
+                {language === 'tr' ? 'Kopyala' : 'Copy'}
+                {!isMobile && <span className={`ml-auto text-[10px] opacity-40 font-mono ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Ctrl+C</span>}
+              </button>
               <button
                 onClick={() => {
                   const targets = selectedDeviceIds.includes(contextMenu.deviceId!) ? selectedDeviceIds : [contextMenu.deviceId!];
@@ -4528,7 +4639,7 @@ export function NetworkTopology({
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 0 0 2.22 0L21 8M5 19h14a2 2 0 0 0 2-2V7a2 2 0 0 0 -2-2H5a2 2 0 0 0 -2 2v10a2 2 0 0 0 2 2z" />
                 </svg>
-                {language === 'tr' ? 'Ping At' : 'Send Ping'}
+                {language === 'tr' ? 'Ping' : 'Ping'}
               </button>
 
               {/* Power Toggle */}
@@ -4543,12 +4654,12 @@ export function NetworkTopology({
                   }`}
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18a6 6 0 1 0 0-12 6 6 0 0 0 0 12zM12 2v6" />
+                  <path d="M18.36 6.64a9 9 0 11-12.73 0" />
+                  <line x1="12" y1="2" x2="12" y2="12" />
                 </svg>
-                {language === 'tr' ? 'Güç Aç/Kapat' : 'Power ON/OFF'}
+                {language === 'tr' ? 'Güç' : 'Power'}
               </button>
 
-              <div className={`h-px ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`} />
             </>
           )}
 
