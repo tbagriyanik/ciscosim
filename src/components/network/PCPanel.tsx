@@ -1130,31 +1130,35 @@ export function PCPanel({
 
               <div
                 ref={outputRef}
-                className="flex-1 overflow-y-auto scroll-smooth custom-scrollbar p-6 space-y-2 font-mono text-sm leading-relaxed flex flex-col"
+                className={`flex-1 overflow-y-auto scroll-smooth custom-scrollbar p-6 space-y-2 font-mono text-sm leading-relaxed flex flex-col ${isPcPoweredOff ? 'bg-black' : ''}`}
               >
-                <div className="flex-1" />
-                {(activeTab === 'desktop' ? pcOutput : activeConsoleOutput).map((line) => (
-                  <div key={line.id} className="break-all animate-in fade-in slide-in-from-left-1 duration-200">
-                    {line.type === 'command' && (
-                      <div className="flex items-start gap-3">
-                        <span className="text-emerald-500 shrink-0 font-black opacity-50 select-none">
-                          {activeTab === 'desktop'
-                            ? `${internalPcHostname} C:\\>`
-                            : (line.prompt || '>')}
-                        </span>
-                        <span className={cmdColor}>{highlightText(line.content)}</span>
+                {isPcPoweredOff ? null : (
+                  <>
+                    <div className="flex-1" />
+                    {(activeTab === 'desktop' ? pcOutput : activeConsoleOutput).map((line) => (
+                      <div key={line.id} className="break-all animate-in fade-in slide-in-from-left-1 duration-200">
+                        {line.type === 'command' && (
+                          <div className="flex items-start gap-3">
+                            <span className="text-emerald-500 shrink-0 font-black opacity-50 select-none">
+                              {activeTab === 'desktop'
+                                ? `${internalPcHostname} C:\\>`
+                                : (line.prompt || '>')}
+                            </span>
+                            <span className={cmdColor}>{highlightText(line.content)}</span>
+                          </div>
+                        )}
+                        {line.type === 'prompt' && (
+                          <div className="flex items-start gap-2">
+                            <span className="text-emerald-500 shrink-0 font-black">{line.prompt}</span>
+                          </div>
+                        )}
+                        {line.type === 'output' && <span className={`${textColor} whitespace-pre-wrap`}>{highlightText(line.content)}</span>}
+                        {line.type === 'error' && <span className="text-rose-500 font-bold italic">{highlightText(line.content)}</span>}
+                        {line.type === 'success' && <span className="text-cyan-500 font-bold uppercase text-xs tracking-widest opacity-80">{highlightText(line.content)}</span>}
                       </div>
-                    )}
-                    {line.type === 'prompt' && (
-                      <div className="flex items-start gap-2">
-                        <span className="text-emerald-500 shrink-0 font-black">{line.prompt}</span>
-                      </div>
-                    )}
-                    {line.type === 'output' && <span className={`${textColor} whitespace-pre-wrap`}>{highlightText(line.content)}</span>}
-                    {line.type === 'error' && <span className="text-rose-500 font-bold italic">{highlightText(line.content)}</span>}
-                    {line.type === 'success' && <span className="text-cyan-500 font-bold uppercase text-xs tracking-widest opacity-80">{highlightText(line.content)}</span>}
-                  </div>
-                ))}
+                    ))}
+                  </>
+                )}
               </div>
             </>
           )}
@@ -1186,7 +1190,7 @@ export function PCPanel({
             </div>
           )}
 
-          {activeTab !== 'settings' && (
+          {activeTab !== 'settings' && !isPcPoweredOff && (
             <div className={`p-4 border-t ${isDark ? 'border-slate-800 bg-slate-900/30' : 'border-slate-200 bg-slate-50'}`}>
               {((activeTab === 'desktop' && isCmdInputDisabled) || (activeTab === 'terminal' && (isPcPoweredOff || isConsoleTargetPoweredOff))) && (
                 <div className="mb-2 px-3 py-2 rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-500 text-xs font-bold tracking-wider">

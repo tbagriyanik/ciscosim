@@ -154,6 +154,39 @@ export function useDeviceManager() {
     return outputs;
   }, [pcOutputs]);
 
+  const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+  const appendOutputsWithDelay = useCallback(async (
+    deviceId: string,
+    lines: TerminalOutput[],
+    options?: { clearFirst?: boolean; minDelay?: number; maxDelay?: number }
+  ) => {
+    if (options?.clearFirst) {
+      setDeviceOutputs(prev => new Map(prev).set(deviceId, []));
+    }
+
+    for (const line of lines) {
+      const content = line.content || '';
+      const animatedLine = content.includes('Loading the runtime image')
+        ? {
+            ...line,
+            content: '\nLoading the runtime image: #\n'
+          }
+        : content.includes('Sending') && content.includes('!')
+          ? {
+              ...line,
+              content: content.replace(/!+/g, (match) => '!'.repeat(Math.max(1, Math.min(5, match.length))))
+            }
+          : line;
+
+      setDeviceOutputs(prev => new Map(prev).set(deviceId, [...(prev.get(deviceId) || []), animatedLine]));
+      const minDelay = options?.minDelay ?? 80;
+      const maxDelay = options?.maxDelay ?? 280;
+      const delay = minDelay + Math.floor(Math.random() * Math.max(1, maxDelay - minDelay));
+      await sleep(delay);
+    }
+  }, []);
+
   const handleCommandForDevice = useCallback(async (
     deviceId: string,
     command: string,
@@ -382,7 +415,7 @@ export function useDeviceManager() {
             { id: `boot-beep-${reloadedState.macAddress}`, type: 'output', content: '\nSystem is powering on...\n' },
             { id: `boot-ready-${reloadedState.macAddress}`, type: 'output', content: '\nReady!\n' }
           ];
-          setDeviceOutputs(prev => new Map(prev).set(deviceId, bootOutputs));
+          void appendOutputsWithDelay(deviceId, bootOutputs, { clearFirst: true, minDelay: 120, maxDelay: 420 });
           return;
         }
 
@@ -406,7 +439,19 @@ export function useDeviceManager() {
         }
       }
       if (newOutputs.length > 0) {
-        setDeviceOutputs(prev => new Map(prev).set(deviceId, [...(prev.get(deviceId) || []), ...newOutputs]));
+        const shouldStream = /^(ping|reload)$/i.test(trimmedCommand) || newOutputs.some(line => line.type === 'output' && line.content.includes('\n'));
+        if (shouldStream) {
+          const immediate = newOutputs.filter(line => line.type === 'command' || line.type === 'password-prompt');
+          const streamed = newOutputs.filter(line => line.type === 'output' || line.type === 'success' || line.type === 'error');
+          if (immediate.length > 0) {
+            setDeviceOutputs(prev => new Map(prev).set(deviceId, [...(prev.get(deviceId) || []), ...immediate]));
+          }
+          if (streamed.length > 0) {
+            void appendOutputsWithDelay(deviceId, streamed, { minDelay: 70, maxDelay: 250 });
+          }
+        } else {
+          setDeviceOutputs(prev => new Map(prev).set(deviceId, [...(prev.get(deviceId) || []), ...newOutputs]));
+        }
       }
 
     } catch (e) {
