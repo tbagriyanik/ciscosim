@@ -349,7 +349,8 @@ export function useDeviceManager() {
             return;
           }
           const baseState = deviceId.includes('router') ? createInitialRouterState() : createInitialState();
-          const hasStartupConfig = !!deviceState.startupConfig;
+          const startupConfig = deviceState.startupConfig;
+          const hasStartupConfig = !!startupConfig;
           const baseIdentityState = {
             ...baseState,
             hostname: hasStartupConfig ? deviceState.hostname : baseState.hostname,
@@ -357,7 +358,7 @@ export function useDeviceManager() {
             version: deviceState.version
           };
           const appliedState = hasStartupConfig
-            ? applyStartupConfig(baseIdentityState, deviceState.startupConfig)
+            ? applyStartupConfig(baseIdentityState, startupConfig)
             : baseIdentityState;
           const reloadedState = {
             ...appliedState,
