@@ -325,9 +325,9 @@ function cmdShowMacAddressTable(
   output += '----    -----------       --------    -----\n';
 
   // Show learned MAC addresses
-  if (state.macTable && state.macTable.length > 0) {
-    state.macTable.forEach((entry: any) => {
-      output += `${String(entry.vlan).padEnd(8)}${entry.mac.padEnd(18)}DYNAMIC     ${entry.port}\n`;
+  if (state.macAddressTable && state.macAddressTable.length > 0) {
+    state.macAddressTable.forEach((entry: any) => {
+      output += `${String(entry.vlan).padEnd(8)}${entry.mac.padEnd(18)}${entry.type || 'DYNAMIC'}     ${entry.port}\n`;
     });
   } else {
     output += 'All    0000.0000.0000    STATIC      CPU\n';
