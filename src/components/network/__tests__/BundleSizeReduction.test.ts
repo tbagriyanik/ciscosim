@@ -330,110 +330,115 @@ describe('Property Test 4 — Bundle Size Reduction', () => {
                 const newBundleSize = otherDependenciesSize + (radixCounts.inUse * avgRadixSize);
 
                 const actualReduction = calculateReductionPercentage(originalBundleSize, newBundleSize);
-            });
+            }
 
-        // ─────────────────────────────────────────────────────────────────────────
-        // Property 4.5: Property-based test for dependency removal scenarios
-        // ─────────────────────────────────────────────────────────────────────────
-
-        describe('Dependency Removal Scenarios', () => {
-            it('removal: unused dependencies can be safely removed', () => {
-                // Verify that unused dependencies are correctly identified
-                const iterations = 100;
-
-                for (let i = 0; i < iterations; i++) {
-                    // Generate random dependency sets
-                    const totalDependencies = Math.floor(Math.random() * 20) + 10; // 10-30 dependencies
-                    const unusedCount = Math.floor(Math.random() * Math.min(10, totalDependencies - 1)) + 1; // 1 to min(10, total-1)
-
-                    // Verify unused count is less than total
-                    expect(unusedCount).toBeLessThan(totalDependencies);
-
-                    // Calculate potential reduction
-                    const reductionPercentage = (unusedCount / totalDependencies) * 100;
-
-                    // Verify reduction is positive and realistic
-                    expect(reductionPercentage).toBeGreaterThan(0);
-                    expect(reductionPercentage).toBeLessThanOrEqual(100);
-                }
-
-                // All iterations completed successfully
-                expect(true).toBe(true);
-            });
-
-            it('removal: dependency removal does not break functionality', () => {
-                // Verify that only unused dependencies are removed
-                const iterations = 100;
-
-                for (let i = 0; i < iterations; i++) {
-                    // Generate random component usage patterns
-                    const totalComponents = Math.floor(Math.random() * 20) + 10;
-                    const usedComponents = Math.floor(Math.random() * Math.min(10, totalComponents - 1)) + 1;
-                    const unusedComponents = totalComponents - usedComponents;
-
-                    // Verify usage pattern is valid
-                    expect(usedComponents).toBeGreaterThan(0);
-                    expect(unusedComponents).toBeGreaterThanOrEqual(0);
-                    expect(usedComponents + unusedComponents).toBe(totalComponents);
-
-                    // Verify only unused components are removed
-                    const removedComponents = unusedComponents;
-                    const remainingComponents = usedComponents;
-
-                    expect(removedComponents).toBe(unusedComponents);
-                    expect(remainingComponents).toBe(usedComponents);
-                }
-
-                // All iterations completed successfully
-                expect(true).toBe(true);
-            });
-        });
-
-        // ─────────────────────────────────────────────────────────────────────────
-        // Property 4.6: Property-based test for bundle size measurement accuracy
-        // ─────────────────────────────────────────────────────────────────────────
-
-        describe('Bundle Size Measurement Accuracy', () => {
-            it('measurement: bundle size measurements are consistent', () => {
-                // Verify that bundle size measurements are consistent across multiple runs
-                const iterations = 100;
-
-                for (let i = 0; i < iterations; i++) {
-                    // Generate random bundle sizes with measurement noise
-                    const actualSize = Math.floor(Math.random() * 1000) + 500;
-                    const measurementNoise = (Math.random() - 0.5) * BUNDLE_SIZE_CONFIG.MEASUREMENT_TOLERANCE;
-                    const measuredSize = actualSize * (1 + measurementNoise / 100);
-
-                    // Verify measurement is within tolerance
-                    const measurementError = Math.abs(measuredSize - actualSize) / actualSize * 100;
-                    expect(measurementError).toBeLessThanOrEqual(BUNDLE_SIZE_CONFIG.MEASUREMENT_TOLERANCE + 1);
-                }
-
-                // All iterations completed successfully
-                expect(true).toBe(true);
-            });
-
-            it('measurement: bundle size reduction is measurable', () => {
-                // Verify that bundle size reduction can be measured accurately
-                const iterations = 100;
-
-                for (let i = 0; i < iterations; i++) {
-                    // Generate random bundle sizes with realistic reduction
-                    const originalSize = Math.floor(Math.random() * 1000) + 500;
-                    const reductionPercentage = Math.random() * 20 + 5; // 5-25% reduction
-                    const newSize = originalSize * (1 - reductionPercentage / 100);
-
-                    // Calculate measured reduction with noise
-                    const measurementNoise = (Math.random() - 0.5) * BUNDLE_SIZE_CONFIG.MEASUREMENT_TOLERANCE;
-                    const measuredReduction = reductionPercentage * (1 + measurementNoise / 100);
-
-                    // Verify reduction is measurable and within tolerance
-                    expect(measuredReduction).toBeGreaterThanOrEqual(reductionPercentage - 2);
-                    expect(measuredReduction).toBeLessThanOrEqual(reductionPercentage + 2);
-                }
-
-                // All iterations completed successfully
-                expect(true).toBe(true);
-            });
+            // All iterations completed successfully
+            expect(true).toBe(true);
         });
     });
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Property 4.5: Property-based test for dependency removal scenarios
+    // ─────────────────────────────────────────────────────────────────────────
+
+    describe('Dependency Removal Scenarios', () => {
+        it('removal: unused dependencies can be safely removed', () => {
+            // Verify that unused dependencies are correctly identified
+            const iterations = 100;
+
+            for (let i = 0; i < iterations; i++) {
+                // Generate random dependency sets
+                const totalDependencies = Math.floor(Math.random() * 20) + 10; // 10-30 dependencies
+                const unusedCount = Math.floor(Math.random() * Math.min(10, totalDependencies - 1)) + 1; // 1 to min(10, total-1)
+
+                // Verify unused count is less than total
+                expect(unusedCount).toBeLessThan(totalDependencies);
+
+                // Calculate potential reduction
+                const reductionPercentage = (unusedCount / totalDependencies) * 100;
+
+                // Verify reduction is positive and realistic
+                expect(reductionPercentage).toBeGreaterThan(0);
+                expect(reductionPercentage).toBeLessThanOrEqual(100);
+            }
+
+            // All iterations completed successfully
+            expect(true).toBe(true);
+        });
+
+        it('removal: dependency removal does not break functionality', () => {
+            // Verify that only unused dependencies are removed
+            const iterations = 100;
+
+            for (let i = 0; i < iterations; i++) {
+                // Generate random component usage patterns
+                const totalComponents = Math.floor(Math.random() * 20) + 10;
+                const usedComponents = Math.floor(Math.random() * Math.min(10, totalComponents - 1)) + 1;
+                const unusedComponents = totalComponents - usedComponents;
+
+                // Verify usage pattern is valid
+                expect(usedComponents).toBeGreaterThan(0);
+                expect(unusedComponents).toBeGreaterThanOrEqual(0);
+                expect(usedComponents + unusedComponents).toBe(totalComponents);
+
+                // Verify only unused components are removed
+                const removedComponents = unusedComponents;
+                const remainingComponents = usedComponents;
+
+                expect(removedComponents).toBe(unusedComponents);
+                expect(remainingComponents).toBe(usedComponents);
+            }
+
+            // All iterations completed successfully
+            expect(true).toBe(true);
+        });
+    });
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Property 4.6: Property-based test for bundle size measurement accuracy
+    // ─────────────────────────────────────────────────────────────────────────
+
+    describe('Bundle Size Measurement Accuracy', () => {
+        it('measurement: bundle size measurements are consistent', () => {
+            // Verify that bundle size measurements are consistent across multiple runs
+            const iterations = 100;
+
+            for (let i = 0; i < iterations; i++) {
+                // Generate random bundle sizes with measurement noise
+                const actualSize = Math.floor(Math.random() * 1000) + 500;
+                const measurementNoise = (Math.random() - 0.5) * BUNDLE_SIZE_CONFIG.MEASUREMENT_TOLERANCE;
+                const measuredSize = actualSize * (1 + measurementNoise / 100);
+
+                // Verify measurement is within tolerance
+                const measurementError = Math.abs(measuredSize - actualSize) / actualSize * 100;
+                expect(measurementError).toBeLessThanOrEqual(BUNDLE_SIZE_CONFIG.MEASUREMENT_TOLERANCE + 1);
+            }
+
+            // All iterations completed successfully
+            expect(true).toBe(true);
+        });
+
+        it('measurement: bundle size reduction is measurable', () => {
+            // Verify that bundle size reduction can be measured accurately
+            const iterations = 100;
+
+            for (let i = 0; i < iterations; i++) {
+                // Generate random bundle sizes with realistic reduction
+                const originalSize = Math.floor(Math.random() * 1000) + 500;
+                const reductionPercentage = Math.random() * 20 + 5; // 5-25% reduction
+                const newSize = originalSize * (1 - reductionPercentage / 100);
+
+                // Calculate measured reduction with noise
+                const measurementNoise = (Math.random() - 0.5) * BUNDLE_SIZE_CONFIG.MEASUREMENT_TOLERANCE;
+                const measuredReduction = reductionPercentage * (1 + measurementNoise / 100);
+
+                // Verify reduction is measurable and within tolerance
+                expect(measuredReduction).toBeGreaterThanOrEqual(reductionPercentage - 2);
+                expect(measuredReduction).toBeLessThanOrEqual(reductionPercentage + 2);
+            }
+
+            // All iterations completed successfully
+            expect(true).toBe(true);
+        });
+    });
+});

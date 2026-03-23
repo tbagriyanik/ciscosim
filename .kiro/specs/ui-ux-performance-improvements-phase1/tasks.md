@@ -95,25 +95,25 @@ This implementation plan addresses critical performance issues in the Network Si
     - Run npm install to update lock file
     - _Requirements: 4.3_
   
-  - [-] 4.4 Write property test for bundle size reduction
+  - [ ] 4.4 Write property test for bundle size reduction
     - **Property 4: Bundle Size Reduction**
     - **Validates: Requirements 4.4**
     - Test that bundle size is reduced after cleanup
 
-- [ ] 5. Performance Validation
-  - [ ] 5.1 Verify no visual regressions
+- [-] 5. Performance Validation
+  - [x] 5.1 Verify no visual regressions
     - Test all components visually
     - Compare before/after screenshots
     - Document any regressions
     - _Requirements: 5.4_
   
-  - [ ] 5.2 Check bundle size reduction
+  - [x] 5.2 Check bundle size reduction
     - Run `npm run build`
     - Compare bundle sizes before/after
     - Verify at least 10% reduction
     - _Requirements: 5.3_
   
-  - [ ] 5.3 Test mobile performance
+  - [x] 5.3 Test mobile performance
     - Test on mobile device or Chrome DevTools
     - Verify time to interactive reduced by 20%
     - Verify frame rate maintains 30 FPS during scrolling/panning
