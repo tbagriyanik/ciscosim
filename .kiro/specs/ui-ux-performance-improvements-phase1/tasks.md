@@ -95,7 +95,7 @@ This implementation plan addresses critical performance issues in the Network Si
     - Run npm install to update lock file
     - _Requirements: 4.3_
   
-  - [ ] 4.4 Write property test for bundle size reduction
+  - [x] 4.4 Write property test for bundle size reduction
     - **Property 4: Bundle Size Reduction**
     - **Validates: Requirements 4.4**
     - Test that bundle size is reduced after cleanup
@@ -119,15 +119,15 @@ This implementation plan addresses critical performance issues in the Network Si
     - Verify frame rate maintains 30 FPS during scrolling/panning
     - _Requirements: 5.1, 5.2_
   
-  - [ ]* 5.4 Write property test for performance improvement
+  - [x] 5.4 Write property test for performance improvement
     - **Property 5: Performance Improvement**
     - **Validates: Requirements 5.1**
     - Test that time to interactive is reduced by 20%
 
-- [ ] 6. Checkpoint - Ensure all tests pass
+- [x] 6. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 7. Final Checkpoint - Performance Validation Complete
+- [x] 7. Final Checkpoint - Performance Validation Complete
   - Verify all performance targets are met
   - Ensure no visual regressions
   - Confirm bundle size reduction targets achieved
