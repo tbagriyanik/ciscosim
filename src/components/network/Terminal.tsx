@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useRef, useEffect, KeyboardEvent, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { SwitchState } from '@/lib/network/types';
 import { Translations } from '@/contexts/LanguageContext';
@@ -573,9 +572,9 @@ export function Terminal({
                   <span className="text-cyan-500 font-bold text-xs select-none shrink-0 group-focus-within:opacity-100 transition-opacity">
                     {prompt}
                   </span>
-                    <input
-                      data-terminal-input
-                      ref={inputRef}
+                  <input
+                    data-terminal-input
+                    ref={inputRef}
                     type="text"
                     value={input}
                     onChange={(e) => setInput(e.target.value)}

@@ -3,7 +3,6 @@
 import { SwitchState } from '@/lib/network/types';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
-import { motion } from 'framer-motion';
 
 interface AppFooterProps {
   state: SwitchState;
@@ -24,24 +23,19 @@ export function AppFooter({ state, selectedDevice, activeDeviceId, activeDeviceN
   const deviceType = activeDeviceId.includes('pc') ? 'PC' : activeDeviceId.includes('router') ? 'Router' : 'Switch';
 
   return (
-    <motion.footer 
-      initial={{ y: 50, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ type: 'spring', stiffness: 100, damping: 20 }}
-      className={`mt-6 rounded-[2.5rem] p-6 ${dark ? 'bg-slate-900/60 border-slate-800/50' : 'bg-white/70 border-slate-200/50'} backdrop-blur-xl border shadow-2xl transition-all duration-500`}
+    <footer
+      className={`mt-6 rounded-[2.5rem] p-6 animate-slide-up ${dark ? 'bg-slate-900/60 border-slate-800/50' : 'bg-white/70 border-slate-200/50'} backdrop-blur-xl border shadow-2xl transition-all duration-500`}
     >
       <div className="flex flex-wrap items-center justify-between gap-8">
         {/* Selected Device Info */}
         <div className="flex items-center gap-8">
-          <motion.div 
-            whileHover={{ scale: 1.05 }}
-            className="flex items-center gap-4 group"
+          <div
+            className="flex items-center gap-4 group transition-transform duration-300 hover:scale-105"
           >
-            <div className={`p-2 rounded-xl shadow-inner ${
-              deviceType === 'PC' ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' : 
-              deviceType === 'Router' ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20' : 
-              'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-            }`}>
+            <div className={`p-2 rounded-xl shadow-inner ${deviceType === 'PC' ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' :
+              deviceType === 'Router' ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20' :
+                'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+              }`}>
               {deviceType === 'PC' ? (
                 <svg className="w-5 h-5 drop-shadow-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
@@ -64,21 +58,21 @@ export function AppFooter({ state, selectedDevice, activeDeviceId, activeDeviceN
                 {deviceName}
               </div>
             </div>
-          </motion.div>
-          
+          </div>
+
           <div className={`h-10 w-px ${dark ? 'bg-slate-800' : 'bg-slate-200'}`} />
-          
+
           <div className="flex items-center gap-8">
             <div className="flex flex-col">
               <div className={`text-[10px] font-bold tracking-wider ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{t.nosVersion}</div>
               <div className="text-sm font-bold font-mono text-cyan-500 bg-cyan-500/5 px-1.5 py-0.5 rounded border border-cyan-500/10">{state.version.nosVersion}</div>
             </div>
-            
+
             <div className="flex flex-col">
               <div className={`text-[10px] font-bold tracking-wider ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{t.model}</div>
               <div className={`text-sm font-bold ${dark ? 'text-slate-200' : 'text-slate-700'}`}>{state.version.modelName}</div>
             </div>
-            
+
             <div className="flex flex-col">
               <div className={`text-[10px] font-bold tracking-wider ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{t.activePorts}</div>
               <div className={`text-sm font-bold font-mono ${dark ? 'text-amber-400' : 'text-amber-600'}`}>
@@ -91,6 +85,6 @@ export function AppFooter({ state, selectedDevice, activeDeviceId, activeDeviceN
         </div>
 
       </div>
-    </motion.footer>
+    </footer>
   );
 }

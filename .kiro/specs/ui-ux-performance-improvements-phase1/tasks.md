@@ -49,43 +49,43 @@ This implementation plan addresses critical performance issues in the Network Si
     - Create smooth transition classes
     - _Requirements: 3.1_
   
-  - [ ] 3.2 Replace framer-motion in BottomSheet
+  - [x] 3.2 Replace framer-motion in BottomSheet
     - Replace AnimatePresence with CSS classes
     - Replace motion.div with div + CSS classes
     - Maintain visual appearance
     - _Requirements: 3.2, 3.3_
   
-  - [ ] 3.3 Replace framer-motion in AppFooter
+  - [x] 3.3 Replace framer-motion in AppFooter
     - Replace motion.footer with footer + CSS classes
     - Replace motion.div with div + CSS classes
     - Maintain visual appearance
     - _Requirements: 3.2, 3.3_
   
-  - [ ] 3.4 Replace framer-motion in TaskCard
+  - [x] 3.4 Replace framer-motion in TaskCard
     - Replace AnimatePresence with CSS classes
     - Replace motion.div with div + CSS classes
     - Maintain visual appearance
     - _Requirements: 3.2, 3.3_
   
-  - [ ] 3.5 Replace framer-motion in Terminal
+  - [x] 3.5 Replace framer-motion in Terminal
     - Replace AnimatePresence with CSS classes
     - Replace motion.div with div + CSS classes
     - Maintain visual appearance
     - _Requirements: 3.2, 3.3_
   
-  - [ ]* 3.6 Write property test for CSS animation visual fidelity
+  - [x] 3.6 Write property test for CSS animation visual fidelity
     - **Property 3: CSS Animation Visual Fidelity**
     - **Validates: Requirements 3.3**
     - Test that CSS animations match framer-motion output
 
 - [ ] 4. Audit and Remove Unused Radix UI Components
-  - [ ] 4.1 Audit Radix UI component usage
+  - [x] 4.1 Audit Radix UI component usage
     - Identify all Radix UI components in use
     - Identify unused Radix UI components
     - Document findings
     - _Requirements: 4.1, 4.2_
   
-  - [ ] 4.2 Remove unused Radix UI imports
+  - [x] 4.2 Remove unused Radix UI imports
     - Remove unused imports from all files
     - Verify no compilation errors
     - _Requirements: 4.2_

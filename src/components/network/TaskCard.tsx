@@ -4,7 +4,6 @@ import { Badge } from '@/components/ui/badge';
 import { TaskDefinition, TaskContext, getTaskStatus } from '@/lib/network/taskDefinitions';
 import { SwitchState } from '@/lib/network/types';
 import { useRef, useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 
 interface TaskCardProps {
   tasks: TaskDefinition[];
@@ -19,7 +18,8 @@ export function TaskCard({ tasks, state, context, color, isDark }: TaskCardProps
   const prevCompletedRef = useRef<Set<string>>(new Set());
   const [animatingTask, setAnimatingTask] = useState<string | null>(null);
   const [showCelebration, setShowCelebration] = useState(false);
-  
+  const [progressWidth, setProgressWidth] = useState(0);
+
   // Calculate score
   const score = tasks.reduce((acc, task) => {
     const completed = getTaskStatus(task, state, context);
@@ -29,7 +29,7 @@ export function TaskCard({ tasks, state, context, color, isDark }: TaskCardProps
   // Calculate max score
   const maxScore = tasks.reduce((acc, task) => acc + task.weight, 0);
   const isCategoryComplete = score === maxScore && maxScore > 0;
-  
+
   // Track task completion changes for animation
   useEffect(() => {
     const newCompleted = new Set<string>();
@@ -45,60 +45,54 @@ export function TaskCard({ tasks, state, context, color, isDark }: TaskCardProps
         }
       }
     });
-    
+
     // Category completion celebration
     if (newlyFinishedCount > 0 && newCompleted.size === tasks.length) {
       setShowCelebration(true);
       setTimeout(() => setShowCelebration(false), 3000);
     }
-    
+
     // Update ref for next comparison
     prevCompletedRef.current = newCompleted;
   }, [tasks, state, context]);
 
+  // Update progress bar width when score changes
+  useEffect(() => {
+    if (maxScore > 0) {
+      setProgressWidth((score / maxScore) * 100);
+    }
+  }, [score, maxScore]);
+
   return (
     <div className={`relative rounded-xl p-4 ${isDark ? 'bg-slate-800/50' : 'bg-white/80'} backdrop-blur-sm border ${isDark ? 'border-slate-700' : 'border-slate-200'} transition-all duration-300 hover:shadow-lg overflow-hidden`}>
       {/* Celebration Overlay */}
-      <AnimatePresence>
-        {showCelebration && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute inset-0 z-10 pointer-events-none flex items-center justify-center bg-green-500/10 backdrop-blur-[1px]"
-          >
-            <motion.div
-              initial={{ scale: 0.5, y: 20 }}
-              animate={{ scale: [1, 1.2, 1], y: 0 }}
-              className="bg-white dark:bg-slate-900 px-4 py-2 rounded-full shadow-2xl border border-green-500/50 flex items-center gap-2"
-            >
-              <span className="text-xl">🎉</span>
-              <span className="text-sm font-bold text-green-500 tracking-wider">
-                {context.language === 'tr' ? 'Tebrikler!' : 'Completed!'}
-              </span>
-            </motion.div>
-            
-            {/* Particles simulation */}
-            {[...Array(12)].map((_, i) => (
-              <motion.div
-                key={i}
-                initial={{ x: 0, y: 0, opacity: 1 }}
-                animate={{ 
-                  x: (Math.random() - 0.5) * 300, 
-                  y: (Math.random() - 0.5) * 300,
-                  opacity: 0,
-                  rotate: Math.random() * 360
-                }}
-                transition={{ duration: 1.5, ease: "easeOut" }}
-                className="absolute w-2 h-2 rounded-full"
-                style={{ 
-                  backgroundColor: ['#22d3ee', '#fbbf24', '#f87171', '#4ade80'][i % 4]
-                }}
-              />
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {showCelebration && (
+        <div className="absolute inset-0 z-10 pointer-events-none flex items-center justify-center bg-green-500/10 backdrop-blur-[1px]">
+          <div className="celebration-pop bg-white dark:bg-slate-900 px-4 py-2 rounded-full shadow-2xl border border-green-500/50 flex items-center gap-2">
+            <span className="text-xl">🎉</span>
+            <span className="text-sm font-bold text-green-500 tracking-wider">
+              {context.language === 'tr' ? 'Tebrikler!' : 'Completed!'}
+            </span>
+          </div>
+
+          {/* Particles simulation */}
+          {[...Array(12)].map((_, i) => (
+            <div
+              key={i}
+              className="absolute w-2 h-2 rounded-full particle-explosion"
+              style={{
+                backgroundColor: ['#22d3ee', '#fbbf24', '#f87171', '#4ade80'][i % 4],
+                left: '50%',
+                top: '50%',
+                transform: 'translate(-50%, -50%)',
+                // Set random direction for each particle
+                '--tx': `${(Math.random() - 0.5) * 300}px`,
+                '--ty': `${(Math.random() - 0.5) * 300}px`,
+              } as React.CSSProperties}
+            />
+          ))}
+        </div>
+      )}
 
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
@@ -115,11 +109,9 @@ export function TaskCard({ tasks, state, context, color, isDark }: TaskCardProps
 
       {/* Progress bar */}
       <div className={`h-1.5 rounded-full ${isDark ? 'bg-slate-700' : 'bg-slate-200'} mb-4 overflow-hidden`}>
-        <motion.div 
-          initial={{ width: 0 }}
-          animate={{ width: `${(score / maxScore) * 100}%` }}
-          className={`h-full bg-gradient-to-r ${isCategoryComplete ? 'from-green-400 to-emerald-500' : color} rounded-full`}
-          transition={{ duration: 0.8, ease: "easeOut" }}
+        <div
+          className={`h-full bg-gradient-to-r ${isCategoryComplete ? 'from-green-400 to-emerald-500' : color} rounded-full progress-fill`}
+          style={{ '--progress-width': `${progressWidth}%` } as React.CSSProperties}
         />
       </div>
 
@@ -133,52 +125,45 @@ export function TaskCard({ tasks, state, context, color, isDark }: TaskCardProps
           const isAnimating = animatingTask === task.id;
 
           return (
-            <motion.div
+            <div
               key={task.id}
-              initial={false}
-              animate={{ 
-                backgroundColor: completed 
+              className={`p-2.5 rounded-lg border transition-all duration-300 ${isAnimating ? 'ring-2 ring-green-400/50 scale-[1.02] z-10' : ''
+                }`}
+              style={{
+                backgroundColor: completed
                   ? (isDark ? 'rgba(34, 197, 94, 0.1)' : 'rgba(34, 197, 94, 0.05)')
                   : (isDark ? 'rgba(51, 65, 85, 0.3)' : 'rgba(241, 245, 249, 1)'),
                 borderColor: completed ? 'rgba(34, 197, 94, 0.2)' : 'transparent'
               }}
-              className={`p-2.5 rounded-lg border transition-all duration-300 ${
-                isAnimating ? 'ring-2 ring-green-400/50 scale-[1.02] z-10' : ''
-              }`}
             >
               {/* Task Header */}
               <div className="flex items-center gap-2 mb-1">
-                <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-500 ${
-                  completed
+                <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-500 ${completed
                     ? 'bg-green-500 text-white shadow-lg shadow-green-500/20'
                     : isDark ? 'bg-slate-600 text-slate-400' : 'bg-slate-200 text-slate-500'
-                }`}>
+                  }`}>
                   {completed ? (
-                    <motion.svg 
-                      initial={{ scale: 0, rotate: -45 }}
-                      animate={{ scale: 1, rotate: 0 }}
-                      className="w-3 h-3" 
-                      fill="none" 
-                      stroke="currentColor" 
+                    <svg
+                      className="w-3 h-3 checkmark-draw"
+                      fill="none"
+                      stroke="currentColor"
                       viewBox="0 0 24 24"
                     >
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                    </motion.svg>
+                    </svg>
                   ) : (
                     <span className="text-xs font-bold">{task.weight}</span>
                   )}
                 </div>
-                <span className={`text-sm font-medium transition-all duration-500 ${
-                  completed ? 'text-green-500 line-through opacity-70' : isDark ? 'text-slate-200' : 'text-slate-800'
-                }`}>
+                <span className={`text-sm font-medium transition-all duration-500 ${completed ? 'text-green-500 line-through opacity-70' : isDark ? 'text-slate-200' : 'text-slate-800'
+                  }`}>
                   {name}
                 </span>
               </div>
 
               {/* Description */}
-              <p className={`text-xs ml-7 transition-all duration-500 ${
-                completed ? 'opacity-40' : ''
-              } ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+              <p className={`text-xs ml-7 transition-all duration-500 ${completed ? 'opacity-40' : ''
+                } ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
                 {description}
               </p>
 
@@ -193,11 +178,10 @@ export function TaskCard({ tasks, state, context, color, isDark }: TaskCardProps
                   </span>
                 </div>
               )}
-            </motion.div>
+            </div>
           );
         })}
       </div>
     </div>
   );
 }
-
