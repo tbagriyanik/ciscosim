@@ -90,12 +90,12 @@ This implementation plan addresses critical performance issues in the Network Si
     - Verify no compilation errors
     - _Requirements: 4.2_
   
-  - [ ] 4.3 Update package.json
+  - [x] 4.3 Update package.json
     - Remove unused Radix UI dependencies
     - Run npm install to update lock file
     - _Requirements: 4.3_
   
-  - [ ]* 4.4 Write property test for bundle size reduction
+  - [-] 4.4 Write property test for bundle size reduction
     - **Property 4: Bundle Size Reduction**
     - **Validates: Requirements 4.4**
     - Test that bundle size is reduced after cleanup
