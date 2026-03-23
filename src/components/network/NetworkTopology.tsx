@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback, useMemo, MouseEvent as ReactMouseEvent, TouchEvent as ReactTouchEvent } from 'react';
-import useAppStore from '@/lib/store/appStore';
+import useAppStore, { useTopologyDevices, useTopologyConnections, useTopologyNotes } from '@/lib/store/appStore';
 import { SwitchState, CableType, CableInfo, isCableCompatible } from '@/lib/network/types';
 import { checkDeviceConnectivity, getPingDiagnostics } from '@/lib/network/connectivity';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -177,12 +177,15 @@ export function NetworkTopology({
     },
   ];
 
-  // Zustand store state
-  const { topology, setDevices, setConnections, setNotes } = useAppStore();
-  
-  const devices = topology.devices;
-  const connections = topology.connections;
-  const notes = topology.notes;
+  // Zustand store state - using granular selectors to prevent cascading re-renders
+  const topologyDevices = useTopologyDevices();
+  const topologyConnections = useTopologyConnections();
+  const topologyNotes = useTopologyNotes();
+  const { setDevices, setConnections, setNotes } = useAppStore();
+
+  const devices = topologyDevices;
+  const connections = topologyConnections;
+  const notes = topologyNotes;
 
   // Sync state functions for local component logic
   const setDevicesState = setDevices;

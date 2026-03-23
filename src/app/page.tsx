@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 import { SwitchState, CableInfo } from '@/lib/network/types';
 import { useDeviceManager } from '@/hooks/useDeviceManager';
-import useAppStore from '@/lib/store/appStore';
+import useAppStore, { useTopologyDevices, useTopologyConnections, useTopologyNotes, useZoom, usePan, useActiveTab } from '@/lib/store/appStore';
 // Duplicate removed
 import { NetworkTopology } from '@/components/network/NetworkTopology';
 import { CanvasDevice, CanvasConnection, CanvasNote } from '@/components/network/networkTopology.types';
@@ -168,22 +168,14 @@ export default function Home() {
   }, []);
   const [showContent, setShowContent] = useState(false);
 
-  const { 
-    topology, 
-    setDevices, 
-    setConnections, 
-    setNotes, 
-    setZoom, 
-    setPan,
-    setActiveTab
-  } = useAppStore();
-
-  const topologyDevices = topology.devices;
-  const topologyConnections = topology.connections;
-  const topologyNotes = topology.notes;
-  const zoom = topology.zoom;
-  const pan = topology.pan;
-  const activeTab = useAppStore((state) => state.activeTab);
+  // Zustand store state - using granular selectors to prevent cascading re-renders
+  const topologyDevices = useTopologyDevices();
+  const topologyConnections = useTopologyConnections();
+  const topologyNotes = useTopologyNotes();
+  const zoom = useZoom();
+  const pan = usePan();
+  const activeTab = useActiveTab();
+  const { setDevices, setConnections, setNotes, setZoom, setPan, setActiveTab } = useAppStore();
 
   // Helper functions for state setters to maintain compatibility
   const setTopologyDevices = setDevices;
@@ -200,7 +192,7 @@ export default function Home() {
       const { deviceId, config } = event.detail;
 
       // Update topology devices using functional update to avoid stale closure
-      setDevices(prev => 
+      setDevices(prev =>
         prev.map((d) =>
           d.id === deviceId
             ? { ...d, ...config }
@@ -2409,15 +2401,15 @@ export default function Home() {
                     t={t}
                     theme={theme}
                     language={language}
-                  onUpdateHistory={handleUpdateHistory}
-                  confirmDialog={confirmDialog}
-                  onRequestFocus={() => {
-                    requestAnimationFrame(() => {
-                      const el = document.querySelector('input[placeholder="' + t.typeCommand + '"]') as HTMLInputElement | null;
-                      el?.focus();
-                    });
-                  }}
-                />
+                    onUpdateHistory={handleUpdateHistory}
+                    confirmDialog={confirmDialog}
+                    onRequestFocus={() => {
+                      requestAnimationFrame(() => {
+                        const el = document.querySelector('input[placeholder="' + t.typeCommand + '"]') as HTMLInputElement | null;
+                        el?.focus();
+                      });
+                    }}
+                  />
                   <QuickCommands
                     currentMode={state.currentMode}
                     onExecuteCommand={handleCommand}

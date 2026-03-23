@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, KeyboardEvent, useCallback, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useSwitchState } from '@/lib/store/appStore';
 import { CableInfo, isCableCompatible, SwitchState } from '@/lib/network/types';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -84,6 +84,9 @@ export function PCPanel({
   const { language, t } = useLanguage();
   const { theme } = useTheme();
   const isDark = theme === 'dark';
+
+  // Use granular selector for device state to prevent cascading re-renders
+  const deviceState = useSwitchState(deviceId);
 
   const terminalBg = isDark ? 'bg-black shadow-inner' : 'bg-slate-50 shadow-inner border border-slate-200';
   const textColor = isDark ? 'text-slate-400' : 'text-slate-600';
@@ -379,8 +382,8 @@ export function PCPanel({
 
   // Synchronized Console Output from Global State
   const activeConsoleOutput = useMemo(() => {
-    if (!isConsoleConnected || !connectedDeviceId || !deviceOutputs) return [];
-    const allOutput = deviceOutputs.get(connectedDeviceId) || [];
+    if (!isConsoleConnected || !connectedDeviceId) return [];
+    const allOutput = deviceOutputs?.get(connectedDeviceId) || [];
     // Sadece bağlantı zamanından sonraki output'u göster
     return allOutput.filter((line: any) => (line.timestamp || 0) >= consoleConnectionTime);
   }, [isConsoleConnected, connectedDeviceId, deviceOutputs, consoleConnectionTime]);
@@ -412,7 +415,7 @@ export function PCPanel({
 
   const isConsoleTargetPoweredOff = isConsoleConnected && !!connectedConsoleDevice && connectedConsoleDevice.status === 'offline';
   const isCmdInputDisabled = isPcPoweredOff;
-  const consoleAwaitingPassword = !!(connectedDeviceId && deviceStates?.get(connectedDeviceId)?.awaitingPassword);
+  const consoleAwaitingPassword = !!(connectedDeviceId && deviceState?.awaitingPassword);
   const isConsoleInputDisabled = isPcPoweredOff || !isConsoleConnected || isConsoleTargetPoweredOff || consoleAwaitingPassword;
   const [showConsolePasswordPrompt, setShowConsolePasswordPrompt] = useState(false);
   const [consolePasswordInput, setConsolePasswordInput] = useState('');
@@ -433,8 +436,8 @@ export function PCPanel({
 
   const consoleAuthenticated = useMemo(() => {
     if (!connectedDeviceId) return true;
-    return deviceStates?.get(connectedDeviceId)?.consoleAuthenticated !== false;
-  }, [connectedDeviceId, deviceStates]);
+    return deviceState?.consoleAuthenticated !== false;
+  }, [connectedDeviceId, deviceState]);
 
   useEffect(() => {
     if (!isConsoleConnected || !connectedDeviceId) return;
@@ -548,7 +551,7 @@ export function PCPanel({
         } else if (pcIP === '0.0.0.0') {
           addLocalOutput('error', 'Ping transmit failed. General failure.');
         } else {
-          const result = checkConnectivity(deviceId, target, topologyDevices as any, topologyConnections as any, deviceStates);
+          const result = checkConnectivity(deviceId, target, topologyDevices as any, topologyConnections as any, deviceStates || new Map());
           if (result.success) {
             addLocalOutput('output', `Pinging ${target} with 32 bytes of data:\nReply from ${target}: bytes=32 time<1ms TTL=128\nReply from ${target}: bytes=32 time<1ms TTL=128\nReply from ${target}: bytes=32 time<1ms TTL=128\nReply from ${target}: bytes=32 time<1ms TTL=128\n\nPing statistics for ${target}:\n    Packets: Sent = 4, Received = 4, Lost = 0 (0% loss),\nApproximate round trip times in milli-seconds:\n    Minimum = 0ms, Maximum = 0ms, Average = 0ms`);
           } else {
@@ -562,7 +565,7 @@ export function PCPanel({
         } else if (pcIP === '0.0.0.0') {
           addLocalOutput('error', 'Unable to resolve target system name.');
         } else {
-          const result = checkConnectivity(deviceId, target, topologyDevices as any, topologyConnections as any, deviceStates);
+          const result = checkConnectivity(deviceId, target, topologyDevices as any, topologyConnections as any, deviceStates || new Map());
           if (result.success) {
             let output = `Tracing route to ${target} over a maximum of 30 hops:\n\n`;
             result.hops.forEach((hop, index) => {
@@ -604,7 +607,7 @@ export function PCPanel({
           addLocalOutput('output', `OpenSSH_9.2p1, OpenSSL 3.0.8\nusage: ssh [-46AaCfGgKkMNnqsTtVvXxYy] [-B bind_interface] [-b bind_address]...\n           [-c cipher_spec] [-D [bind_address:]port] [-E log_file]\n           [-F configfile] [-I pkcs11] [-J [user@]host[:port]]\n           [-L address] [-l login_name] [-m macspec] [-O ctl_cmd]\n           [-o option] [-p port] [-Q query_option] [-R address]\n           [-S ctl_path] [-W host:port] [-w local_tun[:remote_tun]]\n           [-X|-x] [-Y] [-Z] [-b bind_address] [-c cipher_spec]\n           [-D [bind_address:]port] [-E log_file] [-F configfile]\n           [-I pkcs11] [-J [user@]host[:port]] [-L address]\n           [-l login_name] [-m macspec] [-O ctl_cmd] [-o option]\n           [-p port] [-Q query_option] [-R address] [-S ctl_path]\n           [-W host:port] [-w local_tun[:remote_tun]] [-X|-x] [-Y] [-Z]\n           [user@]hostname [command]`);
         } else {
           const target = args[0];
-          const result = checkConnectivity(deviceId, target, topologyDevices as any, topologyConnections as any, deviceStates);
+          const result = checkConnectivity(deviceId, target, topologyDevices as any, topologyConnections as any, deviceStates || new Map());
           if (result.success) {
             const targetDevice = (topologyDevices as any)?.find((d: any) => d.ip === target);
             if (targetDevice && targetDevice.type !== 'pc') {
@@ -817,8 +820,8 @@ export function PCPanel({
           setInput(prefix ? `${prefix} ${matches[nextIndex]}` : matches[nextIndex]);
         }
       }
-    } else if (isConsoleConnected && connectedDeviceId && deviceStates) {
-      const state = deviceStates.get(connectedDeviceId);
+    } else if (isConsoleConnected && connectedDeviceId && deviceState) {
+      const state = deviceState;
       if (!state) return;
 
       const mode = state.currentMode;
