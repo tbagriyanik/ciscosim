@@ -1229,8 +1229,16 @@ export function PCPanel({
                           processCommandQueue();
                         }
                       } else {
-                        // Tek satırlı metin ise input'a yaz
-                        setInput(pastedText);
+                        // Tek satırlı metin ise imlecin olduğu yere yapıştır
+                        const target = e.target as HTMLInputElement;
+                        const start = target.selectionStart ?? 0;
+                        const end = target.selectionEnd ?? 0;
+                        const newValue = input.substring(0, start) + pastedText + input.substring(end);
+                        setInput(newValue);
+                        // Imleci yapıştırılan metnin sonuna taşı
+                        setTimeout(() => {
+                          target.selectionStart = target.selectionEnd = start + pastedText.length;
+                        }, 0);
                       }
                     }}
                     disabled={activeTab === 'desktop' ? isCmdInputDisabled : isConsoleInputDisabled}

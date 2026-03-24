@@ -2168,6 +2168,7 @@ export function NetworkTopology({
     const minY = Math.min(minDeviceY, minNoteY);
 
     setPan({ x: padding - minX * DEFAULT_ZOOM, y: padding - minY * DEFAULT_ZOOM });
+    window.scrollTo(0, 0);
   }, [devices, notes]);
 
   // Toggle Fullscreen
