@@ -191,6 +191,8 @@ export function Terminal({
     if (!value) return;
     await onCommand(value);
     setPasswordInput('');
+    // Focus back to terminal input after password submission
+    setTimeout(() => focusTerminalInput(), 100);
   };
 
   const processCommandQueue = async () => {

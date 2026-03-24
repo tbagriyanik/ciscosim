@@ -262,6 +262,7 @@ export function NetworkTopology({
     point: { x: number; y: number };
   } | null>(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const mousePosRef = useRef({ x: 0, y: 0 });
 
   type ContextMenuMode = 'device' | 'note-edit' | 'canvas';
   type ContextMenuState = {
@@ -840,10 +841,12 @@ export function NetworkTopology({
         const rect = canvasRef.current.getBoundingClientRect();
         const currentPan = panRef.current;
         const currentZoom = zoomRef.current;
-        setMousePos({
+        const newPos = {
           x: (e.clientX - rect.left - currentPan.x) / currentZoom,
           y: (e.clientY - rect.top - currentPan.y) / currentZoom,
-        });
+        };
+        mousePosRef.current = newPos;
+        setMousePos(newPos);
       }
     };
 
@@ -3787,9 +3790,6 @@ export function NetworkTopology({
                       />
                     );
                   })}
-
-                  {/* Temporary connection line */}
-                  {renderTempConnection()}
 
                   {/* Temporary connection line */}
                   {renderTempConnection()}

@@ -975,8 +975,8 @@ function handlePasswordInput(state: SwitchState, password: string, language: 'tr
         success: false,
         error: language === 'tr' ? '% Erişim reddedildi' : '% Access denied',
         newState: {
-          awaitingPassword: false,
-          passwordContext: undefined
+          awaitingPassword: true,
+          passwordContext: 'enable'
         }
       };
     }
@@ -998,8 +998,8 @@ function handlePasswordInput(state: SwitchState, password: string, language: 'tr
         success: false,
         error: language === 'tr' ? '% Erişim reddedildi' : '% Access denied',
         newState: {
-          awaitingPassword: false,
-          passwordContext: undefined
+          awaitingPassword: true,
+          passwordContext: 'console'
         }
       };
     }
@@ -1009,8 +1009,8 @@ function handlePasswordInput(state: SwitchState, password: string, language: 'tr
     success: false,
     error: '% Password error',
     newState: {
-      awaitingPassword: false,
-      passwordContext: undefined
+      awaitingPassword: true,
+      passwordContext: state.passwordContext
     }
   };
 }

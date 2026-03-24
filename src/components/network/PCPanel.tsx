@@ -420,7 +420,7 @@ export function PCPanel({
 
   const isConsoleTargetPoweredOff = isConsoleConnected && !!connectedConsoleDevice && connectedConsoleDevice.status === 'offline';
   const isCmdInputDisabled = isPcPoweredOff;
-  const consoleAwaitingPassword = !!(connectedDeviceId && deviceState?.awaitingPassword);
+  const consoleAwaitingPassword = !!(connectedDeviceId && deviceStates?.get(connectedDeviceId)?.awaitingPassword);
   const isConsoleInputDisabled = isPcPoweredOff || !isConsoleConnected || isConsoleTargetPoweredOff || consoleAwaitingPassword;
   const [showConsolePasswordPrompt, setShowConsolePasswordPrompt] = useState(false);
   const [consolePasswordInput, setConsolePasswordInput] = useState('');
@@ -428,7 +428,7 @@ export function PCPanel({
   const consolePasswordRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (activeTab === 'terminal' && consoleAwaitingPassword) {
+    if (consoleAwaitingPassword) {
       setShowConsolePasswordPrompt(true);
       setConsolePasswordInput('');
       setConsolePasswordAttempted(false);
@@ -437,12 +437,12 @@ export function PCPanel({
       setShowConsolePasswordPrompt(false);
       setConsolePasswordInput('');
     }
-  }, [activeTab, consoleAwaitingPassword]);
+  }, [consoleAwaitingPassword]);
 
   const consoleAuthenticated = useMemo(() => {
     if (!connectedDeviceId) return true;
-    return deviceState?.consoleAuthenticated !== false;
-  }, [connectedDeviceId, deviceState]);
+    return deviceStates?.get(connectedDeviceId)?.consoleAuthenticated !== false;
+  }, [connectedDeviceId, deviceStates]);
 
   useEffect(() => {
     if (!isConsoleConnected || !connectedDeviceId) return;
@@ -481,16 +481,23 @@ export function PCPanel({
     }, 0);
   }, []);
 
-  const handleConnect = () => {
+  const handleConnect = async () => {
     if (!consoleDevice) return;
 
-    setIsConsoleConnected(true);
     setConnectedDeviceId(consoleDevice.id);
     setConsoleConnectionTime(Date.now());
 
     if (onExecuteDeviceCommand) {
       // Internal "connect" signal to trigger console authentication flow if configured.
-      onExecuteDeviceCommand(consoleDevice.id, '__CONSOLE_CONNECT__').then(() => { });
+      await onExecuteDeviceCommand(consoleDevice.id, '__CONSOLE_CONNECT__');
+      // Only set as connected if password is not required
+      // If password is required, the dialog will show and user must authenticate first
+      const deviceState = deviceStates?.get(consoleDevice.id);
+      if (!deviceState?.awaitingPassword) {
+        setIsConsoleConnected(true);
+      }
+    } else {
+      setIsConsoleConnected(true);
     }
   };
 
@@ -709,6 +716,26 @@ export function PCPanel({
     setConsolePasswordAttempted(true);
     await onExecuteDeviceCommand(connectedDeviceId, value);
     setConsolePasswordInput('');
+
+    // Check if authentication was successful
+    const deviceState = deviceStates?.get(connectedDeviceId);
+    if (deviceState) {
+      if (!deviceState.awaitingPassword) {
+        // Password was accepted, set as connected
+        setIsConsoleConnected(true);
+      } else {
+        // Password was rejected, keep waiting for password
+        setIsConsoleConnected(false);
+      }
+    }
+
+    // Focus back to console input after password submission
+    setTimeout(() => {
+      if (activeTab === 'terminal') {
+        const consoleInput = document.querySelector('input[placeholder*="' + (internalPcHostname || 'PC') + '"]') as HTMLInputElement | null;
+        consoleInput?.focus();
+      }
+    }, 100);
   };
 
   const processCommandQueue = async () => {
