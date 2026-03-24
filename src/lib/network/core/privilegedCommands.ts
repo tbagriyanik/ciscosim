@@ -15,6 +15,8 @@ export const privilegedHandlers: Record<string, CommandHandler> = {
     'no ip route': cmdNoIpRoute,
     'debug': cmdDebug,
     'undebug all': cmdUndebugAll,
+    'do write': cmdDoWrite,
+    'do ping': cmdDoPing,
 };
 
 /**
@@ -280,4 +282,35 @@ function cmdUndebugAll(state: any, input: string, ctx: any): any {
         output: 'All possible debugging has been turned off',
         newState: { debugs: {} }
     };
+}
+
+
+/**
+ * Do Write - Execute write command from config mode
+ */
+function cmdDoWrite(state: any, input: string, ctx: any): any {
+    // Extract the write command from "do write ..."
+    const match = input.match(/^do\s+(wr[ite]*(?:\s+me[mory]*)?)$/i);
+    if (!match) {
+        return { success: false, error: '% Invalid command' };
+    }
+
+    // Execute write memory
+    return cmdWriteMemory(state, 'write memory', ctx);
+}
+
+/**
+ * Do Ping - Execute ping command from config mode
+ */
+function cmdDoPing(state: any, input: string, ctx: any): any {
+    // Extract the ping command from "do ping ..."
+    const match = input.match(/^do\s+(ping\s+.+)$/i);
+    if (!match) {
+        return { success: false, error: '% Invalid command' };
+    }
+
+    const pingCommand = match[1];
+
+    // Execute ping
+    return cmdPing(state, pingCommand, ctx);
 }

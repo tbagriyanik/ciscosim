@@ -8,6 +8,7 @@ export const systemHandlers: Record<string, CommandHandler> = {
   'configure terminal': cmdConfigureTerminal,
   'exit': cmdExit,
   'end': cmdEnd,
+  'do': cmdDo,
 };
 
 /**
@@ -156,4 +157,25 @@ function cmdEnd(
       currentVlan: undefined
     }
   };
+}
+
+
+/**
+ * Do - Execute privileged commands from config mode
+ */
+function cmdDo(
+  state: any,
+  input: string,
+  ctx: any
+): any {
+  // Extract the command after "do"
+  const match = input.match(/^do\s+(.+)$/i);
+  if (!match) {
+    return { success: false, error: '% Invalid command' };
+  }
+
+  const command = match[1];
+
+  // Return error - this should be handled by specific do handlers
+  return { success: false, error: `% Unknown command: ${command}` };
 }

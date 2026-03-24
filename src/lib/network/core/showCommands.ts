@@ -19,6 +19,7 @@ export const showHandlers: Record<string, CommandHandler> = {
   'show boot': cmdShowBoot,
   'show spanning-tree': cmdShowSpanningTree,
   'show port-security': cmdShowPortSecurity,
+  'do show': cmdDoShow,
 };
 
 /**
@@ -583,4 +584,63 @@ function getPrefixLength(subnetMask: string): number {
   }
 
   return count;
+}
+
+/**
+ * Do Show - Execute show command from config mode
+ */
+function cmdDoShow(
+  state: any,
+  input: string,
+  ctx: any
+): any {
+  // Extract the show command from "do show ..."
+  const match = input.match(/^do\s+(show\s+.+)$/i);
+  if (!match) {
+    return { success: false, error: '% Invalid command' };
+  }
+
+  const showCommand = match[1];
+
+  // Parse the show command
+  const parts = showCommand.split(/\s+/);
+  const cmd = parts[0].toLowerCase();
+  const subCmd = parts.slice(1).join(' ').toLowerCase();
+
+  // Route to appropriate show handler
+  if (cmd === 'show') {
+    if (subCmd.startsWith('running-config')) {
+      return cmdShowRunningConfig(state, showCommand, ctx);
+    } else if (subCmd.startsWith('version')) {
+      return cmdShowVersion(state, showCommand, ctx);
+    } else if (subCmd.startsWith('interfaces')) {
+      return cmdShowInterfaces(state, showCommand, ctx);
+    } else if (subCmd.startsWith('interface')) {
+      return cmdShowInterface(state, showCommand, ctx);
+    } else if (subCmd.startsWith('ip interface brief')) {
+      return cmdShowIpInterfaceBrief(state, showCommand, ctx);
+    } else if (subCmd.startsWith('vlan')) {
+      return cmdShowVlan(state, showCommand, ctx);
+    } else if (subCmd.startsWith('mac address-table')) {
+      return cmdShowMacAddressTable(state, showCommand, ctx);
+    } else if (subCmd.startsWith('cdp neighbors')) {
+      return cmdShowCdpNeighbors(state, showCommand, ctx);
+    } else if (subCmd.startsWith('ip route')) {
+      return cmdShowIpRoute(state, showCommand, ctx);
+    } else if (subCmd.startsWith('clock')) {
+      return cmdShowClock(state, showCommand, ctx);
+    } else if (subCmd.startsWith('flash')) {
+      return cmdShowFlash(state, showCommand, ctx);
+    } else if (subCmd.startsWith('boot')) {
+      return cmdShowBoot(state, showCommand, ctx);
+    } else if (subCmd.startsWith('spanning-tree')) {
+      return cmdShowSpanningTree(state, showCommand, ctx);
+    } else if (subCmd.startsWith('port-security')) {
+      return cmdShowPortSecurity(state, showCommand, ctx);
+    } else {
+      return cmdShow(state, showCommand, ctx);
+    }
+  }
+
+  return { success: false, error: '% Invalid command' };
 }
