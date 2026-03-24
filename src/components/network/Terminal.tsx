@@ -408,9 +408,13 @@ export function Terminal({
       <Dialog
         open={showPasswordPrompt}
         onOpenChange={(open) => {
-          if (!open && state.awaitingPassword) return;
-          setShowPasswordPrompt(open);
-          if (!open) focusTerminalInput();
+          if (!open) {
+            // Dialog is being closed (ESC, back button, or outside click)
+            // Treat it as a cancelled password attempt
+            setShowPasswordPrompt(false);
+            onCommand('__PASSWORD_CANCELLED__');
+            focusTerminalInput();
+          }
         }}
       >
         <DialogContent showCloseButton={false} className={`${isDark ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white'} sm:max-w-sm`}>

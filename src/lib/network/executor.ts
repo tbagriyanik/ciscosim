@@ -859,6 +859,17 @@ export function executeCommand(
   }
 
   if (state.awaitingPassword) {
+    if (input === '__PASSWORD_CANCELLED__') {
+      // Password dialog was cancelled (ESC, back, outside click)
+      return {
+        success: false,
+        error: language === 'tr' ? '% Erişim reddedildi' : '% Access denied',
+        newState: {
+          awaitingPassword: false,
+          passwordContext: undefined
+        }
+      };
+    }
     return handlePasswordInput(state, input, language);
   }
 
