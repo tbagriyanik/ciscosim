@@ -54,7 +54,7 @@ export function ModernPanel({
             return;
         }
 
-        const mediaQuery = window.matchMedia('(max-width: 767px)');
+        const mediaQuery = window.matchMedia('(max-width: 1023px)');
         const updateIsMobile = () => setIsMobile(mediaQuery.matches);
 
         updateIsMobile();

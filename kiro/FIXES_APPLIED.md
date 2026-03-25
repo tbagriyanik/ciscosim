@@ -176,7 +176,6 @@ const handleAddPC = () => {
 The new packages need to be installed. Due to PowerShell restrictions, use CMD:
 
 ```cmd
-cd ciscosim
 npm install zustand @dnd-kit/core @dnd-kit/modifiers
 ```
 

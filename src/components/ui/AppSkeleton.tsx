@@ -55,27 +55,6 @@ export function AppSkeleton() {
             <main className="flex-1 flex overflow-hidden">
 
 
-                {/* Canvas Area */}
-                <div className="flex-1 relative bg-slate-50/50 dark:bg-slate-900/50">
-                    <div className="absolute inset-0 p-8">
-                        <div className="grid grid-cols-3 gap-4 h-full">
-                            {[1, 2, 3, 4, 5, 6].map((i) => (
-                                <div
-                                    key={i}
-                                    className="animate-scale-in"
-                                    style={{ animationDelay: `${0.3 + i * 0.05}s` }}
-                                >
-                                    <Skeleton className="w-full h-24 rounded-xl" />
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                    <div className="absolute bottom-4 right-4 flex gap-2">
-                        <Skeleton className="w-10 h-10 rounded-full" />
-                        <Skeleton className="w-10 h-10 rounded-full" />
-                        <Skeleton className="w-10 h-10 rounded-full" />
-                    </div>
-                </div>
 
             </main>
 

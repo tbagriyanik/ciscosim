@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { CornerDownLeft, Terminal as TerminalIcon, Trash2, History, X, Copy, Search, Download, Settings as SettingsIcon } from 'lucide-react';
-import { QuickCommands } from './QuickCommands';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from "@/hooks/use-toast";
 import { commandHelp } from '@/lib/network/executor';
@@ -43,6 +42,8 @@ interface TerminalProps {
   confirmDialog?: { show: boolean; message?: string; onConfirm: () => void } | null;
   setConfirmDialog?: (dialog: { show: boolean; message: string; action: string; onConfirm: () => void } | null) => void;
   onRequestFocus?: () => void;
+  className?: string;
+  title?: string;
 }
 
 export function Terminal({
@@ -65,7 +66,9 @@ export function Terminal({
   onUpdateHistory,
   confirmDialog,
   setConfirmDialog,
-  onRequestFocus
+  onRequestFocus,
+  className,
+  title
 }: TerminalProps) {
   const [input, setInput] = useState('');
   const [history, setHistory] = useState<string[]>(() => state.commandHistory || []);
@@ -92,15 +95,15 @@ export function Terminal({
   const terminalRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
-  
+
   const isInputDisabled = isLoading || isConnectionError || state.awaitingPassword;
-  
+
   const [showPasswordPrompt, setShowPasswordPrompt] = useState(false);
   const [passwordInput, setPasswordInput] = useState('');
-  
+
   const commandQueueRef = useRef<string[]>([]);
   const isProcessingQueueRef = useRef(false);
-  
+
   const isReloadConfirmationPending = output.some(
     (line) => line.type === 'output' && /Proceed with reload\? \[confirm\]/i.test(line.content)
   );
@@ -117,7 +120,7 @@ export function Terminal({
     return { candidates, currentWord, contextTokens, hasTrailingSpace };
   }, []);
 
-  // Syntax Highlighting for Cisco Commands
+  // Syntax Highlighting for Commands
   const highlightCommand = useCallback((text: string) => {
     if (!text) return text;
     const parts = text.split(/\s+/);
@@ -339,11 +342,11 @@ export function Terminal({
   return (
     <ModernPanel
       id={`terminal-${deviceId}`}
-      title={deviceName}
+      title={title || deviceName}
       onClose={onClose}
       headerAction={headerAction}
       mobileAutoHeight
-      className="flex flex-col min-h-0 lg:flex-1"
+      className={cn("flex flex-col min-h-0 lg:flex-1", className)}
     >
       <div className="flex flex-col h-full overflow-hidden bg-background">
         {/* Settings Bar */}
@@ -352,8 +355,8 @@ export function Terminal({
             <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground whitespace-nowrap">
               {language === 'tr' ? 'Yazı Boyutu' : 'Font Size'}: {fontSize}px
             </label>
-            <input 
-              type="range" min="10" max="20" value={fontSize} 
+            <input
+              type="range" min="10" max="20" value={fontSize}
               onChange={(e) => setFontSize(parseInt(e.target.value))}
               className="flex-1 h-1 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
             />
@@ -364,7 +367,7 @@ export function Terminal({
         )}
 
         <div className="flex-1 flex flex-col min-h-0 relative">
-          <div 
+          <div
             ref={terminalRef}
             className={cn(
               "flex-1 overflow-y-auto p-6 font-mono leading-relaxed custom-scrollbar",

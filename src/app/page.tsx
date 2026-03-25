@@ -1608,998 +1608,1004 @@ export default function Home() {
 
   return (
     <AppErrorBoundary fallbackTitle={language === 'tr' ? 'Uygulama hatası' : 'Application error'}>
-    <div className={`min-h-screen w-full flex flex-col ${isAppLoading ? 'bg-slate-950 overflow-hidden' : (isDark ? 'bg-slate-950' : 'bg-slate-50')} transition-colors duration-700`}>
-      {/* App Loading Screen */}
-      {isAppLoading && (
-        <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-slate-950">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="flex flex-col items-center"
-          >
-            <div className="relative mb-8">
-              <div className="p-2 animate-glitch">
-                <img src="/favicon.png" alt="Logo" className="w-16 h-16 object-contain" />
-              </div>
-              {/* Glitch overlays */}
-              <div className="absolute inset-0 p-4 rounded-2xl bg-red-500/30 animate-glitch-skew mix-blend-screen" />
-              <div className="absolute inset-0 p-4 rounded-2xl bg-blue-500/30 animate-glitch mix-blend-screen" style={{ animationDelay: '0.1s' }} />
-            </div>
-
-            <h2
-              className="text-3xl font-black tracking-tighter text-white glitch-text mb-2 text-center"
-              data-text="NETWORK SIMULATOR 2026"
+      <div className={`min-h-screen w-full flex flex-col ${isAppLoading ? 'bg-slate-950 overflow-hidden' : (isDark ? 'bg-slate-950' : 'bg-slate-50')} transition-colors duration-700`}>
+        {/* App Loading Screen */}
+        {isAppLoading && (
+          <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-slate-950">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="flex flex-col items-center"
             >
-              NETWORK SIMULATOR 2026
-            </h2>
-
-            <div className="flex items-center gap-2 mt-4">
-              <div className="w-1.5 h-1.5 rounded-full bg-cyan-500 animate-pulse" />
-              <span className="text-xs font-bold tracking-[0.3em] text-cyan-500 uppercase">
-                {t.initializingSystem}
-              </span>
-            </div>
-          </motion.div>
-
-          {/* Background scanline effect */}
-          <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.1)_50%),linear-gradient(90deg,rgba(255,0,0,0.03),rgba(0,255,0,0.01),rgba(0,0,255,0.03))] bg-[length:100%_4px,3px_100%]" />
-        </div>
-      )}
-
-      {/* Skeleton Loading State */}
-      {showSkeleton && !isAppLoading && (
-        <div className="fixed inset-0 z-[9998] bg-background">
-          <AppSkeleton />
-        </div>
-      )}
-
-      {/* Main Content with transition */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: showContent ? 1 : 0 }}
-        transition={{ duration: 0.5 }}
-        className="flex flex-col flex-1"
-      >
-        {/* Header */}
-        <header className={`${isDark ? 'bg-slate-900/95 border-slate-800' : 'bg-white/90 border-slate-200'} backdrop-blur-xl border-b px-5 py-3 sticky top-0 z-50 pb-0`}>
-          <div className="w-full">
-            <div className="flex items-center justify-between">
-              {/* Logo & Title */}
-              <Button
-                variant="ghost"
-                onClick={() => window.location.reload()}
-                className="flex items-center gap-3 p-2"
-                title={t.reloadPage}
-              >
-                <div className="p-1 flex items-center justify-center">
-                  <img src="/favicon.png" alt="Logo" className="w-7 h-7 object-contain" />
+              <div className="relative mb-8">
+                <div className="p-2 animate-glitch">
+                  <img src="/favicon.png" alt="Logo" className="w-16 h-16 object-contain" />
                 </div>
-                <div className="hidden md:flex flex-col">
-                  <h1 className="text-lg font-bold tracking-tight bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent leading-none">
-                    {t.title}
-                  </h1>
-                  <p className={`text-xs font-medium mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{t.subtitle}</p>
-                </div>
-              </Button>
-
-              {/* Total Score - Desktop */}
-              <div className="hidden md:flex items-center gap-4">
-                <div className="flex flex-col items-end gap-1">
-                  <div className="flex items-center gap-2">
-                    <span className={`text-[10px] font-black uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                      {t.labProgress}
-                    </span>
-                    <motion.span
-                      key={totalScore}
-                      initial={{ opacity: 0.5, y: -2 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className={`text-[10px] font-black tabular-nums px-1.5 py-0.5 rounded-full ${totalScore >= maxScore * 0.7 ? 'bg-emerald-500/10 text-emerald-400' :
-                        totalScore >= maxScore * 0.4 ? 'bg-amber-500/10 text-amber-400' :
-                          'bg-rose-500/10 text-rose-400'
-                        }`}
-                    >
-                      {Math.round((totalScore / maxScore) * 100)}%
-                    </motion.span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className={`h-1.5 w-24 rounded-full overflow-hidden p-[px] ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`}>
-                      <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: `${(totalScore / maxScore) * 100}%` }}
-                        transition={{ type: "spring", stiffness: 50, damping: 15 }}
-                        className={`h-full rounded-full bg-gradient-to-r shadow-[0_0_8px_rgba(0,0,0,0.2)] ${totalScore >= maxScore * 0.7 ? 'from-emerald-500 via-teal-400 to-emerald-400' :
-                          totalScore >= maxScore * 0.4 ? 'from-amber-500 via-orange-400 to-amber-400' :
-                            'from-rose-500 via-pink-500 to-rose-400'
-                          }`}
-                      />
-                    </div>
-                    <div className="flex items-baseline gap-0.5">
-                      <span className={`text-xs font-black tabular-nums ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                        {totalScore}
-                      </span>
-                      <span className={`text-[10px] font-bold opacity-30 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                        /{maxScore}
-                      </span>
-                    </div>
-                  </div>
-                </div>
+                {/* Glitch overlays */}
+                <div className="absolute inset-0 p-4 rounded-2xl bg-red-500/30 animate-glitch-skew mix-blend-screen" />
+                <div className="absolute inset-0 p-4 rounded-2xl bg-blue-500/30 animate-glitch mix-blend-screen" style={{ animationDelay: '0.1s' }} />
               </div>
 
-              {/* Right Controls - Integrated Toolbar */}
-              <div className="flex items-center gap-2">
-                {/* Unified Toolbar */}
-                <div className={`flex items-center gap-1 px-2 py-1.5 rounded-xl border ${isDark ? 'bg-slate-800/40 border-slate-800' : 'bg-slate-100 border-slate-200'}`}>
-                  {/* Undo/Redo Group */}
-                  {activeTab === 'topology' && (
-                    <div className="hidden items-center gap-1 sm:hidden">
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button variant="ghost" size="icon" className={`h-8 w-8 ui-hover-surface ${isDark ? 'text-slate-300 hover:text-blue-400' : 'text-slate-600 hover:text-blue-600'}`} onClick={handleUndo} disabled={hasHydrated && !canUndo}>
-                            <Undo2 className={`w-4 h-4 ${!canUndo ? 'opacity-30' : ''}`} />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>{t.undo}</TooltipContent>
-                      </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button variant="ghost" size="icon" className={`h-8 w-8 ui-hover-surface ${isDark ? 'text-slate-300 hover:text-blue-400' : 'text-slate-600 hover:text-blue-600'}`} onClick={handleRedo} disabled={hasHydrated && !canRedo}>
-                            <Redo2 className={`w-4 h-4 ${!canRedo ? 'opacity-30' : ''}`} />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>{t.redo}</TooltipContent>
-                      </Tooltip>
-                      <div className={`w-px h-4 mx-1 ${isDark ? 'bg-slate-700' : 'bg-slate-300'} hidden md:block`} />
-                    </div>
-                  )}
+              <h2
+                className="text-3xl font-black tracking-tighter text-white glitch-text mb-2 text-center"
+                data-text="NETWORK SIMULATOR 2026"
+              >
+                NETWORK SIMULATOR 2026
+              </h2>
 
-                  {/* Project Controls - Desktop only */}
-                  <div className="hidden md:flex items-center gap-1">
+              <div className="flex items-center gap-2 mt-4">
+                <div className="w-1.5 h-1.5 rounded-full bg-cyan-500 animate-pulse" />
+                <span className="text-xs font-bold tracking-[0.3em] text-cyan-500 uppercase">
+                  {t.initializingSystem}
+                </span>
+              </div>
+            </motion.div>
+
+            {/* Background scanline effect */}
+            <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.1)_50%),linear-gradient(90deg,rgba(255,0,0,0.03),rgba(0,255,0,0.01),rgba(0,0,255,0.03))] bg-[length:100%_4px,3px_100%]" />
+          </div>
+        )}
+
+        {/* Skeleton Loading State */}
+        {showSkeleton && !isAppLoading && (
+          <div className="fixed inset-0 z-[9998] bg-background">
+            <AppSkeleton />
+          </div>
+        )}
+
+        {/* Main Content with transition */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: showContent ? 1 : 0 }}
+          transition={{ duration: 0.5 }}
+          className="flex flex-col flex-1"
+        >
+          {/* Header */}
+          <header className={`${isDark ? 'bg-slate-900/95 border-slate-800' : 'bg-white/90 border-slate-200'} backdrop-blur-xl border-b px-5 py-3 sticky top-0 z-50 pb-0`}>
+            <div className="w-full">
+              <div className="flex items-center justify-between">
+                {/* Logo & Title */}
+                <Button
+                  variant="ghost"
+                  onClick={() => window.location.reload()}
+                  className="flex items-center gap-3 p-2"
+                  title={t.reloadPage}
+                >
+                  <div className="p-1 flex items-center justify-center">
+                    <img src="/favicon.png" alt="Logo" className="w-7 h-7 object-contain" />
+                  </div>
+                  <div className="hidden md:flex flex-col">
+                    <h1 className="text-lg font-bold tracking-tight bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent leading-none">
+                      {t.title}
+                    </h1>
+                    <p className={`text-xs font-medium mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{t.subtitle}</p>
+                  </div>
+                </Button>
+
+                {/* Total Score - Desktop */}
+                <div className="hidden md:flex items-center gap-4">
+                  <div className="flex flex-col items-end gap-1">
+                    <div className="flex items-center gap-2">
+                      <span className={`text-[10px] font-black uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                        {t.labProgress}
+                      </span>
+                      <motion.span
+                        key={totalScore}
+                        initial={{ opacity: 0.5, y: -2 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className={`text-[10px] font-black tabular-nums px-1.5 py-0.5 rounded-full ${totalScore >= maxScore * 0.7 ? 'bg-emerald-500/10 text-emerald-400' :
+                          totalScore >= maxScore * 0.4 ? 'bg-amber-500/10 text-amber-400' :
+                            'bg-rose-500/10 text-rose-400'
+                          }`}
+                      >
+                        {Math.round((totalScore / maxScore) * 100)}%
+                      </motion.span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className={`h-1.5 w-24 rounded-full overflow-hidden p-[px] ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`}>
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${(totalScore / maxScore) * 100}%` }}
+                          transition={{ type: "spring", stiffness: 50, damping: 15 }}
+                          className={`h-full rounded-full bg-gradient-to-r shadow-[0_0_8px_rgba(0,0,0,0.2)] ${totalScore >= maxScore * 0.7 ? 'from-emerald-500 via-teal-400 to-emerald-400' :
+                            totalScore >= maxScore * 0.4 ? 'from-amber-500 via-orange-400 to-amber-400' :
+                              'from-rose-500 via-pink-500 to-rose-400'
+                            }`}
+                        />
+                      </div>
+                      <div className="flex items-baseline gap-0.5">
+                        <span className={`text-xs font-black tabular-nums ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                          {totalScore}
+                        </span>
+                        <span className={`text-[10px] font-bold opacity-30 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                          /{maxScore}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right Controls - Integrated Toolbar */}
+                <div className="flex items-center gap-2">
+                  {/* Unified Toolbar */}
+                  <div className={`flex items-center gap-1 px-2 py-1.5 rounded-xl border ${isDark ? 'bg-slate-800/40 border-slate-800' : 'bg-slate-100 border-slate-200'}`}>
+                    {/* Undo/Redo Group */}
+                    {activeTab === 'topology' && (
+                      <div className="hidden items-center gap-1 sm:hidden">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button variant="ghost" size="icon" className={`h-8 w-8 ui-hover-surface ${isDark ? 'text-slate-300 hover:text-blue-400' : 'text-slate-600 hover:text-blue-600'}`} onClick={handleUndo} disabled={hasHydrated && !canUndo}>
+                              <Undo2 className={`w-4 h-4 ${!canUndo ? 'opacity-30' : ''}`} />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>{t.undo}</TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button variant="ghost" size="icon" className={`h-8 w-8 ui-hover-surface ${isDark ? 'text-slate-300 hover:text-blue-400' : 'text-slate-600 hover:text-blue-600'}`} onClick={handleRedo} disabled={hasHydrated && !canRedo}>
+                              <Redo2 className={`w-4 h-4 ${!canRedo ? 'opacity-30' : ''}`} />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>{t.redo}</TooltipContent>
+                        </Tooltip>
+                        <div className={`w-px h-4 mx-1 ${isDark ? 'bg-slate-700' : 'bg-slate-300'} hidden md:block`} />
+                      </div>
+                    )}
+
+                    {/* Project Controls - Desktop only */}
+                    <div className="hidden md:flex items-center gap-1">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className={`h-8 w-8 ui-hover-surface ${isDark ? 'text-slate-300 hover:text-green-400' : 'text-slate-600 hover:text-green-600'}`}
+                            onClick={handleNewProject}
+                          >
+                            <File className="w-4 h-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>{t.newProject} {!isMobile && '(Alt+N)'}</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className={`h-8 w-8 ui-hover-surface ${isDark ? 'text-slate-300 hover:text-amber-400' : 'text-slate-600 hover:text-amber-600'}`}
+                            onClick={() => fileInputRef.current?.click()}
+                          >
+                            <FolderOpen className="w-4 h-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>{t.loadProject} {!isMobile && '(Ctrl+O)'}</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className={`h-8 w-8 ui-hover-surface ${isDark ? 'text-slate-300 hover:text-blue-400' : 'text-slate-600 hover:text-blue-600'}`}
+                            onClick={handleSaveProject}
+                          >
+                            <Save className="w-4 h-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>{t.saveProject} {!isMobile && '(Ctrl+S)'}</TooltipContent>
+                      </Tooltip>
+                    </div>
+                    <input ref={fileInputRef} type="file" accept=".json" onChange={handleLoadProject} className="hidden" />
+                    {(activeTab === 'topology') && (
+                      <div className={`w-px h-4 mx-1 ${isDark ? 'bg-slate-700' : 'bg-slate-300'} hidden md:block`} />
+                    )}
+
+                    {/* Info & Settings */}
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className={`h-8 w-8 ui-hover-surface ${isDark ? 'text-slate-300 hover:text-green-400' : 'text-slate-600 hover:text-green-600'}`}
-                          onClick={handleNewProject}
-                        >
-                          <File className="w-4 h-4" />
+                        <Button variant="ghost" size="icon" className={`h-8 w-8 ui-hover-surface ${isDark ? 'text-slate-300 hover:text-sky-400' : 'text-slate-600 hover:text-sky-600'}`} onClick={() => setShowAboutModal(true)}>
+                          <Info className="w-4 h-4" />
                         </Button>
                       </TooltipTrigger>
-                      <TooltipContent>{t.newProject} {!isMobile && '(Alt+N)'}</TooltipContent>
+                      <TooltipContent>{t.about}</TooltipContent>
                     </Tooltip>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setLanguage(language === 'tr' ? 'en' : 'tr')}
+                      className={`text-xs font-bold h-8 px-2 ui-hover-surface ${isDark ? 'text-slate-300 hover:text-purple-400' : 'text-slate-600 hover:text-purple-600'}`}
+                    >
+                      <Languages className="w-4 h-4 mr-1" />
+                      {language.toUpperCase()}
+                    </Button>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className={`h-8 w-8 ui-hover-surface ${isDark ? 'text-slate-300 hover:text-amber-400' : 'text-slate-600 hover:text-amber-600'}`}
-                          onClick={() => fileInputRef.current?.click()}
-                        >
-                          <FolderOpen className="w-4 h-4" />
+                        <Button variant="ghost" size="icon" className={`h-8 w-8 ui-hover-surface ${isDark ? 'text-slate-300 hover:text-yellow-400' : 'text-slate-600 hover:text-yellow-600'}`} onClick={toggleTheme}>
+                          {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
                         </Button>
                       </TooltipTrigger>
-                      <TooltipContent>{t.loadProject} {!isMobile && '(Ctrl+O)'}</TooltipContent>
-                    </Tooltip>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className={`h-8 w-8 ui-hover-surface ${isDark ? 'text-slate-300 hover:text-blue-400' : 'text-slate-600 hover:text-blue-600'}`}
-                          onClick={handleSaveProject}
-                        >
-                          <Save className="w-4 h-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>{t.saveProject} {!isMobile && '(Ctrl+S)'}</TooltipContent>
+                      <TooltipContent>{isDark ? (language === 'tr' ? 'Açık Tema' : 'Light Mode') : (language === 'tr' ? 'Koyu Tema' : 'Dark Mode')}</TooltipContent>
                     </Tooltip>
                   </div>
-                  <input ref={fileInputRef} type="file" accept=".json" onChange={handleLoadProject} className="hidden" />
-                  {(activeTab === 'topology') && (
-                    <div className={`w-px h-4 mx-1 ${isDark ? 'bg-slate-700' : 'bg-slate-300'} hidden md:block`} />
-                  )}
+                </div>
 
-                  {/* Info & Settings */}
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button variant="ghost" size="icon" className={`h-8 w-8 ui-hover-surface ${isDark ? 'text-slate-300 hover:text-sky-400' : 'text-slate-600 hover:text-sky-600'}`} onClick={() => setShowAboutModal(true)}>
-                        <Info className="w-4 h-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>{t.about}</TooltipContent>
-                  </Tooltip>
+                {/* Mobile Menu */}
+                <Sheet open={showMobileMenu} onOpenChange={setShowMobileMenu}>
+                  <SheetTrigger asChild>
+                    <Button variant="outline" size="icon" className="md:hidden">
+                      <Menu className="w-5 h-5" />
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent side="right" className={`${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white'} p-0 w-72`}>
+                    <SheetHeader className="p-4 text-left border-b border-slate-800/50">
+                      <SheetTitle className="text-lg font-black flex items-center gap-2">
+                        <div className="p-1 flex items-center justify-center">
+                          <img src="/favicon.png" alt="Logo" className="w-5 h-5 object-contain" />
+                        </div>
+                        {t.title}
+                      </SheetTitle>
+                      <SheetDescription className="sr-only">
+                        Main navigation and project controls
+                      </SheetDescription>
+                    </SheetHeader>
+                    <ScrollArea className="h-[calc(100vh-4rem)]">
+                      <div className="p-3 space-y-4">
+                        {/* Quick actions (primary) */}
+                        <div className={`p-3 rounded-xl border ${isDark ? 'bg-slate-800/30 border-slate-800/50' : 'bg-slate-50 border-slate-200'}`}>
+                          <p className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-2 px-1">
+                            {language === 'tr' ? 'Hızlı işlemler' : 'Quick actions'}
+                          </p>
+                          <div className="grid grid-cols-2 gap-2">
+                            <Button
+                              variant="secondary"
+                              className="justify-start gap-2 h-9 text-xs font-bold"
+                              onClick={() => { setShowProjectPicker(true); setShowMobileMenu(false); }}
+                            >
+                              <File className="w-3.5 h-3.5" /> {language === 'tr' ? 'Yeni' : 'New'}
+                            </Button>
+                            <Button
+                              variant="secondary"
+                              className="justify-start gap-2 h-9 text-xs font-bold"
+                              onClick={() => { handleSaveProject(); setShowMobileMenu(false); }}
+                            >
+                              <Save className="w-3.5 h-3.5" /> {language === 'tr' ? 'Kaydet' : 'Save'}
+                            </Button>
+                            <Button
+                              variant="secondary"
+                              className="justify-start gap-2 h-9 text-xs font-bold"
+                              onClick={() => { fileInputRef.current?.click(); setShowMobileMenu(false); }}
+                            >
+                              <FolderOpen className="w-3.5 h-3.5" /> {language === 'tr' ? 'Yükle' : 'Load'}
+                            </Button>
+                            <Button
+                              variant="secondary"
+                              className="justify-start gap-2 h-9 text-xs font-bold"
+                              onClick={() => { setShowOnboarding(true); setOnboardingStep(0); setShowMobileMenu(false); }}
+                            >
+                              <Info className="w-3.5 h-3.5" /> {language === 'tr' ? 'Tur' : 'Tour'}
+                            </Button>
+                          </div>
+                        </div>
+
+                        {/* Navigation Sections */}
+                        <div className="space-y-1">
+                          <p className="text-xs font-bold uppercase tracking-widest text-slate-500 px-2 mb-1">{t.navigation}</p>
+                          <div className="grid gap-0.5">
+                            {ALL_TABS.map((tab) => {
+                              const isTabVisible = tab.id === 'topology' || (activeDeviceId && tab.showFor.includes(activeDeviceType));
+                              if (!isTabVisible) return null;
+
+                              const isActive = activeTab === tab.id;
+                              const label = t[tab.labelKey as keyof typeof t] as string;
+                              return (
+                                <Button
+                                  key={tab.id}
+                                  variant={isActive ? "secondary" : "ghost"}
+                                  className={`w-full justify-start gap-3 h-9 px-3 text-xs font-bold ui-hover-surface ${isActive ? 'bg-cyan-500/10 text-cyan-400' : 'text-slate-400'}`}
+                                  onClick={() => {
+                                    switchTabOrTopology(tab.id);
+                                    setShowMobileMenu(false);
+                                  }}
+                                >
+                                  <span className={`w-4 h-4 flex items-center justify-center ${isActive ? 'text-cyan-400' : 'text-slate-500'}`}>
+                                    {tab.icon}
+                                  </span>
+                                  {label}
+                                </Button>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        <Separator className="bg-slate-800/30" />
+
+                        {/* Lab Progress Mobile */}
+                        <div className={`p-3 rounded-xl ${isDark ? 'bg-slate-800/30' : 'bg-slate-50'} border ${isDark ? 'border-slate-800/50' : 'border-slate-200'}`}>
+                          <div className="flex items-center justify-between mb-1.5">
+                            <span className="text-xs font-bold uppercase tracking-[0.15em] text-slate-500">{t.labProgress}</span>
+                            <span className="text-xs font-bold text-cyan-400">{Math.round((totalScore / maxScore) * 100)}%</span>
+                          </div>
+                          <div className={`h-1.5 w-full rounded-full ${isDark ? 'bg-slate-800' : 'bg-slate-200'} overflow-hidden mb-1.5`}>
+                            <div
+                              className="h-full bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.5)] transition-all duration-500"
+                              style={{ width: `${(totalScore / maxScore) * 100}%` }}
+                            />
+                          </div>
+                          <p className={`text-center text-xs font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>{totalScore} / {maxScore} {t.pts}</p>
+                        </div>
+                      </div>
+                    </ScrollArea>
+                  </SheetContent>
+                </Sheet>
+              </div>
+            </div>
+
+            {/* Desktop Tabs & Device Selector */}
+            <div className="flex items-end gap-1 mt-4 pt-1 overflow-x-auto no-scrollbar">
+              {/* Mobile-only Quick Action Tools (Add, Zoom & Connect) */}
+              <div className="flex md:hidden items-center gap-1.5 mr-auto">
+                {activeTab === 'topology' && (
+                  <div className={`flex items-center gap-1 p-1 rounded-xl border ${isDark ? 'bg-slate-900/40 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
+                    {/* Add Button (Device, Cable, Note) */}
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-9 w-9 text-emerald-500 hover:bg-emerald-500/10"
+                          onClick={() => {
+                            const event = new CustomEvent('trigger-topology-palette');
+                            window.dispatchEvent(event);
+                          }}
+                        >
+                          <Plus className="w-5 h-5" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>{language === 'tr' ? 'Cihaz veya Kablo Ekle' : 'Add Device or Cable'}</TooltipContent>
+                    </Tooltip>
+
+                    <div className={`w-px h-4 ${isDark ? 'bg-slate-800' : 'bg-slate-200'} mx-0.5`} />
+
+                    {/* Connect Button */}
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-9 w-9 text-cyan-500 hover:bg-cyan-500/10"
+                          onClick={() => {
+                            const event = new CustomEvent('trigger-topology-connect');
+                            window.dispatchEvent(event);
+                          }}
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 0 0 -5.656 0l-4 4a4 4 0 1 0 5.656 5.656l1.102-1.101m-.758-4.899a4 4 0 0 0 5.656 0l4-4a4 4 0 0 0 -5.656-5.656l-1.1 1.1" />
+                          </svg>
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>{language === 'tr' ? 'Cihazları Bagla' : 'Connect Devices'}</TooltipContent>
+                    </Tooltip>
+                  </div>
+                )}
+              </div>
+
+              {/* Active Device Dropdown - Always show if component is rendered */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
-                    size="sm"
-                    onClick={() => setLanguage(language === 'tr' ? 'en' : 'tr')}
-                    className={`text-xs font-bold h-8 px-2 ui-hover-surface ${isDark ? 'text-slate-300 hover:text-purple-400' : 'text-slate-600 hover:text-purple-600'}`}
-                  >
-                    <Languages className="w-4 h-4 mr-1" />
-                    {language.toUpperCase()}
-                  </Button>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button variant="ghost" size="icon" className={`h-8 w-8 ui-hover-surface ${isDark ? 'text-slate-300 hover:text-yellow-400' : 'text-slate-600 hover:text-yellow-600'}`} onClick={toggleTheme}>
-                        {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>{isDark ? (language === 'tr' ? 'Açık Tema' : 'Light Mode') : (language === 'tr' ? 'Koyu Tema' : 'Dark Mode')}</TooltipContent>
-                  </Tooltip>
-                </div>
-              </div>
-
-              {/* Mobile Menu */}
-              <Sheet open={showMobileMenu} onOpenChange={setShowMobileMenu}>
-                <SheetTrigger asChild>
-                  <Button variant="outline" size="icon" className="md:hidden">
-                    <Menu className="w-5 h-5" />
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="right" className={`${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white'} p-0 w-72`}>
-                  <SheetHeader className="p-4 text-left border-b border-slate-800/50">
-                    <SheetTitle className="text-lg font-black flex items-center gap-2">
-                      <div className="p-1 flex items-center justify-center">
-                        <img src="/favicon.png" alt="Logo" className="w-5 h-5 object-contain" />
-                      </div>
-                      {t.title}
-                    </SheetTitle>
-                    <SheetDescription className="sr-only">
-                      Main navigation and project controls
-                    </SheetDescription>
-                  </SheetHeader>
-                  <ScrollArea className="h-[calc(100vh-4rem)]">
-                    <div className="p-3 space-y-4">
-                      {/* Quick actions (primary) */}
-                      <div className={`p-3 rounded-xl border ${isDark ? 'bg-slate-800/30 border-slate-800/50' : 'bg-slate-50 border-slate-200'}`}>
-                        <p className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-2 px-1">
-                          {language === 'tr' ? 'Hızlı işlemler' : 'Quick actions'}
-                        </p>
-                        <div className="grid grid-cols-2 gap-2">
-                          <Button
-                            variant="secondary"
-                            className="justify-start gap-2 h-9 text-xs font-bold"
-                            onClick={() => { setShowProjectPicker(true); setShowMobileMenu(false); }}
-                          >
-                            <File className="w-3.5 h-3.5" /> {language === 'tr' ? 'Yeni' : 'New'}
-                          </Button>
-                          <Button
-                            variant="secondary"
-                            className="justify-start gap-2 h-9 text-xs font-bold"
-                            onClick={() => { handleSaveProject(); setShowMobileMenu(false); }}
-                          >
-                            <Save className="w-3.5 h-3.5" /> {language === 'tr' ? 'Kaydet' : 'Save'}
-                          </Button>
-                          <Button
-                            variant="secondary"
-                            className="justify-start gap-2 h-9 text-xs font-bold"
-                            onClick={() => { fileInputRef.current?.click(); setShowMobileMenu(false); }}
-                          >
-                            <FolderOpen className="w-3.5 h-3.5" /> {language === 'tr' ? 'Yükle' : 'Load'}
-                          </Button>
-                          <Button
-                            variant="secondary"
-                            className="justify-start gap-2 h-9 text-xs font-bold"
-                            onClick={() => { setShowOnboarding(true); setOnboardingStep(0); setShowMobileMenu(false); }}
-                          >
-                            <Info className="w-3.5 h-3.5" /> {language === 'tr' ? 'Tur' : 'Tour'}
-                          </Button>
-                        </div>
-                      </div>
-
-                      {/* Navigation Sections */}
-                      <div className="space-y-1">
-                        <p className="text-xs font-bold uppercase tracking-widest text-slate-500 px-2 mb-1">{t.navigation}</p>
-                        <div className="grid gap-0.5">
-                          {ALL_TABS.map((tab) => {
-                            const isTabVisible = tab.id === 'topology' || (activeDeviceId && tab.showFor.includes(activeDeviceType));
-                            if (!isTabVisible) return null;
-
-                            const isActive = activeTab === tab.id;
-                            const label = t[tab.labelKey as keyof typeof t] as string;
-                            return (
-                              <Button
-                                key={tab.id}
-                                variant={isActive ? "secondary" : "ghost"}
-                                className={`w-full justify-start gap-3 h-9 px-3 text-xs font-bold ui-hover-surface ${isActive ? 'bg-cyan-500/10 text-cyan-400' : 'text-slate-400'}`}
-                                onClick={() => {
-                                  switchTabOrTopology(tab.id);
-                                  setShowMobileMenu(false);
-                                }}
-                              >
-                                <span className={`w-4 h-4 flex items-center justify-center ${isActive ? 'text-cyan-400' : 'text-slate-500'}`}>
-                                  {tab.icon}
-                                </span>
-                                {label}
-                              </Button>
-                            );
-                          })}
-                        </div>
-                      </div>
-
-                      <Separator className="bg-slate-800/30" />
-
-                      {/* Lab Progress Mobile */}
-                      <div className={`p-3 rounded-xl ${isDark ? 'bg-slate-800/30' : 'bg-slate-50'} border ${isDark ? 'border-slate-800/50' : 'border-slate-200'}`}>
-                        <div className="flex items-center justify-between mb-1.5">
-                          <span className="text-xs font-bold uppercase tracking-[0.15em] text-slate-500">{t.labProgress}</span>
-                          <span className="text-xs font-bold text-cyan-400">{Math.round((totalScore / maxScore) * 100)}%</span>
-                        </div>
-                        <div className={`h-1.5 w-full rounded-full ${isDark ? 'bg-slate-800' : 'bg-slate-200'} overflow-hidden mb-1.5`}>
-                          <div
-                            className="h-full bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.5)] transition-all duration-500"
-                            style={{ width: `${(totalScore / maxScore) * 100}%` }}
-                          />
-                        </div>
-                        <p className={`text-center text-xs font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>{totalScore} / {maxScore} {t.pts}</p>
-                      </div>
-                    </div>
-                  </ScrollArea>
-                </SheetContent>
-              </Sheet>
-            </div>
-          </div>
-
-          {/* Desktop Tabs & Device Selector */}
-          <div className="flex items-end gap-1 mt-4 pt-1 overflow-x-auto no-scrollbar">
-            {/* Mobile-only Quick Action Tools (Add, Zoom & Connect) */}
-            <div className="flex md:hidden items-center gap-1.5 mr-auto">
-              {activeTab === 'topology' && (
-                <div className={`flex items-center gap-1 p-1 rounded-xl border ${isDark ? 'bg-slate-900/40 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
-                  {/* Add Button (Device, Cable, Note) */}
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-9 w-9 text-emerald-500 hover:bg-emerald-500/10"
-                        onClick={() => {
-                          const event = new CustomEvent('trigger-topology-palette');
-                          window.dispatchEvent(event);
-                        }}
-                      >
-                        <Plus className="w-5 h-5" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>{language === 'tr' ? 'Cihaz veya Kablo Ekle' : 'Add Device or Cable'}</TooltipContent>
-                  </Tooltip>
-
-                  <div className={`w-px h-4 ${isDark ? 'bg-slate-800' : 'bg-slate-200'} mx-0.5`} />
-
-                  {/* Connect Button */}
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-9 w-9 text-cyan-500 hover:bg-cyan-500/10"
-                        onClick={() => {
-                          const event = new CustomEvent('trigger-topology-connect');
-                          window.dispatchEvent(event);
-                        }}
-                      >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 0 0 -5.656 0l-4 4a4 4 0 1 0 5.656 5.656l1.102-1.101m-.758-4.899a4 4 0 0 0 5.656 0l4-4a4 4 0 0 0 -5.656-5.656l-1.1 1.1" />
-                        </svg>
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>{language === 'tr' ? 'Cihazları Bagla' : 'Connect Devices'}</TooltipContent>
-                  </Tooltip>
-                </div>
-              )}
-            </div>
-
-            {/* Active Device Dropdown - Always show if component is rendered */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg border transition-all ${isDark
-                    ? 'bg-slate-900 border-slate-800 text-cyan-400 hover:text-cyan-300'
-                    : 'bg-white border-slate-200 text-cyan-700 hover:text-cyan-800'
-                    }`}
-                >
-                  <div className="flex items-center gap-2">
-                    {activeDeviceId && (topologyDevices.some(d => d.id === activeDeviceId)) ? (
-                      <>
-                        {(() => {
-                          const activeTopologyDevice = topologyDevices.find(d => d.id === activeDeviceId);
-                          const status = activeTopologyDevice?.status || 'online';
-                          const statusColor =
-                            status === 'offline'
-                              ? 'bg-rose-500'
-                              : status === 'online'
-                                ? 'bg-emerald-400'
-                                : 'bg-amber-400';
-                          const statusLabel =
-                            language === 'tr'
-                              ? status === 'offline'
-                                ? 'Kapalı'
-                                : status === 'online'
-                                  ? 'Çevrimiçi'
-                                  : 'Bilinmeyen'
-                              : status === 'offline'
-                                ? 'Offline'
-                                : status === 'online'
-                                  ? 'Online'
-                                  : 'Unknown';
-                          return (
-                            <span
-                              className="w-2 h-2 rounded-full mr-0.5"
-                              title={statusLabel}
-                            >
-                              <span className={`block w-2 h-2 rounded-full ${statusColor} shadow-[0_0_6px_rgba(45,212,191,0.8)]`} />
-                            </span>
-                          );
-                        })()}
-                        <DeviceIcon
-                          type={activeDeviceType}
-                          className={`${activeDeviceType === 'pc' ? 'text-blue-500' : activeDeviceType === 'router' ? 'text-purple-500' : 'text-emerald-500'} w-5 h-5`}
-                        />
-                        <span className="text-xs font-bold">
-                          {truncateWithEllipsis(deviceStates.get(activeDeviceId)?.hostname || activeDeviceId, 15)}
-                        </span>
-                      </>
-                    ) : (
-                      <>
-                        <Plus className="w-4 h-4 text-slate-500" />
-                        <span className="text-sm font-bold text-slate-500">
-                          {t.selectDeviceDropdown}
-                        </span>
-                      </>
-                    )}
-                  </div>
-                  <ChevronDown className="w-3 h-3 opacity-50" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className={`${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white'} w-48`}>
-                <DropdownMenuLabel className="text-[11px] font-bold uppercase tracking-widest text-slate-500 py-2">
-                  {topologyDevices.length > 0 ? t.selectDevice : t.addDevicesFirst}
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <ScrollArea className={topologyDevices.length > 0 ? "h-56" : "h-auto"}>
-                  {topologyDevices.length > 0 ? (
-                    topologyDevices.map((device) => {
-                      const currentDeviceState = deviceStates.get(device.id);
-                      const displayName = currentDeviceState?.hostname || device.name;
-                      const status = device.status || 'online';
-                      const statusColor =
-                        status === 'offline'
-                          ? 'bg-rose-500'
-                          : status === 'online'
-                            ? 'bg-emerald-400'
-                            : 'bg-amber-400';
-
-                      return (
-                        <DropdownMenuItem
-                          key={device.id}
-                          className={`flex items-center gap-2 py-1.5 cursor-pointer ${activeDeviceId === device.id ? 'bg-cyan-500/10 text-cyan-400' : ''}`}
-                          onClick={() => handleDeviceSelectFromMenu(device.type, device.id)}
-                        >
-                          <div className="flex items-center gap-2 cursor-pointer">
-                            <span className={`w-1.5 h-1.5 rounded-full ${statusColor}`} />
-                            <DeviceIcon
-                              type={device.type}
-                              className={`${device.type === 'pc' ? 'text-blue-500' : device.type === 'router' ? 'text-purple-500' : 'text-emerald-500'} w-5 h-5`}
-                            />
-                            <div className="flex flex-col">
-                              <span className="text-xs font-bold leading-none">{truncateWithEllipsis(displayName, 12)}</span>
-                              <span className="text-[10px] opacity-50 capitalize">{device.type}</span>
-                            </div>
-                          </div>
-                        </DropdownMenuItem>
-                      );
-                    })
-                  ) : (
-                    <div className="p-3 text-center text-[11px] text-slate-500 italic">
-                      {t.noDevicesInTopology}
-                    </div>
-                  )}
-                </ScrollArea>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            {/* Main Tabs (Adaptive: Icons on small, Icon+Text on large) */}
-            <div className="hidden md:flex items-end gap-1">
-              {tabs.map((tab, index) => {
-                const isActive = activeTab === tab.id;
-                // Unified Color Mapping
-                const tabColors: Record<string, string> = {
-                  topology: 'text-blue-500 hover:text-blue-500',
-                  cmd: 'text-emerald-500 hover:text-emerald-500',
-                  terminal: 'text-emerald-500 hover:text-emerald-600',
-                  tasks: 'text-red-500 hover:text-red-600',
-                }; const colorClass = tabColors[tab.id] || 'text-slate-500 hover:text-slate-600';
-
-                return (
-                  <Tooltip key={tab.id}>
-                    <TooltipTrigger asChild>
-                      <button
-                        onClick={() => switchTabOrTopology(tab.id)}
-                        className={`flex items-center gap-2 px-3 lg:px-5 py-3 rounded-t-xl text-sm font-semibold transition-all border-x border-t min-w-[50px] lg:min-w-[120px] justify-center ui-hover-surface ${isActive
-                          ? `${isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-300'} ${colorClass.split(' ')[0]} shadow-[0_-4px_0_0_currentColor]`
-                          : `${isDark ? 'bg-slate-900/50 border-transparent' : 'bg-slate-200/50 border-transparent'} ${colorClass}`
-                          }`}
-                      >
-                        <span className={`transition-transform duration-300 ${isActive ? 'scale-110' : ''}`}>
-                          {tab.id === 'topology' ? <Network className="w-4 h-4" /> :
-                            (tab.id === 'cmd' || tab.id === 'terminal') ? <TerminalIcon className="w-4 h-4" /> :
-                              <ShieldCheck className="w-4 h-4" />}
-                        </span>
-                        <span className="hidden md:inline-flex items-center gap-1.5">
-                          {tab.label}
-                          {tab.id === 'tasks' && (
-                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-red-500/10 text-red-300">
-                              {completedTasks}/{ALL_TABS.find(t => t.id === 'tasks')?.tasks.length}
-                            </span>
-                          )}
-                        </span>
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent className="flex flex-col gap-1">
-                      <span>{tab.label} (Ctrl+{index + 1})</span>
-                      <span className="font-normal text-xs opacity-75">{getTabDescription(tab.id)}</span>
-                    </TooltipContent>
-                  </Tooltip>
-                );
-              })}
-            </div>
-          </div>
-        </header>
-        {/* Mobile Bottom Tab Bar (Icons Only) */}
-        <div className={`md:hidden fixed bottom-0 left-0 right-0 z-50 border-t backdrop-blur-xl flex items-center justify-around px-2 py-1 mobile-top-nav ${isDark ? 'bg-slate-900/95 border-slate-800 text-slate-400' : 'bg-white/95 border-slate-200 text-slate-500'
-          } ${showProjectPicker || showOnboarding ? 'hidden' : ''}`}>
-          {tabs.map((tab, index) => {
-            const isActive = activeTab === tab.id;
-
-            const tabColors: Record<string, string> = {
-              topology: 'text-blue-500 hover:text-blue-500',
-              cmd: 'text-blue-500 hover:text-blue-500',
-              terminal: 'text-emerald-500 hover:text-emerald-600',
-              tasks: 'text-red-500 hover:text-red-600',
-            };
-            const colorClass = tabColors[tab.id] || 'text-slate-500 hover:text-slate-600';
-
-            return (
-              <Tooltip key={tab.id}>
-                <TooltipTrigger asChild>
-                  <button
-                    onClick={() => switchTabOrTopology(tab.id)}
-                    className={`flex flex-col items-center justify-center min-h-[40px] flex-1 px-3 py-1.5 rounded-xl transition-all relative ui-hover-surface ${isActive ? 'text-blue-500' : `${colorClass} active:scale-95`
+                    className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg border transition-all ${isDark
+                      ? 'bg-slate-900 border-slate-800 text-cyan-400 hover:text-cyan-300'
+                      : 'bg-white border-slate-200 text-cyan-700 hover:text-cyan-800'
                       }`}
                   >
-                    {isActive && (
-                      <motion.div
-                        layoutId="mobileTabActive"
-                        className="absolute inset-0 bg-blue-500/10 rounded-xl"
-                        transition={{ type: "spring", duration: 0.4, bounce: 0.2 }}
-                      />
-                    )}
-                    <div className={`relative z-10 transition-transform duration-200 ${isActive ? 'scale-110' : ''}`}>
-                      {tab.id === 'topology' ? <Network className="w-4 h-4" /> :
-                        (tab.id === 'cmd' || tab.id === 'terminal') ? <TerminalIcon className="w-4 h-4" /> :
-                          <ShieldCheck className="w-4 h-4" />}
+                    <div className="flex items-center gap-2">
+                      {activeDeviceId && (topologyDevices.some(d => d.id === activeDeviceId)) ? (
+                        <>
+                          {(() => {
+                            const activeTopologyDevice = topologyDevices.find(d => d.id === activeDeviceId);
+                            const status = activeTopologyDevice?.status || 'online';
+                            const statusColor =
+                              status === 'offline'
+                                ? 'bg-rose-500'
+                                : status === 'online'
+                                  ? 'bg-emerald-400'
+                                  : 'bg-amber-400';
+                            const statusLabel =
+                              language === 'tr'
+                                ? status === 'offline'
+                                  ? 'Kapalı'
+                                  : status === 'online'
+                                    ? 'Çevrimiçi'
+                                    : 'Bilinmeyen'
+                                : status === 'offline'
+                                  ? 'Offline'
+                                  : status === 'online'
+                                    ? 'Online'
+                                    : 'Unknown';
+                            return (
+                              <span
+                                className="w-2 h-2 rounded-full mr-0.5"
+                                title={statusLabel}
+                              >
+                                <span className={`block w-2 h-2 rounded-full ${statusColor} shadow-[0_0_6px_rgba(45,212,191,0.8)]`} />
+                              </span>
+                            );
+                          })()}
+                          <DeviceIcon
+                            type={activeDeviceType}
+                            className={`${activeDeviceType === 'pc' ? 'text-blue-500' : activeDeviceType === 'router' ? 'text-purple-500' : 'text-emerald-500'} w-5 h-5`}
+                          />
+                          <span className="text-xs font-bold">
+                            {truncateWithEllipsis(deviceStates.get(activeDeviceId)?.hostname || activeDeviceId, 15)}
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <Plus className="w-4 h-4 text-slate-500" />
+                          <span className="text-sm font-bold text-slate-500">
+                            {t.selectDeviceDropdown}
+                          </span>
+                        </>
+                      )}
                     </div>
-                    <span className="mt-0.5 text-[9px] font-semibold leading-tight relative z-10 md:inline">
-                      {tab.label}
-                    </span>
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent>{tab.label}</TooltipContent>
-              </Tooltip>
-            );
-          })}
-        </div>
-        {/* Mobile bottom nav div moved to bottom */}
-        <Dialog open={showProjectPicker} onOpenChange={setShowProjectPicker}>
-          <DialogContent className={`${isDark ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white'} w-screen h-screen max-w-none m-0 rounded-none`}>
-            <DialogHeader>
-              <DialogTitle>{language === 'tr' ? 'Yeni Proje' : 'New Project'}</DialogTitle>
-              <DialogDescription className={isDark ? 'text-slate-400' : 'text-slate-500'}>
-                {language === 'tr' ? 'Boş bir proje başlat veya hazır örneklerden birini seç.' : 'Start with an empty project or choose a ready-made example.'}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid grid-cols-1 gap-3 h-[calc(100vh-8rem)] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-slate-800 hover:scrollbar-thumb-slate-500 transition-colors">
-              <Button
-                variant="outline"
-                className={`justify-between ${isDark ? 'border-slate-800 hover:bg-slate-800/60' : ''}`}
-                onClick={() => { setShowProjectPicker(false); runWithSaveGuard(() => { resetToEmptyProject(); }); }}
-              >
-                <span className="font-semibold">{language === 'tr' ? 'Boş Proje' : 'Empty Project'}</span>
-                <span className="text-xs opacity-70">{language === 'tr' ? 'Sıfırdan başla' : 'Start from scratch'}</span>
-              </Button>
-              {exampleProjects(language).map((example) => (
-                <Button
-                  key={example.id}
-                  variant="ghost"
-                  className={`h-auto flex-col items-start gap-1 px-4 py-3 text-left border ${isDark ? 'border-slate-800 hover:bg-slate-800/60' : 'border-slate-200 hover:bg-slate-100'}`}
-                  onClick={() => { setShowProjectPicker(false); runWithSaveGuard(() => applyExampleProject(example.data)); }}
-                >
-                  <div className="flex items-center justify-between w-full">
-                    <span className="font-semibold">{example.title}</span>
-                    <span className={`text-[10px] uppercase tracking-wider ${isDark ? 'text-cyan-400' : 'text-cyan-600'}`}>{example.tag}</span>
-                  </div>
-                  <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{example.description}</span>
-                  {example.detail && (
-                    <span className={`text-[11px] ${isDark ? 'text-amber-300' : 'text-amber-700'}`}>{example.detail}</span>
-                  )}
-                </Button>
-              ))}
+                    <ChevronDown className="w-3 h-3 opacity-50" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className={`${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white'} w-48`}>
+                  <DropdownMenuLabel className="text-[11px] font-bold uppercase tracking-widest text-slate-500 py-2">
+                    {topologyDevices.length > 0 ? t.selectDevice : t.addDevicesFirst}
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <ScrollArea className={topologyDevices.length > 0 ? "h-56" : "h-auto"}>
+                    {topologyDevices.length > 0 ? (
+                      topologyDevices.map((device) => {
+                        const currentDeviceState = deviceStates.get(device.id);
+                        const displayName = currentDeviceState?.hostname || device.name;
+                        const status = device.status || 'online';
+                        const statusColor =
+                          status === 'offline'
+                            ? 'bg-rose-500'
+                            : status === 'online'
+                              ? 'bg-emerald-400'
+                              : 'bg-amber-400';
+
+                        return (
+                          <DropdownMenuItem
+                            key={device.id}
+                            className={`flex items-center gap-2 py-1.5 cursor-pointer ${activeDeviceId === device.id ? 'bg-cyan-500/10 text-cyan-400' : ''}`}
+                            onClick={() => handleDeviceSelectFromMenu(device.type, device.id)}
+                          >
+                            <div className="flex items-center gap-2 cursor-pointer">
+                              <span className={`w-1.5 h-1.5 rounded-full ${statusColor}`} />
+                              <DeviceIcon
+                                type={device.type}
+                                className={`${device.type === 'pc' ? 'text-blue-500' : device.type === 'router' ? 'text-purple-500' : 'text-emerald-500'} w-5 h-5`}
+                              />
+                              <div className="flex flex-col">
+                                <span className="text-xs font-bold leading-none">{truncateWithEllipsis(displayName, 12)}</span>
+                                <span className="text-[10px] opacity-50 capitalize">{device.type}</span>
+                              </div>
+                            </div>
+                          </DropdownMenuItem>
+                        );
+                      })
+                    ) : (
+                      <div className="p-3 text-center text-[11px] text-slate-500 italic">
+                        {t.noDevicesInTopology}
+                      </div>
+                    )}
+                  </ScrollArea>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {/* Main Tabs (Adaptive: Icons on small, Icon+Text on large) */}
+              <div className="hidden md:flex items-end gap-1">
+                {tabs.map((tab, index) => {
+                  const isActive = activeTab === tab.id;
+                  // Unified Color Mapping
+                  const tabColors: Record<string, string> = {
+                    topology: 'text-blue-500 hover:text-blue-500',
+                    cmd: 'text-emerald-500 hover:text-emerald-500',
+                    terminal: 'text-emerald-500 hover:text-emerald-600',
+                    tasks: 'text-red-500 hover:text-red-600',
+                  }; const colorClass = tabColors[tab.id] || 'text-slate-500 hover:text-slate-600';
+
+                  return (
+                    <Tooltip key={tab.id}>
+                      <TooltipTrigger asChild>
+                        <button
+                          onClick={() => switchTabOrTopology(tab.id)}
+                          className={`flex items-center gap-2 px-3 lg:px-5 py-3 rounded-t-xl text-sm font-semibold transition-all border-x border-t min-w-[50px] lg:min-w-[120px] justify-center ui-hover-surface ${isActive
+                            ? `${isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-300'} ${colorClass.split(' ')[0]} shadow-[0_-4px_0_0_currentColor]`
+                            : `${isDark ? 'bg-slate-900/50 border-transparent' : 'bg-slate-200/50 border-transparent'} ${colorClass}`
+                            }`}
+                        >
+                          <span className={`transition-transform duration-300 ${isActive ? 'scale-110' : ''}`}>
+                            {tab.id === 'topology' ? <Network className="w-4 h-4" /> :
+                              (tab.id === 'cmd' || tab.id === 'terminal') ? <TerminalIcon className="w-4 h-4" /> :
+                                <ShieldCheck className="w-4 h-4" />}
+                          </span>
+                          <span className="hidden md:inline-flex items-center gap-1.5">
+                            {tab.label}
+                            {tab.id === 'tasks' && (
+                              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-red-500/10 text-red-300">
+                                {completedTasks}/{ALL_TABS.find(t => t.id === 'tasks')?.tasks.length}
+                              </span>
+                            )}
+                          </span>
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent className="flex flex-col gap-1">
+                        <span>{tab.label} (Ctrl+{index + 1})</span>
+                        <span className="font-normal text-xs opacity-75">{getTabDescription(tab.id)}</span>
+                      </TooltipContent>
+                    </Tooltip>
+                  );
+                })}
+              </div>
             </div>
-          </DialogContent>
-        </Dialog>
+          </header>
+          {/* Mobile Bottom Tab Bar (Icons Only) */}
+          <div className={`md:hidden fixed bottom-0 left-0 right-0 z-50 border-t backdrop-blur-xl flex items-center justify-around px-2 py-1 mobile-top-nav ${isDark ? 'bg-slate-900/95 border-slate-800 text-slate-400' : 'bg-white/95 border-slate-200 text-slate-500'
+            } ${showProjectPicker || showOnboarding ? 'hidden' : ''}`}>
+            {tabs.map((tab, index) => {
+              const isActive = activeTab === tab.id;
 
-        <Dialog
-          open={showOnboarding}
-          onOpenChange={(open) => {
-            if (!open) closeOnboardingForever();
-            else setShowOnboarding(true);
-          }}
-        >
-          <DialogContent className={`${isDark ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white'} sm:max-w-lg`}>
-            <DialogHeader>
-              <DialogTitle className="flex items-center justify-between gap-3">
-                <span>{onboardingSteps[onboardingStep]?.title}</span>
-                <span className={`text-[11px] font-bold px-2 py-1 rounded-full ${isDark ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>
-                  {onboardingStep + 1}/{onboardingSteps.length}
-                </span>
-              </DialogTitle>
-              <DialogDescription className={isDark ? 'text-slate-400' : 'text-slate-600'}>
-                {onboardingSteps[onboardingStep]?.description}
-              </DialogDescription>
-            </DialogHeader>
+              const tabColors: Record<string, string> = {
+                topology: 'text-blue-500 hover:text-blue-500',
+                cmd: 'text-blue-500 hover:text-blue-500',
+                terminal: 'text-emerald-500 hover:text-emerald-600',
+                tasks: 'text-red-500 hover:text-red-600',
+              };
+              const colorClass = tabColors[tab.id] || 'text-slate-500 hover:text-slate-600';
 
-            <div className="flex items-center justify-between gap-2 pt-2">
-              <Button variant="ghost" onClick={closeOnboardingForever} className="text-xs font-semibold">
-                {language === 'tr' ? 'Geç' : 'Skip'}
-              </Button>
-              <div className="flex items-center gap-2">
+              return (
+                <Tooltip key={tab.id}>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={() => switchTabOrTopology(tab.id)}
+                      className={`flex flex-col items-center justify-center min-h-[40px] flex-1 px-3 py-1.5 rounded-xl transition-all relative ui-hover-surface ${isActive ? 'text-blue-500' : `${colorClass} active:scale-95`
+                        }`}
+                    >
+                      {isActive && (
+                        <motion.div
+                          layoutId="mobileTabActive"
+                          className="absolute inset-0 bg-blue-500/10 rounded-xl"
+                          transition={{ type: "spring", duration: 0.4, bounce: 0.2 }}
+                        />
+                      )}
+                      <div className={`relative z-10 transition-transform duration-200 ${isActive ? 'scale-110' : ''}`}>
+                        {tab.id === 'topology' ? <Network className="w-4 h-4" /> :
+                          (tab.id === 'cmd' || tab.id === 'terminal') ? <TerminalIcon className="w-4 h-4" /> :
+                            <ShieldCheck className="w-4 h-4" />}
+                      </div>
+                      <span className="mt-0.5 text-[9px] font-semibold leading-tight relative z-10 md:inline">
+                        {tab.label}
+                      </span>
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>{tab.label}</TooltipContent>
+                </Tooltip>
+              );
+            })}
+          </div>
+          {/* Mobile bottom nav div moved to bottom */}
+          <Dialog open={showProjectPicker} onOpenChange={setShowProjectPicker}>
+            <DialogContent className={`${isDark ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white'} w-screen h-screen max-w-none m-0 rounded-none`}>
+              <DialogHeader>
+                <DialogTitle>{language === 'tr' ? 'Yeni Proje' : 'New Project'}</DialogTitle>
+                <DialogDescription className={isDark ? 'text-slate-400' : 'text-slate-500'}>
+                  {language === 'tr' ? 'Boş bir proje başlat veya hazır örneklerden birini seç.' : 'Start with an empty project or choose a ready-made example.'}
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid grid-cols-1 gap-3 h-[calc(100vh-8rem)] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-slate-800 hover:scrollbar-thumb-slate-500 transition-colors">
                 <Button
                   variant="outline"
-                  onClick={prevOnboarding}
-                  disabled={onboardingStep === 0}
-                  className="text-xs font-semibold"
+                  className={`justify-between ${isDark ? 'border-slate-800 hover:bg-slate-800/60' : ''}`}
+                  onClick={() => { setShowProjectPicker(false); runWithSaveGuard(() => { resetToEmptyProject(); }); }}
                 >
-                  {language === 'tr' ? 'Geri' : 'Back'}
+                  <span className="font-semibold">{language === 'tr' ? 'Boş Proje' : 'Empty Project'}</span>
+                  <span className="text-xs opacity-70">{language === 'tr' ? 'Sıfırdan başla' : 'Start from scratch'}</span>
                 </Button>
-                <Button onClick={nextOnboarding} className="text-xs font-semibold bg-cyan-600 hover:bg-cyan-700 text-white">
-                  {onboardingStep >= onboardingSteps.length - 1
-                    ? (language === 'tr' ? 'Bitir' : 'Finish')
-                    : (language === 'tr' ? 'İleri' : 'Next')}
+                {exampleProjects(language).map((example) => (
+                  <Button
+                    key={example.id}
+                    variant="ghost"
+                    className={`h-auto flex-col items-start gap-1 px-4 py-3 text-left border ${isDark ? 'border-slate-800 hover:bg-slate-800/60' : 'border-slate-200 hover:bg-slate-100'}`}
+                    onClick={() => { setShowProjectPicker(false); runWithSaveGuard(() => applyExampleProject(example.data)); }}
+                  >
+                    <div className="flex items-center justify-between w-full">
+                      <span className="font-semibold">{example.title}</span>
+                      <span className={`text-[10px] uppercase tracking-wider ${isDark ? 'text-cyan-400' : 'text-cyan-600'}`}>{example.tag}</span>
+                    </div>
+                    <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{example.description}</span>
+                    {example.detail && (
+                      <span className={`text-[11px] ${isDark ? 'text-amber-300' : 'text-amber-700'}`}>{example.detail}</span>
+                    )}
+                  </Button>
+                ))}
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog
+            open={showOnboarding}
+            onOpenChange={(open) => {
+              if (!open) closeOnboardingForever();
+              else setShowOnboarding(true);
+            }}
+          >
+            <DialogContent className={`${isDark ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white'} sm:max-w-lg`}>
+              <DialogHeader>
+                <DialogTitle className="flex items-center justify-between gap-3">
+                  <span>{onboardingSteps[onboardingStep]?.title}</span>
+                  <span className={`text-[11px] font-bold px-2 py-1 rounded-full ${isDark ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>
+                    {onboardingStep + 1}/{onboardingSteps.length}
+                  </span>
+                </DialogTitle>
+                <DialogDescription className={isDark ? 'text-slate-400' : 'text-slate-600'}>
+                  {onboardingSteps[onboardingStep]?.description}
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="flex items-center justify-between gap-2 pt-2">
+                <Button variant="ghost" onClick={closeOnboardingForever} className="text-xs font-semibold">
+                  {language === 'tr' ? 'Geç' : 'Skip'}
                 </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        {/* Global Dialogs (AlertDialog for better z-index and standard behavior) */}
-        <AlertDialog open={!!confirmDialog} onOpenChange={(open) => {
-          if (!open) {
-            setConfirmDialog(null);
-            focusActiveTerminalInput();
-          }
-        }}>
-          <AlertDialogContent className={`${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white'}`}>
-            <AlertDialogHeader>
-              <AlertDialogTitle className={isDark ? 'text-white' : 'text-slate-900'}>
-                {t.confirmationRequired}
-              </AlertDialogTitle>
-              <AlertDialogDescription className={isDark ? 'text-slate-400' : 'text-slate-500'}>
-                {confirmDialog?.message}
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel className={isDark ? 'bg-slate-800 text-white border-slate-700 hover:bg-slate-700' : ''}>
-                {t.cancel}
-              </AlertDialogCancel>
-              <AlertDialogAction
-                onClick={() => {
-                  confirmDialog?.onConfirm();
-                  focusActiveTerminalInput();
-                }}
-                className="bg-cyan-600 hover:bg-cyan-700 text-white"
-              >
-                {t.continue}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-
-        <AlertDialog open={!!saveDialog} onOpenChange={(open) => {
-          if (!open) {
-            setSaveDialog(null);
-            focusActiveTerminalInput();
-          }
-        }}>
-          <AlertDialogContent className={`${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white'}`}>
-            <AlertDialogHeader>
-              <AlertDialogTitle className={isDark ? 'text-white' : 'text-slate-900'}>
-                {language === 'tr' ? 'Projeyi Kaydet' : 'Save Project'}
-              </AlertDialogTitle>
-              <AlertDialogDescription className={isDark ? 'text-slate-400' : 'text-slate-500'}>
-                {saveDialog?.message}
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  saveDialog?.onConfirm(false);
-                  focusActiveTerminalInput();
-                }}
-                className={isDark ? 'bg-slate-800 text-white border-slate-700 hover:bg-slate-700' : ''}
-              >
-                {t.dontSave}
-              </Button>
-              <AlertDialogAction
-                onClick={() => {
-                  saveDialog?.onConfirm(true);
-                  focusActiveTerminalInput();
-                }}
-                className="bg-cyan-600 hover:bg-cyan-700 text-white"
-              >
-                {t.saveLabel}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-
-        {/* Main Content with matching top background */}
-        <main className={`flex-1 overflow-hidden flex flex-col min-h-0 md:pb-[68px] ${isDark ? 'bg-slate-950' : 'bg-slate-100'}`}>
-          <div className={`${activeTab === 'topology' ? 'p-0 pb-0 sm:pb-0' : 'p-4 sm:p-5'} w-full flex-1 flex flex-col min-h-0 overflow-hidden`}>
-            {/* Tab Content */}
-            {activeTab === 'topology' && (
-              <div className="flex-1 flex flex-col min-h-0 h-full">
-                {/* Network Topology fills remaining space */}
-                <div ref={topologyContainerRef} className="flex-1 w-full h-full min-h-0">
-                  <NetworkTopology
-                    key={topologyKey}
-                    cableInfo={cableInfo}
-                    onCableChange={setCableInfo}
-                    selectedDevice={selectedDevice}
-                    onDeviceSelect={handleDeviceSelectFromCanvas}
-                    onDeviceDoubleClick={handleDeviceDoubleClick}
-                    onDeviceDelete={handleDeviceDelete}
-                    onDeviceRename={handleDeviceRename}
-                    initialDevices={topologyDevices || undefined}
-                    initialConnections={topologyConnections || undefined}
-                    initialNotes={topologyNotes || undefined}
-                    isActive={activeTab === 'topology'}
-                    activeDeviceId={activeDeviceId}
-                    deviceStates={deviceStates}
-                    isFullscreen={isTopologyFullscreen}
-                    onFullscreenChange={setIsTopologyFullscreen}
-                    zoom={zoom}
-                    onZoomChange={setZoom}
-                    pan={pan}
-                    onPanChange={setPan}
-                    canUndo={canUndo}
-                    canRedo={canRedo}
-                    onUndo={handleUndo}
-                    onRedo={handleRedo}
-                  />
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={prevOnboarding}
+                    disabled={onboardingStep === 0}
+                    className="text-xs font-semibold"
+                  >
+                    {language === 'tr' ? 'Geri' : 'Back'}
+                  </Button>
+                  <Button onClick={nextOnboarding} className="text-xs font-semibold bg-cyan-600 hover:bg-cyan-700 text-white">
+                    {onboardingStep >= onboardingSteps.length - 1
+                      ? (language === 'tr' ? 'Bitir' : 'Finish')
+                      : (language === 'tr' ? 'İleri' : 'Next')}
+                  </Button>
                 </div>
               </div>
-            )}
+            </DialogContent>
+          </Dialog>
 
-            {/* CMD Terminal Sekmesi */}
-            {/* CMD Terminal Sekmesi - Always mounted, hidden via CSS */}
-            <div className={`w-full flex-1 min-h-0 overflow-hidden flex flex-col ${activeTab === 'cmd' ? 'flex' : 'hidden'}`}>
-              <PCPanel
-                key={`pc-panel-${activeDeviceId}`}
-                deviceId={activeDeviceId}
-                cableInfo={cableInfo}
-                isVisible={activeTab === 'cmd'}
-                onClose={() => setActiveTab('topology')}
-                onTogglePower={toggleDevicePower}
-                topologyDevices={topologyDevices || undefined}
-                topologyConnections={topologyConnections || undefined}
-                deviceStates={deviceStates}
-                deviceOutputs={deviceOutputs}
-                pcOutputs={pcOutputs}
-                pcHistories={pcHistories}
-                onUpdatePCHistory={handleUpdatePCHistory}
-                onExecuteDeviceCommand={handleExecuteCommand}
-              />
-            </div>
+          {/* Global Dialogs (AlertDialog for better z-index and standard behavior) */}
+          <AlertDialog open={!!confirmDialog} onOpenChange={(open) => {
+            if (!open) {
+              setConfirmDialog(null);
+              focusActiveTerminalInput();
+            }
+          }}>
+            <AlertDialogContent className={`${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white'}`}>
+              <AlertDialogHeader>
+                <AlertDialogTitle className={isDark ? 'text-white' : 'text-slate-900'}>
+                  {t.confirmationRequired}
+                </AlertDialogTitle>
+                <AlertDialogDescription className={isDark ? 'text-slate-400' : 'text-slate-500'}>
+                  {confirmDialog?.message}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel className={isDark ? 'bg-slate-800 text-white border-slate-700 hover:bg-slate-700' : ''}>
+                  {t.cancel}
+                </AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => {
+                    confirmDialog?.onConfirm();
+                    focusActiveTerminalInput();
+                  }}
+                  className="bg-cyan-600 hover:bg-cyan-700 text-white"
+                >
+                  {t.continue}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
 
-            {/* Terminal Sekmesi - Always mounted, hidden via CSS */}
-            <div className={`flex-1 min-h-0 flex flex-col gap-4 overflow-y-auto lg:overflow-hidden custom-scrollbar ${activeTab === 'terminal' ? 'flex' : 'hidden'}`}>
-              <div className="flex flex-col xl:grid xl:grid-cols-4 gap-4 flex-1 min-h-0 xl:overflow-hidden">
-                <div className="flex flex-col gap-4 min-h-0 xl:col-span-3">
-                  <Terminal
-                    key={`terminal-${activeDeviceId}`}
-                    deviceId={activeDeviceId}
-                    // use same display name as the dropdown (hostname or topology name)
-                    deviceName={
-                      (() => {
-                        const deviceState = deviceStates.get(activeDeviceId);
-                        return deviceState?.hostname || activeDeviceId;
-                      })()
-                    }
-                    prompt={prompt}
-                    state={state}
-                    onCommand={handleCommand}
-                    onClear={handleClearTerminal}
-                    output={output}
-                    isLoading={isExecutingCommand}
-                    isConnectionError={topologyDevices.some(d => d.id === activeDeviceId && d.status === 'offline')}
-                    connectionErrorMessage={language === 'tr' ? 'Bağlantı hatası' : 'Connection error'}
-                    isPoweredOff={topologyDevices.some(d => d.id === activeDeviceId && d.status === 'offline')}
-                    onTogglePower={toggleDevicePower}
-                    onClose={() => setActiveTab('topology')}
-                    t={t}
-                    theme={theme}
-                    language={language}
-                    onUpdateHistory={handleUpdateHistory}
-                    confirmDialog={confirmDialog}
-                    setConfirmDialog={setConfirmDialog}
-                    onRequestFocus={() => {
-                      requestAnimationFrame(() => {
-                        const el = document.querySelector('input[placeholder="' + t.typeCommand + '"]') as HTMLInputElement | null;
-                        el?.focus();
-                      });
-                    }}
-                  />
-                  <QuickCommands
-                    currentMode={state.currentMode}
-                    onExecuteCommand={handleCommand}
-                    isDevicePoweredOff={topologyDevices.some(d => d.id === activeDeviceId && d.status === 'offline')}
-                    t={t}
-                    theme={theme}
-                    language={language}
-                  />
-                </div>
-                <div className="w-full space-y-4 min-h-0">
-                  <ConfigPanel
-                    state={state}
-                    onExecuteCommand={handleCommand}
-                    isDevicePoweredOff={topologyDevices.some(d => d.id === activeDeviceId && d.status === 'offline')}
-                    t={t}
-                    theme={theme}
-                  />
-                </div>
-              </div>
-            </div>
+          <AlertDialog open={!!saveDialog} onOpenChange={(open) => {
+            if (!open) {
+              setSaveDialog(null);
+              focusActiveTerminalInput();
+            }
+          }}>
+            <AlertDialogContent className={`${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white'}`}>
+              <AlertDialogHeader>
+                <AlertDialogTitle className={isDark ? 'text-white' : 'text-slate-900'}>
+                  {language === 'tr' ? 'Projeyi Kaydet' : 'Save Project'}
+                </AlertDialogTitle>
+                <AlertDialogDescription className={isDark ? 'text-slate-400' : 'text-slate-500'}>
+                  {saveDialog?.message}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    saveDialog?.onConfirm(false);
+                    focusActiveTerminalInput();
+                  }}
+                  className={isDark ? 'bg-slate-800 text-white border-slate-700 hover:bg-slate-700' : ''}
+                >
+                  {t.dontSave}
+                </Button>
+                <AlertDialogAction
+                  onClick={() => {
+                    saveDialog?.onConfirm(true);
+                    focusActiveTerminalInput();
+                  }}
+                  className="bg-cyan-600 hover:bg-cyan-700 text-white"
+                >
+                  {t.saveLabel}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
 
-            {/* Tasks Sekmesi */}
-            {activeTab === 'tasks' && (
-              <div className="grid lg:grid-cols-3 gap-4 flex-1 min-h-0 overflow-y-auto custom-scrollbar">
-                <div className="lg:col-span-2">
-                  <PortPanel
-                    ports={state.ports}
-                    t={t}
-                    theme={theme}
-                    deviceName={state.hostname}
-                    deviceModel={activeDeviceType === 'router' ? 'NETWORK-1941' : 'WS-C2960-24TT-L'}
-                    activeDeviceId={activeDeviceId}
-                    isDevicePoweredOff={topologyDevices.some(d => d.id === activeDeviceId && d.status === 'offline')}
-                    topologyDevices={topologyDevices}
-                    onTogglePower={toggleDevicePower}
-                    topologyConnections={topologyConnections || undefined}
-                  />
-                  <VlanPanel
-                    vlans={state.vlans}
-                    ports={state.ports}
-                    deviceName={state.hostname}
-                    deviceModel={activeDeviceType === 'router' ? 'NETWORK-1941' : 'WS-C2960-24TT-L'}
-                    deviceId={activeDeviceId}
-                    onTogglePower={toggleDevicePower}
-                    onExecuteCommand={handleCommand}
-                    t={t}
-                    theme={theme}
-                    activeDeviceType={activeDeviceType}
-                    isDevicePoweredOff={topologyDevices.some(d => d.id === activeDeviceId && d.status === 'offline')}
-                  />
-                  <SecurityPanel
-                    security={state.security}
-                    t={t}
-                    theme={theme}
-                    deviceId={activeDeviceId}
-                    isDevicePoweredOff={topologyDevices.some(d => d.id === activeDeviceId && d.status === 'offline')}
-                    onTogglePower={toggleDevicePower}
-                  />
-                </div>
-                <div>
-                  <TaskCard
-                    tasks={[...portTasks, ...vlanTasks, ...securityTasks]}
-                    state={state}
-                    context={taskContext}
-                    color="from-red-500 to-rose-500"
-                    isDark={isDark}
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-        </main>
-
-        {/* Footer - Save Status & Hints */}
-        <footer className={`hidden md:block fixed bottom-0 inset-x-0 z-40 border-t backdrop-blur-xl transition-all ${isDark ? 'bg-slate-900/95 border-slate-800' : 'bg-white/95 border-slate-200'
-          } ${showProjectPicker || showOnboarding ? 'hidden' : ''}`}>
-          <div className="w-full px-5 py-2">
-            <div className="flex items-center justify-between gap-4">
-              {/* Save Status */}
-              <div className="flex items-center gap-3">
-                <div className={`hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg border ${isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-100 border-slate-200'
-                  }`}>
-                  <span className={`flex items-center gap-1.5 text-xs font-semibold ${hasUnsavedChanges ? 'text-amber-400' : 'text-emerald-400'
-                    }`}>
-                    <span className={`w-2 h-2 rounded-full ${hasUnsavedChanges ? 'bg-amber-400 animate-pulse' : 'bg-emerald-400'
-                      }`} />
-                    {hasUnsavedChanges
-                      ? (language === 'tr' ? 'Kaydedilmedi' : 'Unsaved')
-                      : (language === 'tr' ? 'Kaydedildi' : 'Saved')}
-                  </span>
-                  {lastSaveTime && (
-                    <span className={`text-[11px] ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>
-                      {(language === 'tr' ? 'Son kaydedilme: ' : 'Last saved: ') + lastSaveTime}
-                    </span>
-                  )}
-                </div>
-
-                {/* Quick Hints */}
-                <div className={`hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg border ${isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-100 border-slate-200'
-                  }`}>
-                  <span className={`text-[11px] font-medium ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-                    {language === 'tr' ? 'İpuçları:' : 'Tips:'}
-                  </span>
-                  <span className={`text-[11px] ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-                    {activeTab === 'topology' && (
-                      <>
-                        <kbd className={`px-1.5 py-0.5 rounded text-[10px] font-mono ${isDark ? 'bg-slate-700 text-slate-300' : 'bg-slate-200 text-slate-700'
-                          }`}>Ctrl+F</kbd>
-                        <span className="mx-1">{language === 'tr' ? 'Tam Ekran' : 'Fullscreen'}</span>
-                        <kbd className={`px-1.5 py-0.5 rounded text-[10px] font-mono ${isDark ? 'bg-slate-700 text-slate-300' : 'bg-slate-200 text-slate-700'
-                          }`}>Ctrl+S</kbd>
-                        <span className="mx-1">{language === 'tr' ? 'Kaydet' : 'Save'}</span>
-                      </>
-                    )}
-                    {(activeTab === 'cmd' || activeTab === 'terminal') && (
-                      <>
-                        <kbd className={`px-1.5 py-0.5 rounded text-[10px] font-mono ${isDark ? 'bg-slate-700 text-slate-300' : 'bg-slate-200 text-slate-700'
-                          }`}>Ctrl+L</kbd>
-                        <span className="mx-1">{language === 'tr' ? 'Temizle' : 'Clear'}</span>
-                        <kbd className={`px-1.5 py-0.5 rounded text-[10px] font-mono ${isDark ? 'bg-slate-700 text-slate-300' : 'bg-slate-200 text-slate-700'
-                          }`}>↑↓</kbd>
-                        <span className="mx-1">{language === 'tr' ? 'Geçmiş' : 'History'}</span>
-                      </>
-                    )}
-                    {activeTab !== 'topology' && activeTab !== 'cmd' && activeTab !== 'terminal' && (
-                      <>
-                        <kbd className={`px-1.5 py-0.5 rounded text-[10px] font-mono ${isDark ? 'bg-slate-700 text-slate-300' : 'bg-slate-200 text-slate-700'
-                          }`}>Ctrl+1-5</kbd>
-                        <span className="mx-1">{language === 'tr' ? 'Sekmeler' : 'Tabs'}</span>
-                      </>
-                    )}
-                  </span>
-                </div>
-              </div>
-
-              {/* Lab Progress */}
-              {totalScore > 0 && (
-                <div className={`hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg border ${isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-100 border-slate-200'
-                  }`}>
-                  <span className={`text-[11px] font-bold uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-600'}`}>
-                    {t.labProgress}
-                  </span>
-                  <div className={`w-20 h-1.5 rounded-full ${isDark ? 'bg-slate-700' : 'bg-slate-200'} overflow-hidden`}>
-                    <div
-                      className="h-full bg-cyan-500 shadow-[0_0_6px_rgba(6,182,212,0.5)] transition-all duration-300"
-                      style={{ width: `${(totalScore / maxScore) * 100}%` }}
+          {/* Main Content with matching top background */}
+          <main className={`flex-1 overflow-hidden flex flex-col min-h-0 md:pb-[68px] ${isDark ? 'bg-slate-950' : 'bg-slate-100'}`}>
+            <div className={`${activeTab === 'topology' ? 'p-0 pb-0 sm:pb-0' : 'p-4 sm:p-5'} w-full flex-1 flex flex-col min-h-0 overflow-hidden`}>
+              {/* Tab Content */}
+              {activeTab === 'topology' && (
+                <div className="flex-1 flex flex-col min-h-0 h-full">
+                  {/* Network Topology fills remaining space */}
+                  <div ref={topologyContainerRef} className="flex-1 w-full h-full min-h-0">
+                    <NetworkTopology
+                      key={topologyKey}
+                      cableInfo={cableInfo}
+                      onCableChange={setCableInfo}
+                      selectedDevice={selectedDevice}
+                      onDeviceSelect={handleDeviceSelectFromCanvas}
+                      onDeviceDoubleClick={handleDeviceDoubleClick}
+                      onDeviceDelete={handleDeviceDelete}
+                      onDeviceRename={handleDeviceRename}
+                      initialDevices={topologyDevices || undefined}
+                      initialConnections={topologyConnections || undefined}
+                      initialNotes={topologyNotes || undefined}
+                      isActive={activeTab === 'topology'}
+                      activeDeviceId={activeDeviceId}
+                      deviceStates={deviceStates}
+                      isFullscreen={isTopologyFullscreen}
+                      onFullscreenChange={setIsTopologyFullscreen}
+                      zoom={zoom}
+                      onZoomChange={setZoom}
+                      pan={pan}
+                      onPanChange={setPan}
+                      canUndo={canUndo}
+                      canRedo={canRedo}
+                      onUndo={handleUndo}
+                      onRedo={handleRedo}
                     />
                   </div>
-                  <span className={`text-[11px] font-bold ${isDark ? 'text-cyan-400' : 'text-cyan-600'}`}>
-                    {Math.round((totalScore / maxScore) * 100)}%
-                  </span>
+                </div>
+              )}
+
+              {/* CMD Terminal Sekmesi */}
+              {/* CMD Terminal Sekmesi - Always mounted, hidden via CSS */}
+              <div className={`w-full flex-1 min-h-0 overflow-hidden flex flex-col ${activeTab === 'cmd' ? 'flex' : 'hidden'}`}>
+                <PCPanel
+                  key={`pc-panel-${activeDeviceId}`}
+                  deviceId={activeDeviceId}
+                  cableInfo={cableInfo}
+                  isVisible={activeTab === 'cmd'}
+                  onClose={() => setActiveTab('topology')}
+                  onTogglePower={toggleDevicePower}
+                  topologyDevices={topologyDevices || undefined}
+                  topologyConnections={topologyConnections || undefined}
+                  deviceStates={deviceStates}
+                  deviceOutputs={deviceOutputs}
+                  pcOutputs={pcOutputs}
+                  pcHistories={pcHistories}
+                  onUpdatePCHistory={handleUpdatePCHistory}
+                  onExecuteDeviceCommand={handleExecuteCommand}
+                />
+              </div>
+
+              {/* Terminal Sekmesi - Always mounted, hidden via CSS */}
+              <div className={`flex-1 min-h-0 flex flex-col gap-4 overflow-y-auto xl:overflow-hidden custom-scrollbar ${activeTab === 'terminal' ? 'flex' : 'hidden'}`}>
+                <div className="flex flex-col xl:grid xl:grid-cols-4 xl:grid-rows-[minmax(0,1fr)_auto] gap-4 flex-1 min-h-0 xl:overflow-hidden">
+                  <div className="flex flex-col min-h-[400px] xl:min-h-0 xl:col-start-1 xl:col-end-4 xl:row-start-1">
+                    <Terminal
+                      key={`terminal-${activeDeviceId}`}
+                      title={isMobile ? "CLI" : undefined}
+                      className="flex-1"
+                      deviceId={activeDeviceId}
+                      // use same display name as the dropdown (hostname or topology name)
+                      deviceName={
+                        (() => {
+                          const deviceState = deviceStates.get(activeDeviceId);
+                          return deviceState?.hostname || activeDeviceId;
+                        })()
+                      }
+                      prompt={prompt}
+                      state={state}
+                      onCommand={handleCommand}
+                      onClear={handleClearTerminal}
+                      output={output}
+                      isLoading={isExecutingCommand}
+                      isConnectionError={topologyDevices.some(d => d.id === activeDeviceId && d.status === 'offline')}
+                      connectionErrorMessage={language === 'tr' ? 'Bağlantı hatası' : 'Connection error'}
+                      isPoweredOff={topologyDevices.some(d => d.id === activeDeviceId && d.status === 'offline')}
+                      onTogglePower={toggleDevicePower}
+                      onClose={() => setActiveTab('topology')}
+                      t={t}
+                      theme={theme}
+                      language={language}
+                      onUpdateHistory={handleUpdateHistory}
+                      confirmDialog={confirmDialog}
+                      setConfirmDialog={setConfirmDialog}
+                      onRequestFocus={() => {
+                        requestAnimationFrame(() => {
+                          const el = document.querySelector('input[placeholder="' + t.typeCommand + '"]') as HTMLInputElement | null;
+                          el?.focus();
+                        });
+                      }}
+                    />
+                  </div>
+                  <div className="min-h-0 xl:col-start-1 xl:col-end-4 xl:row-start-2">
+                    <QuickCommands
+                      currentMode={state.currentMode}
+                      onExecuteCommand={handleCommand}
+                      isDevicePoweredOff={topologyDevices.some(d => d.id === activeDeviceId && d.status === 'offline')}
+                      t={t}
+                      theme={theme}
+                      language={language}
+                    />
+                  </div>
+                  <div className="flex flex-col min-h-[400px] xl:min-h-0 xl:col-start-4 xl:row-start-1 xl:row-end-3">
+                    <ConfigPanel
+                      state={state}
+                      title={isMobile ? (language === "tr" ? "Running Config" : "Running Config") : undefined}
+                      className="flex-1"
+                      onExecuteCommand={handleCommand}
+                      isDevicePoweredOff={topologyDevices.some(d => d.id === activeDeviceId && d.status === 'offline')}
+                      t={t}
+                      theme={theme}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Tasks Sekmesi */}
+              {activeTab === 'tasks' && (
+                <div className="grid lg:grid-cols-3 gap-4 flex-1 min-h-0 overflow-y-auto custom-scrollbar">
+                  <div className="lg:col-span-2">
+                    <PortPanel
+                      ports={state.ports}
+                      t={t}
+                      theme={theme}
+                      deviceName={state.hostname}
+                      deviceModel={activeDeviceType === 'router' ? 'NETWORK-1941' : 'WS-C2960-24TT-L'}
+                      activeDeviceId={activeDeviceId}
+                      isDevicePoweredOff={topologyDevices.some(d => d.id === activeDeviceId && d.status === 'offline')}
+                      topologyDevices={topologyDevices}
+                      onTogglePower={toggleDevicePower}
+                      topologyConnections={topologyConnections || undefined}
+                    />
+                    <VlanPanel
+                      vlans={state.vlans}
+                      ports={state.ports}
+                      deviceName={state.hostname}
+                      deviceModel={activeDeviceType === 'router' ? 'NETWORK-1941' : 'WS-C2960-24TT-L'}
+                      deviceId={activeDeviceId}
+                      onTogglePower={toggleDevicePower}
+                      onExecuteCommand={handleCommand}
+                      t={t}
+                      theme={theme}
+                      activeDeviceType={activeDeviceType}
+                      isDevicePoweredOff={topologyDevices.some(d => d.id === activeDeviceId && d.status === 'offline')}
+                    />
+                    <SecurityPanel
+                      security={state.security}
+                      t={t}
+                      theme={theme}
+                      deviceId={activeDeviceId}
+                      isDevicePoweredOff={topologyDevices.some(d => d.id === activeDeviceId && d.status === 'offline')}
+                      onTogglePower={toggleDevicePower}
+                    />
+                  </div>
+                  <div>
+                    <TaskCard
+                      tasks={[...portTasks, ...vlanTasks, ...securityTasks]}
+                      state={state}
+                      context={taskContext}
+                      color="from-red-500 to-rose-500"
+                      isDark={isDark}
+                    />
+                  </div>
                 </div>
               )}
             </div>
-          </div>
-        </footer>
+          </main>
 
-        <AboutModal isOpen={showAboutModal} onClose={() => setShowAboutModal(false)} />
-      </motion.div>
-    </div>
+          {/* Footer - Save Status & Hints */}
+          <footer className={`hidden md:block fixed bottom-0 inset-x-0 z-40 border-t backdrop-blur-xl transition-all ${isDark ? 'bg-slate-900/95 border-slate-800' : 'bg-white/95 border-slate-200'
+            } ${showProjectPicker || showOnboarding ? 'hidden' : ''}`}>
+            <div className="w-full px-5 py-2">
+              <div className="flex items-center justify-between gap-4">
+                {/* Save Status */}
+                <div className="flex items-center gap-3">
+                  <div className={`hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg border ${isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-100 border-slate-200'
+                    }`}>
+                    <span className={`flex items-center gap-1.5 text-xs font-semibold ${hasUnsavedChanges ? 'text-amber-400' : 'text-emerald-400'
+                      }`}>
+                      <span className={`w-2 h-2 rounded-full ${hasUnsavedChanges ? 'bg-amber-400 animate-pulse' : 'bg-emerald-400'
+                        }`} />
+                      {hasUnsavedChanges
+                        ? (language === 'tr' ? 'Kaydedilmedi' : 'Unsaved')
+                        : (language === 'tr' ? 'Kaydedildi' : 'Saved')}
+                    </span>
+                    {lastSaveTime && (
+                      <span className={`text-[11px] ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>
+                        {(language === 'tr' ? 'Son kaydedilme: ' : 'Last saved: ') + lastSaveTime}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Quick Hints */}
+                  <div className={`hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg border ${isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-100 border-slate-200'
+                    }`}>
+                    <span className={`text-[11px] font-medium ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+                      {language === 'tr' ? 'İpuçları:' : 'Tips:'}
+                    </span>
+                    <span className={`text-[11px] ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                      {activeTab === 'topology' && (
+                        <>
+                          <kbd className={`px-1.5 py-0.5 rounded text-[10px] font-mono ${isDark ? 'bg-slate-700 text-slate-300' : 'bg-slate-200 text-slate-700'
+                            }`}>Ctrl+F</kbd>
+                          <span className="mx-1">{language === 'tr' ? 'Tam Ekran' : 'Fullscreen'}</span>
+                          <kbd className={`px-1.5 py-0.5 rounded text-[10px] font-mono ${isDark ? 'bg-slate-700 text-slate-300' : 'bg-slate-200 text-slate-700'
+                            }`}>Ctrl+S</kbd>
+                          <span className="mx-1">{language === 'tr' ? 'Kaydet' : 'Save'}</span>
+                        </>
+                      )}
+                      {(activeTab === 'cmd' || activeTab === 'terminal') && (
+                        <>
+                          <kbd className={`px-1.5 py-0.5 rounded text-[10px] font-mono ${isDark ? 'bg-slate-700 text-slate-300' : 'bg-slate-200 text-slate-700'
+                            }`}>Ctrl+L</kbd>
+                          <span className="mx-1">{language === 'tr' ? 'Temizle' : 'Clear'}</span>
+                          <kbd className={`px-1.5 py-0.5 rounded text-[10px] font-mono ${isDark ? 'bg-slate-700 text-slate-300' : 'bg-slate-200 text-slate-700'
+                            }`}>↑↓</kbd>
+                          <span className="mx-1">{language === 'tr' ? 'Geçmiş' : 'History'}</span>
+                        </>
+                      )}
+                      {activeTab !== 'topology' && activeTab !== 'cmd' && activeTab !== 'terminal' && (
+                        <>
+                          <kbd className={`px-1.5 py-0.5 rounded text-[10px] font-mono ${isDark ? 'bg-slate-700 text-slate-300' : 'bg-slate-200 text-slate-700'
+                            }`}>Ctrl+1-5</kbd>
+                          <span className="mx-1">{language === 'tr' ? 'Sekmeler' : 'Tabs'}</span>
+                        </>
+                      )}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Lab Progress */}
+                {totalScore > 0 && (
+                  <div className={`hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg border ${isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-100 border-slate-200'
+                    }`}>
+                    <span className={`text-[11px] font-bold uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-600'}`}>
+                      {t.labProgress}
+                    </span>
+                    <div className={`w-20 h-1.5 rounded-full ${isDark ? 'bg-slate-700' : 'bg-slate-200'} overflow-hidden`}>
+                      <div
+                        className="h-full bg-cyan-500 shadow-[0_0_6px_rgba(6,182,212,0.5)] transition-all duration-300"
+                        style={{ width: `${(totalScore / maxScore) * 100}%` }}
+                      />
+                    </div>
+                    <span className={`text-[11px] font-bold ${isDark ? 'text-cyan-400' : 'text-cyan-600'}`}>
+                      {Math.round((totalScore / maxScore) * 100)}%
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </footer>
+
+          <AboutModal isOpen={showAboutModal} onClose={() => setShowAboutModal(false)} />
+        </motion.div>
+      </div>
     </AppErrorBoundary>
   );
 }

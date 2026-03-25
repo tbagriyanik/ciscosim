@@ -7,6 +7,7 @@ import { Translations } from '@/contexts/LanguageContext';
 import { ModernPanel } from '@/components/ui/ModernPanel';
 import { Save, FileText } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
 
 interface ConfigPanelProps {
   state: SwitchState;
@@ -14,11 +15,13 @@ interface ConfigPanelProps {
   isDevicePoweredOff?: boolean;
   t: Translations;
   theme: string;
+  className?: string;
+  title?: string;
 }
 
 const TIMESTAMP = '2026-02-26 22:00:00';
 
-export function ConfigPanel({ state, onExecuteCommand, isDevicePoweredOff = false, t, theme }: ConfigPanelProps) {
+export function ConfigPanel({ state, onExecuteCommand, isDevicePoweredOff = false, t, theme, className, title }: ConfigPanelProps) {
   const [isSaving, setIsSaving] = useState(false);
   const isDark = theme === 'dark';
 
@@ -168,10 +171,10 @@ export function ConfigPanel({ state, onExecuteCommand, isDevicePoweredOff = fals
   return (
     <ModernPanel
       id={`config-${state.hostname}`}
-      title={t.runningConfig}
+      title={title || t.runningConfig}
       headerAction={headerAction}
       mobileAutoHeight
-      className="w-full max-w-none lg:h-[500px]"
+      className={cn("w-full max-w-none lg:h-[500px]", className)}
     >
       <div className="flex flex-col h-full overflow-hidden p-4 bg-background">
         <div className="flex-1 overflow-auto rounded-lg border border-slate-800 bg-slate-950 custom-scrollbar">
