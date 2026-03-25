@@ -1,6 +1,5 @@
 'use client';
 
-import { motion } from 'framer-motion';
 import { Skeleton } from "./skeleton";
 
 export function AppSkeleton() {
@@ -61,14 +60,13 @@ export function AppSkeleton() {
                     <div className="absolute inset-0 p-8">
                         <div className="grid grid-cols-3 gap-4 h-full">
                             {[1, 2, 3, 4, 5, 6].map((i) => (
-                                <motion.div
+                                <div
                                     key={i}
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 0.5, y: 0 }}
-                                    transition={{ delay: 0.3 + i * 0.05 }}
+                                    className="animate-scale-in"
+                                    style={{ animationDelay: `${0.3 + i * 0.05}s` }}
                                 >
                                     <Skeleton className="w-full h-24 rounded-xl" />
-                                </motion.div>
+                                </div>
                             ))}
                         </div>
                     </div>

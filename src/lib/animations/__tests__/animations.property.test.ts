@@ -7,6 +7,7 @@ import {
     TRANSITION_PRESETS,
     COMMON_ANIMATIONS,
 } from '../transitions';
+import { getAccessibleAnimationPreset } from '@/lib/design-tokens/animations';
 
 describe('Animation and Interaction Design - Property Tests', () => {
     // Property 13: Animation System Responsiveness
@@ -125,7 +126,7 @@ describe('Animation and Interaction Design - Property Tests', () => {
             fc.property(
                 fc.array(
                     fc.record({
-                        offset: fc.float({ min: 0, max: 1 }),
+                        offset: fc.float({ min: 0, max: 1 }).filter(Number.isFinite),
                         properties: fc.record({
                             opacity: fc.float({ min: 0, max: 1 }).map(String),
                         }),
@@ -156,6 +157,45 @@ describe('Animation and Interaction Design - Property Tests', () => {
                     expect(preset.easing).toContain('cubic-bezier');
                 });
             })
+        );
+    });
+
+    // Property: Reduced Motion Responsiveness
+    it('should switch between animated and instant presets based on motion preference', () => {
+        fc.assert(
+            fc.property(
+                fc.constantFrom('fade-in', 'slide-up', 'scale-in', 'slide-down'),
+                fc.boolean(),
+                (presetName, reducedMotion) => {
+                    const preset = getAccessibleAnimationPreset(presetName, {
+                        reducedMotion,
+                        userReducedMotion: reducedMotion,
+                    });
+
+                    if (reducedMotion) {
+                        expect(preset.animation).toBeUndefined();
+                        expect(preset.opacity ?? '1').toBe('1');
+                    } else {
+                        expect(preset.animation).toBeTruthy();
+                        expect(typeof preset.animation).toBe('string');
+                    }
+                }
+            )
+        );
+    });
+
+    // Property: Motion Preference Timing Stability
+    it('should return zero duration for reduced motion and preserve normal timing otherwise', () => {
+        fc.assert(
+            fc.property(
+                fc.integer({ min: 1, max: 1000 }),
+                fc.string({ minLength: 1, maxLength: 40 }).filter(s => s.trim().length > 0),
+                fc.boolean(),
+                (duration, timing, reducedMotion) => {
+                    expect(getAnimationDuration(duration, reducedMotion)).toBe(reducedMotion ? 0 : duration);
+                    expect(getAnimationTiming(timing, reducedMotion)).toBe(reducedMotion ? 'none' : timing);
+                }
+            )
         );
     });
 });

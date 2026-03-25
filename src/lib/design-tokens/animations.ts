@@ -301,6 +301,18 @@ export function getAnimationPreset(
     return animationPresets[presetName as keyof typeof animationPresets] || {};
 }
 
+/**
+ * Resolve animation preset using both system reduced motion and user preference.
+ * User preference wins when explicitly enabled, otherwise system preference is honored.
+ */
+export function getAccessibleAnimationPreset(
+    presetName: string,
+    options?: { reducedMotion?: boolean; userReducedMotion?: boolean }
+): Record<string, string> {
+    const shouldReduce = options?.userReducedMotion ?? options?.reducedMotion ?? false;
+    return getAnimationPreset(presetName, shouldReduce);
+}
+
 // CSS string containing all keyframes
 export const keyframesCSS = Object.values(keyframes).join('\n');
 

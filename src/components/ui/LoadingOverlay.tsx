@@ -1,18 +1,13 @@
 'use client';
 
-import { motion } from 'framer-motion';
-
 interface LoadingOverlayProps {
     message?: string;
 }
 
 export function LoadingOverlay({ message = 'Loading...' }: LoadingOverlayProps) {
     return (
-        <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50"
+        <div
+            className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in"
         >
             <div className="flex flex-col items-center gap-3">
                 <div className="relative">
@@ -21,6 +16,6 @@ export function LoadingOverlay({ message = 'Loading...' }: LoadingOverlayProps) 
                 </div>
                 <span className="text-sm text-muted-foreground">{message}</span>
             </div>
-        </motion.div>
+        </div>
     );
 }
