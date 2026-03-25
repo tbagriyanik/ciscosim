@@ -1,6 +1,6 @@
 'use client';
 
-import React, { ReactNode, useState } from 'react';
+import React, { ReactNode, useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { X, GripHorizontal } from 'lucide-react';
 import { useLayout } from '@/contexts/LayoutContext';
@@ -21,6 +21,7 @@ export interface ModernPanelProps {
     headerAction?: ReactNode;
     headerStart?: ReactNode;
     footer?: ReactNode;
+    mobileAutoHeight?: boolean;
 }
 
 export function ModernPanel({
@@ -39,12 +40,30 @@ export function ModernPanel({
     headerAction,
     headerStart,
     footer,
+    mobileAutoHeight = false,
 }: ModernPanelProps) {
     const { panelLayout } = useLayout();
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [width, setWidth] = useState(defaultWidth);
     const [height, setHeight] = useState(defaultHeight);
     const [isResizing, setIsResizing] = useState(false);
+    const [isMobile, setIsMobile] = useState(false);
+
+    useEffect(() => {
+        if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+            return;
+        }
+
+        const mediaQuery = window.matchMedia('(max-width: 767px)');
+        const updateIsMobile = () => setIsMobile(mediaQuery.matches);
+
+        updateIsMobile();
+        mediaQuery.addEventListener('change', updateIsMobile);
+
+        return () => {
+            mediaQuery.removeEventListener('change', updateIsMobile);
+        };
+    }, []);
 
     const handleResizeStart = (e: React.MouseEvent) => {
         e.preventDefault();
@@ -78,6 +97,8 @@ export function ModernPanel({
 
     const isOverlay = panelLayout === 'overlay';
     const isStacked = panelLayout === 'stacked';
+    const canResize = resizable && isOverlay && !isMobile;
+    const canCollapse = collapsible && !isMobile;
 
     return (
         <div
@@ -89,14 +110,14 @@ export function ModernPanel({
             )}
             style={{
                 width: isOverlay || isStacked ? width : '100%',
-                height: isCollapsed ? 'auto' : height,
+                height: isCollapsed || (isMobile && mobileAutoHeight) ? 'auto' : height,
                 ...style
             }}
         >
             {/* Header */}
             <div className="flex items-center justify-between gap-2 p-4 border-b bg-muted/50">
                 <div className="flex items-center gap-2 min-w-0 flex-1">
-                    {resizable && isOverlay && (
+                    {canResize && (
                         <GripHorizontal className="w-4 h-4 text-muted-foreground cursor-grab" />
                     )}
                     {headerStart}
@@ -104,7 +125,7 @@ export function ModernPanel({
                 </div>
                 <div className="flex items-center gap-2">
                     {headerAction}
-                    {collapsible && (
+                    {canCollapse && (
                         <button
                             onClick={() => setIsCollapsed(!isCollapsed)}
                             className="p-1 hover:bg-accent rounded"
@@ -134,7 +155,7 @@ export function ModernPanel({
             )}
 
             {/* Resize Handle */}
-            {resizable && isOverlay && (
+            {canResize && (
                 <div
                     onMouseDown={handleResizeStart}
                     className={cn(

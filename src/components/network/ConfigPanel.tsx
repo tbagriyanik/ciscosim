@@ -170,7 +170,8 @@ export function ConfigPanel({ state, onExecuteCommand, isDevicePoweredOff = fals
       id={`config-${state.hostname}`}
       title={t.runningConfig}
       headerAction={headerAction}
-      className="max-w-3xl w-full h-[500px]"
+      mobileAutoHeight
+      className="w-full max-w-none lg:h-[500px]"
     >
       <div className="flex flex-col h-full overflow-hidden p-4 bg-background">
         <div className="flex-1 overflow-auto rounded-lg border border-slate-800 bg-slate-950 custom-scrollbar">

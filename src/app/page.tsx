@@ -2344,7 +2344,7 @@ export default function Home() {
         </AlertDialog>
 
         {/* Main Content with matching top background */}
-        <main className={`flex-1 overflow-hidden flex flex-col min-h-0 ${isDark ? 'bg-slate-950' : 'bg-slate-100'}`}>
+        <main className={`flex-1 overflow-hidden flex flex-col min-h-0 md:pb-[68px] ${isDark ? 'bg-slate-950' : 'bg-slate-100'}`}>
           <div className={`${activeTab === 'topology' ? 'p-0 pb-0 sm:pb-0' : 'p-4 sm:p-5'} w-full flex-1 flex flex-col min-h-0 overflow-hidden`}>
             {/* Tab Content */}
             {activeTab === 'topology' && (
@@ -2403,9 +2403,9 @@ export default function Home() {
             </div>
 
             {/* Terminal Sekmesi - Always mounted, hidden via CSS */}
-            <div className={`flex-1 min-h-0 flex flex-col gap-4 overflow-hidden ${activeTab === 'terminal' ? 'flex' : 'hidden'}`}>
-              <div className="grid lg:grid-cols-4 gap-4 flex-1 overflow-hidden">
-                <div className="lg:col-span-3 flex flex-col gap-4 overflow-hidden">
+            <div className={`flex-1 min-h-0 flex flex-col gap-4 overflow-y-auto lg:overflow-hidden custom-scrollbar ${activeTab === 'terminal' ? 'flex' : 'hidden'}`}>
+              <div className="flex flex-col xl:grid xl:grid-cols-4 gap-4 flex-1 min-h-0 xl:overflow-hidden">
+                <div className="flex flex-col gap-4 min-h-0 xl:col-span-3">
                   <Terminal
                     key={`terminal-${activeDeviceId}`}
                     deviceId={activeDeviceId}
@@ -2449,7 +2449,7 @@ export default function Home() {
                     language={language}
                   />
                 </div>
-                <div className="space-y-4">
+                <div className="w-full space-y-4 min-h-0">
                   <ConfigPanel
                     state={state}
                     onExecuteCommand={handleCommand}
@@ -2514,7 +2514,7 @@ export default function Home() {
         </main>
 
         {/* Footer - Save Status & Hints */}
-        <footer className={`hidden md:block shrink-0 border-t backdrop-blur-xl transition-all ${isDark ? 'bg-slate-900/95 border-slate-800' : 'bg-white/95 border-slate-200'
+        <footer className={`hidden md:block fixed bottom-0 inset-x-0 z-40 border-t backdrop-blur-xl transition-all ${isDark ? 'bg-slate-900/95 border-slate-800' : 'bg-white/95 border-slate-200'
           } ${showProjectPicker || showOnboarding ? 'hidden' : ''}`}>
           <div className="w-full px-5 py-2">
             <div className="flex items-center justify-between gap-4">

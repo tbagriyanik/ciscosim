@@ -342,7 +342,8 @@ export function Terminal({
       title={deviceName}
       onClose={onClose}
       headerAction={headerAction}
-      className="flex-1 flex flex-col min-h-0"
+      mobileAutoHeight
+      className="flex flex-col min-h-0 lg:flex-1"
     >
       <div className="flex flex-col h-full overflow-hidden bg-background">
         {/* Settings Bar */}

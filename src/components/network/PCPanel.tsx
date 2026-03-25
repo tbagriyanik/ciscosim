@@ -611,7 +611,7 @@ export function PCPanel({
       title={`${internalPcHostname} (${pcIP})`}
       onClose={onClose}
       headerAction={headerAction}
-      className="max-w-2xl w-full h-[600px]"
+      className="w-full h-full min-w-0 max-w-none 2xl:max-w-[1400px] 2xl:mx-auto"
     >
       <div className="flex flex-col h-full overflow-hidden bg-background">
         <Dialog open={searchOpen} onOpenChange={setSearchOpen}>
