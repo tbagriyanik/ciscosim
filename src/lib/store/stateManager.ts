@@ -146,7 +146,8 @@ export class StateManager<T> {
             const data = localStorage.getItem(this.options.persistKey);
             if (!data) return false;
 
-            const parsed = JSON.parse(data);
+            const parsed = safeParseJSON(data, null as any);
+            if (!parsed) return false;
             this.history = parsed.history || [];
             this.currentIndex = parsed.currentIndex ?? -1;
 
@@ -183,3 +184,4 @@ export function createStateManager<T>(
 ) {
     return new StateManager(initialState, options);
 }
+import { safeParseJSON } from '@/lib/security/sanitizer';

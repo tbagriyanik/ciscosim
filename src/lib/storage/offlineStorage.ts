@@ -1,6 +1,8 @@
 // Offline Storage Manager for Network Simulator
 // Provides localStorage-based persistence when database is unavailable
 
+import { createAppSession, isSessionValid, persistAppSession, readAppSession } from '@/lib/security/sessionManager';
+
 export interface OfflineProject {
   id: string;
   name: string;
@@ -24,6 +26,7 @@ class OfflineStorage {
   private readonly PROJECTS_KEY = 'netsim_projects';
   private readonly SETTINGS_KEY = 'netsim_settings';
   private readonly HISTORIES_KEY = 'netsim_histories';
+  private readonly SESSION_KEY = 'netsim_app_session';
 
   // Project Management
   saveProject(project: Omit<OfflineProject, 'createdAt' | 'updatedAt'>): void {
@@ -46,7 +49,7 @@ class OfflineStorage {
         projects.push(fullProject);
       }
 
-      localStorage.setItem(this.PROJECTS_KEY, JSON.stringify(projects));
+      localStorage.setItem(sanitizeInput(this.PROJECTS_KEY), JSON.stringify(projects));
     } catch (error) {
       console.warn('Failed to save project to localStorage:', error);
     }
@@ -64,8 +67,8 @@ class OfflineStorage {
 
   getAllProjects(): OfflineProject[] {
     try {
-      const data = localStorage.getItem(this.PROJECTS_KEY);
-      return data ? JSON.parse(data) : [];
+      const data = localStorage.getItem(sanitizeInput(this.PROJECTS_KEY));
+      return data ? safeParseJSON(data, []) : [];
     } catch (error) {
       console.warn('Failed to get projects from localStorage:', error);
       return [];
@@ -76,7 +79,7 @@ class OfflineStorage {
     try {
       const projects = this.getAllProjects();
       const filtered = projects.filter(p => p.id !== id);
-      localStorage.setItem(this.PROJECTS_KEY, JSON.stringify(filtered));
+      localStorage.setItem(sanitizeInput(this.PROJECTS_KEY), JSON.stringify(filtered));
     } catch (error) {
       console.warn('Failed to delete project from localStorage:', error);
     }
@@ -85,7 +88,8 @@ class OfflineStorage {
   // Settings Management
   saveSettings(settings: OfflineSettings): void {
     try {
-      localStorage.setItem(this.SETTINGS_KEY, JSON.stringify(settings));
+      localStorage.setItem(sanitizeInput(this.SETTINGS_KEY), JSON.stringify(settings));
+      persistAppSession(createAppSession(settings));
     } catch (error) {
       console.warn('Failed to save settings to localStorage:', error);
     }
@@ -93,8 +97,21 @@ class OfflineStorage {
 
   getSettings(): OfflineSettings {
     try {
-      const data = localStorage.getItem(this.SETTINGS_KEY);
-      return data ? JSON.parse(data) : {
+      const session = readAppSession();
+      if (isSessionValid(session)) {
+        return {
+          language: session.language,
+          theme: session.theme,
+          autoSave: session.autoSave,
+        };
+      }
+
+      const data = localStorage.getItem(sanitizeInput(this.SETTINGS_KEY));
+      return data ? safeParseJSON(data, {
+        language: 'tr',
+        theme: 'dark',
+        autoSave: true
+      }) : {
         language: 'tr',
         theme: 'dark',
         autoSave: true
@@ -114,7 +131,7 @@ class OfflineStorage {
     try {
       const histories = this.getAllPCHistories();
       histories[deviceId] = history;
-      localStorage.setItem(this.HISTORIES_KEY, JSON.stringify(histories));
+      localStorage.setItem(sanitizeInput(this.HISTORIES_KEY), JSON.stringify(histories));
     } catch (error) {
       console.warn('Failed to save PC history to localStorage:', error);
     }
@@ -132,8 +149,8 @@ class OfflineStorage {
 
   getAllPCHistories(): Record<string, string[]> {
     try {
-      const data = localStorage.getItem(this.HISTORIES_KEY);
-      return data ? JSON.parse(data) : {};
+      const data = localStorage.getItem(sanitizeInput(this.HISTORIES_KEY));
+      return data ? safeParseJSON(data, {}) : {};
     } catch (error) {
       console.warn('Failed to get PC histories from localStorage:', error);
       return {};
@@ -143,9 +160,10 @@ class OfflineStorage {
   // Utility Methods
   clearAll(): void {
     try {
-      localStorage.removeItem(this.PROJECTS_KEY);
-      localStorage.removeItem(this.SETTINGS_KEY);
-      localStorage.removeItem(this.HISTORIES_KEY);
+      localStorage.removeItem(sanitizeInput(this.PROJECTS_KEY));
+      localStorage.removeItem(sanitizeInput(this.SETTINGS_KEY));
+      localStorage.removeItem(sanitizeInput(this.HISTORIES_KEY));
+      sessionStorage.removeItem(sanitizeInput(this.SESSION_KEY));
     } catch (error) {
       console.warn('Failed to clear localStorage:', error);
     }
@@ -183,3 +201,4 @@ class OfflineStorage {
 }
 
 export const offlineStorage = new OfflineStorage();
+import { safeParseJSON, sanitizeInput } from '@/lib/security/sanitizer';

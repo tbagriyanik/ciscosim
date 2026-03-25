@@ -10,8 +10,29 @@ export function sanitizeHTML(input: string): string {
 
 export function sanitizeInput(input: string): string {
     return input
-        .replace(/[<>]/g, '') // Remove angle brackets
+        .replace(/[<>`]/g, '')
+        .replace(/javascript:/gi, '')
         .trim();
+}
+
+export function sanitizeObject<T>(value: T): T {
+    if (typeof value === 'string') {
+        return sanitizeInput(value) as T;
+    }
+
+    if (Array.isArray(value)) {
+        return value.map(item => sanitizeObject(item)) as T;
+    }
+
+    if (value && typeof value === 'object') {
+        const result: Record<string, any> = {};
+        Object.entries(value as Record<string, any>).forEach(([key, entry]) => {
+            result[sanitizeInput(key)] = sanitizeObject(entry);
+        });
+        return result as T;
+    }
+
+    return value;
 }
 
 export function validateEmail(email: string): boolean {
@@ -64,12 +85,20 @@ export function validateURL(url: string): boolean {
 }
 
 export function escapeJSON(obj: any): string {
-    return JSON.stringify(obj)
+    return JSON.stringify(sanitizeObject(obj))
         .replace(/\\/g, '\\\\')
         .replace(/"/g, '\\"')
         .replace(/\n/g, '\\n')
         .replace(/\r/g, '\\r')
         .replace(/\t/g, '\\t');
+}
+
+export function safeParseJSON<T>(value: string, fallback: T): T {
+    try {
+        return sanitizeObject(JSON.parse(value));
+    } catch {
+        return fallback;
+    }
 }
 
 export function validateConfigData(config: Record<string, any>): {
