@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect, useLayoutEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import dynamic from 'next/dynamic';
 
 import { SwitchState, CableInfo } from '@/lib/network/types';
 import { useDeviceManager } from '@/hooks/useDeviceManager';
@@ -9,15 +10,8 @@ import useAppStore, { useTopologyDevices, useTopologyConnections, useTopologyNot
 // Duplicate removed
 import { NetworkTopology } from '@/components/network/NetworkTopology';
 import { CanvasDevice, CanvasConnection, CanvasNote } from '@/components/network/networkTopology.types';
-import { PCPanel } from '@/components/network/PCPanel';
 import { getPrompt } from '@/lib/network/executor';
-import { Terminal } from '@/components/network/Terminal';
 import type { TerminalOutput } from '@/components/network/Terminal';
-import { PortPanel } from '@/components/network/PortPanel';
-import { VlanPanel } from '@/components/network/VlanPanel';
-import { SecurityPanel } from '@/components/network/SecurityPanel';
-import { ConfigPanel } from '@/components/network/ConfigPanel';
-import { QuickCommands } from '@/components/network/QuickCommands';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -51,7 +45,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { TaskCard } from '@/components/network/TaskCard';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { ChevronDown, Menu, Plus, Save, FolderOpen, Languages, Sun, Moon, Network, ShieldCheck, Database, Info, File, Layers, Terminal as TerminalIcon, Undo2, Redo2, Link2, Pencil, StickyNote } from "lucide-react";
@@ -65,7 +58,6 @@ import {
 import { useLanguage, Translations } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { toast } from "@/hooks/use-toast";
-import { AboutModal } from '@/components/network/AboutModal';
 import {
   topologyTasks,
   portTasks,
@@ -77,9 +69,20 @@ import {
 } from '@/lib/network/taskDefinitions';
 import { exampleProjects } from '@/lib/network/exampleProjects';
 import { buildRunningConfig } from '@/lib/network/core/configBuilder';
+import { performanceMonitor } from '@/lib/performance/monitoring';
 
 import { DeviceIcon } from '@/components/network/DeviceIcon';
 import { AppSkeleton } from '@/components/ui/AppSkeleton';
+
+const PCPanel = dynamic(() => import('@/components/network/PCPanel').then((m) => m.PCPanel), { ssr: false });
+const Terminal = dynamic(() => import('@/components/network/Terminal').then((m) => m.Terminal), { ssr: false });
+const PortPanel = dynamic(() => import('@/components/network/PortPanel').then((m) => m.PortPanel), { ssr: false });
+const VlanPanel = dynamic(() => import('@/components/network/VlanPanel').then((m) => m.VlanPanel), { ssr: false });
+const SecurityPanel = dynamic(() => import('@/components/network/SecurityPanel').then((m) => m.SecurityPanel), { ssr: false });
+const ConfigPanel = dynamic(() => import('@/components/network/ConfigPanel').then((m) => m.ConfigPanel), { ssr: false });
+const QuickCommands = dynamic(() => import('@/components/network/QuickCommands').then((m) => m.QuickCommands), { ssr: false });
+const TaskCard = dynamic(() => import('@/components/network/TaskCard').then((m) => m.TaskCard), { ssr: false });
+const AboutModal = dynamic(() => import('@/components/network/AboutModal').then((m) => m.AboutModal), { ssr: false });
 
 type TabType = 'topology' | 'cmd' | 'terminal' | 'tasks';
 
@@ -167,6 +170,23 @@ export default function Home() {
     setHasHydrated(true);
   }, []);
   const [showContent, setShowContent] = useState(false);
+
+  // Bootstrap performance monitoring in development without affecting production UX.
+  useEffect(() => {
+    if (process.env.NODE_ENV !== 'development') return;
+
+    const intervalId = window.setInterval(() => {
+      const metrics = performanceMonitor.getMetrics();
+      const thresholdStatus = performanceMonitor.checkThresholds();
+      (window as any).__netsimPerformance = {
+        metrics,
+        thresholdStatus,
+        timestamp: Date.now(),
+      };
+    }, 5000);
+
+    return () => window.clearInterval(intervalId);
+  }, []);
 
   // Zustand store state - using granular selectors to prevent cascading re-renders
   const topologyDevices = useTopologyDevices();

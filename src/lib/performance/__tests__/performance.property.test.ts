@@ -116,4 +116,44 @@ describe('Performance Optimization Layer - Property Tests', () => {
             )
         );
     });
+
+    // Property: Extended metric surface remains valid after interaction tracking
+    it('should expose extended performance metrics with valid ranges', () => {
+        fc.assert(
+            fc.property(
+                fc.integer({ min: 1, max: 30 }),
+                (iterations) => {
+                    for (let i = 0; i < iterations; i++) {
+                        performanceMonitor.trackInteraction(() => {
+                            let sum = 0;
+                            for (let j = 0; j < 500; j++) {
+                                sum += Math.sqrt(j);
+                            }
+                            return sum;
+                        });
+                    }
+
+                    const metrics = performanceMonitor.getMetrics();
+                    expect(metrics.interactionP95).toBeGreaterThanOrEqual(0);
+                    expect(metrics.interactionTime).toBeGreaterThanOrEqual(0);
+                    expect(metrics.longTaskTime).toBeGreaterThanOrEqual(0);
+                    if (metrics.inp !== null) {
+                        expect(metrics.inp).toBeGreaterThanOrEqual(0);
+                    }
+                }
+            )
+        );
+    });
+
+    // Property: Threshold object contains extended performance budgets
+    it('should include threshold budgets for extended metrics', () => {
+        fc.assert(
+            fc.property(
+                fc.constantFrom('inp', 'longTaskTime', 'interactionTime', 'renderTime'),
+                (key) => {
+                    expect(DEFAULT_THRESHOLDS[key]).toBeGreaterThan(0);
+                }
+            )
+        );
+    });
 });

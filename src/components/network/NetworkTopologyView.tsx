@@ -6,6 +6,7 @@ import NetworkTopologyContextMenu from './NetworkTopologyContextMenu';
 import { NetworkTopologyPortSelectorModal } from './NetworkTopologyPortSelectorModal';
 import { CABLE_COLORS, MIN_ZOOM, MAX_ZOOM } from './networkTopology.constants';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { performanceMonitor } from '@/lib/performance/monitoring';
 
 type NetworkTopologyViewProps = Record<string, any>;
 
@@ -268,6 +269,77 @@ export const NetworkTopologyView = React.memo(
       return map;
     }, [connections]);
 
+    // 10.1 - Virtualization + LOD: render only objects near viewport.
+    const viewport = useMemo(() => {
+      const fallbackWidth = Math.min(1920, canvasDimensions.width);
+      const fallbackHeight = Math.min(1080, canvasDimensions.height);
+      const viewportWidth = canvasRef?.current?.clientWidth || fallbackWidth;
+      const viewportHeight = canvasRef?.current?.clientHeight || fallbackHeight;
+      const margin = Math.max(220, 240 / Math.max(zoom, 0.25));
+
+      const left = (-pan.x) / zoom - margin;
+      const top = (-pan.y) / zoom - margin;
+      const right = (viewportWidth - pan.x) / zoom + margin;
+      const bottom = (viewportHeight - pan.y) / zoom + margin;
+
+      return { left, top, right, bottom };
+    }, [canvasDimensions.height, canvasDimensions.width, canvasRef, pan.x, pan.y, zoom]);
+
+    const visibleDevices = useMemo(() => {
+      return devices.filter((device: any) => {
+        const width = device.type === 'pc' ? 90 : 130;
+        const height = 100;
+        return (
+          device.x + width >= viewport.left &&
+          device.x <= viewport.right &&
+          device.y + height >= viewport.top &&
+          device.y <= viewport.bottom
+        );
+      });
+    }, [devices, viewport.bottom, viewport.left, viewport.right, viewport.top]);
+
+    const visibleDeviceIdSet = useMemo(() => {
+      return new Set(visibleDevices.map((d: any) => d.id));
+    }, [visibleDevices]);
+
+    const visibleConnections = useMemo(() => {
+      return connections.filter((conn: any) => {
+        const source = deviceById.get(conn.sourceDeviceId);
+        const target = deviceById.get(conn.targetDeviceId);
+        if (!source || !target) return false;
+
+        if (visibleDeviceIdSet.has(source.id) || visibleDeviceIdSet.has(target.id)) return true;
+
+        const minX = Math.min(source.x, target.x);
+        const maxX = Math.max(source.x, target.x);
+        const minY = Math.min(source.y, target.y);
+        const maxY = Math.max(source.y, target.y);
+        return !(
+          maxX < viewport.left ||
+          minX > viewport.right ||
+          maxY < viewport.top ||
+          minY > viewport.bottom
+        );
+      });
+    }, [connections, deviceById, viewport.bottom, viewport.left, viewport.right, viewport.top, visibleDeviceIdSet]);
+
+    const visibleNotes = useMemo(() => {
+      return notes.filter((note: any) => {
+        return (
+          note.x + note.width >= viewport.left &&
+          note.x <= viewport.right &&
+          note.y + note.height >= viewport.top &&
+          note.y <= viewport.bottom
+        );
+      });
+    }, [notes, viewport.bottom, viewport.left, viewport.right, viewport.top]);
+
+    const isFarZoom = zoom < 0.6;
+    const isVeryFarZoom = zoom < 0.4;
+    const showConnectionAnimations = !isFarZoom;
+    const showConnectionLabels = !isVeryFarZoom;
+    const trackInteraction = <T,>(fn: () => T) => performanceMonitor.trackInteraction(fn);
+
     return (
       <div className="relative w-full h-full min-h-0 flex flex-col">
         {/* Header with Tools */}
@@ -277,20 +349,22 @@ export const NetworkTopologyView = React.memo(
         <div
           ref={canvasRef}
           className="w-full flex-1 min-h-0 h-full overflow-hidden cursor-grab active:cursor-grabbing relative touch-none select-none"
-          onMouseDown={handleCanvasMouseDown}
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
+          onMouseDown={(e) => trackInteraction(() => handleCanvasMouseDown(e))}
+          onTouchStart={(e) => trackInteraction(() => handleTouchStart(e))}
+          onTouchMove={(e) => trackInteraction(() => handleTouchMove(e))}
+          onTouchEnd={(e) => trackInteraction(() => handleTouchEnd(e))}
           onClick={() => {
-            if (isDrawingConnection) {
-              setIsDrawingConnection(false);
-              setConnectionStart(null);
-            }
-            if (selectAllMode) {
-              setSelectAllMode(false);
-            }
+            trackInteraction(() => {
+              if (isDrawingConnection) {
+                setIsDrawingConnection(false);
+                setConnectionStart(null);
+              }
+              if (selectAllMode) {
+                setSelectAllMode(false);
+              }
+            });
           }}
-          onContextMenu={(e) => handleContextMenu(e)}
+          onContextMenu={(e) => trackInteraction(() => handleContextMenu(e))}
         >
           <svg width="100%" height="100%" className="block select-none canvas-no-select">
             <g
@@ -325,7 +399,7 @@ export const NetworkTopologyView = React.memo(
                   fill="url(#gridPattern)"
                 />
 
-                {connections.map((conn: any) => {
+                {visibleConnections.map((conn: any) => {
                   const sourceDevice = deviceById.get(conn.sourceDeviceId);
                   const targetDevice = deviceById.get(conn.targetDeviceId);
                   if (!sourceDevice || !targetDevice) return null;
@@ -349,15 +423,17 @@ export const NetworkTopologyView = React.memo(
                         sameConnIndex={sameConnIndex}
                         getPortPosition={getPortPosition}
                         CABLE_COLORS={CABLE_COLORS as any}
+                        showAnimation={showConnectionAnimations}
+                        showLabel={showConnectionLabels}
                       />
-                      {renderConnectionHandle(conn)}
+                      {!isVeryFarZoom && renderConnectionHandle(conn)}
                     </g>
                   );
                 })}
 
                 {renderTempConnection()}
 
-                {devices.map((device: any) => {
+                {visibleDevices.map((device: any) => {
                   const isCurrentlyDragging =
                     (draggedDevice === device.id && isActuallyDragging) ||
                     (touchDraggedDevice === device.id && isTouchDragging);
@@ -369,19 +445,19 @@ export const NetworkTopologyView = React.memo(
                       isDragging={isCurrentlyDragging}
                       isActive={activeDeviceId === device.id}
                       isDark={isDark}
-                      onMouseDown={(e: any, id: string) => handleDeviceMouseDown(e, id)}
-                      onClick={(e: any, dev: any) => handleDeviceClick(e, dev)}
-                      onDoubleClick={() => handleDeviceDoubleClick(device)}
-                      onContextMenu={(e: any, id: string) => handleContextMenu(e, id)}
-                      onTouchStart={(e: any, id: string) => handleDeviceTouchStart(e, id)}
-                      onTouchMove={handleDeviceTouchMove}
-                      onTouchEnd={handleDeviceTouchEnd}
+                      onMouseDown={(e: any, id: string) => trackInteraction(() => handleDeviceMouseDown(e, id))}
+                      onClick={(e: any, dev: any) => trackInteraction(() => handleDeviceClick(e, dev))}
+                      onDoubleClick={() => trackInteraction(() => handleDeviceDoubleClick(device))}
+                      onContextMenu={(e: any, id: string) => trackInteraction(() => handleContextMenu(e, id))}
+                      onTouchStart={(e: any, id: string) => trackInteraction(() => handleDeviceTouchStart(e, id))}
+                      onTouchMove={(e: any) => trackInteraction(() => handleDeviceTouchMove(e))}
+                      onTouchEnd={(e: any) => trackInteraction(() => handleDeviceTouchEnd(e))}
                       renderDeviceContent={renderDevice}
                     />
                   );
                 })}
 
-                {notes.map((note: any) => (
+                {visibleNotes.map((note: any) => (
                   <foreignObject
                     key={note.id}
                     x={note.x}
@@ -504,7 +580,7 @@ export const NetworkTopologyView = React.memo(
             } shadow-lg`}
         >
           <button
-            onClick={() => props.setZoom((z: number) => {
+            onClick={() => trackInteraction(() => props.setZoom((z: number) => {
               const newZoom = Math.max(MIN_ZOOM, z - 0.25);
               if (!canvasRef.current) return newZoom;
               const rect = canvasRef.current.getBoundingClientRect();
@@ -515,7 +591,7 @@ export const NetworkTopologyView = React.memo(
                 y: cursorY - (cursorY - prevPan.y) * (newZoom / z)
               }));
               return newZoom;
-            })}
+            }))}
             className={`w-8 h-8 flex items-center justify-center rounded text-lg font-bold touch-target transition-colors ${isDark ? 'hover:bg-slate-700 hover:text-cyan-400 text-slate-300' : 'hover:bg-slate-100 hover:text-cyan-600 text-slate-600'
               }`}
             aria-label="Zoom out"
@@ -526,7 +602,7 @@ export const NetworkTopologyView = React.memo(
             {Math.round(zoom * 100)}%
           </span>
           <button
-            onClick={() => props.setZoom((z: number) => {
+            onClick={() => trackInteraction(() => props.setZoom((z: number) => {
               const newZoom = Math.min(MAX_ZOOM, z + 0.25);
               if (!canvasRef.current) return newZoom;
               const rect = canvasRef.current.getBoundingClientRect();
@@ -537,7 +613,7 @@ export const NetworkTopologyView = React.memo(
                 y: cursorY - (cursorY - prevPan.y) * (newZoom / z)
               }));
               return newZoom;
-            })}
+            }))}
             className={`w-8 h-8 flex items-center justify-center rounded text-lg font-bold touch-target transition-colors ${isDark ? 'hover:bg-slate-700 hover:text-cyan-400 text-slate-300' : 'hover:bg-slate-100 hover:text-cyan-600 text-slate-600'
               }`}
             aria-label="Zoom in"
@@ -546,7 +622,7 @@ export const NetworkTopologyView = React.memo(
           </button>
           <div className={`w-px h-5 ${isDark ? 'bg-slate-600' : 'bg-slate-300'} mx-0.5 hidden md:block`} />
           <button
-            onClick={resetView}
+            onClick={() => trackInteraction(() => resetView())}
             className={`hidden md:block px-2 py-1 text-xs rounded transition-colors ${isDark
               ? 'hover:bg-slate-700 hover:text-amber-400 text-slate-300'
               : 'hover:bg-slate-100 hover:text-amber-600 text-slate-600'
@@ -556,7 +632,7 @@ export const NetworkTopologyView = React.memo(
             {language === 'tr' ? 'Sıfırla' : 'Reset'}
           </button>
           <button
-            onClick={toggleFullscreen}
+            onClick={() => trackInteraction(() => toggleFullscreen())}
             className={`hidden md:flex px-2 py-1 text-xs rounded items-center gap-1 transition-colors ${isDark
               ? 'hover:bg-slate-700 hover:text-purple-400 text-slate-300'
               : 'hover:bg-slate-100 hover:text-purple-600 text-slate-600'

@@ -15,6 +15,8 @@ interface ConnectionLineProps {
   isHovered?: boolean;
   onMouseEnter?: () => void;
   onMouseLeave?: () => void;
+  showAnimation?: boolean;
+  showLabel?: boolean;
 }
 
 export const ConnectionLine = memo(function ConnectionLine({
@@ -29,7 +31,9 @@ export const ConnectionLine = memo(function ConnectionLine({
   CABLE_COLORS,
   isHovered = false,
   onMouseEnter,
-  onMouseLeave
+  onMouseLeave,
+  showAnimation = true,
+  showLabel = true
 }: ConnectionLineProps) {
   // Get port positions for more accurate connection lines
   const source = getPortPosition(sourceDevice, connection.sourcePort);
@@ -121,7 +125,7 @@ export const ConnectionLine = memo(function ConnectionLine({
       />
 
       {/* Animated data flow - only for compatible cables and NOT during dragging */}
-      {isEffectivelyActive && !isDragging && (
+      {showAnimation && isEffectivelyActive && !isDragging && (
         <>
           <circle r="4" fill={color}>
             <animateMotion
@@ -141,7 +145,7 @@ export const ConnectionLine = memo(function ConnectionLine({
         </>
       )}
       {/* Connection label */}
-      {totalSameConns > 1 ? (
+      {showLabel && (totalSameConns > 1 ? (
         <>
           <text
             x={midX + perpX}
@@ -194,7 +198,7 @@ export const ConnectionLine = memo(function ConnectionLine({
             {connection.sourcePort} ↔ {connection.targetPort}
           </text>
         </>
-      )}
+      ))}
     </g>
   );
 }, (prevProps, nextProps) => {
@@ -215,6 +219,8 @@ export const ConnectionLine = memo(function ConnectionLine({
     prevProps.sameConnIndex === nextProps.sameConnIndex &&
     prevProps.isDark === nextProps.isDark &&
     prevProps.isDragging === nextProps.isDragging &&
-    prevProps.isHovered === nextProps.isHovered
+    prevProps.isHovered === nextProps.isHovered &&
+    prevProps.showAnimation === nextProps.showAnimation &&
+    prevProps.showLabel === nextProps.showLabel
   );
 });
