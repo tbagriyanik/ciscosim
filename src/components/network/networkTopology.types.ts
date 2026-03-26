@@ -56,6 +56,16 @@ export interface CanvasDevice {
   ipv6Prefix?: string;
   gateway?: string;
   dns?: string;
+  services?: {
+    dns?: {
+      enabled: boolean;
+      records: Array<{ domain: string; address: string }>;
+    };
+    http?: {
+      enabled: boolean;
+      content: string;
+    };
+  };
   vlan?: number;
   x: number;
   y: number;

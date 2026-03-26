@@ -7,6 +7,7 @@ import { CableInfo, isCableCompatible, SwitchState } from '@/lib/network/types';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import type { TerminalOutput } from './Terminal';
+import type { CanvasDevice } from './networkTopology.types';
 import { checkConnectivity } from '@/lib/network/connectivity';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -39,7 +40,7 @@ interface PCPanelProps {
   isVisible: boolean;
   onClose: () => void;
   onTogglePower?: (deviceId: string) => void;
-  topologyDevices?: { id: string; type: string; name: string; ip: string; subnet?: string; ipv6?: string; ipv6Prefix?: string; gateway?: string; dns?: string; macAddress?: string; status?: string; vlan?: number; ports: { id: string; status: string }[] }[];
+  topologyDevices?: CanvasDevice[];
   topologyConnections?: {
     sourceDeviceId: string;
     sourcePort: string;
@@ -148,7 +149,22 @@ export function PCPanel({
   const [pcSubnet, setPcSubnet] = useState(deviceFromTopology?.subnet || '255.255.255.0');
   const [pcIPv6, setPcIPv6] = useState(deviceFromTopology?.ipv6 || '2001:db8:acad:1::10');
   const [pcIPv6Prefix, setPcIPv6Prefix] = useState(deviceFromTopology?.ipv6Prefix || '64');
+  const [serviceDnsEnabled, setServiceDnsEnabled] = useState(deviceFromTopology?.services?.dns?.enabled ?? false);
+  const [serviceDnsRecords, setServiceDnsRecords] = useState<Array<{ domain: string; address: string }>>(
+    deviceFromTopology?.services?.dns?.records || []
+  );
+  const [dnsFormDomain, setDnsFormDomain] = useState('');
+  const [dnsFormAddress, setDnsFormAddress] = useState('');
+  const [serviceHttpEnabled, setServiceHttpEnabled] = useState(deviceFromTopology?.services?.http?.enabled ?? false);
+  const [serviceHttpContent, setServiceHttpContent] = useState(deviceFromTopology?.services?.http?.content || 'Merhaba Dünya!');
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    setServiceDnsEnabled(deviceFromTopology?.services?.dns?.enabled ?? false);
+    setServiceDnsRecords(deviceFromTopology?.services?.dns?.records || []);
+    setServiceHttpEnabled(deviceFromTopology?.services?.http?.enabled ?? false);
+    setServiceHttpContent(deviceFromTopology?.services?.http?.content || 'Merhaba Dünya!');
+  }, [deviceId, deviceFromTopology?.services]);
 
   const validateIP = (ip: string) => /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/.test(ip);
 
@@ -175,12 +191,22 @@ export function PCPanel({
             gateway: pcGateway,
             dns: pcDNS,
             ipv6: pcIPv6,
-            ipv6Prefix: pcIPv6Prefix
+            ipv6Prefix: pcIPv6Prefix,
+            services: {
+              dns: {
+                enabled: serviceDnsEnabled,
+                records: serviceDnsRecords
+              },
+              http: {
+                enabled: serviceHttpEnabled,
+                content: serviceHttpContent || 'Merhaba Dünya!'
+              }
+            }
           }
         }
       }));
     }
-  }, [internalPcHostname, pcIP, pcMAC, pcSubnet, pcGateway, pcDNS, pcIPv6, pcIPv6Prefix, deviceId]);
+  }, [internalPcHostname, pcIP, pcMAC, pcSubnet, pcGateway, pcDNS, pcIPv6, pcIPv6Prefix, serviceDnsEnabled, serviceDnsRecords, serviceHttpEnabled, serviceHttpContent, deviceId]);
 
   // Trigger sync on change (debounced)
   useEffect(() => {
@@ -188,7 +214,7 @@ export function PCPanel({
       syncToGlobal();
     }, 500);
     return () => clearTimeout(handler);
-  }, [pcIP, pcMAC, pcSubnet, pcGateway, pcDNS, pcIPv6, pcIPv6Prefix, internalPcHostname, syncToGlobal]);
+  }, [pcIP, pcMAC, pcSubnet, pcGateway, pcDNS, pcIPv6, pcIPv6Prefix, internalPcHostname, serviceDnsEnabled, serviceDnsRecords, serviceHttpEnabled, serviceHttpContent, syncToGlobal]);
 
   // Local output for Desktop (Local) - initialize from prop if available
   const getInitialPcOutput = (): OutputLine[] => {
@@ -436,6 +462,41 @@ export function PCPanel({
     }, 0);
   }, []);
 
+  const resolveDomainWithDnsServices = useCallback((domain: string) => {
+    const normalized = domain.trim().toLowerCase();
+    if (!normalized) return null;
+
+    const dnsServers = topologyDevices.filter(
+      (d) => d.type === 'pc' && d.services?.dns?.enabled && (d.services?.dns?.records?.length || 0) > 0
+    );
+
+    for (const server of dnsServers) {
+      const record = server.services?.dns?.records?.find((r) => r.domain.toLowerCase() === normalized);
+      if (record) {
+        return { address: record.address, server };
+      }
+    }
+
+    return null;
+  }, [topologyDevices]);
+
+  const findHttpServerByTarget = useCallback((target: string) => {
+    const normalizedTarget = target.trim().toLowerCase();
+    if (!normalizedTarget) return null;
+
+    const byIp = topologyDevices.find(
+      (d) => d.type === 'pc' && d.ip === target && d.services?.http?.enabled
+    );
+    if (byIp) return byIp;
+
+    const dnsResult = resolveDomainWithDnsServices(normalizedTarget);
+    if (!dnsResult) return null;
+
+    return topologyDevices.find(
+      (d) => d.type === 'pc' && d.ip === dnsResult.address && d.services?.http?.enabled
+    ) || null;
+  }, [resolveDomainWithDnsServices, topologyDevices]);
+
   const handleConnect = async () => {
     if (!consoleDevice) return;
     setConnectedDeviceId(consoleDevice.id);
@@ -506,8 +567,35 @@ export function PCPanel({
             addLocalOutput('output', `Pinging ${target} with 32 bytes of data:\nRequest timed out.\nRequest timed out.\nRequest timed out.\nRequest timed out.\n\nPing statistics for ${target}:\n    Packets: Sent = 4, Received = 0, Lost = 4 (100% loss)`);
           }
         }
+      } else if (cmd === 'nslookup') {
+        const targetDomain = args[0];
+        if (!targetDomain) {
+          addLocalOutput('output', 'Usage: nslookup <domain>');
+        } else {
+          const dnsResult = resolveDomainWithDnsServices(targetDomain);
+          if (!dnsResult) {
+            addLocalOutput('output', `*** DNS request timed out\n*** Can't find ${targetDomain}: Non-existent domain`);
+          } else {
+            addLocalOutput(
+              'output',
+              `Server: ${dnsResult.server.name}\nAddress: ${dnsResult.server.ip}\n\nName: ${targetDomain}\nAddress: ${dnsResult.address}`
+            );
+          }
+        }
+      } else if (cmd === 'http') {
+        const target = args[0];
+        if (!target) {
+          addLocalOutput('output', 'Usage: http <ip_or_domain>');
+        } else {
+          const httpServer = findHttpServerByTarget(target);
+          if (!httpServer) {
+            addLocalOutput('error', `HTTP service is unavailable for ${target}`);
+          } else {
+            addLocalOutput('output', httpServer.services?.http?.content || 'Merhaba Dünya!');
+          }
+        }
       } else if (cmd === 'help' || cmd === '?') {
-        addLocalOutput('output', `Available commands: ipconfig, ping, tracert, nslookup, arp, netstat, hostname, dir, ver, cls, exit, quit, snake`);
+        addLocalOutput('output', `Available commands: ipconfig, ping, nslookup, http, tracert, arp, netstat, hostname, dir, ver, cls, exit, quit, snake`);
       } else if (cmd === 'cls') {
         setPcOutput([]);
       } else if (cmd === 'exit' || cmd === 'quit') {
@@ -718,6 +806,15 @@ export function PCPanel({
             <ShieldCheck className="w-4 h-4" />
             <span className={isMobile ? 'text-[10px]' : 'hidden sm:inline'}>{language === 'tr' ? 'Ayarlar' : 'Settings'}</span>
           </Button>
+          <Button
+            variant={activeTab === 'services' ? 'secondary' : 'ghost'}
+            size="sm"
+            onClick={() => setActiveTab('services')}
+            className={`h-9 px-4 text-xs font-black tracking-wider transition-all gap-2 ${activeTab === 'services' ? 'bg-amber-500/10 text-amber-500' : 'text-slate-500 hover:text-amber-500'} ${isMobile ? 'flex-1 min-w-0' : ''}`}
+          >
+            <Globe className="w-4 h-4" />
+            <span className={isMobile ? 'text-[10px]' : 'hidden sm:inline'}>{language === 'tr' ? 'Servisler' : 'Services'}</span>
+          </Button>
         </div>
 
         {/* Content Area */}
@@ -760,6 +857,110 @@ export function PCPanel({
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-slate-500 uppercase">IPv6 Prefix</label>
                   <Input value={pcIPv6Prefix} onChange={(e) => setPcIPv6Prefix(e.target.value)} />
+                </div>
+              </div>
+            </div>
+          ) : activeTab === 'services' ? (
+            <div className="p-6 space-y-6 overflow-y-auto custom-scrollbar">
+              <div className={`rounded-xl border p-4 space-y-4 ${isDark ? 'border-slate-800 bg-slate-900/40' : 'border-slate-200 bg-white'}`}>
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <h3 className="text-sm font-bold">DNS</h3>
+                    <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                      {language === 'tr' ? 'Alan adı -> IP adresi kayıtlarını yönet.' : 'Manage domain to IP address records.'}
+                    </p>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant={serviceDnsEnabled ? 'default' : 'outline'}
+                    onClick={() => setServiceDnsEnabled((prev) => !prev)}
+                  >
+                    {serviceDnsEnabled ? (language === 'tr' ? 'Açık' : 'On') : (language === 'tr' ? 'Kapalı' : 'Off')}
+                  </Button>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <Input
+                    value={dnsFormDomain}
+                    onChange={(e) => setDnsFormDomain(e.target.value)}
+                    placeholder={language === 'tr' ? 'Alan adı (or: site.local)' : 'Domain (ex: site.local)'}
+                  />
+                  <Input
+                    value={dnsFormAddress}
+                    onChange={(e) => setDnsFormAddress(e.target.value)}
+                    placeholder={language === 'tr' ? 'Adres (or: 192.168.1.10)' : 'Address (ex: 192.168.1.10)'}
+                  />
+                  <Button
+                    onClick={() => {
+                      const domain = dnsFormDomain.trim().toLowerCase();
+                      const address = dnsFormAddress.trim();
+                      if (!domain || !address) return;
+                      setServiceDnsRecords((prev) => {
+                        const withoutSame = prev.filter((r) => r.domain.toLowerCase() !== domain);
+                        return [...withoutSame, { domain, address }];
+                      });
+                      setDnsFormDomain('');
+                      setDnsFormAddress('');
+                    }}
+                  >
+                    {language === 'tr' ? 'Kayıt Ekle' : 'Add Record'}
+                  </Button>
+                </div>
+
+                <div className="space-y-2">
+                  {serviceDnsRecords.length === 0 && (
+                    <div className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>
+                      {language === 'tr' ? 'Henüz DNS kaydı yok.' : 'No DNS records yet.'}
+                    </div>
+                  )}
+                  {serviceDnsRecords.map((record) => (
+                    <div key={`${record.domain}-${record.address}`} className={`flex items-center justify-between gap-3 rounded-lg px-3 py-2 ${isDark ? 'bg-slate-950 border border-slate-800' : 'bg-slate-50 border border-slate-200'}`}>
+                      <div className="text-xs font-mono">
+                        <span>{record.domain}</span>
+                        <span className="mx-2 opacity-60">-&gt;</span>
+                        <span>{record.address}</span>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setServiceDnsRecords((prev) => prev.filter((r) => !(r.domain === record.domain && r.address === record.address)))}
+                      >
+                        {language === 'tr' ? 'Sil' : 'Delete'}
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className={`rounded-xl border p-4 space-y-4 ${isDark ? 'border-slate-800 bg-slate-900/40' : 'border-slate-200 bg-white'}`}>
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <h3 className="text-sm font-bold">HTTP</h3>
+                    <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                      {language === 'tr' ? 'HTTP açıkken bu cihazın web içeriği yayınlanır.' : 'When enabled, this PC serves web content.'}
+                    </p>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant={serviceHttpEnabled ? 'default' : 'outline'}
+                    onClick={() => setServiceHttpEnabled((prev) => !prev)}
+                  >
+                    {serviceHttpEnabled ? (language === 'tr' ? 'Açık' : 'On') : (language === 'tr' ? 'Kapalı' : 'Off')}
+                  </Button>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase tracking-wide text-slate-500">HTTP Content</label>
+                  <Input
+                    value={serviceHttpContent}
+                    onChange={(e) => setServiceHttpContent(e.target.value)}
+                    placeholder="Merhaba Dünya!"
+                  />
+                  {serviceHttpEnabled && (
+                    <div className={`text-xs rounded-lg px-3 py-2 ${isDark ? 'bg-slate-950 border border-slate-800 text-slate-200' : 'bg-slate-50 border border-slate-200 text-slate-700'}`}>
+                      {serviceHttpContent || 'Merhaba Dünya!'}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -818,7 +1019,7 @@ export function PCPanel({
             </>
           )}
 
-          {activeTab !== 'settings' && !isPcPoweredOff && (
+          {(activeTab === 'desktop' || activeTab === 'terminal') && !isPcPoweredOff && (
             <div className={`sticky bottom-0 inset-x-0 z-10 p-3 sm:p-4 border-t ${isDark ? 'border-slate-800 bg-slate-900/95' : 'border-slate-200 bg-slate-50/95'}`}>
               <div className={`flex items-center gap-2 sm:gap-3 ${isMobile ? 'flex-col' : ''}`}>
                 <div className={`flex items-center gap-3 px-3 sm:px-4 py-2.5 ${inputBg} rounded-xl border ${inputBorder} flex-1 group ${isMobile ? 'w-full' : ''}`}>
@@ -854,7 +1055,7 @@ export function PCPanel({
   );
 }
 
-type PCActiveTab = 'desktop' | 'terminal' | 'settings';
+type PCActiveTab = 'desktop' | 'terminal' | 'settings' | 'services';
 
 function getPCConfigDefaults(id: string) {
   const num = id.split('-')[1] || '1';
