@@ -527,6 +527,34 @@ export function PCPanel({
     return resolvedServer;
   }, [canReachTargetIp, resolveDomainWithDnsServices, topologyDevices]);
 
+  const formatMacForArp = useCallback((mac?: string) => {
+    if (!mac) return '';
+    const hex = mac.replace(/[^a-fA-F0-9]/g, '').toLowerCase();
+    if (hex.length !== 12) return mac.toLowerCase();
+    return hex.match(/.{1,2}/g)?.join('-') || mac.toLowerCase();
+  }, []);
+
+  const buildArpTableOutput = useCallback(() => {
+    const reachableHosts = topologyDevices
+      .filter((d) => d.id !== deviceId && !!d.ip && !!d.macAddress)
+      .filter((d) => canReachTargetIp(d.ip))
+      .map((d) => ({
+        ip: d.ip,
+        mac: formatMacForArp(d.macAddress),
+        type: 'dynamic',
+      }));
+
+    if (reachableHosts.length === 0) {
+      return `Interface: ${pcIP} --- 0x3\n  Internet Address      Physical Address      Type`;
+    }
+
+    const rows = reachableHosts
+      .map((h) => `  ${h.ip.padEnd(20)} ${h.mac.padEnd(21)} ${h.type}`)
+      .join('\n');
+
+    return `Interface: ${pcIP} --- 0x3\n  Internet Address      Physical Address      Type\n${rows}`;
+  }, [canReachTargetIp, deviceId, formatMacForArp, pcIP, topologyDevices]);
+
   const handleConnect = async () => {
     if (!consoleDevice) return;
     setConnectedDeviceId(consoleDevice.id);
@@ -633,6 +661,12 @@ export function PCPanel({
           } else {
             addLocalOutput('output', httpServer.services?.http?.content || 'Merhaba Dünya!');
           }
+        }
+      } else if (cmd === 'arp') {
+        if (args.length === 0 || (args.length === 1 && args[0].toLowerCase() === '-a')) {
+          addLocalOutput('output', buildArpTableOutput());
+        } else {
+          addLocalOutput('output', 'Usage: arp -a');
         }
       } else if (cmd === 'help' || cmd === '?') {
         addLocalOutput('output', `Available commands: ipconfig, ping, nslookup, http, tracert, arp, netstat, hostname, dir, ver, cls, exit, quit, snake`);
