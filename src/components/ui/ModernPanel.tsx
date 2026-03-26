@@ -19,6 +19,7 @@ export interface ModernPanelProps {
     className?: string;
     style?: React.CSSProperties;
     headerAction?: ReactNode;
+    noPadding?: boolean;
     headerStart?: ReactNode;
     footer?: ReactNode;
     mobileAutoHeight?: boolean;
@@ -41,6 +42,7 @@ export function ModernPanel({
     headerStart,
     footer,
     mobileAutoHeight = false,
+    noPadding = false,
 }: ModernPanelProps) {
     const { panelLayout } = useLayout();
     const [isCollapsed, setIsCollapsed] = useState(false);
@@ -162,7 +164,10 @@ export function ModernPanel({
 
             {/* Content */}
             {!isCollapsed && (
-                <div className="flex-1 overflow-y-auto p-4">
+                <div className={cn(
+                    "flex-1 min-h-0",
+                    noPadding ? "overflow-hidden" : "overflow-y-auto p-4"
+                )}>
                     {children}
                     {footer && <div className="mt-4 border-t pt-3">{footer}</div>}
                 </div>

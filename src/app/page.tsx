@@ -2446,9 +2446,9 @@ export default function Home() {
                     </div>
                   </div>
                 ) : (
-                  /* Desktop Layout: 4 kolon grid - Terminal + QuickCommands solda, ConfigPanel sağda */
-                  <div className="flex flex-col xl:grid xl:grid-cols-4 xl:grid-rows-[minmax(0,1fr)_auto] gap-4 flex-1 min-h-0 xl:overflow-hidden">
-                    <div className="flex flex-col min-h-[400px] xl:min-h-0 xl:col-start-1 xl:col-end-4 xl:row-start-1">
+                  /* Desktop Layout: Terminal + QuickCommands üstte, Running Config en altta */
+                  <div className="flex flex-col gap-4 flex-1 min-h-0 xl:overflow-hidden">
+                    <div className="flex flex-col min-h-[400px] xl:min-h-0 ">
                       <Terminal
                         key={`terminal-${activeDeviceId}`}
                         title={isMobile ? "CLI" : undefined}
@@ -2485,7 +2485,7 @@ export default function Home() {
                         }}
                       />
                     </div>
-                    <div className="min-h-0 xl:col-start-1 xl:col-end-4 xl:row-start-2">
+                    <div className="min-h-0">
                       <QuickCommands
                         currentMode={state.currentMode}
                         onExecuteCommand={handleCommand}
@@ -2495,10 +2495,10 @@ export default function Home() {
                         language={language}
                       />
                     </div>
-                    <div className="flex flex-col min-h-[400px] xl:min-h-0 xl:col-start-4 xl:row-start-1 xl:row-end-3">
+                    <div className="flex flex-col min-h-[400px] xl:min-h-0">
                       <ConfigPanel
                         state={state}
-                        title={isMobile ? (language === "tr" ? "Running Config" : "Running Config") : undefined}
+                        title={isMobile ? (language === "tr" ? "Çalışan Config" : "Running Config") : undefined}
                         className="flex-1"
                         onExecuteCommand={handleCommand}
                         isDevicePoweredOff={topologyDevices.some(d => d.id === activeDeviceId && d.status === 'offline')}

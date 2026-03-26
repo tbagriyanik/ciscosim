@@ -352,6 +352,7 @@ export function Terminal({
       title={title || deviceName}
       onClose={onClose}
       headerAction={headerAction}
+      noPadding
       className={cn("flex flex-col h-full", className)}
     >
       <div className="flex flex-col h-full overflow-hidden bg-background">
@@ -414,7 +415,7 @@ export function Terminal({
 
           {!isPoweredOff && (
             <div className={cn(
-              "border-t bg-muted/20",
+              "sticky bottom-0 border-t bg-muted/20 backdrop-blur-sm",
               isMobile ? "p-2" : "p-4"
             )}>
               <form onSubmit={handleFormSubmit} className="flex items-center gap-3">
@@ -436,10 +437,10 @@ export function Terminal({
                     spellCheck={false}
                   />
                 </div>
-                <Button 
-                  type="submit" 
-                  disabled={isInputDisabled || !input.trim()} 
-                  size="icon" 
+                <Button
+                  type="submit"
+                  disabled={isInputDisabled || !input.trim()}
+                  size="icon"
                   className={cn(
                     "shrink-0 rounded-xl shadow-lg",
                     isMobile ? "h-9 w-9" : "h-11 w-11"
