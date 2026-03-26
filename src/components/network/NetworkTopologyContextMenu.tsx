@@ -156,7 +156,7 @@ export default function NetworkTopologyContextMenu({
     >
       {contextMenu.noteId && contextMenu.mode === 'note-style' && (
         <div className="px-2 py-2 space-y-2">
-          <div className="text-[10px] uppercase tracking-widest text-slate-500">
+          <div className="text-[10px]  tracking-widest text-slate-500">
             {language === 'tr' ? 'Not Biçimi' : 'Note Style'}
           </div>
 
@@ -173,7 +173,7 @@ export default function NetworkTopologyContextMenu({
           </div>
 
           <div className="space-y-1">
-            <div className="text-[10px] uppercase tracking-widest text-slate-500">
+            <div className="text-[10px]  tracking-widest text-slate-500">
               {language === 'tr' ? 'Yazı Tipi' : 'Font'}
             </div>
             <div className="grid grid-cols-1 gap-1">
@@ -194,7 +194,7 @@ export default function NetworkTopologyContextMenu({
           </div>
 
           <div className="space-y-1">
-            <div className="text-[10px] uppercase tracking-widest text-slate-500">
+            <div className="text-[10px] tracking-widest text-slate-500">
               {language === 'tr' ? 'Boyut' : 'Size'}
             </div>
             <div className="flex gap-1">
@@ -214,7 +214,7 @@ export default function NetworkTopologyContextMenu({
           </div>
 
           <div className="space-y-1">
-            <div className="text-[10px] uppercase tracking-widest text-slate-500">
+            <div className="text-[10px] tracking-widest text-slate-500">
               {language === 'tr' ? 'Saydamlık' : 'Opacity'}
             </div>
             <div className="flex gap-1">

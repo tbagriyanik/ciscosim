@@ -490,7 +490,7 @@ export const NetworkTopologyView = React.memo(
                         data-note-drag-handle
                         onMouseDown={(e) => handleNoteMouseDown(e, note.id)}
                         onContextMenu={(e) => handleNoteContextMenu(e, note.id, 'note-style')}
-                        className={`flex items-center justify-between px-2 text-[10px] font-semibold uppercase tracking-widest cursor-move select-none ${isDark ? 'bg-black/10' : 'bg-black/5'
+                        className={`flex items-center justify-between px-2 text-[10px] font-semibold tracking-widest cursor-move select-none ${isDark ? 'bg-black/10' : 'bg-black/5'
                           }`}
                         style={{ height: props.NOTE_HEADER_HEIGHT }}
                       >

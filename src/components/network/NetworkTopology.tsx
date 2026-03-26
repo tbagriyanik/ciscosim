@@ -3652,7 +3652,7 @@ export function NetworkTopology({
               <div className="p-6 space-y-8">
                 {/* Devices Section */}
                 <div className="space-y-4">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">{t.devices}</p>
+                  <p className="text-[10px] font-bold  tracking-widest text-slate-500 ml-1">{t.devices}</p>
                   <div className="grid grid-cols-3 gap-3">
                     {(['pc', 'switch', 'router'] as const).map((type) => (
                       <button
@@ -3674,7 +3674,7 @@ export function NetworkTopology({
 
                 {/* Cables Section - Grouped */}
                 <div className="space-y-2">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">{t.cableTypes}</p>
+                  <p className="text-[10px] font-bold  tracking-widest text-slate-500 ml-1">{t.cableTypes}</p>
                   <div className={`grid grid-cols-3 gap-2 p-2 rounded-xl border ${isDark ? 'border-slate-700 bg-slate-800/50' : 'border-slate-200 bg-slate-50'}`}>
                     {(['straight', 'crossover', 'console'] as CableType[]).map((type) => (
                       <button
@@ -3953,7 +3953,7 @@ export function NetworkTopology({
                             e.preventDefault();
                             handleNoteHeaderMouseDown(e as unknown as ReactMouseEvent, note.id);
                           }}
-                          className={`flex items-center gap-2 px-2 text-[10px] font-semibold uppercase tracking-widest cursor-move select-none ${isDark ? 'bg-black/10' : 'bg-black/5'
+                          className={`flex items-center gap-2 px-2 text-[10px] font-semibold  tracking-widest cursor-move select-none ${isDark ? 'bg-black/10' : 'bg-black/5'
                             }`}
                           style={{ height: '24px' }}
                         >
@@ -5148,7 +5148,7 @@ export function NetworkTopology({
                 {/* Cable Type Selector - Toolbar Button Group */}
                 <div className="mt-6 flex items-center gap-2">
                   <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800">
-                    <span className={`text-[9px] font-bold uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                    <span className={`text-[9px] font-bold  tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                       {language === 'tr' ? 'Kablo' : 'Cable'}
                     </span>
                     <div className="flex gap-1">
@@ -5406,7 +5406,7 @@ export function NetworkTopology({
                   return dev?.status === 'offline' || prt?.shutdown ? 'bg-red-500' : prt?.status === 'connected' ? 'bg-green-500' : 'bg-slate-400';
                 })()
                   }`} />
-                <span className="text-[10px] font-black tracking-widest uppercase opacity-60">
+                <span className="text-[10px] font-black tracking-widest opacity-60">
                   {portTooltip.portId}
                 </span>
               </div>

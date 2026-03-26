@@ -1694,7 +1694,7 @@ export default function Home() {
 
               <div className="flex items-center gap-2 mt-4">
                 <div className="w-1.5 h-1.5 rounded-full bg-cyan-500 animate-pulse" />
-                <span className="text-xs font-bold tracking-[0.3em] text-cyan-500 uppercase">
+                <span className="text-xs font-bold tracking-[0.3em] text-cyan-500 ">
                   {t.initializingSystem}
                 </span>
               </div>
@@ -1745,7 +1745,7 @@ export default function Home() {
                 <div className="hidden md:flex items-center gap-4">
                   <div className="flex flex-col items-end gap-1">
                     <div className="flex items-center gap-2">
-                      <span className={`text-[10px] font-black uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                      <span className={`text-[10px] font-black tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                         {t.labProgress}
                       </span>
                       <motion.span
@@ -1915,7 +1915,7 @@ export default function Home() {
                       <div className="p-3 space-y-4">
                         {/* Quick actions (primary) */}
                         <div className={`p-3 rounded-xl border ${isDark ? 'bg-slate-800/30 border-slate-800/50' : 'bg-slate-50 border-slate-200'}`}>
-                          <p className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-2 px-1">
+                          <p className="text-xs font-bold tracking-widest text-slate-500 mb-2 px-1">
                             {language === 'tr' ? 'Hızlı işlemler' : 'Quick actions'}
                           </p>
                           <div className="grid grid-cols-2 gap-2">
@@ -1952,7 +1952,7 @@ export default function Home() {
 
                         {/* Navigation Sections */}
                         <div className="space-y-1">
-                          <p className="text-xs font-bold uppercase tracking-widest text-slate-500 px-2 mb-1">{t.navigation}</p>
+                          <p className="text-xs font-bold  tracking-widest text-slate-500 px-2 mb-1">{t.navigation}</p>
                           <div className="grid gap-0.5">
                             {ALL_TABS.map((tab) => {
                               const isTabVisible = tab.id === 'topology' || (activeDeviceId && tab.showFor.includes(activeDeviceType));
@@ -1985,7 +1985,7 @@ export default function Home() {
                         {/* Lab Progress Mobile */}
                         <div className={`p-3 rounded-xl ${isDark ? 'bg-slate-800/30' : 'bg-slate-50'} border ${isDark ? 'border-slate-800/50' : 'border-slate-200'}`}>
                           <div className="flex items-center justify-between mb-1.5">
-                            <span className="text-xs font-bold uppercase tracking-[0.15em] text-slate-500">{t.labProgress}</span>
+                            <span className="text-xs font-bold tracking-[0.15em] text-slate-500">{t.labProgress}</span>
                             <span className="text-xs font-bold text-cyan-400">{Math.round((totalScore / maxScore) * 100)}%</span>
                           </div>
                           <div className={`h-1.5 w-full rounded-full ${isDark ? 'bg-slate-800' : 'bg-slate-200'} overflow-hidden mb-1.5`}>
@@ -2116,7 +2116,7 @@ export default function Home() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" className={`${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white'} w-48`}>
-                  <DropdownMenuLabel className="text-[11px] font-bold uppercase tracking-widest text-slate-500 py-2">
+                  <DropdownMenuLabel className="text-[11px] font-bold  tracking-widest text-slate-500 py-2">
                     {topologyDevices.length > 0 ? t.selectDevice : t.addDevicesFirst}
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
@@ -2301,7 +2301,7 @@ export default function Home() {
                         return (
                           <section key={level} className='space-y-4 md:space-y-6 w-full'>
                             <div className='flex items-center gap-3 md:gap-4 px-1 md:px-2'>
-                              <p className='text-[10px] md:text-xs font-black uppercase tracking-[0.3em] md:tracking-[0.4em] text-slate-500 dark:text-slate-400 whitespace-nowrap'>
+                              <p className='text-[10px] md:text-xs font-black  tracking-[0.3em] md:tracking-[0.4em] text-slate-500 dark:text-slate-400 whitespace-nowrap'>
                                 {exampleLevelLabels[level]}
                               </p>
                               <div className={`h-px flex-1 ${isDark ? 'bg-slate-800/60' : 'bg-slate-200'}`} />
@@ -2317,13 +2317,13 @@ export default function Home() {
                                 >
                                   <div className='flex items-start justify-between w-full gap-4 overflow-hidden'>
                                     <span className='font-black text-base md:text-2xl leading-none group-hover:text-cyan-400 transition-colors duration-300 break-words flex-1'>{example.title}</span>
-                                    <span className={`text-[8px] md:text-[10px] font-black uppercase tracking-[0.2em] px-3 py-1.5 rounded-full whitespace-nowrap border shrink-0 ${isDark ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20' : 'bg-blue-50 text-blue-600 border-blue-100'}`}>{example.tag}</span>
+                                    <span className={`text-[8px] md:text-[10px] font-black  tracking-[0.2em] px-3 py-1.5 rounded-full whitespace-nowrap border shrink-0 ${isDark ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20' : 'bg-blue-50 text-blue-600 border-blue-100'}`}>{example.tag}</span>
                                   </div>
                                   <p className={`text-[11px] md:text-sm leading-relaxed ${isDark ? 'text-slate-400/80' : 'text-slate-600'} font-medium italic group-hover:text-slate-200 transition-colors break-words w-full`}>{example.description}</p>
                                   {example.detail && (
                                     <div className='mt-auto pt-2 md:pt-4 flex items-center gap-2 md:gap-3 w-full border-t border-slate-800/10 dark:border-slate-800/50'>
                                       <div className='w-1 md:w-1.5 h-1 md:h-1.5 rounded-full bg-amber-500 shrink-0 shadow-[0_0_8px_rgba(245,158,11,0.5)]' />
-                                      <span className={`text-[8px] md:text-[11px] font-bold tracking-wide uppercase ${isDark ? 'text-amber-400/80' : 'text-amber-700/80'} break-words`}>{example.detail}</span>
+                                      <span className={`text-[8px] md:text-[11px] font-bold tracking-wide  ${isDark ? 'text-amber-400/80' : 'text-amber-700/80'} break-words`}>{example.detail}</span>
                                     </div>
                                   )}
                                 </Button>
@@ -2749,7 +2749,7 @@ export default function Home() {
                 {totalScore > 0 && (
                   <div className={`hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg border ${isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-100 border-slate-200'
                     }`}>
-                    <span className={`text-[11px] font-bold uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-600'}`}>
+                    <span className={`text-[11px] font-bold  tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-600'}`}>
                       {t.labProgress}
                     </span>
                     <div className={`w-20 h-1.5 rounded-full ${isDark ? 'bg-slate-700' : 'bg-slate-200'} overflow-hidden`}>

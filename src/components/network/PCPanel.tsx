@@ -1064,11 +1064,11 @@ export function PCPanel({
         <Dialog open={searchOpen} onOpenChange={setSearchOpen}>
           <DialogContent className={`${isDark ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white'} sm:max-w-md`}>
             <DialogHeader>
-            <DialogTitle>{t.searchOutputTitle}</DialogTitle>
-            <DialogDescription className={isDark ? 'text-slate-400' : 'text-slate-600'}>
-              {t.searchOutputDescription}
-            </DialogDescription>
-          </DialogHeader>
+              <DialogTitle>{t.searchOutputTitle}</DialogTitle>
+              <DialogDescription className={isDark ? 'text-slate-400' : 'text-slate-600'}>
+                {t.searchOutputDescription}
+              </DialogDescription>
+            </DialogHeader>
             <Input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder={t.searchPlaceholder} autoFocus />
             <div className="flex justify-end gap-2 pt-1">
               <Button variant="outline" onClick={() => setSearchQuery('')} className="text-xs font-semibold" disabled={!searchQuery.trim()}>
@@ -1128,9 +1128,9 @@ export function PCPanel({
           {activeTab === 'settings' ? (
             <div className="p-6 space-y-4 overflow-y-auto custom-scrollbar">
               <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-500 uppercase">
+                <label className="text-xs font-bold text-slate-500 ">
                   {t.ipConfigurationLabel}
-                </label>
+                </label>&nbsp;
                 <div className={`inline-flex p-1 rounded-xl border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-slate-100 border-slate-200'}`}>
                   <button
                     type="button"
@@ -1162,40 +1162,40 @@ export function PCPanel({
                 </div>
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-500 uppercase">{t.hostname}</label>
+                <label className="text-xs font-bold text-slate-500 ">{t.hostname}</label>
                 <Input value={internalPcHostname} onChange={(e) => setPcHostname(e.target.value)} />
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-500 uppercase">MAC Address</label>
+                <label className="text-xs font-bold text-slate-500 ">MAC Address</label>
                 <Input value={pcMAC} onChange={(e) => setPcMAC(e.target.value)} className={errors.mac ? 'border-rose-500' : ''} />
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase">IP Address</label>
+                  <label className="text-xs font-bold text-slate-500 ">IP Address</label>
                   <Input value={pcIP} onChange={(e) => setPcIP(e.target.value)} className={errors.ip ? 'border-rose-500' : ''} disabled={ipConfigMode === 'dhcp'} />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase">Subnet Mask</label>
+                  <label className="text-xs font-bold text-slate-500 ">Subnet Mask</label>
                   <Input value={pcSubnet} onChange={(e) => setPcSubnet(e.target.value)} className={errors.subnet ? 'border-rose-500' : ''} disabled={ipConfigMode === 'dhcp'} />
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase">Gateway</label>
+                  <label className="text-xs font-bold text-slate-500 ">Gateway</label>
                   <Input value={pcGateway} onChange={(e) => setPcGateway(e.target.value)} className={errors.gateway ? 'border-rose-500' : ''} disabled={ipConfigMode === 'dhcp'} />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase">DNS</label>
+                  <label className="text-xs font-bold text-slate-500 ">DNS</label>
                   <Input value={pcDNS} onChange={(e) => setPcDNS(e.target.value)} className={errors.dns ? 'border-rose-500' : ''} disabled={ipConfigMode === 'dhcp'} />
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase">IPv6 Address</label>
+                  <label className="text-xs font-bold text-slate-500 ">IPv6 Address</label>
                   <Input value={pcIPv6} onChange={(e) => setPcIPv6(e.target.value)} />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase">IPv6 Prefix</label>
+                  <label className="text-xs font-bold text-slate-500 ">IPv6 Prefix</label>
                   <Input value={pcIPv6Prefix} onChange={(e) => setPcIPv6Prefix(e.target.value)} />
                 </div>
               </div>
@@ -1210,9 +1210,9 @@ export function PCPanel({
                         ? 'DNS (Domain Name System - isim çözümleme)'
                         : 'DNS (Domain Name System - name resolution)'}
                     </h3>
-                  <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                    {t.dnsRecordManagerTip}
-                  </p>
+                    <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                      {t.dnsRecordManagerTip}
+                    </p>
                   </div>
                   <button
                     type="button"
@@ -1293,7 +1293,7 @@ export function PCPanel({
                         : 'HTTP (Hypertext Transfer Protocol - web content)'}
                     </h3>
                     <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                    {t.httpServiceDescription}
+                      {t.httpServiceDescription}
                     </p>
                   </div>
                   <button
@@ -1314,7 +1314,7 @@ export function PCPanel({
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase tracking-wide text-slate-500">HTTP Content</label>
+                  <label className="text-xs font-bold  tracking-wide text-slate-500">HTTP Content</label>
                   <Input
                     value={serviceHttpContent}
                     onChange={(e) => setServiceHttpContent(e.target.value)}
@@ -1403,13 +1403,13 @@ export function PCPanel({
                   )}
                 </div>
 
-                  <div className="space-y-2">
-                    {serviceDhcpPools.length === 0 && (
-                      <div className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>
-                        {t.noDhcpPools}
-                      </div>
-                    )}
-                    {serviceDhcpPools.map((pool, index) => (
+                <div className="space-y-2">
+                  {serviceDhcpPools.length === 0 && (
+                    <div className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>
+                      {t.noDhcpPools}
+                    </div>
+                  )}
+                  {serviceDhcpPools.map((pool, index) => (
                     <div key={`${pool.poolName}-${index}`} className={`rounded-lg px-3 py-2 space-y-2 ${isDark ? 'bg-slate-950 border border-slate-800' : 'bg-slate-50 border border-slate-200'}`}>
                       <div className="text-xs font-mono">
                         <div>{pool.poolName}</div>
@@ -1526,7 +1526,7 @@ export function PCPanel({
                       )}
                       {line.type === 'output' && <span className={`${textColor} whitespace-pre-wrap`}>{highlightText(line.content)}</span>}
                       {line.type === 'error' && <span className="text-rose-500 font-bold italic">{highlightText(line.content)}</span>}
-                      {line.type === 'success' && <span className="text-cyan-500 font-bold uppercase text-xs tracking-widest opacity-80">{highlightText(line.content)}</span>}
+                      {line.type === 'success' && <span className="text-cyan-500 font-bold  text-xs tracking-widest opacity-80">{highlightText(line.content)}</span>}
                     </div>
                   ))
                 )}

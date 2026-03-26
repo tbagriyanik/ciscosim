@@ -192,7 +192,7 @@ export function ConfigPanel({ state, onExecuteCommand, isDevicePoweredOff = fals
           </pre>
         </div>
 
-        <div className="mt-3 flex items-center gap-2 text-[10px] sm:text-xs font-black uppercase tracking-widest text-slate-500">
+        <div className="mt-3 flex items-center gap-2 text-[10px] sm:text-xs font-black tracking-widest text-slate-500">
           <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
           <span className={isMobile ? 'text-[9px]' : ''}>{t.realTimeUpdate}</span>
         </div>

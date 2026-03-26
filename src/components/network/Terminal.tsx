@@ -363,7 +363,7 @@ export function Terminal({
         {/* Settings Bar */}
         {showSettings && (
           <div className="px-4 py-2 border-b bg-muted/30 flex items-center gap-4 animate-in slide-in-from-top-2">
-            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground whitespace-nowrap">
+            <label className="text-[10px] font-black tracking-widest text-muted-foreground whitespace-nowrap">
               {language === 'tr' ? 'Yazı Boyutu' : 'Font Size'}: {fontSize}px
             </label>
             <input
@@ -371,7 +371,7 @@ export function Terminal({
               onChange={(e) => setFontSize(parseInt(e.target.value))}
               className="flex-1 h-1 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
             />
-            <Button variant="ghost" size="sm" onClick={onClear} className="h-7 text-[10px] font-black uppercase tracking-widest text-rose-500">
+            <Button variant="ghost" size="sm" onClick={onClear} className="h-7 text-[10px] font-black  tracking-widest text-rose-500">
               <Trash2 className="w-3 h-3 mr-1" /> {t.clearTerminalBtn}
             </Button>
           </div>
@@ -388,7 +388,7 @@ export function Terminal({
             style={{ fontSize: `${fontSize}px` }}
           >
             {isPoweredOff ? (
-              <div className="h-full flex items-center justify-center text-slate-800 font-black tracking-tighter text-2xl uppercase italic">Offline</div>
+              <div className="h-full flex items-center justify-center text-slate-800 font-black tracking-tighter text-2xl  italic">Offline</div>
             ) : (
               <div className="space-y-1.5">
                 {output.map((line, i) => (
@@ -410,7 +410,7 @@ export function Terminal({
                 ))}
                 {isLoading && (
                   <div className="flex items-center gap-2 text-primary/50 italic py-1 animate-pulse">
-                    <span className="text-[10px] font-black uppercase tracking-widest">{t.processing}...</span>
+                    <span className="text-[10px] font-black tracking-widest">{t.processing}...</span>
                   </div>
                 )}
               </div>
