@@ -1661,7 +1661,13 @@ export default function Home() {
 
   return (
     <AppErrorBoundary fallbackTitle={language === 'tr' ? 'Uygulama hatası' : 'Application error'}>
-      <div className={`min-h-screen w-full flex flex-col ${isAppLoading ? 'bg-slate-950 overflow-hidden' : (isDark ? 'bg-slate-950' : 'bg-slate-50')} transition-colors duration-700`}>
+      <div className={`min-h-screen w-full flex flex-col relative overflow-hidden transition-colors duration-700 ${isAppLoading ? 'bg-slate-950 overflow-hidden' : (isDark ? 'bg-slate-950' : 'bg-slate-50')}`}>
+        {!isAppLoading && (
+          <div className="fixed inset-0 pointer-events-none z-0 opacity-40 dark:opacity-20 transition-opacity duration-1000">
+            <div className="absolute inset-0 mesh-gradient animate-liquid blur-[100px] scale-150 rotate-12" />
+            <div className={`absolute inset-0 ${isDark ? 'bg-slate-950/40' : 'bg-white/40'}`} />
+          </div>
+        )}
         {/* App Loading Screen */}
         {isAppLoading && (
           <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-slate-950">
@@ -1714,7 +1720,7 @@ export default function Home() {
           className="flex flex-col flex-1"
         >
           {/* Header */}
-          <header className={`${isDark ? 'bg-slate-900/95 border-slate-800' : 'bg-white/90 border-slate-200'} backdrop-blur-xl border-b px-5 py-3 sticky top-0 z-50 pb-0`}>
+          <header className={`liquid-glass sticky top-0 z-50 border-b px-5 py-3 pb-0`}>
             <div className="w-full">
               <div className="flex items-center justify-between">
                 {/* Logo & Title */}
@@ -2249,7 +2255,7 @@ export default function Home() {
           </div>
 
           <Dialog open={showProjectPicker} onOpenChange={setShowProjectPicker}>
-            <DialogContent className={`${isDark ? 'bg-slate-950 border-slate-800 text-white' : 'bg-white'} w-[98vw] max-w-[1400px] h-[95vh] max-h-[1000px] p-0 overflow-hidden flex flex-col shadow-2xl ring-1 ring-slate-800/10 rounded-none md:rounded-3xl`}>
+            <DialogContent className={`liquid-glass-strong w-[98vw] max-w-[1400px] h-[95vh] max-h-[1000px] p-0 overflow-hidden flex flex-col shadow-2xl rounded-none md:rounded-3xl`}>
               <div className='flex flex-col flex-1 overflow-hidden h-full max-w-full'>
                 <div className='p-4 md:p-8 pb-2 md:pb-4'>
                   <div className='rounded-2xl md:rounded-3xl border border-transparent bg-gradient-to-r from-cyan-500/20 to-blue-500/10 p-4 md:p-6 shadow-xl shadow-cyan-500/10'>
@@ -2341,7 +2347,7 @@ export default function Home() {
               else setShowOnboarding(true);
             }}
           >
-            <DialogContent className={`${isDark ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white'} sm:max-w-lg`}>
+            <DialogContent className={`liquid-glass-strong sm:max-w-lg`}>
               <DialogHeader>
                 <DialogTitle className="flex items-center justify-between gap-3">
                   <span>{onboardingSteps[onboardingStep]?.title}</span>
