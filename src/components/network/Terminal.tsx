@@ -232,8 +232,11 @@ export function Terminal({
         const completion = matches[nextIndex];
         setInput(originalContext ? `${originalContext} ${completion}` : completion);
       }
+    } else if (value.trim()) {
+      // No matches - trigger help by appending ?
+      onCommand(value.trim() + ' ?');
     }
-  }, [input, tabCycleIndex, lastTabInput, state.currentMode, expandCommandContext]);
+  }, [input, tabCycleIndex, lastTabInput, state.currentMode, expandCommandContext, onCommand]);
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {

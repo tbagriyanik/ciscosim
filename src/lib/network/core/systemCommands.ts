@@ -155,15 +155,38 @@ function cmdEnd(
   input: string,
   ctx: any
 ): any {
-  return {
-    success: true,
-    newState: {
-      currentMode: 'privileged',
-      currentInterface: undefined,
-      currentLine: undefined,
-      currentVlan: undefined
-    }
-  };
+  // Handle all sub-modes and return to privileged
+  switch (state.currentMode) {
+    case 'interface':
+    case 'line':
+    case 'vlan':
+    case 'router-config':
+      return {
+        success: true,
+        newState: {
+          currentMode: 'privileged',
+          currentInterface: undefined,
+          currentLine: undefined,
+          currentVlan: undefined,
+          ospfProcessId: undefined,
+          ripEnabled: undefined
+        }
+      };
+    case 'config':
+      return {
+        success: true,
+        newState: {
+          currentMode: 'privileged',
+          currentInterface: undefined,
+          currentLine: undefined,
+          currentVlan: undefined,
+          ospfProcessId: undefined,
+          ripEnabled: undefined
+        }
+      };
+    default:
+      return { success: true, output: '' };
+  }
 }
 
 

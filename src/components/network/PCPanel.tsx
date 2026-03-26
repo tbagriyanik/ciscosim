@@ -565,8 +565,11 @@ export function PCPanel({
         const completion = matches[nextIndex];
         setInput(originalContext ? `${originalContext} ${completion}` : completion);
       }
+    } else if (value.trim() && activeTab === 'terminal' && isConsoleConnected) {
+      // No matches in console mode - trigger help
+      executeCommand(value.trim() + ' ?');
     }
-  }, [input, tabCycleIndex, lastTabInput, activeTab]);
+  }, [input, tabCycleIndex, lastTabInput, activeTab, isConsoleConnected]);
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') executeCommand();
