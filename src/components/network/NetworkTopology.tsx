@@ -3811,19 +3811,21 @@ export function NetworkTopology({
                     <rect x="0" y="0" width={getCanvasDimensions().width} height={getCanvasDimensions().height} />
                   </clipPath>
                   {/* Canvas background gradient */}
-                  <linearGradient id="canvasBgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <radialGradient id="canvasBgGradient" cx="45%" cy="30%" r="85%">
                     {isDark ? (
                       <>
                         <stop offset="0%" stopColor="#1e293b" />
-                        <stop offset="100%" stopColor="#0f172a" />
+                        <stop offset="55%" stopColor="#162235" />
+                        <stop offset="100%" stopColor="#0b1322" />
                       </>
                     ) : (
                       <>
-                        <stop offset="0%" stopColor="#f8fafc" />
-                        <stop offset="100%" stopColor="#e2e8f0" />
+                        <stop offset="0%" stopColor="#f9fbff" />
+                        <stop offset="55%" stopColor="#edf3fb" />
+                        <stop offset="100%" stopColor="#dde7f3" />
                       </>
                     )}
-                  </linearGradient>
+                  </radialGradient>
                   {/* Grid pattern with improved visibility */}
                   <pattern id="gridPattern" width="20" height="20" patternUnits="userSpaceOnUse">
                     <circle cx="10" cy="10" r="1.5" fill={isDark ? '#475569' : '#64748b'} opacity="0.6" />
@@ -4421,10 +4423,38 @@ export function NetworkTopology({
             >
               {/* Canvas background */}
               <defs>
-                <linearGradient id="printCanvasBgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#ffffff" />
-                  <stop offset="100%" stopColor="#f5f5f5" />
-                </linearGradient>
+                <radialGradient id="canvasBgGradient" cx="45%" cy="30%" r="85%">
+                  {isDark ? (
+                    <>
+                      <stop offset="0%" stopColor="#0b1220" />
+                      <stop offset="45%" stopColor="#111a2b" />
+                      <stop offset="75%" stopColor="#131f33" />
+                      <stop offset="100%" stopColor="#0c1424" />
+                    </>
+                  ) : (
+                    <>
+                      <stop offset="0%" stopColor="#f8fbff" />
+                      <stop offset="45%" stopColor="#f2f7ff" />
+                      <stop offset="75%" stopColor="#eef4fb" />
+                      <stop offset="100%" stopColor="#e9f0f8" />
+                    </>
+                  )}
+                </radialGradient>
+                <radialGradient id="canvasSoftGlow" cx="20%" cy="15%" r="75%">
+                  {isDark ? (
+                    <>
+                      <stop offset="0%" stopColor="#22d3ee" stopOpacity="0.08" />
+                      <stop offset="45%" stopColor="#38bdf8" stopOpacity="0.04" />
+                      <stop offset="100%" stopColor="#0b1220" stopOpacity="0" />
+                    </>
+                  ) : (
+                    <>
+                      <stop offset="0%" stopColor="#7dd3fc" stopOpacity="0.18" />
+                      <stop offset="45%" stopColor="#a5b4fc" stopOpacity="0.08" />
+                      <stop offset="100%" stopColor="#f8fbff" stopOpacity="0" />
+                    </>
+                  )}
+                </radialGradient>
               </defs>
 
               {/* Background */}
@@ -4433,7 +4463,14 @@ export function NetworkTopology({
                 y="0"
                 width={getCanvasDimensions().width}
                 height={getCanvasDimensions().height}
-                fill="url(#printCanvasBgGradient)"
+                fill="url(#canvasBgGradient)"
+              />
+              <rect
+                x="0"
+                y="0"
+                width={getCanvasDimensions().width}
+                height={getCanvasDimensions().height}
+                fill="url(#canvasSoftGlow)"
               />
 
               {/* Connections */}

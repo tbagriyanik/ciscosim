@@ -1516,6 +1516,12 @@ export default function Home() {
     label: t[tab.labelKey as keyof typeof t] as string
   }));
 
+  const handleTabHoverGlow = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    e.currentTarget.style.setProperty('--mx', `${e.clientX - rect.left}px`);
+    e.currentTarget.style.setProperty('--my', `${e.clientY - rect.top}px`);
+  }, []);
+
   // Handle key events: ESC to close, ENTER to confirm
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -2188,11 +2194,19 @@ export default function Home() {
                       <TooltipTrigger asChild>
                         <button
                           onClick={() => switchTabOrTopology(tab.id)}
-                          className={`flex items-center gap-2 px-3 lg:px-5 py-3 rounded-t-xl text-sm font-semibold transition-all border-x border-t min-w-[50px] lg:min-w-[120px] justify-center ui-hover-surface ${isActive
+                          onMouseMove={handleTabHoverGlow}
+                          style={{ ['--mx' as any]: '50%', ['--my' as any]: '50%' }}
+                          className={`group relative overflow-hidden flex items-center gap-2 px-3 lg:px-5 py-3 rounded-t-xl text-sm font-semibold transition-all border-x border-t min-w-[50px] lg:min-w-[120px] justify-center ui-hover-surface ${isActive
                             ? `${isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-300'} ${colorClass.split(' ')[0]} shadow-[0_-4px_0_0_currentColor]`
                             : `${isDark ? 'bg-slate-900/50 border-transparent' : 'bg-slate-200/50 border-transparent'} ${colorClass}`
                             }`}
                         >
+                          <span
+                            className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+                            style={{
+                              background: `radial-gradient(130px circle at var(--mx) var(--my), ${isDark ? 'rgba(34,211,238,0.2)' : 'rgba(14,165,233,0.18)'}, transparent 65%)`
+                            }}
+                          />
                           <span className={`transition-transform duration-300 ${isActive ? 'scale-110' : ''}`}>
                             {tab.id === 'topology' ? <Network className="w-4 h-4" /> :
                               (tab.id === 'cmd' || tab.id === 'terminal') ? <TerminalIcon className="w-4 h-4" /> :
@@ -2237,9 +2251,17 @@ export default function Home() {
                   <TooltipTrigger asChild>
                     <button
                       onClick={() => switchTabOrTopology(tab.id)}
-                      className={`flex flex-col items-center justify-center min-h-[40px] flex-1 px-3 py-1.5 rounded-xl transition-all relative ui-hover-surface ${isActive ? 'text-blue-500' : `${colorClass} active:scale-95`
+                      onMouseMove={handleTabHoverGlow}
+                      style={{ ['--mx' as any]: '50%', ['--my' as any]: '50%' }}
+                      className={`group flex flex-col items-center justify-center min-h-[40px] flex-1 px-3 py-1.5 rounded-xl transition-all relative overflow-hidden ui-hover-surface ${isActive ? 'text-blue-500' : `${colorClass} active:scale-95`
                         }`}
                     >
+                      <span
+                        className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+                        style={{
+                          background: `radial-gradient(90px circle at var(--mx) var(--my), ${isDark ? 'rgba(34,211,238,0.24)' : 'rgba(14,165,233,0.2)'}, transparent 68%)`
+                        }}
+                      />
                       {isActive && (
                         <motion.div
                           layoutId="mobileTabActive"
@@ -2269,6 +2291,11 @@ export default function Home() {
                 <div className='p-4 md:p-8 pb-2 md:pb-4'>
                   <div className='rounded-2xl md:rounded-3xl border border-transparent bg-gradient-to-r from-cyan-500/20 to-blue-500/10 p-4 md:p-6 shadow-xl shadow-cyan-500/10'>
                     <DialogTitle className='text-xl md:text-3xl lg:text-4xl font-black tracking-tight bg-gradient-to-br from-white to-slate-400 bg-clip-text text-transparent break-words'>{language === 'tr' ? 'Yeni Proje Aç' : 'Open a New Project'}</DialogTitle>
+                    <DialogDescription className="sr-only">
+                      {language === 'tr'
+                        ? 'Yeni proje penceresi: boş projeyle başlayın veya hazır örneklerden birini seçin.'
+                        : 'New project dialog: start with an empty project or choose one of the ready examples.'}
+                    </DialogDescription>
                     <p className={`text-xs md:text-base mt-1 md:mt-2 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'} break-words`}>
                       {language === 'tr'
                         ? 'Yeni laboratuvar akışına göre boş projeyle başlayın ya da seviyelendirilmiş hazır senaryolardan birini seçin.'
@@ -2756,7 +2783,7 @@ export default function Home() {
                       {activeTab !== 'topology' && activeTab !== 'cmd' && activeTab !== 'terminal' && (
                         <>
                           <kbd className={`px-1.5 py-0.5 rounded text-[10px] font-mono ${isDark ? 'bg-slate-700 text-slate-300' : 'bg-slate-200 text-slate-700'
-                            }`}>Ctrl+1-5</kbd>
+                            }`}>Ctrl+1-3</kbd>
                           <span className="mx-1">{language === 'tr' ? 'Sekmeler' : 'Tabs'}</span>
                         </>
                       )}
