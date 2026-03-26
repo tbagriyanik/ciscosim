@@ -77,6 +77,7 @@ export function QuickCommands({ currentMode, onExecuteCommand, t, theme, languag
           <span className="truncate">{modeLabels[currentMode]}</span>
         </Badge>
       }
+      collapsible={false}
       className={cn("w-full max-w-none", cardBg)}
     >
       <div className="space-y-4">

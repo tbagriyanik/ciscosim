@@ -1053,6 +1053,7 @@ export function PCPanel({
       title={`${internalPcHostname} (${pcIP})`}
       onClose={onClose}
       headerAction={headerAction}
+      collapsible={false}
       className={`
         w-full h-full min-w-0 
         ${isMobile ? 'max-w-none' : 'max-w-none'} 

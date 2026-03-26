@@ -355,6 +355,7 @@ export function Terminal({
       title={title || deviceName}
       onClose={onClose}
       headerAction={headerAction}
+      collapsible={false}
       noPadding
       className={cn("flex flex-col h-full", className)}
     >

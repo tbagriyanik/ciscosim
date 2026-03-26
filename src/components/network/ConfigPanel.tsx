@@ -179,6 +179,7 @@ export function ConfigPanel({ state, onExecuteCommand, isDevicePoweredOff = fals
       id={`config-${state.hostname}`}
       title={title || t.runningConfig}
       headerAction={headerAction}
+      collapsible={false}
       className={cn(
         "w-full max-w-none",
         className
