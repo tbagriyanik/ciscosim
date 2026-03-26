@@ -1206,6 +1206,17 @@ export default function Home() {
     setTopologyConnections([]);
     setTopologyNotes([]);
 
+    // Reset zoom and pan to top-left
+    setZoom(1.0);
+    setPan({ x: 0, y: 0 });
+
+    // Scroll to top
+    if (topologyContainerRef.current) {
+      topologyContainerRef.current.scrollTop = 0;
+      topologyContainerRef.current.scrollLeft = 0;
+    }
+    window.scrollTo(0, 0);
+
     // Reset active selections
     setActiveDeviceId('switch-1');
     setActiveDeviceType('switch');
@@ -1571,6 +1582,15 @@ export default function Home() {
             title: language === 'tr' ? 'Proje yüklendi' : 'Project loaded',
             description: language === 'tr' ? 'Dosya başarıyla içe aktarıldı.' : 'File imported successfully.',
           });
+          // Reset zoom and pan to top-left
+          setZoom(1.0);
+          setPan({ x: 0, y: 0 });
+          // Scroll to top
+          if (topologyContainerRef.current) {
+            topologyContainerRef.current.scrollTop = 0;
+            topologyContainerRef.current.scrollLeft = 0;
+          }
+          window.scrollTo(0, 0);
         } else {
           toast({
             title: language === 'tr' ? 'Geçersiz proje dosyası' : 'Invalid project file',
@@ -1594,6 +1614,17 @@ export default function Home() {
   const applyExampleProject = useCallback((projectData: any) => {
     loadProjectData(projectData);
     setShowProjectPicker(false);
+
+    // Reset zoom and pan to top-left
+    setZoom(1.0);
+    setPan({ x: 0, y: 0 });
+
+    // Scroll to top
+    if (topologyContainerRef.current) {
+      topologyContainerRef.current.scrollTop = 0;
+      topologyContainerRef.current.scrollLeft = 0;
+    }
+    window.scrollTo(0, 0);
   }, [loadProjectData, setShowProjectPicker]);
 
   const isDark = theme === 'dark';
@@ -2349,6 +2380,15 @@ export default function Home() {
               {/* Tab Content */}
               {activeTab === 'topology' && (
                 <div className="flex-1 flex flex-col min-h-0 h-full">
+                  {/* Topology Header */}
+                  <div className={`flex items-center justify-between px-4 py-2 border-b ${isDark ? 'border-slate-800 bg-slate-900' : 'border-slate-200 bg-white'}`}>
+                    <h2 className={`text-sm font-semibold ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
+                      {language === 'tr' ? 'Ağ Topolojisi' : 'Network Topology'}
+                    </h2>
+                    <span className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                      {topologyDevices?.length || 0} {language === 'tr' ? 'cihaz' : 'devices'}
+                    </span>
+                  </div>
                   {/* Network Topology fills remaining space */}
                   <div ref={topologyContainerRef} className="flex-1 w-full h-full min-h-0">
                     <NetworkTopology

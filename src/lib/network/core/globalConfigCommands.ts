@@ -1,3 +1,5 @@
+'use client';
+
 import type { CommandHandler } from './commandTypes';
 
 // Global config (hostname, vlan, vtp, spanning-tree, security, ip domain-name, etc.)
@@ -18,6 +20,11 @@ export const globalConfigHandlers: Record<string, CommandHandler> = {
   'ip domain-name': cmdIpDomainName,
   'cdp run': cmdCdpRun,
   'no cdp run': cmdNoCdpRun,
+  // Routing protocols
+  'router rip': cmdRouterRip,
+  'router ospf': cmdRouterOspf,
+  'no router rip': cmdNoRouterRip,
+  'no router ospf': cmdNoRouterOspf,
 };
 
 /**
@@ -351,5 +358,93 @@ function cmdNoCdpRun(state: any, input: string, ctx: any): any {
   return {
     success: true,
     newState: { cdpEnabled: false }
+  };
+}
+
+/**
+ * Router RIP - Enable RIP routing
+ */
+function cmdRouterRip(state: any, input: string, ctx: any): any {
+  if (state.currentMode !== 'config') {
+    return { success: false, error: '% Invalid command at this mode' };
+  }
+
+  const lang = ctx.language || 'en';
+  return {
+    success: true,
+    output: lang === 'tr' ?
+      'RIP Routing Protocol etkinleştirildi' :
+      'RIP Routing Protocol enabled',
+    newState: {
+      routingProtocol: 'rip',
+      ipRouting: true,
+      currentMode: 'router-config'
+    }
+  };
+}
+
+/**
+ * Router OSPF - Enable OSPF routing
+ */
+function cmdRouterOspf(state: any, input: string, ctx: any): any {
+  if (state.currentMode !== 'config') {
+    return { success: false, error: '% Invalid command at this mode' };
+  }
+
+  // Parse OSPF process ID (optional)
+  const match = input.match(/^router\s+ospf\s*(\d*)$/i);
+  const processId = match?.[1] || '1';
+
+  return {
+    success: true,
+    output: `OSPF Routing Process enabled with Process ID ${processId}`,
+    newState: {
+      routingProtocol: 'ospf',
+      ipRouting: true,
+      ospfProcessId: processId,
+      currentMode: 'router-config'
+    }
+  };
+}
+
+/**
+ * No Router RIP - Disable RIP routing
+ */
+function cmdNoRouterRip(state: any, input: string, ctx: any): any {
+  if (state.currentMode !== 'config') {
+    return { success: false, error: '% Invalid command at this mode' };
+  }
+
+  const lang = ctx.language || 'en';
+  return {
+    success: true,
+    output: lang === 'tr' ?
+      'RIP Routing Protocol devre dışı bırakıldı' :
+      'RIP Routing Protocol disabled',
+    newState: {
+      routingProtocol: 'none',
+      dynamicRoutes: []
+    }
+  };
+}
+
+/**
+ * No Router OSPF - Disable OSPF routing
+ */
+function cmdNoRouterOspf(state: any, input: string, ctx: any): any {
+  if (state.currentMode !== 'config') {
+    return { success: false, error: '% Invalid command at this mode' };
+  }
+
+  const lang = ctx.language || 'en';
+  return {
+    success: true,
+    output: lang === 'tr' ?
+      'OSPF Routing Protocol devre dışı bırakıldı' :
+      'OSPF Routing Protocol disabled',
+    newState: {
+      routingProtocol: 'none',
+      dynamicRoutes: []
+    }
   };
 }

@@ -38,6 +38,7 @@ import { systemHandlers } from './core/systemCommands';
 import { showHandlers } from './core/showCommands';
 import { interfaceHandlers } from './core/interfaceCommands';
 import { globalConfigHandlers } from './core/globalConfigCommands';
+import { routerConfigHandlers } from './core/routerConfigCommands';
 import { lineHandlers } from './core/lineCommands';
 import { privilegedHandlers } from './core/privilegedCommands';
 
@@ -1044,6 +1045,9 @@ const commandHandlers: Record<string, CommandHandler> = {
 
   // Global configuration commands
   ...globalConfigHandlers,
+
+  // Router configuration commands (OSPF/RIP)
+  ...routerConfigHandlers,
 
   // Line commands
   ...lineHandlers,
