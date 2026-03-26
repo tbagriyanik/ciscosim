@@ -101,6 +101,12 @@ export function ModernPanel({
     const isStacked = panelLayout === 'stacked';
     const canResize = resizable && isOverlay && !isMobile;
     const canCollapse = collapsible && !isMobile;
+    const overlayMobileStyle: React.CSSProperties = {};
+    if (isOverlay && isMobile) {
+        overlayMobileStyle.width = '100vw';
+        overlayMobileStyle.left = "5px";
+        overlayMobileStyle.right = "5px";
+    }
 
     return (
         <div
@@ -111,13 +117,14 @@ export function ModernPanel({
                 className
             )}
             style={{
-                width: isOverlay ? width : '100%',
-                height: isCollapsed ? 'auto' : (isMobile ? '400px' : (style?.height || 'auto')),
+                width: isOverlay ? (isMobile ? '100vw' : width) : '100%',
+                height: isCollapsed ? 'auto' : (isMobile ? '550px' : (style?.height || 'auto')),
+                ...overlayMobileStyle,
                 ...style
             }}
         >
             {/* Header */}
-            <div 
+            <div
                 className={cn(
                     "flex items-center justify-between gap-2 p-4 border-b bg-muted/50",
                     isMobile && "p-3 min-h-[48px] touch-manipulation"

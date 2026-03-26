@@ -1065,7 +1065,7 @@ export function PCPanel({
             className={`h-9 px-4 text-xs font-black tracking-wider transition-all gap-2 ${activeTab === 'desktop' ? 'bg-blue-500/10 text-blue-400' : 'text-slate-500'} ${isMobile ? 'flex-1 min-w-0' : ''}`}
           >
             <Command className="w-4 h-4" />
-            <span className={isMobile ? 'text-[10px]' : 'hidden sm:inline'}>{t.commandPromptTab}</span>
+            <span className={isMobile ? 'sr-only' : 'hidden sm:inline'}>{t.commandPromptTab}</span>
           </Button>
           <Button
             variant={activeTab === 'terminal' ? 'secondary' : 'ghost'}
@@ -1074,7 +1074,7 @@ export function PCPanel({
             className={`h-9 px-4 text-xs font-black tracking-wider  transition-all gap-2 ${activeTab === 'terminal' ? 'bg-emerald-500/10 text-emerald-500' : 'text-slate-500 hover:text-emerald-500'} ${isMobile ? 'flex-1 min-w-0' : ''}`}
           >
             <TerminalIcon className="w-4 h-4" />
-            <span className={isMobile ? 'text-[10px]' : 'hidden sm:inline'}>{t.consoleTab}</span>
+            <span className={isMobile ? 'sr-only' : 'hidden sm:inline'}>{t.consoleTab}</span>
           </Button>
           <Button
             variant={activeTab === 'settings' ? 'secondary' : 'ghost'}
@@ -1083,7 +1083,7 @@ export function PCPanel({
             className={`h-9 px-4 text-xs font-black tracking-wider  transition-all gap-2 ${activeTab === 'settings' ? 'bg-purple-500/10 text-purple-500' : 'text-slate-500 hover:text-purple-500'} ${isMobile ? 'flex-1 min-w-0' : ''}`}
           >
             <ShieldCheck className="w-4 h-4" />
-            <span className={isMobile ? 'text-[10px]' : 'hidden sm:inline'}>{t.settingsTab}</span>
+            <span className={isMobile ? 'sr-only' : 'hidden sm:inline'}>{t.settingsTab}</span>
           </Button>
           <Button
             variant={activeTab === 'services' ? 'secondary' : 'ghost'}
@@ -1092,7 +1092,7 @@ export function PCPanel({
             className={`h-9 px-4 text-xs font-black tracking-wider transition-all gap-2 ${activeTab === 'services' ? 'bg-amber-500/10 text-amber-500' : 'text-slate-500 hover:text-amber-500'} ${isMobile ? 'flex-1 min-w-0' : ''}`}
           >
             <Globe className="w-4 h-4" />
-            <span className={isMobile ? 'text-[10px]' : 'hidden sm:inline'}>
+            <span className={isMobile ? 'sr-only' : 'hidden sm:inline'}>
               {`${t.servicesTab} (${activeServiceCount}/3)`}
             </span>
           </Button>
