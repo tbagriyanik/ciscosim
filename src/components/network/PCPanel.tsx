@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useRef, useEffect, KeyboardEvent, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -153,6 +153,7 @@ export function PCPanel({
   }, [deviceFromTopology?.name, deviceId, setPcHostname]);
 
   const [pcMAC, setPcMAC] = useState(deviceFromTopology?.macAddress || defaultConfig.mac);
+  const [ipConfigMode, setIpConfigMode] = useState<'static' | 'dhcp'>(deviceFromTopology?.ipConfigMode || 'static');
   const [pcGateway, setPcGateway] = useState(deviceFromTopology?.gateway || '192.168.1.1');
   const [pcDNS, setPcDNS] = useState(deviceFromTopology?.dns || '8.8.8.8');
   const [pcSubnet, setPcSubnet] = useState(deviceFromTopology?.subnet || '255.255.255.0');
@@ -166,7 +167,7 @@ export function PCPanel({
   const [dnsFormAddress, setDnsFormAddress] = useState('');
   const [editingDnsIndex, setEditingDnsIndex] = useState<number | null>(null);
   const [serviceHttpEnabled, setServiceHttpEnabled] = useState(deviceFromTopology?.services?.http?.enabled ?? false);
-  const [serviceHttpContent, setServiceHttpContent] = useState(deviceFromTopology?.services?.http?.content || 'Merhaba Dünya!');
+  const [serviceHttpContent, setServiceHttpContent] = useState(deviceFromTopology?.services?.http?.content || 'Merhaba DÃ¼nya!');
   const [serviceDhcpEnabled, setServiceDhcpEnabled] = useState(deviceFromTopology?.services?.dhcp?.enabled ?? false);
   const [serviceDhcpPools, setServiceDhcpPools] = useState<DhcpPoolConfig[]>(deviceFromTopology?.services?.dhcp?.pools || []);
   const [dhcpForm, setDhcpForm] = useState<DhcpPoolConfig>({
@@ -182,13 +183,14 @@ export function PCPanel({
   const activeServiceCount = Number(serviceDnsEnabled) + Number(serviceHttpEnabled) + Number(serviceDhcpEnabled);
 
   useEffect(() => {
+    setIpConfigMode(deviceFromTopology?.ipConfigMode || 'static');
     setServiceDnsEnabled(deviceFromTopology?.services?.dns?.enabled ?? false);
     setServiceDnsRecords(deviceFromTopology?.services?.dns?.records || []);
     setDnsFormDomain('');
     setDnsFormAddress('');
     setEditingDnsIndex(null);
     setServiceHttpEnabled(deviceFromTopology?.services?.http?.enabled ?? false);
-    setServiceHttpContent(deviceFromTopology?.services?.http?.content || 'Merhaba Dünya!');
+    setServiceHttpContent(deviceFromTopology?.services?.http?.content || 'Merhaba DÃ¼nya!');
     setServiceDhcpEnabled(deviceFromTopology?.services?.dhcp?.enabled ?? false);
     setServiceDhcpPools(deviceFromTopology?.services?.dhcp?.pools || []);
     setDhcpForm({
@@ -207,11 +209,13 @@ export function PCPanel({
   // Validate and sync global state
   const syncToGlobal = useCallback(() => {
     const newErrors: Record<string, string> = {};
-    if (!validateIP(pcIP)) newErrors.ip = 'Geçersiz IP';
-    if (!isValidMAC(pcMAC)) newErrors.mac = 'Geçersiz MAC';
-    if (pcSubnet && !validateIP(pcSubnet)) newErrors.subnet = 'Geçersiz Subnet';
-    if (pcGateway && !validateIP(pcGateway)) newErrors.gateway = 'Geçersiz Gateway';
-    if (pcDNS && !validateIP(pcDNS)) newErrors.dns = 'Geçersiz DNS';
+    if (!validateIP(pcIP)) newErrors.ip = 'GeÃ§ersiz IP';
+    if (!isValidMAC(pcMAC)) newErrors.mac = 'GeÃ§ersiz MAC';
+    if (ipConfigMode === 'static') {
+      if (pcSubnet && !validateIP(pcSubnet)) newErrors.subnet = 'GeÃ§ersiz Subnet';
+      if (pcGateway && !validateIP(pcGateway)) newErrors.gateway = 'GeÃ§ersiz Gateway';
+      if (pcDNS && !validateIP(pcDNS)) newErrors.dns = 'GeÃ§ersiz DNS';
+    }
 
     setErrors(newErrors);
 
@@ -221,6 +225,7 @@ export function PCPanel({
           deviceId: deviceId,
           config: {
             name: internalPcHostname,
+            ipConfigMode,
             ip: pcIP,
             macAddress: isValidMAC(pcMAC) ? normalizeMAC(pcMAC) : pcMAC,
             subnet: pcSubnet,
@@ -235,7 +240,7 @@ export function PCPanel({
               },
               http: {
                 enabled: serviceHttpEnabled,
-                content: serviceHttpContent || 'Merhaba Dünya!'
+                content: serviceHttpContent || 'Merhaba DÃ¼nya!'
               },
               dhcp: {
                 enabled: serviceDhcpEnabled,
@@ -246,7 +251,7 @@ export function PCPanel({
         }
       }));
     }
-  }, [internalPcHostname, pcIP, pcMAC, pcSubnet, pcGateway, pcDNS, pcIPv6, pcIPv6Prefix, serviceDnsEnabled, serviceDnsRecords, serviceHttpEnabled, serviceHttpContent, serviceDhcpEnabled, serviceDhcpPools, deviceId]);
+  }, [internalPcHostname, ipConfigMode, pcIP, pcMAC, pcSubnet, pcGateway, pcDNS, pcIPv6, pcIPv6Prefix, serviceDnsEnabled, serviceDnsRecords, serviceHttpEnabled, serviceHttpContent, serviceDhcpEnabled, serviceDhcpPools, deviceId]);
 
   // Trigger sync on change (debounced)
   useEffect(() => {
@@ -254,7 +259,7 @@ export function PCPanel({
       syncToGlobal();
     }, 500);
     return () => clearTimeout(handler);
-  }, [pcIP, pcMAC, pcSubnet, pcGateway, pcDNS, pcIPv6, pcIPv6Prefix, internalPcHostname, serviceDnsEnabled, serviceDnsRecords, serviceHttpEnabled, serviceHttpContent, serviceDhcpEnabled, serviceDhcpPools, syncToGlobal]);
+  }, [pcIP, pcMAC, pcSubnet, pcGateway, pcDNS, pcIPv6, pcIPv6Prefix, internalPcHostname, ipConfigMode, serviceDnsEnabled, serviceDnsRecords, serviceHttpEnabled, serviceHttpContent, serviceDhcpEnabled, serviceDhcpPools, syncToGlobal]);
 
   // Local output for Desktop (Local) - initialize from prop if available
   const getInitialPcOutput = (): OutputLine[] => {
@@ -430,13 +435,13 @@ export function PCPanel({
       });
       await navigator.clipboard.writeText(lines.join('\n'));
       toast({
-        title: language === 'tr' ? 'Kopyalandı' : 'Copied',
-        description: language === 'tr' ? 'Çıktı panoya kopyalandı.' : 'Output copied to clipboard.',
+        title: language === 'tr' ? 'KopyalandÄ±' : 'Copied',
+        description: language === 'tr' ? 'Ã‡Ä±ktÄ± panoya kopyalandÄ±.' : 'Output copied to clipboard.',
       });
     } catch {
       toast({
-        title: language === 'tr' ? 'Kopyalama başarısız' : 'Copy failed',
-        description: language === 'tr' ? 'Panoya erişilemedi.' : 'Clipboard access was blocked.',
+        title: language === 'tr' ? 'Kopyalama baÅŸarÄ±sÄ±z' : 'Copy failed',
+        description: language === 'tr' ? 'Panoya eriÅŸilemedi.' : 'Clipboard access was blocked.',
         variant: "destructive",
       });
     }
@@ -476,8 +481,8 @@ export function PCPanel({
     if (!connectedDeviceId) return;
     if (consolePasswordAttempted && consoleAwaitingPassword) {
       toast({
-        title: language === 'tr' ? 'Parola Hatalı' : 'Incorrect Password',
-        description: language === 'tr' ? 'Lütfen doğru parolayı girin.' : 'Please enter the correct password.',
+        title: language === 'tr' ? 'Parola HatalÄ±' : 'Incorrect Password',
+        description: language === 'tr' ? 'LÃ¼tfen doÄŸru parolayÄ± girin.' : 'Please enter the correct password.',
         variant: 'destructive',
       });
       setConsolePasswordAttempted(false);
@@ -491,7 +496,7 @@ export function PCPanel({
 
   const connectionErrorText = useMemo(() => {
     if (!isPcPoweredOff && !isConsoleTargetPoweredOff) return '';
-    return language === 'tr' ? 'Bağlantı hatası' : 'Connection error';
+    return language === 'tr' ? 'BaÄŸlantÄ± hatasÄ±' : 'Connection error';
   }, [isPcPoweredOff, isConsoleTargetPoweredOff, language]);
 
   const addLocalOutput = useCallback((type: OutputLine['type'], content: string, prompt?: string) => {
@@ -689,6 +694,16 @@ export function PCPanel({
     return null;
   }, [canReachTargetIp, deviceId, ipToNumber, numberToIp, topologyDevices, validateIP]);
 
+  const applyDhcpLease = useCallback(() => {
+    const lease = getDhcpLease();
+    if (!lease) return null;
+    setPcIP(lease.ip);
+    setPcSubnet(lease.subnetMask);
+    setPcGateway(lease.gateway);
+    setPcDNS(lease.dns);
+    return lease;
+  }, [getDhcpLease]);
+
   const handleConnect = async () => {
     if (!consoleDevice) return;
     setConnectedDeviceId(consoleDevice.id);
@@ -708,7 +723,7 @@ export function PCPanel({
     const command = (cmdToExecute || input).trim();
     if (!command) return;
     if ((activeTab === 'desktop' && isCmdInputDisabled) || (activeTab === 'terminal' && isConsoleInputDisabled)) {
-      addLocalOutput('error', connectionErrorText || (language === 'tr' ? 'Bağlantı hatası' : 'Connection error'));
+      addLocalOutput('error', connectionErrorText || (language === 'tr' ? 'BaÄŸlantÄ± hatasÄ±' : 'Connection error'));
       setInput('');
       return;
     }
@@ -724,8 +739,8 @@ export function PCPanel({
       const parts = command.split(' ');
       const cmd = parts[0].toLowerCase();
       const normalizedCmd = cmd
-        .replace(/ı/g, 'i')
-        .replace(/İ/g, 'i')
+        .replace(/Ä±/g, 'i')
+        .replace(/Ä°/g, 'i')
         .normalize('NFD')
         .replace(/[\u0300-\u036f]/g, '');
       const args = parts.slice(1);
@@ -744,12 +759,8 @@ export function PCPanel({
           setPcIP('0.0.0.0');
           addLocalOutput('success', 'IP address released successfully.');
         } else if (args.includes('/renew')) {
-          const lease = getDhcpLease();
+          const lease = applyDhcpLease();
           if (lease) {
-            setPcIP(lease.ip);
-            setPcSubnet(lease.subnetMask);
-            setPcGateway(lease.gateway);
-            setPcDNS(lease.dns);
             addLocalOutput(
               'success',
               `DHCP lease acquired from ${lease.serverName}/${lease.poolName}. New IP: ${lease.ip}`
@@ -781,9 +792,9 @@ export function PCPanel({
         if (!targetDomain) {
           addLocalOutput('output', 'Usage: nslookup <domain>');
         } else if (!isValidIpv4(pcDNS)) {
-          addLocalOutput('error', language === 'tr' ? 'DNS adresi geçersiz veya eksik.' : 'DNS address is missing or invalid.');
+          addLocalOutput('error', language === 'tr' ? 'DNS adresi geÃ§ersiz veya eksik.' : 'DNS address is missing or invalid.');
         } else if (!hasGatewayForTarget(pcDNS)) {
-          addLocalOutput('error', language === 'tr' ? 'DNS sunucusuna erişim için gateway gerekli.' : 'Gateway is required to reach DNS server.');
+          addLocalOutput('error', language === 'tr' ? 'DNS sunucusuna eriÅŸim iÃ§in gateway gerekli.' : 'Gateway is required to reach DNS server.');
         } else {
           const dnsResult = resolveDomainWithDnsServices(targetDomain);
           if (!dnsResult) {
@@ -800,17 +811,17 @@ export function PCPanel({
         if (!target) {
           addLocalOutput('output', 'Usage: http <ip_or_domain>');
         } else if (isValidIpv4(target) && !hasGatewayForTarget(target)) {
-          addLocalOutput('error', language === 'tr' ? 'Hedefe erişim için gateway gerekli.' : 'Gateway is required to reach target.');
+          addLocalOutput('error', language === 'tr' ? 'Hedefe eriÅŸim iÃ§in gateway gerekli.' : 'Gateway is required to reach target.');
         } else if (!isValidIpv4(target) && !isValidIpv4(pcDNS)) {
-          addLocalOutput('error', language === 'tr' ? 'Alan adı çözümlemek için DNS adresi gerekli.' : 'A valid DNS address is required to resolve domain.');
+          addLocalOutput('error', language === 'tr' ? 'Alan adÄ± Ã§Ã¶zÃ¼mlemek iÃ§in DNS adresi gerekli.' : 'A valid DNS address is required to resolve domain.');
         } else if (!isValidIpv4(target) && !hasGatewayForTarget(pcDNS)) {
-          addLocalOutput('error', language === 'tr' ? 'DNS sunucusuna erişim için gateway gerekli.' : 'Gateway is required to reach DNS server.');
+          addLocalOutput('error', language === 'tr' ? 'DNS sunucusuna eriÅŸim iÃ§in gateway gerekli.' : 'Gateway is required to reach DNS server.');
         } else {
           const httpServer = findHttpServerByTarget(target);
           if (!httpServer) {
             addLocalOutput('error', `HTTP service is unavailable for ${target}`);
           } else {
-            addLocalOutput('output', httpServer.services?.http?.content || 'Merhaba Dünya!');
+            addLocalOutput('output', httpServer.services?.http?.content || 'Merhaba DÃ¼nya!');
           }
         }
       } else if (cmd === 'arp') {
@@ -838,14 +849,14 @@ export function PCPanel({
     } else {
       // Console mode - send to connected device
       if (!isConsoleConnected) {
-        addLocalOutput('error', language === 'tr' ? 'Bağlı bir cihaz yok' : 'No device connected');
+        addLocalOutput('error', language === 'tr' ? 'BaÄŸlÄ± bir cihaz yok' : 'No device connected');
         return;
       }
       const trimmedCmd = command.trim().toLowerCase();
       // Handle help command
       if (trimmedCmd === '?' || trimmedCmd === 'help') {
         const helpOutput = language === 'tr'
-          ? 'Mevcut komutlar:\n  enable   - Privileged mode\n  exit     - Konsoldan çık\n  show     - Bilgi göster\n  ?        - Yardım\n'
+          ? 'Mevcut komutlar:\n  enable   - Privileged mode\n  exit     - Konsoldan Ã§Ä±k\n  show     - Bilgi gÃ¶ster\n  ?        - YardÄ±m\n'
           : 'Available commands:\n  enable   - Enter privileged mode\n  exit     - Disconnect from console\n  show     - Show information\n  ?        - Help\n';
         addLocalOutput('output', helpOutput);
         return;
@@ -985,9 +996,9 @@ export function PCPanel({
         <Dialog open={searchOpen} onOpenChange={setSearchOpen}>
           <DialogContent className={`${isDark ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white'} sm:max-w-md`}>
             <DialogHeader>
-              <DialogTitle>{language === 'tr' ? 'Çıktıda ara' : 'Search output'}</DialogTitle>
+              <DialogTitle>{language === 'tr' ? 'Ã‡Ä±ktÄ±da ara' : 'Search output'}</DialogTitle>
               <DialogDescription className={isDark ? 'text-slate-400' : 'text-slate-600'}>
-                {language === 'tr' ? 'Eşleşmeler çıktı alanında vurgulanır.' : 'Matches will be highlighted in the output.'}
+                {language === 'tr' ? 'EÅŸleÅŸmeler Ã§Ä±ktÄ± alanÄ±nda vurgulanÄ±r.' : 'Matches will be highlighted in the output.'}
               </DialogDescription>
             </DialogHeader>
             <Input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder={language === 'tr' ? 'Arama...' : 'Search...'} autoFocus />
@@ -1011,7 +1022,7 @@ export function PCPanel({
             className={`h-9 px-4 text-xs font-black tracking-wider transition-all gap-2 ${activeTab === 'desktop' ? 'bg-blue-500/10 text-blue-400' : 'text-slate-500'} ${isMobile ? 'flex-1 min-w-0' : ''}`}
           >
             <Command className="w-4 h-4" />
-            <span className={isMobile ? 'text-[10px]' : 'hidden sm:inline'}>{language === 'tr' ? 'Komut İstemi' : 'Command Prompt'}</span>
+            <span className={isMobile ? 'text-[10px]' : 'hidden sm:inline'}>{language === 'tr' ? 'Komut Ä°stemi' : 'Command Prompt'}</span>
           </Button>
           <Button
             variant={activeTab === 'terminal' ? 'secondary' : 'ghost'}
@@ -1049,6 +1060,42 @@ export function PCPanel({
           {activeTab === 'settings' ? (
             <div className="p-6 space-y-4 overflow-y-auto custom-scrollbar">
               <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-500 uppercase">
+                  {language === 'tr' ? 'IP Yapılandırma' : 'IP Configuration'}
+                </label>
+                <div className={`inline-flex p-1 rounded-xl border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-slate-100 border-slate-200'}`}>
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={ipConfigMode === 'dhcp'}
+                    onClick={() => {
+                      setIpConfigMode('dhcp');
+                      applyDhcpLease();
+                    }}
+                    className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
+                      ipConfigMode === 'dhcp'
+                        ? 'bg-cyan-500 text-white shadow-sm'
+                        : (isDark ? 'text-slate-300 hover:bg-slate-800' : 'text-slate-600 hover:bg-slate-200')
+                    }`}
+                  >
+                    DHCP
+                  </button>
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={ipConfigMode === 'static'}
+                    onClick={() => setIpConfigMode('static')}
+                    className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
+                      ipConfigMode === 'static'
+                        ? 'bg-blue-500 text-white shadow-sm'
+                        : (isDark ? 'text-slate-300 hover:bg-slate-800' : 'text-slate-600 hover:bg-slate-200')
+                    }`}
+                  >
+                    {language === 'tr' ? 'Statik' : 'Static'}
+                  </button>
+                </div>
+              </div>
+              <div className="space-y-2">
                 <label className="text-xs font-bold text-slate-500 uppercase">{language === 'tr' ? 'Cihaz Adı' : 'Hostname'}</label>
                 <Input value={internalPcHostname} onChange={(e) => setPcHostname(e.target.value)} />
               </div>
@@ -1059,21 +1106,21 @@ export function PCPanel({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-slate-500 uppercase">IP Address</label>
-                  <Input value={pcIP} onChange={(e) => setPcIP(e.target.value)} className={errors.ip ? 'border-rose-500' : ''} />
+                  <Input value={pcIP} onChange={(e) => setPcIP(e.target.value)} className={errors.ip ? 'border-rose-500' : ''} disabled={ipConfigMode === 'dhcp'} />
                 </div>
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-slate-500 uppercase">Subnet Mask</label>
-                  <Input value={pcSubnet} onChange={(e) => setPcSubnet(e.target.value)} className={errors.subnet ? 'border-rose-500' : ''} />
+                  <Input value={pcSubnet} onChange={(e) => setPcSubnet(e.target.value)} className={errors.subnet ? 'border-rose-500' : ''} disabled={ipConfigMode === 'dhcp'} />
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-slate-500 uppercase">Gateway</label>
-                  <Input value={pcGateway} onChange={(e) => setPcGateway(e.target.value)} className={errors.gateway ? 'border-rose-500' : ''} />
+                  <Input value={pcGateway} onChange={(e) => setPcGateway(e.target.value)} className={errors.gateway ? 'border-rose-500' : ''} disabled={ipConfigMode === 'dhcp'} />
                 </div>
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-slate-500 uppercase">DNS</label>
-                  <Input value={pcDNS} onChange={(e) => setPcDNS(e.target.value)} className={errors.dns ? 'border-rose-500' : ''} />
+                  <Input value={pcDNS} onChange={(e) => setPcDNS(e.target.value)} className={errors.dns ? 'border-rose-500' : ''} disabled={ipConfigMode === 'dhcp'} />
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1094,7 +1141,7 @@ export function PCPanel({
                   <div>
                     <h3 className="text-sm font-bold">DNS</h3>
                     <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                      {language === 'tr' ? 'Alan adı -> IP adresi kayıtlarını yönet.' : 'Manage domain to IP address records.'}
+                      {language === 'tr' ? 'Alan adÄ± -> IP adresi kayÄ±tlarÄ±nÄ± yÃ¶net.' : 'Manage domain to IP address records.'}
                     </p>
                   </div>
                   <button
@@ -1120,7 +1167,7 @@ export function PCPanel({
                   <Input
                     value={dnsFormDomain}
                     onChange={(e) => setDnsFormDomain(e.target.value)}
-                    placeholder={language === 'tr' ? 'Alan adı (or: site.local)' : 'Domain (ex: site.local)'}
+                    placeholder={language === 'tr' ? 'Alan adÄ± (or: site.local)' : 'Domain (ex: site.local)'}
                   />
                   <Input
                     value={dnsFormAddress}
@@ -1140,14 +1187,14 @@ export function PCPanel({
                       setDnsFormAddress('');
                     }}
                   >
-                    {language === 'tr' ? 'Kayıt Ekle' : 'Add Record'}
+                    {language === 'tr' ? 'KayÄ±t Ekle' : 'Add Record'}
                   </Button>
                 </div>
 
                 <div className="space-y-2">
                   {serviceDnsRecords.length === 0 && (
                     <div className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>
-                      {language === 'tr' ? 'Henüz DNS kaydı yok.' : 'No DNS records yet.'}
+                      {language === 'tr' ? 'HenÃ¼z DNS kaydÄ± yok.' : 'No DNS records yet.'}
                     </div>
                   )}
                   {serviceDnsRecords.map((record) => (
@@ -1174,7 +1221,7 @@ export function PCPanel({
                   <div>
                     <h3 className="text-sm font-bold">HTTP</h3>
                     <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                      {language === 'tr' ? 'HTTP açıkken bu cihazın web içeriği yayınlanır.' : 'When enabled, this PC serves web content.'}
+                      {language === 'tr' ? 'HTTP aÃ§Ä±kken bu cihazÄ±n web iÃ§eriÄŸi yayÄ±nlanÄ±r.' : 'When enabled, this PC serves web content.'}
                     </p>
                   </div>
                   <button
@@ -1201,11 +1248,11 @@ export function PCPanel({
                   <Input
                     value={serviceHttpContent}
                     onChange={(e) => setServiceHttpContent(e.target.value)}
-                    placeholder="Merhaba Dünya!"
+                    placeholder="Merhaba DÃ¼nya!"
                   />
                   {serviceHttpEnabled && (
                     <div className={`text-xs rounded-lg px-3 py-2 ${isDark ? 'bg-slate-950 border border-slate-800 text-slate-200' : 'bg-slate-50 border border-slate-200 text-slate-700'}`}>
-                      {serviceHttpContent || 'Merhaba Dünya!'}
+                      {serviceHttpContent || 'Merhaba DÃ¼nya!'}
                     </div>
                   )}
                 </div>
@@ -1216,7 +1263,7 @@ export function PCPanel({
                   <div>
                     <h3 className="text-sm font-bold">DHCP</h3>
                     <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                      {language === 'tr' ? 'DHCP havuzlarını ekle, düzenle ve sil.' : 'Add, edit and delete DHCP pools.'}
+                      {language === 'tr' ? 'DHCP havuzlarÄ±nÄ± ekle, dÃ¼zenle ve sil.' : 'Add, edit and delete DHCP pools.'}
                     </p>
                   </div>
                   <button
@@ -1242,7 +1289,7 @@ export function PCPanel({
                   <Input
                     value={dhcpForm.poolName}
                     onChange={(e) => setDhcpForm((prev) => ({ ...prev, poolName: e.target.value }))}
-                    placeholder={language === 'tr' ? 'Havuz Adı' : 'Pool Name'}
+                    placeholder={language === 'tr' ? 'Havuz AdÄ±' : 'Pool Name'}
                   />
                   <Input
                     value={dhcpForm.defaultGateway}
@@ -1277,11 +1324,11 @@ export function PCPanel({
                   <Button onClick={saveDhcpPool}>
                     {editingDhcpIndex === null
                       ? (language === 'tr' ? 'Havuz Ekle' : 'Add Pool')
-                      : (language === 'tr' ? 'Havuzu Güncelle' : 'Update Pool')}
+                      : (language === 'tr' ? 'Havuzu GÃ¼ncelle' : 'Update Pool')}
                   </Button>
                   {editingDhcpIndex !== null && (
                     <Button variant="outline" onClick={resetDhcpForm}>
-                      {language === 'tr' ? 'İptal' : 'Cancel'}
+                      {language === 'tr' ? 'Ä°ptal' : 'Cancel'}
                     </Button>
                   )}
                 </div>
@@ -1289,7 +1336,7 @@ export function PCPanel({
                 <div className="space-y-2">
                   {serviceDhcpPools.length === 0 && (
                     <div className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>
-                      {language === 'tr' ? 'Henüz DHCP havuzu yok.' : 'No DHCP pools yet.'}
+                      {language === 'tr' ? 'HenÃ¼z DHCP havuzu yok.' : 'No DHCP pools yet.'}
                     </div>
                   )}
                   {serviceDhcpPools.map((pool, index) => (
@@ -1308,7 +1355,7 @@ export function PCPanel({
                             setEditingDhcpIndex(index);
                           }}
                         >
-                          {language === 'tr' ? 'Düzenle' : 'Edit'}
+                          {language === 'tr' ? 'DÃ¼zenle' : 'Edit'}
                         </Button>
                         <Button
                           size="sm"
@@ -1361,7 +1408,7 @@ export function PCPanel({
                   <div className="flex-1 flex flex-col items-center justify-center gap-3">
                     <div className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
                       {gameLanguage === 'tr'
-                        ? `Skor: ${gameScore} | Çıkış: ESC | Yeniden: SPACE`
+                        ? `Skor: ${gameScore} | Ã‡Ä±kÄ±ÅŸ: ESC | Yeniden: SPACE`
                         : `Score: ${gameScore} | Exit: ESC | Restart: SPACE`}
                     </div>
                     <div
@@ -1468,3 +1515,5 @@ function getPCConfigDefaults(id: string) {
     mac: `00-40-96-99-88-7${num}`
   };
 }
+
+

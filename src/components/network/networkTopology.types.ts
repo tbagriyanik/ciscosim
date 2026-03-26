@@ -50,6 +50,7 @@ export interface CanvasDevice {
   type: DeviceType;
   name: string;
   macAddress?: string;
+  ipConfigMode?: 'static' | 'dhcp';
   ip: string;
   subnet?: string;
   ipv6?: string;
