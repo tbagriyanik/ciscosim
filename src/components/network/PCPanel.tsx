@@ -34,6 +34,15 @@ interface OutputLine {
   prompt?: string;
 }
 
+interface DhcpPoolConfig {
+  poolName: string;
+  defaultGateway: string;
+  dnsServer: string;
+  startIp: string;
+  subnetMask: string;
+  maxUsers: number;
+}
+
 interface PCPanelProps {
   deviceId: string;
   cableInfo: CableInfo;
@@ -155,16 +164,42 @@ export function PCPanel({
   );
   const [dnsFormDomain, setDnsFormDomain] = useState('');
   const [dnsFormAddress, setDnsFormAddress] = useState('');
+  const [editingDnsIndex, setEditingDnsIndex] = useState<number | null>(null);
   const [serviceHttpEnabled, setServiceHttpEnabled] = useState(deviceFromTopology?.services?.http?.enabled ?? false);
   const [serviceHttpContent, setServiceHttpContent] = useState(deviceFromTopology?.services?.http?.content || 'Merhaba Dünya!');
+  const [serviceDhcpEnabled, setServiceDhcpEnabled] = useState(deviceFromTopology?.services?.dhcp?.enabled ?? false);
+  const [serviceDhcpPools, setServiceDhcpPools] = useState<DhcpPoolConfig[]>(deviceFromTopology?.services?.dhcp?.pools || []);
+  const [dhcpForm, setDhcpForm] = useState<DhcpPoolConfig>({
+    poolName: '',
+    defaultGateway: '',
+    dnsServer: '',
+    startIp: '',
+    subnetMask: '255.255.255.0',
+    maxUsers: 50,
+  });
+  const [editingDhcpIndex, setEditingDhcpIndex] = useState<number | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const activeServiceCount = Number(serviceDnsEnabled) + Number(serviceHttpEnabled);
+  const activeServiceCount = Number(serviceDnsEnabled) + Number(serviceHttpEnabled) + Number(serviceDhcpEnabled);
 
   useEffect(() => {
     setServiceDnsEnabled(deviceFromTopology?.services?.dns?.enabled ?? false);
     setServiceDnsRecords(deviceFromTopology?.services?.dns?.records || []);
+    setDnsFormDomain('');
+    setDnsFormAddress('');
+    setEditingDnsIndex(null);
     setServiceHttpEnabled(deviceFromTopology?.services?.http?.enabled ?? false);
     setServiceHttpContent(deviceFromTopology?.services?.http?.content || 'Merhaba Dünya!');
+    setServiceDhcpEnabled(deviceFromTopology?.services?.dhcp?.enabled ?? false);
+    setServiceDhcpPools(deviceFromTopology?.services?.dhcp?.pools || []);
+    setDhcpForm({
+      poolName: '',
+      defaultGateway: '',
+      dnsServer: '',
+      startIp: '',
+      subnetMask: '255.255.255.0',
+      maxUsers: 50,
+    });
+    setEditingDhcpIndex(null);
   }, [deviceId, deviceFromTopology?.services]);
 
   const validateIP = (ip: string) => /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/.test(ip);
@@ -201,13 +236,17 @@ export function PCPanel({
               http: {
                 enabled: serviceHttpEnabled,
                 content: serviceHttpContent || 'Merhaba Dünya!'
+              },
+              dhcp: {
+                enabled: serviceDhcpEnabled,
+                pools: serviceDhcpPools
               }
             }
           }
         }
       }));
     }
-  }, [internalPcHostname, pcIP, pcMAC, pcSubnet, pcGateway, pcDNS, pcIPv6, pcIPv6Prefix, serviceDnsEnabled, serviceDnsRecords, serviceHttpEnabled, serviceHttpContent, deviceId]);
+  }, [internalPcHostname, pcIP, pcMAC, pcSubnet, pcGateway, pcDNS, pcIPv6, pcIPv6Prefix, serviceDnsEnabled, serviceDnsRecords, serviceHttpEnabled, serviceHttpContent, serviceDhcpEnabled, serviceDhcpPools, deviceId]);
 
   // Trigger sync on change (debounced)
   useEffect(() => {
@@ -215,7 +254,7 @@ export function PCPanel({
       syncToGlobal();
     }, 500);
     return () => clearTimeout(handler);
-  }, [pcIP, pcMAC, pcSubnet, pcGateway, pcDNS, pcIPv6, pcIPv6Prefix, internalPcHostname, serviceDnsEnabled, serviceDnsRecords, serviceHttpEnabled, serviceHttpContent, syncToGlobal]);
+  }, [pcIP, pcMAC, pcSubnet, pcGateway, pcDNS, pcIPv6, pcIPv6Prefix, internalPcHostname, serviceDnsEnabled, serviceDnsRecords, serviceHttpEnabled, serviceHttpContent, serviceDhcpEnabled, serviceDhcpPools, syncToGlobal]);
 
   // Local output for Desktop (Local) - initialize from prop if available
   const getInitialPcOutput = (): OutputLine[] => {
@@ -555,6 +594,101 @@ export function PCPanel({
     return `Interface: ${pcIP} --- 0x3\n  Internet Address      Physical Address      Type\n${rows}`;
   }, [canReachTargetIp, deviceId, formatMacForArp, pcIP, topologyDevices]);
 
+  const resetDhcpForm = useCallback(() => {
+    setDhcpForm({
+      poolName: '',
+      defaultGateway: '',
+      dnsServer: '',
+      startIp: '',
+      subnetMask: '255.255.255.0',
+      maxUsers: 50,
+    });
+    setEditingDhcpIndex(null);
+  }, []);
+
+  const saveDhcpPool = useCallback(() => {
+    const cleaned: DhcpPoolConfig = {
+      poolName: dhcpForm.poolName.trim(),
+      defaultGateway: dhcpForm.defaultGateway.trim(),
+      dnsServer: dhcpForm.dnsServer.trim(),
+      startIp: dhcpForm.startIp.trim(),
+      subnetMask: dhcpForm.subnetMask.trim(),
+      maxUsers: Number.isFinite(dhcpForm.maxUsers) ? Math.max(1, Number(dhcpForm.maxUsers)) : 1,
+    };
+
+    if (!cleaned.poolName || !cleaned.defaultGateway || !cleaned.dnsServer || !cleaned.startIp || !cleaned.subnetMask) {
+      return;
+    }
+
+    setServiceDhcpPools((prev) => {
+      if (editingDhcpIndex === null) {
+        return [...prev, cleaned];
+      }
+      return prev.map((pool, idx) => (idx === editingDhcpIndex ? cleaned : pool));
+    });
+
+    resetDhcpForm();
+  }, [dhcpForm, editingDhcpIndex, resetDhcpForm]);
+
+  const ipToNumber = useCallback((ip: string) => {
+    const parts = ip.split('.').map(Number);
+    if (parts.length !== 4 || parts.some((p) => Number.isNaN(p) || p < 0 || p > 255)) return null;
+    return (((parts[0] * 256 + parts[1]) * 256 + parts[2]) * 256 + parts[3]) >>> 0;
+  }, []);
+
+  const numberToIp = useCallback((num: number) => {
+    const a = (num >>> 24) & 255;
+    const b = (num >>> 16) & 255;
+    const c = (num >>> 8) & 255;
+    const d = num & 255;
+    return `${a}.${b}.${c}.${d}`;
+  }, []);
+
+  const getDhcpLease = useCallback(() => {
+    const usedIps = new Set(
+      topologyDevices
+        .filter((d) => d.id !== deviceId && validateIP(d.ip || ''))
+        .map((d) => d.ip)
+    );
+
+    const servers = topologyDevices.filter(
+      (d) =>
+        d.id !== deviceId &&
+        d.type === 'pc' &&
+        d.services?.dhcp?.enabled &&
+        (d.services?.dhcp?.pools?.length || 0) > 0 &&
+        !!d.ip &&
+        canReachTargetIp(d.ip)
+    );
+
+    for (const server of servers) {
+      const pools = server.services?.dhcp?.pools || [];
+      for (const pool of pools) {
+        if (!validateIP(pool.startIp) || !validateIP(pool.subnetMask) || !validateIP(pool.defaultGateway) || !validateIP(pool.dnsServer)) {
+          continue;
+        }
+        const start = ipToNumber(pool.startIp);
+        if (start === null) continue;
+        const maxUsers = Math.max(1, Number(pool.maxUsers || 1));
+        for (let i = 0; i < maxUsers; i += 1) {
+          const candidate = numberToIp(start + i);
+          if (!usedIps.has(candidate)) {
+            return {
+              ip: candidate,
+              subnetMask: pool.subnetMask,
+              gateway: pool.defaultGateway,
+              dns: pool.dnsServer,
+              serverName: server.name,
+              poolName: pool.poolName,
+            };
+          }
+        }
+      }
+    }
+
+    return null;
+  }, [canReachTargetIp, deviceId, ipToNumber, numberToIp, topologyDevices, validateIP]);
+
   const handleConnect = async () => {
     if (!consoleDevice) return;
     setConnectedDeviceId(consoleDevice.id);
@@ -610,9 +744,21 @@ export function PCPanel({
           setPcIP('0.0.0.0');
           addLocalOutput('success', 'IP address released successfully.');
         } else if (args.includes('/renew')) {
-          const restoredIP = deviceFromTopology?.ip || defaultConfig.ip;
-          setPcIP(restoredIP);
-          addLocalOutput('success', `IP address renewed successfully. New IP: ${restoredIP}`);
+          const lease = getDhcpLease();
+          if (lease) {
+            setPcIP(lease.ip);
+            setPcSubnet(lease.subnetMask);
+            setPcGateway(lease.gateway);
+            setPcDNS(lease.dns);
+            addLocalOutput(
+              'success',
+              `DHCP lease acquired from ${lease.serverName}/${lease.poolName}. New IP: ${lease.ip}`
+            );
+          } else {
+            const restoredIP = deviceFromTopology?.ip || defaultConfig.ip;
+            setPcIP(restoredIP);
+            addLocalOutput('error', 'No reachable DHCP server/pool found. Using existing IP.');
+          }
         } else if (args.includes('/all')) {
           addLocalOutput('output', `OS IP Configuration\n\n   Host Name . . . . . . . . . . . . : ${internalPcHostname}\n   Physical Address. . . . . . . . . : ${pcMAC}\n   DHCP Enabled. . . . . . . . . . . : No\n   IPv4 Address. . . . . . . . . . . : ${pcIP}(Preferred)\n   Subnet Mask . . . . . . . . . . . : ${pcSubnet}\n   Default Gateway . . . . . . . . . : ${pcGateway}\n   DNS Servers . . . . . . . . . . . : ${pcDNS}`);
         } else {
@@ -893,7 +1039,7 @@ export function PCPanel({
           >
             <Globe className="w-4 h-4" />
             <span className={isMobile ? 'text-[10px]' : 'hidden sm:inline'}>
-              {(language === 'tr' ? 'Servisler' : 'Services') + ` (${activeServiceCount}/2)`}
+              {(language === 'tr' ? 'Servisler' : 'Services') + ` (${activeServiceCount}/3)`}
             </span>
           </Button>
         </div>
@@ -1062,6 +1208,123 @@ export function PCPanel({
                       {serviceHttpContent || 'Merhaba Dünya!'}
                     </div>
                   )}
+                </div>
+              </div>
+
+              <div className={`rounded-xl border p-4 space-y-4 ${isDark ? 'border-slate-800 bg-slate-900/40' : 'border-slate-200 bg-white'}`}>
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <h3 className="text-sm font-bold">DHCP</h3>
+                    <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                      {language === 'tr' ? 'DHCP havuzlarını ekle, düzenle ve sil.' : 'Add, edit and delete DHCP pools.'}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={serviceDhcpEnabled}
+                    onClick={() => setServiceDhcpEnabled((prev) => !prev)}
+                    className={`relative inline-flex h-7 w-14 shrink-0 items-center rounded-full border transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/60 ${
+                      serviceDhcpEnabled
+                        ? 'bg-sky-500/90 border-sky-400'
+                        : (isDark ? 'bg-slate-800 border-slate-700' : 'bg-slate-200 border-slate-300')
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform duration-200 ${
+                        serviceDhcpEnabled ? 'translate-x-8' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <Input
+                    value={dhcpForm.poolName}
+                    onChange={(e) => setDhcpForm((prev) => ({ ...prev, poolName: e.target.value }))}
+                    placeholder={language === 'tr' ? 'Havuz Adı' : 'Pool Name'}
+                  />
+                  <Input
+                    value={dhcpForm.defaultGateway}
+                    onChange={(e) => setDhcpForm((prev) => ({ ...prev, defaultGateway: e.target.value }))}
+                    placeholder={language === 'tr' ? 'Default Gateway' : 'Default Gateway'}
+                  />
+                  <Input
+                    value={dhcpForm.dnsServer}
+                    onChange={(e) => setDhcpForm((prev) => ({ ...prev, dnsServer: e.target.value }))}
+                    placeholder={language === 'tr' ? 'DNS Server' : 'DNS Server'}
+                  />
+                  <Input
+                    value={dhcpForm.startIp}
+                    onChange={(e) => setDhcpForm((prev) => ({ ...prev, startIp: e.target.value }))}
+                    placeholder={language === 'tr' ? 'Start IP' : 'Start IP'}
+                  />
+                  <Input
+                    value={dhcpForm.subnetMask}
+                    onChange={(e) => setDhcpForm((prev) => ({ ...prev, subnetMask: e.target.value }))}
+                    placeholder={language === 'tr' ? 'Subnet Mask' : 'Subnet Mask'}
+                  />
+                  <Input
+                    type="number"
+                    min={1}
+                    value={dhcpForm.maxUsers}
+                    onChange={(e) => setDhcpForm((prev) => ({ ...prev, maxUsers: Number(e.target.value || 1) }))}
+                    placeholder={language === 'tr' ? 'Max User' : 'Max User'}
+                  />
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Button onClick={saveDhcpPool}>
+                    {editingDhcpIndex === null
+                      ? (language === 'tr' ? 'Havuz Ekle' : 'Add Pool')
+                      : (language === 'tr' ? 'Havuzu Güncelle' : 'Update Pool')}
+                  </Button>
+                  {editingDhcpIndex !== null && (
+                    <Button variant="outline" onClick={resetDhcpForm}>
+                      {language === 'tr' ? 'İptal' : 'Cancel'}
+                    </Button>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  {serviceDhcpPools.length === 0 && (
+                    <div className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>
+                      {language === 'tr' ? 'Henüz DHCP havuzu yok.' : 'No DHCP pools yet.'}
+                    </div>
+                  )}
+                  {serviceDhcpPools.map((pool, index) => (
+                    <div key={`${pool.poolName}-${index}`} className={`rounded-lg px-3 py-2 space-y-2 ${isDark ? 'bg-slate-950 border border-slate-800' : 'bg-slate-50 border border-slate-200'}`}>
+                      <div className="text-xs font-mono">
+                        <div>{pool.poolName}</div>
+                        <div>GW: {pool.defaultGateway} | DNS: {pool.dnsServer}</div>
+                        <div>Start: {pool.startIp} | Mask: {pool.subnetMask} | Max: {pool.maxUsers}</div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setDhcpForm(pool);
+                            setEditingDhcpIndex(index);
+                          }}
+                        >
+                          {language === 'tr' ? 'Düzenle' : 'Edit'}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setServiceDhcpPools((prev) => prev.filter((_, i) => i !== index));
+                            if (editingDhcpIndex === index) {
+                              resetDhcpForm();
+                            }
+                          }}
+                        >
+                          {language === 'tr' ? 'Sil' : 'Delete'}
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>

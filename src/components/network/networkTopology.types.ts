@@ -65,6 +65,17 @@ export interface CanvasDevice {
       enabled: boolean;
       content: string;
     };
+    dhcp?: {
+      enabled: boolean;
+      pools: Array<{
+        poolName: string;
+        defaultGateway: string;
+        dnsServer: string;
+        startIp: string;
+        subnetMask: string;
+        maxUsers: number;
+      }>;
+    };
   };
   vlan?: number;
   x: number;
