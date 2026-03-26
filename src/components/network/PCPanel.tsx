@@ -589,15 +589,20 @@ export function PCPanel({
       addLocalOutput('command', command);
       const parts = command.split(' ');
       const cmd = parts[0].toLowerCase();
+      const normalizedCmd = cmd
+        .replace(/ı/g, 'i')
+        .replace(/İ/g, 'i')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
       const args = parts.slice(1);
-      if (cmd === 'snake' || cmd === 'yilan') {
+      if (normalizedCmd === 'snake' || normalizedCmd === 'yilan') {
         setGameActive(true);
         setSnake([{ x: 10, y: 10 }]);
         setFood({ x: 15, y: 15 });
         setDirection({ x: 1, y: 0 });
         setGameScore(0);
         setGameOver(false);
-        setGameLanguage(cmd === 'yilan' ? 'tr' : 'en');
+        setGameLanguage(normalizedCmd === 'yilan' ? 'tr' : 'en');
         return;
       }
       if (cmd === 'ipconfig') {
@@ -1089,6 +1094,46 @@ export function PCPanel({
               >
                 {isPcPoweredOff ? (
                   <div className="flex-1 flex items-center justify-center text-slate-700">POWERED OFFLINE</div>
+                ) : gameActive && activeTab === 'desktop' ? (
+                  <div className="flex-1 flex flex-col items-center justify-center gap-3">
+                    <div className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+                      {gameLanguage === 'tr'
+                        ? `Skor: ${gameScore} | Çıkış: ESC | Yeniden: SPACE`
+                        : `Score: ${gameScore} | Exit: ESC | Restart: SPACE`}
+                    </div>
+                    <div
+                      className={`grid border rounded-md p-1 ${isDark ? 'border-slate-700 bg-slate-950' : 'border-slate-300 bg-white'}`}
+                      style={{ gridTemplateColumns: 'repeat(30, minmax(0, 10px))', gridTemplateRows: 'repeat(20, minmax(0, 10px))', gap: '1px' }}
+                    >
+                      {Array.from({ length: 30 * 20 }).map((_, idx) => {
+                        const x = idx % 30;
+                        const y = Math.floor(idx / 30);
+                        const isHead = snake[0]?.x === x && snake[0]?.y === y;
+                        const isBody = snake.slice(1).some((s) => s.x === x && s.y === y);
+                        const isFood = food.x === x && food.y === y;
+
+                        return (
+                          <div
+                            key={idx}
+                            className={`w-[10px] h-[10px] ${
+                              isHead
+                                ? 'bg-emerald-400'
+                                : isBody
+                                  ? 'bg-emerald-600'
+                                  : isFood
+                                    ? 'bg-rose-500'
+                                    : (isDark ? 'bg-slate-800' : 'bg-slate-100')
+                            }`}
+                          />
+                        );
+                      })}
+                    </div>
+                    {gameOver && (
+                      <div className="text-rose-500 font-bold text-sm">
+                        {gameLanguage === 'tr' ? 'Oyun Bitti!' : 'Game Over!'}
+                      </div>
+                    )}
+                  </div>
                 ) : (
                   (activeTab === 'desktop' ? pcOutput : activeConsoleOutput).map((line) => (
                     <div key={line.id} className="break-all animate-in fade-in slide-in-from-left-1 duration-200">
