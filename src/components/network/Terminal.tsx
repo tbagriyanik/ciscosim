@@ -387,7 +387,7 @@ export function Terminal({
             style={{ fontSize: `${fontSize}px` }}
           >
             {isPoweredOff ? (
-              <div className="h-full flex items-center justify-center text-slate-800 font-black tracking-tighter text-2xl uppercase italic">Powered Offline</div>
+              <div className="h-full flex items-center justify-center text-slate-800 font-black tracking-tighter text-2xl uppercase italic">Offline</div>
             ) : (
               <div className="space-y-1.5">
                 {output.map((line, i) => (

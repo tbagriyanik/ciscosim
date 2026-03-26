@@ -1460,7 +1460,7 @@ export function PCPanel({
                 className={`flex-1 overflow-y-auto scroll-smooth custom-scrollbar p-4 sm:p-6 space-y-2 font-mono text-sm leading-relaxed flex flex-col ${isPcPoweredOff ? 'bg-black' : ''}`}
               >
                 {isPcPoweredOff ? (
-                  <div className="flex-1 flex items-center justify-center text-slate-700">POWERED OFFLINE</div>
+                  <div className="flex-1 flex items-center justify-center text-slate-700">OFFLINE</div>
                 ) : gameActive && activeTab === 'desktop' ? (
                   <div className="flex-1 flex flex-col items-center justify-center gap-3">
                     <div className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
