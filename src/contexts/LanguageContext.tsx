@@ -149,6 +149,10 @@ export interface Translations {
   updatePool: string;
   noDhcpPools: string;
   edit: string;
+  dhcpSuccessTitle: string;
+  dhcpSuccessDescription: string;
+  dhcpFailureTitle: string;
+  dhcpFailureDescription: string;
   load: string;
   saveLabel: string;
   languageLabel: string;
@@ -556,6 +560,10 @@ const translations: Record<Language, Translations> = {
     copy: 'Kopyala',
     power: 'Güç',
     tasks: 'Görevler',
+    dhcpSuccessTitle: 'DHCP ataması başarılı',
+    dhcpSuccessDescription: 'DHCP ile {ip} atandı.',
+    dhcpFailureTitle: 'DHCP ataması başarısız',
+    dhcpFailureDescription: 'DHCP sunucusu bulunamadı.',
   },
   en: {
     title: 'Network Simulator 2026',
@@ -815,6 +823,10 @@ const translations: Record<Language, Translations> = {
     copy: 'Copy',
     power: 'Power',
     tasks: 'Tasks',
+    dhcpSuccessTitle: 'DHCP assignment successful',
+    dhcpSuccessDescription: 'Assigned via DHCP: {ip}',
+    dhcpFailureTitle: 'DHCP assignment failed',
+    dhcpFailureDescription: 'No DHCP server found.',
   }
 };
 

@@ -310,6 +310,7 @@ export function PCPanel({
   const inputRef = useRef<HTMLInputElement>(null);
   const commandQueueRef = useRef<string[]>([]);
   const isProcessingQueueRef = useRef(false);
+  const prevIpConfigModeRef = useRef(ipConfigMode);
 
   const highlightText = useCallback((text: string) => {
     const q = searchQuery.trim();
@@ -743,11 +744,34 @@ export function PCPanel({
     return lease;
   }, [getDhcpLease, pcDNS, pcGateway, pcIP, pcSubnet]);
 
-  // Auto-renew instantly while DHCP mode is active.
+  // When DHCP mode is selected, request a lease immediately and notify the user.
   useEffect(() => {
-    if (ipConfigMode !== 'dhcp') return;
-    applyDhcpLease();
-  }, [ipConfigMode, topologyDevices, topologyConnections, deviceStates, applyDhcpLease]);
+    if (prevIpConfigModeRef.current === 'dhcp') {
+      prevIpConfigModeRef.current = ipConfigMode;
+      return;
+    }
+
+    if (ipConfigMode !== 'dhcp') {
+      prevIpConfigModeRef.current = ipConfigMode;
+      return;
+    }
+
+    const lease = applyDhcpLease(true);
+    if (lease) {
+      toast({
+        title: t.dhcpSuccessTitle,
+        description: t.dhcpSuccessDescription.replace('{ip}', lease.ip),
+      });
+    } else {
+      toast({
+        title: t.dhcpFailureTitle,
+        description: t.dhcpFailureDescription,
+        variant: 'destructive',
+      });
+    }
+
+    prevIpConfigModeRef.current = ipConfigMode;
+  }, [applyDhcpLease, ipConfigMode, t]);
 
   const handleConnect = async () => {
     if (!consoleDevice) return;
