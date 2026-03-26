@@ -350,17 +350,101 @@ function cmdShowMacAddressTable(
   output += 'Vlan    Mac Address       Type        Ports\n';
   output += '----    -----------       --------    -----\n';
 
-  // Show learned MAC addresses
-  if (state.macAddressTable && state.macAddressTable.length > 0) {
-    state.macAddressTable.forEach((entry: any) => {
-      output += `${String(entry.vlan).padEnd(8)}${entry.mac.padEnd(18)}${entry.type || 'DYNAMIC'}     ${entry.port}\n`;
+  // Build MAC table from real connections (topologyConnections)
+  const connections = ctx.connections || [];
+  const sourceDeviceId = ctx.sourceDeviceId;
+
+  // Collect MAC entries from connections only - no legacy data
+  const macTable: { vlan: number; mac: string; port: string; type: string }[] = [];
+
+  if (connections && connections.length > 0) {
+    // Find all connections to this device using CanvasConnection format
+    const deviceConnections = connections.filter(
+      (conn: any) => conn.sourceDeviceId === sourceDeviceId || conn.targetDeviceId === sourceDeviceId
+    );
+
+    deviceConnections.forEach((conn: any) => {
+      // Determine which port on the device is connected
+      const isSource = conn.sourceDeviceId === sourceDeviceId;
+      const portId = isSource ? conn.sourcePort : conn.targetPort;
+
+      // Get the connected device's MAC address
+      const connectedDeviceId = isSource ? conn.targetDeviceId : conn.sourceDeviceId;
+      const connectedDevice = ctx.devices?.find((d: any) => d.id === connectedDeviceId);
+
+      if (connectedDevice?.macAddress) {
+        // Format MAC address: 0000.0000.0000
+        const mac = formatMacAddressSimple(connectedDevice.macAddress);
+
+        // Get VLAN from the port - check if trunk mode
+        const portState = state.ports?.[portId];
+
+        if (portState?.mode === 'trunk') {
+          // For trunk ports, show all VLANs
+          const vlans = Object.keys(state.vlans || {}).filter(v => v !== '1').slice(0, 5);
+          if (vlans.length === 0) {
+            // Default VLAN 1 for trunk
+            macTable.push({
+              vlan: 1,
+              mac: mac,
+              port: portId,
+              type: 'DYNAMIC'
+            });
+          } else {
+            // Add entries for each VLAN on trunk
+            vlans.forEach((vlanId) => {
+              macTable.push({
+                vlan: parseInt(vlanId),
+                mac: mac,
+                port: portId,
+                type: 'DYNAMIC'
+              });
+            });
+          }
+        } else {
+          // Access port - get VLAN from accessVlan or default to 1
+          const vlan = portState?.accessVlan || portState?.vlan || 1;
+          macTable.push({
+            vlan: vlan,
+            mac: mac,
+            port: portId,
+            type: 'DYNAMIC'
+          });
+        }
+      }
     });
-  } else {
+  }
+
+  // Remove duplicates based on VLAN + MAC + Port
+  const uniqueMacTable = macTable.filter((entry, index, self) =>
+    index === self.findIndex(e => e.vlan === entry.vlan && e.mac === entry.mac && e.port === entry.port)
+  );
+
+  // Show learned MAC addresses from connections
+  if (uniqueMacTable.length > 0) {
+    uniqueMacTable.forEach((entry) => {
+      output += `${String(entry.vlan).padEnd(8)}${entry.mac.padEnd(18)}${entry.type.padEnd(11)}${entry.port}\n`;
+    });
+  }
+
+  // If no MAC addresses found, show default
+  if (uniqueMacTable.length === 0) {
     output += 'All    0000.0000.0000    STATIC      CPU\n';
   }
 
   output += '!\n';
   return { success: true, output };
+}
+
+// Helper function to format MAC address: xxxx.xxxx.xxxx
+function formatMacAddressSimple(mac: string): string {
+  if (!mac) return '0000.0000.0000';
+  // Keep only the dots, remove any dashes or colons
+  const cleanMac = mac.replace(/[-:]/g, '').toUpperCase();
+  // Pad with zeros to ensure 12 characters
+  const padded = cleanMac.padStart(12, '0').slice(0, 12);
+  // Add dots every 4 characters for Cisco format
+  return padded.match(/.{1,4}/g)?.join('.') || padded;
 }
 
 /**
