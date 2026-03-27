@@ -421,10 +421,22 @@ export function PCPanel({
         return;
       }
       switch (e.key) {
-        case 'ArrowUp': if (direction.y === 0) setDirection({ x: 0, y: -1 }); break;
-        case 'ArrowDown': if (direction.y === 0) setDirection({ x: 0, y: 1 }); break;
-        case 'ArrowLeft': if (direction.x === 0) setDirection({ x: -1, y: 0 }); break;
-        case 'ArrowRight': if (direction.x === 0) setDirection({ x: 1, y: 0 }); break;
+        case 'ArrowUp':
+          e.preventDefault();
+          if (direction.y === 0) setDirection({ x: 0, y: -1 });
+          break;
+        case 'ArrowDown':
+          e.preventDefault();
+          if (direction.y === 0) setDirection({ x: 0, y: 1 });
+          break;
+        case 'ArrowLeft':
+          e.preventDefault();
+          if (direction.x === 0) setDirection({ x: -1, y: 0 });
+          break;
+        case 'ArrowRight':
+          e.preventDefault();
+          if (direction.x === 0) setDirection({ x: 1, y: 0 });
+          break;
       }
     };
     window.addEventListener('keydown', handleGameKey);
@@ -1635,11 +1647,11 @@ export function PCPanel({
                           <div
                             key={idx}
                             className={`w-[10px] h-[10px] ${isHead
-                              ? 'bg-emerald-400'
+                              ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]'
                               : isBody
                                 ? 'bg-emerald-600'
                                 : isFood
-                                  ? 'bg-rose-500'
+                                  ? 'bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.9)] animate-pulse'
                                   : (isDark ? 'bg-slate-800' : 'bg-slate-100')
                               }`}
                           />
