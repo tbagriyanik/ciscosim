@@ -98,6 +98,8 @@ export interface SwitchState {
   awaitingPassword?: boolean;
   passwordContext?: 'enable' | 'console';
   consoleAuthenticated?: boolean;
+  // Reload confirmation state
+  awaitingReloadConfirm?: boolean;
   // New optional properties for extended features
   domainName?: string;
   defaultGateway?: string;

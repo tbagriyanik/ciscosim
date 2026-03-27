@@ -2033,7 +2033,7 @@ export default function Home() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-9 w-9 text-emerald-500 hover:bg-emerald-500/10"
+                          className="px-2.5 py-1.5 h-auto text-emerald-500 hover:bg-emerald-500/10"
                           onClick={() => {
                             const event = new CustomEvent('trigger-topology-palette');
                             window.dispatchEvent(event);
@@ -2511,7 +2511,7 @@ export default function Home() {
               {activeTab === 'topology' && (
                 <div className="flex-1 flex flex-col min-h-0 h-full">
                   {/* Topology Header */}
-                  <div className={`flex items-center justify-between px-4 py-2 border-b ${isDark ? 'border-slate-800 bg-slate-900' : 'border-slate-200 bg-white'}`}>
+                  <div className={`hidden md:flex items-center justify-between px-4 py-2 border-b ${isDark ? 'border-slate-800 bg-slate-900' : 'border-slate-200 bg-white'}`}>
                     <h2 className={`text-sm font-semibold ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
                       {language === 'tr' ? 'Ağ Topolojisi' : 'Network Topology'}
                     </h2>
@@ -2757,8 +2757,7 @@ export default function Home() {
                   </div>
 
                   {/* Quick Hints */}
-                  <div className={`hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg border ${isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-100 border-slate-200'
-                    }`}>
+                  <div className={`hidden md:flex items-center gap-2`}>
                     <span className={`text-[11px] font-medium ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
                       {language === 'tr' ? 'İpuçları:' : 'Tips:'}
                     </span>
@@ -2796,8 +2795,7 @@ export default function Home() {
 
                 {/* Lab Progress */}
                 {totalScore > 0 && (
-                  <div className={`hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg border ${isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-100 border-slate-200'
-                    }`}>
+                  <div className={`hidden md:flex items-center gap-2`}>
                     <span className={`text-[11px] font-bold  tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-600'}`}>
                       {t.labProgress}
                     </span>
