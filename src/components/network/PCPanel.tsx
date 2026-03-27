@@ -12,10 +12,10 @@ import { checkConnectivity } from '@/lib/network/connectivity';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Laptop, Monitor, Terminal as TerminalIcon, X, CornerDownLeft, Command, Globe, Network, ShieldCheck, History, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Search, Copy, Save } from 'lucide-react';
+import { Laptop, Monitor, Terminal as TerminalIcon, X, CornerDownLeft, Command, Globe, Network, ShieldCheck, History, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Search, Copy, Save, Trash2, Download, Settings } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from "@/hooks/use-toast";
-import { isValidMAC, normalizeMAC } from "@/lib/utils";
+import { isValidMAC, normalizeMAC, cn } from "@/lib/utils";
 import { commandHelp } from '@/lib/network/executor';
 import { ModernPanel } from '@/components/ui/ModernPanel';
 import { useIsMobile, useIsTablet, useIsDesktop } from '@/hooks/use-breakpoint';
@@ -1816,103 +1816,202 @@ export function PCPanel({
                     : 'bg-blue-600 hover:bg-blue-700'
                     }`}
                 >
-                  <CornerDownLeft className="w-5 h-5" />
+                  <CornerDownLeft className={cn("w-6 h-6", isMobile && "w-8 h-8")} />
                 </Button>
               </div>
               
               {/* Quick Command Buttons */}
               {activeTab === 'desktop' && !isPcPoweredOff && (
                 <div className={`px-3 sm:px-4 pb-3 border-t ${isDark ? 'border-slate-800 bg-slate-900/40' : 'border-slate-200 bg-slate-50'}`}>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        setInput('ipconfig');
-                        executeCommand('ipconfig');
-                      }}
-                      className="text-xs font-mono h-8"
-                    >
-                      ipconfig
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        setInput('ping 8.8.8.8');
-                        executeCommand('ping 8.8.8.8');
-                      }}
-                      className="text-xs font-mono h-8"
-                    >
-                      ping
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        setInput('tracert 8.8.8.8');
-                        executeCommand('tracert 8.8.8.8');
-                      }}
-                      className="text-xs font-mono h-8"
-                    >
-                      tracert
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        setInput('nslookup google.com');
-                        executeCommand('nslookup google.com');
-                      }}
-                      className="text-xs font-mono h-8"
-                    >
-                      nslookup
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        setInput('arp -a');
-                        executeCommand('arp -a');
-                      }}
-                      className="text-xs font-mono h-8"
-                    >
-                      arp -a
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        setInput('netstat -an');
-                        executeCommand('netstat -an');
-                      }}
-                      className="text-xs font-mono h-8"
-                    >
-                      netstat
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        setInput('dir');
-                        executeCommand('dir');
-                      }}
-                      className="text-xs font-mono h-8"
-                    >
-                      dir
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        setInput('ver');
-                        executeCommand('ver');
-                      }}
-                      className="text-xs font-mono h-8"
-                    >
-                      ver
-                    </Button>
-                  </div>
+                  {isMobile ? (
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="col-span-2 space-y-2">
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setInput('ipconfig');
+                              executeCommand('ipconfig');
+                            }}
+                            className="text-xs font-mono h-8"
+                          >
+                            ipconfig
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setInput('ping 8.8.8.8');
+                              executeCommand('ping 8.8.8.8');
+                            }}
+                            className="text-xs font-mono h-8"
+                          >
+                            ping
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setInput('tracert 8.8.8.8');
+                              executeCommand('tracert 8.8.8.8');
+                            }}
+                            className="text-xs font-mono h-8"
+                          >
+                            tracert
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setInput('nslookup google.com');
+                              executeCommand('nslookup google.com');
+                            }}
+                            className="text-xs font-mono h-8"
+                          >
+                            nslookup
+                          </Button>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setInput('arp -a');
+                              executeCommand('arp -a');
+                            }}
+                            className="text-xs font-mono h-8"
+                          >
+                            arp -a
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setInput('netstat -an');
+                              executeCommand('netstat -an');
+                            }}
+                            className="text-xs font-mono h-8"
+                          >
+                            netstat
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setInput('dir');
+                              executeCommand('dir');
+                            }}
+                            className="text-xs font-mono h-8"
+                          >
+                            dir
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setInput('ver');
+                              executeCommand('ver');
+                            }}
+                            className="text-xs font-mono h-8"
+                          >
+                            ver
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setInput('ipconfig');
+                          executeCommand('ipconfig');
+                        }}
+                        className="text-xs font-mono h-8"
+                      >
+                        ipconfig
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setInput('ping 8.8.8.8');
+                          executeCommand('ping 8.8.8.8');
+                        }}
+                        className="text-xs font-mono h-8"
+                      >
+                        ping
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setInput('tracert 8.8.8.8');
+                          executeCommand('tracert 8.8.8.8');
+                        }}
+                        className="text-xs font-mono h-8"
+                      >
+                        tracert
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setInput('nslookup google.com');
+                          executeCommand('nslookup google.com');
+                        }}
+                        className="text-xs font-mono h-8"
+                      >
+                        nslookup
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setInput('arp -a');
+                          executeCommand('arp -a');
+                        }}
+                        className="text-xs font-mono h-8"
+                      >
+                        arp -a
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setInput('netstat -an');
+                          executeCommand('netstat -an');
+                        }}
+                        className="text-xs font-mono h-8"
+                      >
+                        netstat
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setInput('dir');
+                          executeCommand('dir');
+                        }}
+                        className="text-xs font-mono h-8"
+                      >
+                        dir
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setInput('ver');
+                          executeCommand('ver');
+                        }}
+                        className="text-xs font-mono h-8"
+                      >
+                        ver
+                      </Button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
