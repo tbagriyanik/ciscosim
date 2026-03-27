@@ -31,11 +31,11 @@ const quickCommands: QuickCommand[] = [
   { command: 'configure terminal', label: 'conf t', modes: ['privileged'], color: 'bg-blue-600 hover:bg-blue-700' },
   { command: 'exit', label: 'exit', modes: ['privileged', 'config', 'interface', 'line', 'vlan'], color: 'bg-orange-600 hover:bg-orange-700' },
   { command: 'end', label: 'end', modes: ['config', 'interface', 'line', 'vlan'], color: 'bg-red-600 hover:bg-red-700' },
-  { command: 'show running-config', label: 'sh run', modes: ['privileged'], color: 'bg-purple-600 hover:bg-purple-700' },
-  { command: 'show vlan brief', label: 'sh vlan', modes: ['privileged'], color: 'bg-cyan-600 hover:bg-cyan-700' },
-  { command: 'show interfaces', label: 'sh int', modes: ['privileged'], color: 'bg-teal-600 hover:bg-teal-700' },
-  { command: 'show version', label: 'sh ver', modes: ['privileged'], color: 'bg-indigo-600 hover:bg-indigo-700' },
-  { command: 'show mac address-table', label: 'sh mac', modes: ['privileged'], color: 'bg-pink-600 hover:bg-pink-700' },
+  { command: 'show running-config', label: 'sh run', modes: ['privileged'], color: 'bg-slate-600 hover:bg-slate-700' },
+  { command: 'show vlan brief', label: 'sh vlan', modes: ['privileged'], color: 'bg-gray-600 hover:bg-gray-700' },
+  { command: 'show interfaces', label: 'sh int', modes: ['privileged'], color: 'bg-gray-600 hover:bg-gray-700' },
+  { command: 'show version', label: 'sh ver', modes: ['privileged'], color: 'bg-gray-600 hover:bg-gray-700' },
+  { command: 'show mac address-table', label: 'sh mac', modes: ['privileged'], color: 'bg-gray-600 hover:bg-gray-700' },
   { command: 'write memory', label: 'wr', modes: ['privileged'], color: 'bg-yellow-600 hover:bg-yellow-700' },
   { command: 'no shutdown', label: 'no shut', modes: ['interface'], color: 'bg-green-600 hover:bg-green-700' },
   { command: 'shutdown', label: 'shut', modes: ['interface'], color: 'bg-red-600 hover:bg-red-700' },
@@ -80,20 +80,20 @@ export function QuickCommands({ currentMode, onExecuteCommand, t, theme, languag
       collapsible={false}
       className={cn("w-full max-w-none", cardBg)}
     >
-      <div className="space-y-4">
+      <div className="space-y-2">
         {isDevicePoweredOff ? (
           <div className="px-3 py-2 rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-500 text-xs font-bold tracking-wider text-center">
             {language === 'tr' ? 'Bağlantı hatası' : 'Connection error'}
           </div>
         ) : availableCommands.length > 0 ? (
-          <div className={`grid gap-2 ${isMobile ? 'grid-cols-2' : 'sm:flex sm:flex-wrap sm:gap-2'}`}>
+          <div className={`grid gap-1 ${isMobile ? 'grid-cols-2' : 'sm:flex sm:flex-wrap sm:gap-1'}`}>
             {availableCommands.map((cmd) => (
               <Tooltip key={cmd.command}>
                 <TooltipTrigger asChild>
                   <Button
                     size="sm"
                     onClick={() => onExecuteCommand(cmd.command)}
-                    className={`text-xs px-2 py-2 h-auto min-h-[32px] ${cmd.color} transition-transform hover:scale-105 ${isMobile ? 'text-[10px] leading-tight' : 'sm:text-xs sm:px-3 sm:h-8'}`}
+                    className={`text-xs px-2 py-1 h-auto min-h-[28px] ${cmd.color} transition-transform hover:scale-105 ${isMobile ? 'text-[9px] leading-tight' : 'sm:text-xs sm:px-2 sm:h-6'}`}
                   >
                     <span className="truncate">{cmd.label}</span>
                   </Button>
@@ -105,7 +105,7 @@ export function QuickCommands({ currentMode, onExecuteCommand, t, theme, languag
             ))}
           </div>
         ) : (
-          <div className={`text-xs ${textMuted} text-center py-2 ${isMobile ? 'text-[10px]' : ''}`}>
+          <div className={`text-xs ${textMuted} text-center py-2 ${isMobile ? 'text-[9px]' : ''}`}>
             {t.noCommandsAvailable}
           </div>
         )}

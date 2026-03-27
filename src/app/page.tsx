@@ -2655,16 +2655,6 @@ export default function Home() {
                         }}
                       />
                     </div>
-                    <div className="min-h-0">
-                      <QuickCommands
-                        currentMode={state.currentMode}
-                        onExecuteCommand={handleCommand}
-                        isDevicePoweredOff={topologyDevices.some(d => d.id === activeDeviceId && d.status === 'offline')}
-                        t={t}
-                        theme={theme}
-                        language={language}
-                      />
-                    </div>
                     <div className="flex flex-col min-h-[400px] xl:min-h-0">
                       <ConfigPanel
                         state={state}

@@ -17,7 +17,8 @@ import { toast } from "@/hooks/use-toast";
 import { commandHelp } from '@/lib/network/executor';
 import { ModernPanel } from '@/components/ui/ModernPanel';
 import { cn } from '@/lib/utils';
-import { useIsMobile } from '@/hooks/use-breakpoint';
+import { useIsMobile, useIsTablet, useIsDesktop } from '@/hooks/use-breakpoint';
+import { QuickCommands } from './QuickCommands';
 
 export interface TerminalOutput {
   id: string;
@@ -86,6 +87,8 @@ export function Terminal({
 
   const isDark = theme === 'dark';
   const isMobile = useIsMobile();
+  const isTablet = useIsTablet();
+  const isDesktop = useIsDesktop();
 
   // Sync with global history
   useEffect(() => {
@@ -527,6 +530,20 @@ export function Terminal({
                   <CornerDownLeft className={cn("w-5 h-5", isMobile && "w-4 h-4")} />
                 </Button>
               </form>
+              
+              {/* QuickCommands Component - Desktop Only */}
+              {!isPoweredOff && !isMobile && !isTablet && (
+                <div className="px-4 pb-3">
+                  <QuickCommands
+                    currentMode={state.currentMode}
+                    onExecuteCommand={onCommand}
+                    isDevicePoweredOff={isPoweredOff}
+                    t={t}
+                    theme={theme}
+                    language={language as 'tr' | 'en'}
+                  />
+                </div>
+              )}
             </div>
           )}
         </div>
