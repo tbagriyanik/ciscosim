@@ -222,7 +222,7 @@ function cmdServicePasswordEncryption(state: any, input: string, ctx: any): any 
     newState: {
       security: {
         ...state.security,
-        passwordEncryption: true
+        servicePasswordEncryption: true
       }
     }
   };

@@ -62,12 +62,20 @@ export function ConfigPanel({ state, onExecuteCommand, isDevicePoweredOff = fals
       }
     }
     if (state.security.enablePassword) {
-      config += `enable password ${state.security.enablePassword}\\n`;
+      if (state.security.servicePasswordEncryption) {
+        config += `enable password 7 ${Buffer.from(state.security.enablePassword).toString('base64')}\\n`;
+      } else {
+        config += `enable password ${state.security.enablePassword}\\n`;
+      }
     }
     config += `!\\n`;
 
     state.security.users.forEach(user => {
-      config += `username ${user.username} privilege ${user.privilege} secret ${user.password}\\n`;
+      if (state.security.servicePasswordEncryption) {
+        config += `username ${user.username} privilege ${user.privilege} secret 7 ${Buffer.from(user.password).toString('base64')}\\n`;
+      } else {
+        config += `username ${user.username} privilege ${user.privilege} secret ${user.password}\\n`;
+      }
     });
     if (state.security.users.length > 0) {
       config += `!\\n`;
@@ -170,9 +178,7 @@ export function ConfigPanel({ state, onExecuteCommand, isDevicePoweredOff = fals
     </Tooltip>
   );
 
-  const configText = state.runningConfig?.length
-    ? state.runningConfig.join('\n')
-    : generateConfig();
+  const configText = generateConfig();
 
   return (
     <ModernPanel
