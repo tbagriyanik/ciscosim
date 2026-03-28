@@ -2,7 +2,7 @@
 
 Öğrenciler ve ağ meraklıları için tasarlanmış, modern ve etkileşimli bir web tabanlı Network simülatörü.
 
-![Version](https://img.shields.io/badge/version-1.0.0-blue)
+![Version](https://img.shields.io/badge/version-1.1.0-blue)
 ![Tech Stack](https://img.shields.io/badge/stack-Next.js%2016%20|%20React%2019%20|%20TypeScript%20|%20Tailwind%204-green)
 ![License](https://img.shields.io/badge/license-MIT-blue)
 ![Commits](https://img.shields.io/badge/commits-350-orange)
