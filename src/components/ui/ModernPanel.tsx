@@ -4,6 +4,7 @@ import React, { ReactNode, useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { X, GripHorizontal } from 'lucide-react';
 import { useLayout } from '@/contexts/LayoutContext';
+import { useTheme } from '@/contexts/ThemeContext';
 
 export interface ModernPanelProps {
     id: string;
@@ -23,6 +24,8 @@ export interface ModernPanelProps {
     headerStart?: ReactNode;
     footer?: ReactNode;
     mobileAutoHeight?: boolean;
+    hideTitle?: boolean;
+    hideHeader?: boolean;
 }
 
 export function ModernPanel({
@@ -43,8 +46,12 @@ export function ModernPanel({
     footer,
     mobileAutoHeight = false,
     noPadding = false,
+    hideTitle = false,
+    hideHeader = false,
 }: ModernPanelProps) {
     const { panelLayout } = useLayout();
+    const { theme } = useTheme();
+    const isDark = theme === 'dark';
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [width, setWidth] = useState(defaultWidth);
     const [height, setHeight] = useState(defaultHeight);
@@ -124,6 +131,7 @@ export function ModernPanel({
             }}
         >
             {/* Header */}
+            {!hideHeader && (
             <div
                 className={cn(
                     "flex items-center justify-between gap-2 p-4 border-b bg-muted/50",
@@ -135,10 +143,12 @@ export function ModernPanel({
                         <GripHorizontal className="w-4 h-4 text-muted-foreground cursor-grab" />
                     )}
                     {headerStart}
-                    <h2 className={cn(
-                        "font-semibold flex-1 truncate",
-                        isMobile ? "text-sm" : "text-sm"
-                    )}>{title}</h2>
+                    {!hideTitle && (
+                        <h2 className={cn(
+                            "font-semibold flex-1 truncate",
+                            isMobile ? "text-sm" : "text-sm"
+                        )}>{title}</h2>
+                    )}
                 </div>
                 <div className="flex items-center gap-2">
                     {headerAction}
@@ -168,6 +178,7 @@ export function ModernPanel({
                     )}
                 </div>
             </div>
+            )}
 
             {/* Content */}
             {!isCollapsed && (

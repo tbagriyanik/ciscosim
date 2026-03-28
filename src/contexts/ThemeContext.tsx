@@ -90,7 +90,7 @@ function applyTheme(
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<Theme>('auto');
-  const [effectiveTheme, setEffectiveTheme] = useState<'dark' | 'light' | 'high-contrast'>('light');
+  const [effectiveTheme, setEffectiveTheme] = useState<'dark' | 'light' | 'high-contrast'>('dark');
   const [systemThemePreference, setSystemThemePreference] = useState<'dark' | 'light' | null>(null);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [initialized, setInitialized] = useState(false);
@@ -103,13 +103,15 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     try {
       // Load saved theme preference
       const saved = localStorage.getItem(THEME_STORAGE_KEY) as Theme | null;
-      const validTheme = saved && ['dark', 'light', 'high-contrast', 'auto'].includes(saved) ? saved : 'auto';
+      
+      // If no saved theme, default to dark for new visitors
+      const validTheme = saved && ['dark', 'light', 'high-contrast', 'auto'].includes(saved) ? saved : 'dark';
 
       // Detect system theme
       const systemTheme = detectSystemTheme();
       setSystemThemePreference(systemTheme);
 
-      // Determine effective theme
+      // Determine effective theme (only use system theme if explicitly set to 'auto')
       const effective = validTheme === 'auto' ? systemTheme : validTheme;
       setEffectiveTheme(effective);
       setThemeState(validTheme);
@@ -117,10 +119,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       // Apply theme immediately without transition on first load
       applyTheme(effective);
     } catch {
-      // Fallback to light theme
-      setEffectiveTheme('light');
-      setThemeState('auto');
-      applyTheme('light');
+      // Fallback to dark theme
+      setEffectiveTheme('dark');
+      setThemeState('dark');
+      applyTheme('dark');
     }
 
     setInitialized(true);

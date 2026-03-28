@@ -110,7 +110,15 @@ export function PCPanel({
   const inputBg = isDark ? 'bg-black/50' : 'bg-white';
   const inputBorder = isDark ? 'border-slate-800' : 'border-slate-300';
 
-  const [activeTab, setActiveTab] = useState<PCActiveTab>('desktop');
+  const [activeTab, setActiveTab] = useState<PCActiveTab>('home');
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const [showNetworkMenu, setShowNetworkMenu] = useState(false);
+  const [showSettingsMenu, setShowSettingsMenu] = useState(false);
+
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
   const [input, setInput] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -1181,6 +1189,10 @@ export function PCPanel({
 
   const recentCommands = history.slice(0, 10);
 
+  const formatTime = (date: Date) => {
+    return date.toLocaleTimeString(language === 'tr' ? 'tr-TR' : 'en-US', { hour: '2-digit', minute: '2-digit' });
+  };
+
   const headerAction = (
     <div className={`flex items-center gap-1 p-1 rounded-xl border ${isDark ? 'bg-slate-900/60 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
       {activeTab === 'desktop' && (
@@ -1215,6 +1227,24 @@ export function PCPanel({
           </Tooltip>
         </>
       )}
+      {/* Home Button */}
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setActiveTab('home')}
+            className={`h-8 w-8 rounded-lg ui-hover-surface ${isDark ? 'text-slate-300 hover:text-cyan-400' : 'text-slate-600 hover:text-cyan-600'}`}
+            aria-label={language === 'tr' ? 'Ana Ekran' : 'Home'}
+          >
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+              <polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>{language === 'tr' ? 'Ana Ekran' : 'Home'}</TooltipContent>
+      </Tooltip>
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
@@ -1239,19 +1269,154 @@ export function PCPanel({
   if (!isVisible) return null;
 
   return (
-    <ModernPanel
-      id={deviceId}
-      title={`${internalPcHostname} (${pcIP})`}
-      onClose={onClose}
-      headerAction={headerAction}
-      collapsible={false}
-      className={`
-        w-full h-full min-w-0 
-        ${isMobile ? 'max-w-none' : 'max-w-none'} 
-        ${isDesktop ? '2xl:max-w-[1400px] 2xl:mx-auto' : ''}
-      `}
-    >
-      <div className="flex flex-col h-full overflow-hidden bg-background">
+    <div className={`
+      w-full h-full flex items-center justify-center p-0 sm:p-4
+      ${isDark ? 'bg-slate-900' : 'bg-slate-100'}
+    `}>
+      {/* Tablet Frame - Full screen on mobile */}
+      <div className={`
+        w-full h-full max-w-4xl mx-auto overflow-hidden
+        relative
+        ${isDark 
+          ? 'bg-gradient-to-br from-slate-900 via-indigo-900/50 via-violet-900/40 to-slate-900 sm:border-4 sm:border-slate-600 sm:shadow-2xl sm:shadow-purple-500/20 sm:rounded-3xl' 
+          : 'bg-gradient-to-br from-blue-200 via-indigo-100 to-purple-200 sm:border-4 sm:border-slate-300 sm:shadow-2xl sm:shadow-purple-300/30 sm:rounded-3xl'
+        }
+      `}>
+        {/* Animated colorful overlay */}
+        <div className="absolute inset-0 overflow-hidden -z-10">
+          {/* Moving gradient */}
+          <div className={`
+            absolute -top-1/2 -left-1/2 w-[200%] h-[200%] 
+            ${isDark 
+              ? 'bg-gradient-to-br from-blue-600/30 via-purple-600/30 via-pink-500/20 to-cyan-500/30 animate-gradient' 
+              : 'bg-gradient-to-br from-blue-400/40 via-purple-400/40 to-pink-400/40 animate-gradient'
+            }
+          `} />
+          {/* Colorful orbs */}
+          <div className={`
+            absolute top-0 right-0 w-40 h-40 rounded-full blur-3xl
+            ${isDark ? 'bg-purple-600/40' : 'bg-purple-400/50'}
+          `} />
+          <div className={`
+            absolute bottom-0 left-0 w-48 h-48 rounded-full blur-3xl
+            ${isDark ? 'bg-cyan-600/30' : 'bg-cyan-400/40'}
+          `} />
+          <div className={`
+            absolute top-1/3 left-1/3 w-32 h-32 rounded-full blur-3xl
+            ${isDark ? 'bg-pink-600/30' : 'bg-pink-400/40'}
+          `} />
+          <div className={`
+            absolute bottom-1/4 right-1/4 w-36 h-36 rounded-full blur-3xl
+            ${isDark ? 'bg-blue-600/25' : 'bg-blue-400/35'}
+          `} />
+          <div className={`
+            absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-56 h-56 rounded-full blur-3xl
+            ${isDark ? 'bg-violet-600/20' : 'bg-violet-400/30'}
+          `} />
+        </div>
+        {/* Tablet Header / Status Bar */}
+        <div className={`
+          px-4 py-2 flex items-center justify-between relative z-50
+          ${isDark ? 'bg-slate-900' : 'bg-white'}
+        `}>
+          <div className="flex items-center gap-2">
+            <div className={`w-2 h-2 rounded-full ${isPcPoweredOff ? 'bg-red-500' : 'bg-green-500 animate-pulse'}`} />
+            <span className={`text-xs font-medium ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+              {deviceId} - {pcIP}
+            </span>
+          </div>
+            <div className="flex items-center gap-1">
+            {/* Home Button - Disabled when PC is off */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setActiveTab('home')}
+                  disabled={isPcPoweredOff}
+                  className={`h-7 w-7 rounded-lg ui-hover-surface ${isPcPoweredOff ? 'opacity-30 cursor-not-allowed' : isDark ? 'text-slate-300 hover:text-cyan-400' : 'text-slate-600 hover:text-cyan-600'}`}
+                  aria-label={language === 'tr' ? 'Ana Ekran' : 'Home'}
+                >
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                    <polyline points="9 22 9 12 15 12 15 22"/>
+                  </svg>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{language === 'tr' ? 'Ana Ekran' : 'Home'}</TooltipContent>
+            </Tooltip>
+            {/* Power Button */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => onTogglePower?.(deviceId)}
+                  className={`h-7 w-7 rounded-lg ui-hover-surface transition-all ${isPcPoweredOff ? 'text-rose-500 hover:text-rose-400' : 'text-emerald-500 hover:text-emerald-400'}`}
+                  aria-label={t.power}
+                  disabled={!onTogglePower}
+                >
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 2v10" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 5.636a9 9 0 1 1-12.728 0" />
+                  </svg>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{t.power}</TooltipContent>
+            </Tooltip>
+            {/* Close Button */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={onClose}
+                  className={`h-7 w-7 rounded-lg ui-hover-surface ${isDark ? 'text-slate-300 hover:text-red-400' : 'text-slate-600 hover:text-red-600'}`}
+                  aria-label={language === 'tr' ? 'Kapat' : 'Close'}
+                >
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                  </svg>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{language === 'tr' ? 'Kapat' : 'Close'}</TooltipContent>
+            </Tooltip>
+            {/* Clock */}
+            <div className={`ml-2 text-xs font-mono ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
+              {formatTime(currentTime)}
+            </div>
+          </div>
+        </div>
+        {/* Screen Bezel */}
+        <div className={`
+          h-[calc(100%-40px)] overflow-hidden relative
+          ${isDark ? 'bg-black' : 'bg-slate-900'}
+        `}>
+          {/* Power Off Overlay */}
+          {isPcPoweredOff && (
+            <div className="absolute inset-0 z-50 bg-black flex flex-col items-center justify-center">
+              <svg className="w-16 h-16 text-red-500 mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 2v10" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 5.636a9 9 0 1 1-12.728 0" />
+              </svg>
+              <span className="text-red-500 text-sm font-medium">{language === 'tr' ? 'KAPALI' : 'OFF'}</span>
+            </div>
+          )}
+          <ModernPanel
+            id={deviceId}
+            title={deviceId}
+            onClose={onClose}
+            collapsible={false}
+            hideTitle
+            hideHeader
+            className={`
+              w-full h-full min-w-0 
+              ${isMobile ? 'max-w-none' : 'max-w-none'} 
+              ${isDesktop ? '2xl:max-w-[1400px] 2xl:mx-auto' : ''}
+            `}
+          >
+            <div className="flex flex-col h-full overflow-hidden bg-background">
         <Dialog open={searchOpen} onOpenChange={setSearchOpen}>
           <DialogContent className={`${isDark ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white'} sm:max-w-md`}>
             <DialogHeader>
@@ -1272,8 +1437,17 @@ export function PCPanel({
           </DialogContent>
         </Dialog>
 
-        {/* Navigation Tabs */}
-        <div className={`px-4 py-1.5 flex items-center gap-1 border-b ${isDark ? 'border-slate-800 bg-slate-900' : 'border-slate-200 bg-white'} ${isMobile ? 'flex-wrap' : ''}`}>
+        {/* Navigation Tabs - Hide on mobile, use main app tabs */}
+        <div className="hidden">
+          <Button
+            variant={activeTab === 'home' ? 'secondary' : 'ghost'}
+            size="sm"
+            onClick={() => setActiveTab('home')}
+            className={`h-9 px-4 text-xs font-black tracking-wider transition-all gap-2 ${activeTab === 'home' ? 'bg-slate-500/10 text-slate-300' : 'text-slate-500 hover:text-slate-300'} ${isMobile ? 'flex-1 min-w-0' : ''}`}
+          >
+            <Monitor className="w-4 h-4" />
+            <span className={isMobile ? 'sr-only' : 'hidden sm:inline'}>{language === 'tr' ? 'Ana Ekran' : 'Home'}</span>
+          </Button>
           <Button
             variant={activeTab === 'desktop' ? 'secondary' : 'ghost'}
             size="sm"
@@ -1325,7 +1499,67 @@ export function PCPanel({
 
         {/* Content Area */}
         <div className={`flex-1 flex flex-col overflow-hidden ${terminalBg} relative min-h-0`}>
-          {activeTab === 'settings' ? (
+          {activeTab === 'home' ? (
+            <div className="flex-1 flex items-center justify-center p-8">
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-6 sm:gap-8 rounded-3xl p-6 sm:p-8 bg-white/10 backdrop-blur-xl border border-white/20 shadow-xl">
+                <button
+                  onClick={() => setActiveTab('desktop')}
+                  className={`flex flex-col items-center gap-3 p-4 rounded-2xl transition-all hover:scale-105 ${isDark ? 'hover:bg-white/10' : 'hover:bg-white/40'}`}
+                >
+                  <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-2xl flex items-center justify-center ${isDark ? 'bg-gradient-to-br from-blue-500/30 to-blue-600/20 border border-blue-400/20' : 'bg-gradient-to-br from-blue-400 to-blue-500'} backdrop-blur-md`}>
+                    <Command className={`w-8 h-8 sm:w-10 sm:h-10 ${isDark ? 'text-blue-300' : 'text-white'}`} />
+                  </div>
+                  <span className={`text-xs sm:text-sm font-medium ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
+                    {language === 'tr' ? 'CMD' : 'CMD'}
+                  </span>
+                </button>
+                <button
+                  onClick={() => setActiveTab('terminal')}
+                  className={`flex flex-col items-center gap-3 p-4 rounded-2xl transition-all hover:scale-105 ${isDark ? 'hover:bg-white/10' : 'hover:bg-white/40'}`}
+                >
+                  <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-2xl flex items-center justify-center ${isDark ? 'bg-gradient-to-br from-emerald-500/30 to-emerald-600/20 border border-emerald-400/20' : 'bg-gradient-to-br from-emerald-400 to-emerald-500'} backdrop-blur-md`}>
+                    <TerminalIcon className={`w-8 h-8 sm:w-10 sm:h-10 ${isDark ? 'text-emerald-300' : 'text-white'}`} />
+                  </div>
+                  <span className={`text-xs sm:text-sm font-medium ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
+                    {language === 'tr' ? 'Konsol' : 'Console'}
+                  </span>
+                </button>
+                <button
+                  onClick={() => setActiveTab('settings')}
+                  className={`flex flex-col items-center gap-3 p-4 rounded-2xl transition-all hover:scale-105 ${isDark ? 'hover:bg-white/10' : 'hover:bg-white/40'}`}
+                >
+                  <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-2xl flex items-center justify-center ${isDark ? 'bg-gradient-to-br from-purple-500/30 to-purple-600/20 border border-purple-400/20' : 'bg-gradient-to-br from-purple-400 to-purple-500'} backdrop-blur-md`}>
+                    <ShieldCheck className={`w-8 h-8 sm:w-10 sm:h-10 ${isDark ? 'text-purple-300' : 'text-white'}`} />
+                  </div>
+                  <span className={`text-xs sm:text-sm font-medium ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
+                    {language === 'tr' ? 'Ayarlar' : 'Settings'}
+                  </span>
+                </button>
+                <button
+                  onClick={() => setActiveTab('services')}
+                  className={`flex flex-col items-center gap-3 p-4 rounded-2xl transition-all hover:scale-105 ${isDark ? 'hover:bg-white/10' : 'hover:bg-white/40'}`}
+                >
+                  <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-2xl flex items-center justify-center ${isDark ? 'bg-gradient-to-br from-amber-500/30 to-amber-600/20 border border-amber-400/20' : 'bg-gradient-to-br from-amber-400 to-amber-500'} backdrop-blur-md`}>
+                    <Globe className={`w-8 h-8 sm:w-10 sm:h-10 ${isDark ? 'text-amber-300' : 'text-white'}`} />
+                  </div>
+                  <span className={`text-xs sm:text-sm font-medium ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
+                    {language === 'tr' ? 'Servisler' : 'Services'}
+                  </span>
+                </button>
+                <button
+                  onClick={() => setActiveTab('wireless')}
+                  className={`flex flex-col items-center gap-3 p-4 rounded-2xl transition-all hover:scale-105 ${isDark ? 'hover:bg-white/10' : 'hover:bg-white/40'}`}
+                >
+                  <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-2xl flex items-center justify-center ${isDark ? 'bg-gradient-to-br from-cyan-500/30 to-cyan-600/20 border border-cyan-400/20' : 'bg-gradient-to-br from-cyan-400 to-cyan-500'} backdrop-blur-md`}>
+                    <Network className={`w-8 h-8 sm:w-10 sm:h-10 ${isDark ? 'text-cyan-300' : 'text-white'}`} />
+                  </div>
+                  <span className={`text-xs sm:text-sm font-medium ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
+                    {language === 'tr' ? 'Kablosuz' : 'Wireless'}
+                  </span>
+                </button>
+              </div>
+            </div>
+          ) : activeTab === 'settings' ? (
             <div className="p-6 space-y-4 overflow-y-auto custom-scrollbar">
               <div className="space-y-2">
                 <label className="text-xs font-bold text-slate-500 ">
@@ -2251,12 +2485,15 @@ export function PCPanel({
             </div>
           )}
         </div>
+          </div>
+        </ModernPanel>
+        </div>
       </div>
-    </ModernPanel>
+    </div>
   );
 }
 
-type PCActiveTab = 'desktop' | 'terminal' | 'settings' | 'services' | 'wireless';
+type PCActiveTab = 'home' | 'desktop' | 'terminal' | 'settings' | 'services' | 'wireless';
 
 function getPCConfigDefaults(id: string) {
   const num = id.split('-')[1] || '1';
