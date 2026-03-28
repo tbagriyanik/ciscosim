@@ -179,6 +179,12 @@ export function PCPanel({
     maxUsers: 50,
   });
   const [editingDhcpIndex, setEditingDhcpIndex] = useState<number | null>(null);
+  const [wifiEnabled, setWifiEnabled] = useState(deviceFromTopology?.wifi?.enabled ?? false);
+  const [wifiSSID, setWifiSSID] = useState(deviceFromTopology?.wifi?.ssid ?? '');
+  const [wifiSecurity, setWifiSecurity] = useState(deviceFromTopology?.wifi?.security ?? 'open');
+  const [wifiPassword, setWifiPassword] = useState(deviceFromTopology?.wifi?.password ?? '');
+  const [wifiChannel, setWifiChannel] = useState(deviceFromTopology?.wifi?.channel ?? '2.4GHz');
+  
   const [errors, setErrors] = useState<Record<string, string>>({});
   const activeServiceCount = Number(serviceDnsEnabled) + Number(serviceHttpEnabled) + Number(serviceDhcpEnabled);
 
@@ -202,7 +208,12 @@ export function PCPanel({
       maxUsers: 50,
     });
     setEditingDhcpIndex(null);
-  }, [deviceId, deviceFromTopology?.services]);
+    setWifiEnabled(deviceFromTopology?.wifi?.enabled ?? false);
+    setWifiSSID(deviceFromTopology?.wifi?.ssid ?? '');
+    setWifiSecurity(deviceFromTopology?.wifi?.security ?? 'open');
+    setWifiPassword(deviceFromTopology?.wifi?.password ?? '');
+    setWifiChannel(deviceFromTopology?.wifi?.channel ?? '2.4GHz');
+  }, [deviceId, deviceFromTopology?.services, deviceFromTopology?.wifi]);
 
   const validateIP = (ip: string) => /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/.test(ip);
 
@@ -246,12 +257,20 @@ export function PCPanel({
                 enabled: serviceDhcpEnabled,
                 pools: serviceDhcpPools
               }
+            },
+            wifi: {
+              enabled: wifiEnabled,
+              ssid: wifiSSID,
+              security: wifiSecurity,
+              password: wifiPassword,
+              channel: wifiChannel,
+              mode: 'client'
             }
           }
         }
       }));
     }
-  }, [internalPcHostname, ipConfigMode, pcIP, pcMAC, pcSubnet, pcGateway, pcDNS, pcIPv6, pcIPv6Prefix, serviceDnsEnabled, serviceDnsRecords, serviceHttpEnabled, serviceHttpContent, serviceDhcpEnabled, serviceDhcpPools, deviceId]);
+  }, [internalPcHostname, ipConfigMode, pcIP, pcMAC, pcSubnet, pcGateway, pcDNS, pcIPv6, pcIPv6Prefix, serviceDnsEnabled, serviceDnsRecords, serviceHttpEnabled, serviceHttpContent, serviceDhcpEnabled, serviceDhcpPools, wifiEnabled, wifiSSID, wifiSecurity, wifiPassword, wifiChannel, deviceId]);
 
   // Trigger sync on change (debounced)
   useEffect(() => {
@@ -1267,6 +1286,15 @@ export function PCPanel({
               {`${t.servicesTab} (${activeServiceCount}/3)`}
             </span>
           </Button>
+          <Button
+            variant={activeTab === 'wireless' ? 'secondary' : 'ghost'}
+            size="sm"
+            onClick={() => setActiveTab('wireless')}
+            className={`h-9 px-4 text-xs font-black tracking-wider transition-all gap-2 ${activeTab === 'wireless' ? 'bg-purple-500/10 text-purple-500' : 'text-slate-500 hover:text-purple-500'} ${isMobile ? 'flex-1 min-w-0' : ''}`}
+          >
+            <Network className="w-4 h-4" />
+            <span className={isMobile ? 'sr-only' : 'hidden sm:inline'}>{language === 'tr' ? 'Kablosuz' : 'Wireless'}</span>
+          </Button>
         </div>
 
         {/* Content Area */}
@@ -1588,6 +1616,117 @@ export function PCPanel({
                       </div>
                     </div>
                   ))}
+                </div>
+              </div>
+            </div>
+          ) : activeTab === 'wireless' ? (
+            <div className="p-6 space-y-6 overflow-y-auto custom-scrollbar">
+              <div className={`rounded-2xl border p-5 space-y-5 ${isDark ? 'border-slate-800 bg-slate-900/40' : 'border-slate-200 bg-white'}`}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3 text-purple-500">
+                    <Network className="w-5 h-5" />
+                    <h3 className="text-sm font-black tracking-widest uppercase">
+                      {language === 'tr' ? 'Wi-Fi Bağlantısı' : 'Wi-Fi Connection'}
+                    </h3>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={wifiEnabled}
+                    onClick={() => setWifiEnabled(!wifiEnabled)}
+                    className={`relative inline-flex h-7 w-14 shrink-0 items-center rounded-full border transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500/60 ${wifiEnabled
+                      ? 'bg-purple-500 border-purple-400'
+                      : (isDark ? 'bg-slate-800 border-slate-700' : 'bg-slate-200 border-slate-300')
+                      }`}
+                  >
+                    <span
+                      className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform duration-200 ${wifiEnabled ? 'translate-x-8' : 'translate-x-1'
+                        }`}
+                    />
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black tracking-widest uppercase text-slate-500 ml-1">SSID</label>
+                    <Input
+                      value={wifiSSID}
+                      onChange={(e) => setWifiSSID(e.target.value)}
+                      placeholder="Network Name"
+                      disabled={!wifiEnabled}
+                      className="bg-background"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black tracking-widest uppercase text-slate-500 ml-1">
+                      {language === 'tr' ? 'Güvenlik' : 'Security'}
+                    </label>
+                    <select
+                      value={wifiSecurity}
+                      onChange={(e) => setWifiSecurity(e.target.value as any)}
+                      disabled={!wifiEnabled}
+                      className={`w-full h-10 px-3 rounded-lg border text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50 ${
+                        isDark ? 'bg-background border-slate-800 text-white' : 'bg-white border-slate-200 text-slate-900'
+                      }`}
+                    >
+                      <option value="open">Open</option>
+                      <option value="wpa">WPA</option>
+                      <option value="wpa2">WPA2 Personal</option>
+                      <option value="wpa3">WPA3</option>
+                    </select>
+                  </div>
+
+                  {wifiSecurity !== 'open' && (
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black tracking-widest uppercase text-slate-500 ml-1">
+                        {language === 'tr' ? 'Parola' : 'Password'}
+                      </label>
+                      <Input
+                        type="password"
+                        value={wifiPassword}
+                        onChange={(e) => setWifiPassword(e.target.value)}
+                        placeholder="Security Key"
+                        disabled={!wifiEnabled}
+                        className="bg-background"
+                      />
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black tracking-widest uppercase text-slate-500 ml-1">
+                      {language === 'tr' ? 'Kanal' : 'Channel'}
+                    </label>
+                    <select
+                      value={wifiChannel}
+                      onChange={(e) => setWifiChannel(e.target.value as any)}
+                      disabled={!wifiEnabled}
+                      className={`w-full h-10 px-3 rounded-lg border text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50 ${
+                        isDark ? 'bg-background border-slate-800 text-white' : 'bg-white border-slate-200 text-slate-900'
+                      }`}
+                    >
+                      <option value="2.4GHz">2.4 GHz</option>
+                      <option value="5GHz">5 GHz</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className={`p-4 rounded-xl text-xs flex items-center gap-3 ${
+                  wifiEnabled ? 'text-purple-500 bg-purple-500/10' : 'text-slate-500 bg-slate-500/5'
+                }`}>
+                  <div className={`p-2 rounded-lg ${wifiEnabled ? 'bg-purple-500/20' : 'bg-slate-500/10'}`}>
+                    <Monitor className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="font-bold uppercase tracking-wider mb-0.5">
+                      {language === 'tr' ? 'Durum' : 'Status'}
+                    </div>
+                    <div className="opacity-80">
+                      {wifiEnabled 
+                        ? (language === 'tr' ? `WLAN0 aktif, SSID: ${wifiSSID || '-'}` : `WLAN0 active, SSID: ${wifiSSID || '-'}`)
+                        : (language === 'tr' ? 'Kablosuz alıcı kapalı' : 'Wireless receiver disabled')}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -2022,7 +2161,7 @@ export function PCPanel({
   );
 }
 
-type PCActiveTab = 'desktop' | 'terminal' | 'settings' | 'services';
+type PCActiveTab = 'desktop' | 'terminal' | 'settings' | 'services' | 'wireless';
 
 function getPCConfigDefaults(id: string) {
   const num = id.split('-')[1] || '1';

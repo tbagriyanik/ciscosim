@@ -46,6 +46,13 @@ export interface Port {
   ipv6Address?: string;         // For CCNA 1 v7 support
   ipv6Prefix?: number;
   isRoutedPort?: boolean;       // For L3 switch routed ports
+  wifi?: {
+    ssid: string;
+    security: 'open' | 'wpa' | 'wpa2' | 'wpa3';
+    password?: string;
+    channel: '2.4GHz' | '5GHz';
+    mode: 'ap' | 'client' | 'disabled';
+  };
 }
 
 export interface Vlan {
@@ -170,21 +177,23 @@ export interface ParsedCommand {
 }
 
 // Kablo Tipleri
-export type CableType = 'straight' | 'crossover' | 'console';
+export type CableType = 'straight' | 'crossover' | 'console' | 'wireless';
 
 export interface CableInfo {
   connected: boolean;
   cableType: CableType;
-  sourceDevice: 'pc' | 'switch';
-  targetDevice: 'pc' | 'switch';
+  sourceDevice: 'pc' | 'switch' | 'router';
+  targetDevice: 'pc' | 'switch' | 'router';
   sourcePort?: string;  // Port ID (e.g., 'eth0', 'com1', 'console', 'fa0/1')
   targetPort?: string;  // Port ID
 }
 
 // Kablo uyumluluk kuralları
 export const CABLE_COMPATIBILITY: Record<string, CableType[]> = {
-  'pc-switch': ['straight'],
-  'switch-pc': ['straight'],
+  'pc-switch': ['straight', 'wireless'],
+  'switch-pc': ['straight', 'wireless'],
+  'pc-router': ['straight', 'wireless'],
+  'router-pc': ['straight', 'wireless'],
   'pc-pc': ['crossover'],
   'switch-switch': ['crossover'],
   'pc-console': ['console'],
@@ -232,6 +241,7 @@ export function getCableTypeName(type: CableType, lang: 'tr' | 'en'): string {
     straight: { tr: 'Düz Kablo', en: 'Straight-through' },
     crossover: { tr: 'Çapraz Kablo', en: 'Crossover' },
     console: { tr: 'Konsol Kablosu', en: 'Console Cable' },
+    wireless: { tr: 'Kablosuz Bağlantı', en: 'Wireless Connection' },
   };
   return names[type][lang];
 }

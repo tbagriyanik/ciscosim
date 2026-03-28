@@ -109,6 +109,13 @@ export function ConfigPanel({ state, onExecuteCommand, isDevicePoweredOff = fals
         if (vlanId !== 1) config += ` switchport access vlan ${vlanId}\\n`;
       }
       if (port.ipAddress && port.subnetMask) config += ` ip address ${port.ipAddress} ${port.subnetMask}\\n`;
+      if (port.id.toLowerCase().startsWith('wlan') && port.wifi) {
+        if (port.wifi.ssid) config += ` ssid ${port.wifi.ssid}\\n`;
+        if (port.wifi.security) config += ` encryption ${port.wifi.security}\\n`;
+        if (port.wifi.password) config += ` wifi-password ${port.wifi.password}\\n`;
+        if (port.wifi.channel) config += ` wifi-channel ${port.wifi.channel}\\n`;
+        if (port.wifi.mode) config += ` wifi-mode ${port.wifi.mode}\\n`;
+      }
       config += `!\\n`;
     });
 

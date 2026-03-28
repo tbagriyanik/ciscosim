@@ -23,6 +23,11 @@ export const interfaceHandlers: Record<string, CommandHandler> = {
   'spanning-tree bpduguard enable': cmdSpanningTreeBpduguard,
   'ip address': cmdIpAddress,
   'no ip address': cmdNoIpAddress,
+  'ssid': cmdSsid,
+  'encryption': cmdEncryption,
+  'wifi-password': cmdWifiPassword,
+  'wifi-channel': cmdWifiChannel,
+  'wifi-mode': cmdWifiMode,
 };
 
 /**
@@ -585,4 +590,119 @@ function applyToSelectedPorts(state: any, updater: (port: any) => any) {
   });
 
   return newPorts;
+}
+
+/**
+ * SSID - Set Wireless SSID
+ */
+function cmdSsid(state: any, input: string, ctx: any): any {
+  if (state.currentMode !== 'interface' || !state.currentInterface) {
+    return { success: false, error: '% No interface selected' };
+  }
+  if (!state.currentInterface.toLowerCase().startsWith('wlan')) {
+    return { success: false, error: '% Wireless commands are only valid on WLAN interfaces' };
+  }
+
+  const match = input.match(/^ssid\s+(.+)$/i);
+  if (!match) return { success: false, error: '% Invalid SSID' };
+
+  const ssid = match[1].trim();
+  const newPorts = applyToSelectedPorts(state, (port: any) => ({
+    ...port,
+    wifi: { ...port.wifi, ssid }
+  }));
+
+  return { success: true, newState: { ports: newPorts } };
+}
+
+/**
+ * Encryption - Set Wireless Security
+ */
+function cmdEncryption(state: any, input: string, ctx: any): any {
+  if (state.currentMode !== 'interface' || !state.currentInterface) {
+    return { success: false, error: '% No interface selected' };
+  }
+  if (!state.currentInterface.toLowerCase().startsWith('wlan')) {
+    return { success: false, error: '% Wireless commands are only valid on WLAN interfaces' };
+  }
+
+  const match = input.match(/^encryption\s+(open|wpa|wpa2|wpa3)$/i);
+  if (!match) return { success: false, error: '% Invalid encryption (open, wpa, wpa2, wpa3)' };
+
+  const security = match[1].toLowerCase();
+  const newPorts = applyToSelectedPorts(state, (port: any) => ({
+    ...port,
+    wifi: { ...port.wifi, security }
+  }));
+
+  return { success: true, newState: { ports: newPorts } };
+}
+
+/**
+ * Wifi-Password - Set Wireless Key
+ */
+function cmdWifiPassword(state: any, input: string, ctx: any): any {
+  if (state.currentMode !== 'interface' || !state.currentInterface) {
+    return { success: false, error: '% No interface selected' };
+  }
+  if (!state.currentInterface.toLowerCase().startsWith('wlan')) {
+    return { success: false, error: '% Wireless commands are only valid on WLAN interfaces' };
+  }
+
+  const match = input.match(/^wifi-password\s+(.+)$/i);
+  if (!match) return { success: false, error: '% Invalid password' };
+
+  const password = match[1].trim();
+  const newPorts = applyToSelectedPorts(state, (port: any) => ({
+    ...port,
+    wifi: { ...port.wifi, password }
+  }));
+
+  return { success: true, newState: { ports: newPorts } };
+}
+
+/**
+ * Channel - Set Wireless Channel/Band
+ */
+function cmdWifiChannel(state: any, input: string, ctx: any): any {
+  if (state.currentMode !== 'interface' || !state.currentInterface) {
+    return { success: false, error: '% No interface selected' };
+  }
+  if (!state.currentInterface.toLowerCase().startsWith('wlan')) {
+    return { success: false, error: '% Wireless commands are only valid on WLAN interfaces' };
+  }
+
+  const match = input.match(/^wifi-channel\s+(2\.4ghz|5ghz)$/i);
+  if (!match) return { success: false, error: '% Invalid channel (2.4ghz, 5ghz)' };
+
+  const channel = match[1].toLowerCase() === '2.4ghz' ? '2.4GHz' : '5GHz';
+  const newPorts = applyToSelectedPorts(state, (port: any) => ({
+    ...port,
+    wifi: { ...port.wifi, channel }
+  }));
+
+  return { success: true, newState: { ports: newPorts } };
+}
+
+/**
+ * Wifi-Mode - Set Wireless Mode
+ */
+function cmdWifiMode(state: any, input: string, ctx: any): any {
+  if (state.currentMode !== 'interface' || !state.currentInterface) {
+    return { success: false, error: '% No interface selected' };
+  }
+  if (!state.currentInterface.toLowerCase().startsWith('wlan')) {
+    return { success: false, error: '% Wireless commands are only valid on WLAN interfaces' };
+  }
+
+  const match = input.match(/^wifi-mode\s+(ap|client|disabled)$/i);
+  if (!match) return { success: false, error: '% Invalid mode (ap, client, disabled)' };
+
+  const mode = match[1].toLowerCase();
+  const newPorts = applyToSelectedPorts(state, (port: any) => ({
+    ...port,
+    wifi: { ...port.wifi, mode }
+  }));
+
+  return { success: true, newState: { ports: newPorts } };
 }

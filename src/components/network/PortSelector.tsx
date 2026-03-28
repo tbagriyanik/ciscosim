@@ -26,6 +26,7 @@ const CABLE_COLORS = {
   straight: { primary: '#3b82f6', bg: 'bg-blue-500', text: 'text-blue-400', border: 'border-blue-500/30' },
   crossover: { primary: '#f97316', bg: 'bg-orange-500', text: 'text-orange-400', border: 'border-orange-500/30' },
   console: { primary: '#06b6d4', bg: 'bg-cyan-500', text: 'text-cyan-400', border: 'border-cyan-500/30' },
+  wireless: { primary: '#a855f7', bg: 'bg-purple-500', text: 'text-purple-400', border: 'border-purple-500/30' },
 };
 
 export function PortSelector({ devices, cableInfo, onConnect, onClose }: PortSelectorProps) {
@@ -102,7 +103,7 @@ export function PortSelector({ devices, cableInfo, onConnect, onClose }: PortSel
               {language === 'tr' ? 'Kablo Tipi' : 'Cable Type'}
             </div>
             <div className="flex gap-1 p-1 rounded-lg bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 w-fit">
-              {(['straight', 'crossover', 'console'] as CableType[]).map((type, index) => {
+              {(['straight', 'crossover', 'console', 'wireless'] as CableType[]).map((type, index) => {
                 const typeLabel = getCableTypeLabel(type, language);
                 return (
                   <button
@@ -113,7 +114,7 @@ export function PortSelector({ devices, cableInfo, onConnect, onClose }: PortSel
                       : isDark
                         ? 'text-slate-400 hover:text-white hover:bg-slate-700 rounded-md'
                         : 'text-slate-500 hover:text-slate-800 hover:bg-slate-200 rounded-md'
-                      } ${index === 0 ? 'rounded-l-md' : index === 2 ? 'rounded-r-md' : 'rounded-none'}`}
+                      } ${index === 0 ? 'rounded-l-md' : index === 3 ? 'rounded-r-md' : 'rounded-none'}`}
                   >
                     {typeLabel}
                   </button>

@@ -17,6 +17,11 @@ export interface CanvasPort {
   duplex?: 'half' | 'full' | 'auto';
   ipAddress?: string;
   subnetMask?: string;
+  wifi?: {
+    ssid: string;
+    security: 'open' | 'wpa' | 'wpa2' | 'wpa3';
+    channel: '2.4GHz' | '5GHz';
+  };
 }
 
 export interface NetworkTopologyProps {
@@ -83,6 +88,14 @@ export interface CanvasDevice {
   y: number;
   status: 'online' | 'offline' | 'error';
   ports: CanvasPort[];
+  wifi?: {
+    enabled: boolean;
+    ssid: string;
+    security: 'open' | 'wpa' | 'wpa2' | 'wpa3';
+    password?: string;
+    channel: '2.4GHz' | '5GHz';
+    mode: 'ap' | 'client';
+  };
 }
 
 export interface CanvasConnection {

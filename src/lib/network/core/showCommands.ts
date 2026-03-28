@@ -19,6 +19,7 @@ export const showHandlers: Record<string, CommandHandler> = {
   'show boot': cmdShowBoot,
   'show spanning-tree': cmdShowSpanningTree,
   'show port-security': cmdShowPortSecurity,
+  'show wireless': cmdShowWireless,
   'do show': cmdDoShow,
 };
 
@@ -721,6 +722,8 @@ function cmdDoShow(
       return cmdShowSpanningTree(state, showCommand, ctx);
     } else if (subCmd.startsWith('port-security')) {
       return cmdShowPortSecurity(state, showCommand, ctx);
+    } else if (subCmd.startsWith('wireless')) {
+      return cmdShowWireless(state, showCommand, ctx);
     } else {
       return cmdShow(state, showCommand, ctx);
     }
@@ -728,3 +731,41 @@ function cmdDoShow(
 
   return { success: false, error: '% Invalid command' };
 }
+
+/**
+ * Show Wireless - Display WiFi settings
+ */
+function cmdShowWireless(
+  state: any,
+  input: string,
+  ctx: any
+): any {
+  let output = '\nWireless Configuration & Status\n';
+  output += '-------------------------------------------\n';
+  output += 'Interface   Mode     SSID           Security   Channel  Status\n';
+  output += '---------   ------   -------------  ---------  -------  ----------\n';
+
+  let found = false;
+  Object.keys(state.ports || {}).forEach(portName => {
+    const port = state.ports[portName];
+    if (portName.toLowerCase().startsWith('wlan')) {
+      found = true;
+      const wifi = port.wifi || {};
+      const mode = (wifi.mode || 'disabled').padEnd(8);
+      const ssid = (wifi.ssid || '-').padEnd(14);
+      const security = (wifi.security || 'open').padEnd(10);
+      const channel = (wifi.channel || '2.4GHz').padEnd(8);
+      const status = (port.shutdown ? 'Down' : 'Up');
+      
+      output += `${portName.padEnd(11)} ${mode}${ssid}${security}${channel}${status}\n`;
+    }
+  });
+
+  if (!found) {
+    output += 'No wireless interfaces found on this device.\n';
+  }
+
+  output += '!\n';
+  return { success: true, output };
+}
+

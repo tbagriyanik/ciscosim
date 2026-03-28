@@ -74,7 +74,7 @@ export const commandHelp: Record<string, Record<string, string[]>> = {
     's': ['snake', 'show'],
     'sh': ['show'],
     'sho': ['show'],
-    'show': ['version'],
+    'show': ['version', 'wireless'],
   },
   privileged: {
     '': ['configure', 'disable', 'show', 'write', 'ping', 'telnet', 'reload', 'exit', 'copy', 'erase', 'ip', '?', 'help'],
@@ -105,7 +105,7 @@ export const commandHelp: Record<string, Record<string, string[]>> = {
     's': ['show'],
     'sh': ['show'],
     'sho': ['show'],
-    'show': ['running-config', 'interfaces', 'vlan', 'version', 'mac', 'cdp', 'ip', 'spanning-tree', 'port-security'],
+    'show': ['running-config', 'interfaces', 'vlan', 'version', 'mac', 'cdp', 'ip', 'spanning-tree', 'port-security', 'wireless'],
     'show r': ['running-config'],
     'show ru': ['running-config'],
     'show run': ['running-config'],
@@ -345,11 +345,15 @@ export const commandHelp: Record<string, Record<string, string[]>> = {
     'vlan': ['1', '10', '20', '30', '50', '100', '200'],
 
     'e': ['enable', 'end', 'exit'],
-    'en': ['enable', 'end'],
+    'en': ['enable', 'end', 'encryption'],
     'ena': ['enable'],
     'enab': ['enable'],
     'enabl': ['enable'],
     'enable': ['secret', 'password'],
+    'enc': ['encryption'],
+    'encr': ['encryption'],
+    'encry': ['encryption'],
+    'encryption': ['open', 'wpa', 'wpa2', 'wpa3'],
     'enable s': ['secret'],
     'enable se': ['secret'],
     'enable sec': ['secret'],
@@ -487,8 +491,11 @@ export const commandHelp: Record<string, Record<string, string[]>> = {
     'do write': ['memory'],
   },
   interface: {
-    '': ['shutdown', 'no', 'speed', 'duplex', 'description', 'switchport', 'cdp', 'spanning-tree', 'channel-group', 'ip', 'exit', 'end', 'do', '?', 'help'],
-    's': ['shutdown', 'speed', 'spanning-tree'],
+    '': ['shutdown', 'no', 'speed', 'duplex', 'description', 'switchport', 'cdp', 'spanning-tree', 'channel-group', 'ip', 'ssid', 'encryption', 'wifi-password', 'channel', 'wifi-mode', 'exit', 'end', 'do', '?', 'help'],
+    's': ['shutdown', 'speed', 'spanning-tree', 'ssid'],
+    'ss': ['ssid'],
+    'ssi': ['ssid'],
+    'ssid': [],
     'sh': ['shutdown'],
     'shu': ['shutdown'],
     'shut': ['shutdown'],
@@ -517,6 +524,8 @@ export const commandHelp: Record<string, Record<string, string[]>> = {
     'descript': ['description'],
     'descripti': ['description'],
     'descriptio': ['description'],
+
+
 
     'i': ['ip'],
     'ip': ['address', 'helper-address'],
@@ -683,6 +692,14 @@ export const commandHelp: Record<string, Record<string, string[]>> = {
     'channel-group 1 mo': ['mode'],
     'channel-group 1 mod': ['mode'],
     'channel-group 1 mode': ['active', 'passive', 'on', 'desirable', 'auto'],
+
+    'wi': ['wifi-password', 'wifi-channel', 'wifi-mode'],
+    'wif': ['wifi-password', 'wifi-channel', 'wifi-mode'],
+    'wifi': ['-password', '-channel', '-mode'],
+    'wifi-p': ['password'],
+    'wifi-c': ['channel'],
+    'wifi-m': ['mode'],
+    'wifi-channel': ['2.4GHz', '5GHz'],
 
     'ex': ['exit'],
     'exi': ['exit'],
