@@ -241,6 +241,92 @@ export default function Home() {
   const [activeDeviceId, setActiveDeviceId] = useState<string>('switch-1');
   const [activeDeviceType, setActiveDeviceType] = useState<'pc' | 'switch' | 'router'>('switch');
 
+  // Navigation history for back/forward support
+  const navigationHistoryRef = useRef<{ tab: TabType; deviceId?: string; program?: string }[]>([{ tab: 'topology' }]);
+  const currentNavIndexRef = useRef(0);
+  const isInternalNavRef = useRef(false);
+
+  // Custom tab setter with navigation history
+  const setActiveTabWithHistory = useCallback((tab: TabType) => {
+    if (isInternalNavRef.current) {
+      isInternalNavRef.current = false;
+      setActiveTab(tab);
+      return;
+    }
+    
+    // Add to history
+    const newState = { tab, deviceId: undefined, program: undefined };
+    const currentIndex = currentNavIndexRef.current;
+    
+    // Remove any forward history
+    if (currentIndex < navigationHistoryRef.current.length - 1) {
+      navigationHistoryRef.current = navigationHistoryRef.current.slice(0, currentIndex + 1);
+    }
+    
+    // Don't add duplicate consecutive states
+    const lastState = navigationHistoryRef.current[navigationHistoryRef.current.length - 1];
+    if (lastState && lastState.tab === tab) {
+      setActiveTab(tab);
+      return;
+    }
+    
+    navigationHistoryRef.current.push(newState);
+    currentNavIndexRef.current = navigationHistoryRef.current.length - 1;
+    
+    // Push to browser history
+    window.history.pushState({ tab }, '');
+    setActiveTab(tab);
+  }, [setActiveTab]);
+
+  // Custom device tab setter with navigation history (for PC terminal)
+  const setDeviceTabWithHistory = useCallback((tab: TabType, deviceId: string, deviceType: 'pc' | 'switch' | 'router') => {
+    if (isInternalNavRef.current) {
+      isInternalNavRef.current = false;
+      setActiveDeviceId(deviceId);
+      setActiveDeviceType(deviceType);
+      setActiveTab(tab);
+      return;
+    }
+    
+    // Add to history
+    const newState = { tab, deviceId, program: undefined };
+    const currentIndex = currentNavIndexRef.current;
+    
+    // Remove any forward history
+    if (currentIndex < navigationHistoryRef.current.length - 1) {
+      navigationHistoryRef.current = navigationHistoryRef.current.slice(0, currentIndex + 1);
+    }
+    
+    navigationHistoryRef.current.push(newState);
+    currentNavIndexRef.current = navigationHistoryRef.current.length - 1;
+    
+    // Push to browser history
+    window.history.pushState({ tab, deviceId }, '');
+    
+    setActiveDeviceId(deviceId);
+    setActiveDeviceType(deviceType);
+    setActiveTab(tab);
+  }, [setActiveTab, setActiveDeviceId, setActiveDeviceType]);
+
+  // Handle PCPanel tablet program navigation
+  const handlePCPanelNavigate = useCallback((program: string) => {
+    if (program === 'home') {
+      // Navigate back to topology when going home from tablet
+      if (isInternalNavRef.current) {
+        isInternalNavRef.current = false;
+        return;
+      }
+      window.history.pushState({ tab: 'topology', deviceId: activeDeviceId }, '');
+    } else if (program === 'terminal' || program === 'desktop') {
+      // Navigate to CMD terminal tab
+      if (isInternalNavRef.current) {
+        isInternalNavRef.current = false;
+        return;
+      }
+      window.history.pushState({ tab: 'cmd', deviceId: activeDeviceId, program }, '');
+    }
+  }, [activeDeviceId]);
+
   // Listen for device config updates from PCPanel
   useEffect(() => {
     const handleDeviceUpdate = (event: any) => {
@@ -764,11 +850,11 @@ export default function Home() {
     if (currentTabDef && !currentTabDef.showFor.includes(activeDeviceType)) {
       // Current tab is not supported by new device type
       if (activeDeviceType === 'pc') {
-        setActiveTab('cmd');
+        setActiveTabWithHistory('cmd');
       } else if (activeDeviceType === 'switch' || activeDeviceType === 'router') {
-        setActiveTab('terminal');
+        setActiveTabWithHistory('terminal');
       } else {
-        setActiveTab('topology');
+        setActiveTabWithHistory('topology');
       }
     }
   }, [activeDeviceType, activeTab]);
@@ -951,23 +1037,20 @@ export default function Home() {
 
     if (actualDeviceType === 'pc') {
       // PC - open CMD tab directly
-      setActiveTab('cmd');
+      setDeviceTabWithHistory('cmd', deviceId, 'pc');
       setShowPCDeviceId(deviceId);
       setShowPCPanel(true);
-      setActiveDeviceId(deviceId);
-      setActiveDeviceType('pc');
     } else {
       // Switch or Router - set as CLI device and switch to terminal
-      setActiveDeviceId(deviceId);
       const actualType = actualDeviceType as 'switch' | 'router';
-      setActiveDeviceType(actualType);
-
+      
       const deviceObj = topologyDevices?.find(d => d.id === deviceId);
       getOrCreateDeviceState(deviceId, actualType, deviceObj?.name, deviceObj?.macAddress);
       getOrCreateDeviceOutputs(deviceId);
-      setActiveTab('terminal');
+      
+      setDeviceTabWithHistory('terminal', deviceId, actualType);
     }
-  }, [getOrCreateDeviceState, getOrCreateDeviceOutputs, topologyDevices, setActiveTab, setShowPCDeviceId, setShowPCPanel, setActiveDeviceId, setActiveDeviceType]);
+  }, [getOrCreateDeviceState, getOrCreateDeviceOutputs, topologyDevices, setDeviceTabWithHistory, setShowPCDeviceId, setShowPCPanel]);
 
   // Handle topology change from NetworkTopology component
   const handleTopologyChange = useCallback((devices: CanvasDevice[], connections: CanvasConnection[], notes: CanvasNote[]) => {
@@ -1403,9 +1486,12 @@ export default function Home() {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [hasUnsavedChanges]);
 
-  // Handle back button on mobile: popstate shuts down everything
+  // Handle back/forward navigation
   useEffect(() => {
-    const handlePopState = () => {
+    const handlePopState = (e: PopStateEvent) => {
+      const state = e.state as { tab?: TabType; deviceId?: string; program?: string; modal?: boolean } | null;
+      
+      // Close modals first
       setShowMobileMenu(false);
       setConfirmDialog(null);
       setSaveDialog(null);
@@ -1413,10 +1499,30 @@ export default function Home() {
       setShowProjectPicker(false);
       setShowOnboarding(false);
       window.dispatchEvent(new CustomEvent('close-menus-broadcast', { detail: { source: 'back' } }));
+      
+      // Handle navigation state
+      if (state && state.tab) {
+        isInternalNavRef.current = true;
+        
+        // Update history index
+        currentNavIndexRef.current = Math.max(0, currentNavIndexRef.current - 1);
+        
+        // Navigate to the state
+        if (state.tab === 'cmd' || state.tab === 'terminal') {
+          if (state.deviceId) {
+            setActiveDeviceId(state.deviceId);
+            setActiveDeviceType(state.deviceId.startsWith('pc') ? 'pc' : state.deviceId.startsWith('router') ? 'router' : 'switch');
+          }
+          setActiveTab(state.tab);
+        } else {
+          setActiveTab(state.tab);
+        }
+      }
     };
+    
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, [setShowMobileMenu, setConfirmDialog, setSaveDialog, setShowPCPanel, setShowProjectPicker, setShowOnboarding]);
+  }, [setShowMobileMenu, setConfirmDialog, setSaveDialog, setShowPCPanel, setShowProjectPicker, setShowOnboarding, setActiveTab, setActiveDeviceId, setActiveDeviceType]);
 
   // History pushState for back button tracking
   useEffect(() => {
@@ -2565,6 +2671,7 @@ export default function Home() {
                   pcHistories={pcHistories}
                   onUpdatePCHistory={handleUpdatePCHistory}
                   onExecuteDeviceCommand={handleExecuteCommand}
+                  onNavigate={handlePCPanelNavigate}
                 />
               </div>
 

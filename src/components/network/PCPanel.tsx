@@ -64,6 +64,7 @@ interface PCPanelProps {
   pcHistories?: Map<string, string[]>;
   onUpdatePCHistory?: (deviceId: string, history: string[]) => void;
   onExecuteDeviceCommand?: (deviceId: string, command: string) => Promise<any>;
+  onNavigate?: (program: string) => void;
 }
 
 const expandCommandContext = (mode: keyof typeof commandHelp, rawValue: string) => {
@@ -90,7 +91,8 @@ export function PCPanel({
   pcOutputs,
   pcHistories,
   onUpdatePCHistory,
-  onExecuteDeviceCommand
+  onExecuteDeviceCommand,
+  onNavigate
 }: PCPanelProps) {
   const { t, language } = useLanguage();
   const { theme } = useTheme();
@@ -111,6 +113,46 @@ export function PCPanel({
   const inputBorder = isDark ? 'border-slate-800' : 'border-slate-300';
 
   const [activeTab, setActiveTab] = useState<PCActiveTab>('home');
+  const tabletHistoryRef = useRef<PCActiveTab[]>(['home']);
+  const tabletHistoryIndexRef = useRef(0);
+  const isInternalTabletNavRef = useRef(false);
+
+  const navigateToProgram = useCallback((program: PCActiveTab) => {
+    if (program === 'home') {
+      // Going home - pop from history
+      if (tabletHistoryIndexRef.current > 0) {
+        tabletHistoryIndexRef.current--;
+        isInternalTabletNavRef.current = true;
+        setActiveTab(tabletHistoryRef.current[tabletHistoryIndexRef.current]);
+        onNavigate?.('home');
+      } else {
+        setActiveTab('home');
+        onNavigate?.('home');
+      }
+    } else {
+      // Going to a program - push to history
+      tabletHistoryRef.current = tabletHistoryRef.current.slice(0, tabletHistoryIndexRef.current + 1);
+      tabletHistoryRef.current.push(program);
+      tabletHistoryIndexRef.current = tabletHistoryRef.current.length - 1;
+      setActiveTab(program);
+      onNavigate?.(program);
+    }
+  }, [onNavigate]);
+
+  // Handle browser back button for tablet navigation
+  useEffect(() => {
+    const handleTabletPopState = (e: CustomEvent) => {
+      const { program } = e.detail || {};
+      if (program === 'home' && tabletHistoryIndexRef.current > 0) {
+        tabletHistoryIndexRef.current--;
+        isInternalTabletNavRef.current = true;
+        setActiveTab(tabletHistoryRef.current[tabletHistoryIndexRef.current]);
+      }
+    };
+    window.addEventListener('tablet-back', handleTabletPopState as EventListener);
+    return () => window.removeEventListener('tablet-back', handleTabletPopState as EventListener);
+  }, []);
+
   const [currentTime, setCurrentTime] = useState(new Date());
   const [showNetworkMenu, setShowNetworkMenu] = useState(false);
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
@@ -1499,7 +1541,7 @@ export function PCPanel({
                   <div className="flex-1 flex items-center justify-center p-8">
                     <div className="grid grid-cols-3 md:grid-cols-4 gap-6 md:gap-8 rounded-3xl p-6 md:p-8 bg-white/10 backdrop-blur-xl border border-white/20 shadow-xl">
                       <button
-                        onClick={() => setActiveTab('desktop')}
+                        onClick={() => navigateToProgram('desktop')}
                         className={`flex flex-col items-center gap-3 p-4 rounded-2xl transition-all duration-300 hover:scale-105 hover:-translate-y-1 group ${isDark ? 'hover:bg-white/10 hover:shadow-lg hover:shadow-blue-500/20' : 'hover:bg-white/40 hover:shadow-xl'}`}
                       >
                         <div className={`w-16 h-16 md:w-20 md:h-20 rounded-2xl flex items-center justify-center shadow-lg ${isDark ? 'bg-gradient-to-br from-blue-500/40 to-blue-600/30 border border-blue-400/30' : 'bg-gradient-to-br from-blue-400 to-blue-500'} group-hover:scale-105 transition-transform duration-300`}>
@@ -1510,7 +1552,7 @@ export function PCPanel({
                         </span>
                       </button>
                       <button
-                        onClick={() => setActiveTab('terminal')}
+                        onClick={() => navigateToProgram('terminal')}
                         className={`flex flex-col items-center gap-3 p-4 rounded-2xl transition-all duration-300 hover:scale-105 hover:-translate-y-1 group ${isDark ? 'hover:bg-white/10 hover:shadow-lg hover:shadow-emerald-500/20' : 'hover:bg-white/40 hover:shadow-xl'}`}
                       >
                         <div className={`w-16 h-16 md:w-20 md:h-20 rounded-2xl flex items-center justify-center shadow-lg ${isDark ? 'bg-gradient-to-br from-emerald-500/40 to-emerald-600/30 border border-emerald-400/30' : 'bg-gradient-to-br from-emerald-400 to-emerald-500'} group-hover:scale-105 transition-transform duration-300`}>
@@ -1521,7 +1563,7 @@ export function PCPanel({
                         </span>
                       </button>
                       <button
-                        onClick={() => setActiveTab('settings')}
+                        onClick={() => navigateToProgram('settings')}
                         className={`flex flex-col items-center gap-3 p-4 rounded-2xl transition-all duration-300 hover:scale-105 hover:-translate-y-1 group ${isDark ? 'hover:bg-white/10 hover:shadow-lg hover:shadow-purple-500/20' : 'hover:bg-white/40 hover:shadow-xl'}`}
                       >
                         <div className={`w-16 h-16 md:w-20 md:h-20 rounded-2xl flex items-center justify-center shadow-lg ${isDark ? 'bg-gradient-to-br from-purple-500/40 to-purple-600/30 border border-purple-400/30' : 'bg-gradient-to-br from-purple-400 to-purple-500'} group-hover:scale-105 transition-transform duration-300`}>
