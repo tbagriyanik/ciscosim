@@ -434,7 +434,7 @@ export default function Home() {
 
       return nextDevices;
     });
-  }, []);
+  }, [setTopologyDevices, setTopologyConnections]);
 
   const [cableInfo, setCableInfo] = useState<CableInfo>({
     connected: true,
@@ -817,7 +817,7 @@ export default function Home() {
       });
       return false;
     }
-  }, [setDeviceStates, setDeviceOutputs, setPcOutputs, setPcHistories, setTopologyDevices, setTopologyConnections, setTopologyNotes, setCableInfo, setActiveDeviceId, setActiveDeviceType, setActiveTab, setTopologyKey, setHasUnsavedChanges, resetHistory, toast]);
+  }, [setDeviceStates, setDeviceOutputs, setPcOutputs, setPcHistories, setTopologyDevices, setTopologyConnections, setTopologyNotes, setCableInfo, setActiveDeviceId, setActiveDeviceType, setActiveTab, setTopologyKey, setHasUnsavedChanges, resetHistory, toast, setZoom, setPan, language]);
 
   // Persistence: Load from localStorage on mount
   useEffect(() => {
@@ -902,7 +902,7 @@ export default function Home() {
         y: rect.height / 2 - targetDevice.y * zoom,
       });
     });
-  }, [topologyDevices, zoom]);
+  }, [topologyDevices, zoom, setPan]);
 
   const resetTopologyView = useCallback(() => {
     const nextZoom = 1.0;
@@ -922,7 +922,7 @@ export default function Home() {
     const minY = Math.min(minDeviceY, minNoteY);
 
     setPan({ x: PADDING - minX * nextZoom, y: PADDING - minY * nextZoom });
-  }, [topologyDevices, topologyNotes]);
+  }, [topologyDevices, topologyNotes, setZoom, setPan]);
 
   const switchTabOrTopology = useCallback((tabId: TabType) => {
     const targetTab = ALL_TABS.find(tab => tab.id === tabId);
@@ -991,7 +991,7 @@ export default function Home() {
     if (result?.exitSession) {
       setActiveTab('topology');
     }
-  }, [activeDeviceId, handleCommandForDevice, topologyDevices, topologyConnections, setActiveDeviceId, setActiveDeviceType]);
+  }, [activeDeviceId, handleCommandForDevice, topologyDevices, topologyConnections, setActiveDeviceId, setActiveDeviceType, setActiveTab]);
 
   const prompt = getPrompt(state);
 
@@ -1215,7 +1215,7 @@ export default function Home() {
       });
     }
     setHasUnsavedChanges(true);
-  }, [activeDeviceId, showPCDeviceId, selectedDevice, setDeviceStates, setDeviceOutputs, setPcOutputs, setShowPCPanel, setShowPCDeviceId, setSelectedDevice, setActiveDeviceId, setActiveDeviceType, setActiveTab, setHasUnsavedChanges]);
+  }, [activeDeviceId, showPCDeviceId, selectedDevice, setDeviceStates, setDeviceOutputs, setPcOutputs, setShowPCPanel, setShowPCDeviceId, setSelectedDevice, setActiveDeviceId, setActiveDeviceType, setActiveTab, setHasUnsavedChanges, setTopologyConnections, setTopologyDevices]);
 
   // Handle device rename - propagate topology label change to deviceStates hostname
   const handleDeviceRename = useCallback((deviceId: string, newName: string) => {
@@ -1407,7 +1407,7 @@ export default function Home() {
       pan: { x: 0, y: 0 },
       activeTab: 'topology'
     });
-  }, [resetHistory, setDeviceStates, setDeviceOutputs, setPcOutputs, setPcHistories, setTopologyDevices, setTopologyConnections, setTopologyNotes, setActiveDeviceId, setActiveDeviceType, setSelectedDevice, setShowPCPanel, setActiveTab, setHasUnsavedChanges, setTopologyKey]);
+  }, [resetHistory, setDeviceStates, setDeviceOutputs, setPcOutputs, setPcHistories, setTopologyDevices, setTopologyConnections, setTopologyNotes, setActiveDeviceId, setActiveDeviceType, setSelectedDevice, setShowPCPanel, setActiveTab, setHasUnsavedChanges, setTopologyKey, setZoom, setPan]);
 
   const runWithSaveGuard = useCallback((action: () => void) => {
     if (hasUnsavedChanges) {
@@ -1792,7 +1792,7 @@ export default function Home() {
     reader.readAsText(file);
     // Reset input
     event.target.value = '';
-  }, [loadProjectData, setHasUnsavedChanges, t.invalidProjectFile, t.failedLoadProject, language]);
+  }, [loadProjectData, setHasUnsavedChanges, t.invalidProjectFile, t.failedLoadProject, language, setZoom, setPan]);
 
   const applyExampleProject = useCallback((projectData: any) => {
     loadProjectData(projectData);
@@ -1808,7 +1808,7 @@ export default function Home() {
       topologyContainerRef.current.scrollLeft = 0;
     }
     window.scrollTo(0, 0);
-  }, [loadProjectData, setShowProjectPicker]);
+  }, [loadProjectData, setShowProjectPicker, setZoom, setPan]);
 
   const isDark = (effectiveTheme ?? theme) === 'dark';
 

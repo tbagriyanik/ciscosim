@@ -273,8 +273,10 @@ export const NetworkTopologyView = React.memo(
     const viewport = useMemo(() => {
       const fallbackWidth = Math.min(1920, canvasDimensions.width);
       const fallbackHeight = Math.min(1080, canvasDimensions.height);
-      const viewportWidth = canvasRef?.current?.clientWidth || fallbackWidth;
-      const viewportHeight = canvasRef?.current?.clientHeight || fallbackHeight;
+      // Accessing refs during render is discouraged in React and causes issues with React Compiler.
+      // We use fallback dimensions which are sufficient for virtualization.
+      const viewportWidth = fallbackWidth;
+      const viewportHeight = fallbackHeight;
       const margin = Math.max(220, 240 / Math.max(zoom, 0.25));
 
       const left = (-pan.x) / zoom - margin;

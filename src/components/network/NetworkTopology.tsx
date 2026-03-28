@@ -1044,10 +1044,8 @@ export function NetworkTopology({
       window.removeEventListener('mouseup', handleMouseUp);
       if (dragAnimationFrameRef.current) cancelAnimationFrame(dragAnimationFrameRef.current);
       if (panAnimationFrameRef.current) cancelAnimationFrame(panAnimationFrameRef.current);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
+      };
+      }, []);
   // Global touch event handlers for device dragging on mobile
   // FIXED: uses refs to avoid re-registering the listener on ogni state change
   useEffect(() => {
