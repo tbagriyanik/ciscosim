@@ -44,7 +44,14 @@ function cmdPing(state: any, input: string, ctx: any): any {
             ctx.deviceStates
         );
 
-        if (!connectivity.success) {
+        if (connectivity.success) {
+            let output = `\nType escape sequence to abort.\n`;
+            output += `Sending ${count}, ${size}-byte ICMP Echos to ${host}, timeout is 2 seconds:\n`;
+            const successCount = parseInt(count);
+            for (let i = 0; i < successCount; i++) output += '!';
+            output += '\n\nSuccess rate is 100 percent (5/5), round-trip min/avg/max = 1/2/8 ms\n';
+            return { success: true, output, triggerPingAnimation: connectivity.targetId };
+        } else {
             return {
                 success: false,
                 output: `\nType escape sequence to abort.\nSending ${count}, ${size}-byte ICMP Echos to ${host}, timeout is 2 seconds:\n.....\n`,
@@ -53,23 +60,7 @@ function cmdPing(state: any, input: string, ctx: any): any {
         }
     }
 
-    let output = `\nType escape sequence to abort.\n`;
-    output += `Sending ${count}, ${size}-byte ICMP Echos to ${host}, timeout is 2 seconds:\n`;
-    const successCount = parseInt(count);
-    const failCount = 0;
-
-    for (let i = 0; i < successCount; i++) {
-        output += '!';
-    }
-    for (let i = 0; i < failCount; i++) {
-        output += '.';
-    }
-    output += '\n';
-
-    output += `\nSuccess rate is 100 percent (${successCount}/${count}), round-trip min/avg/max = 1/2/8 ms`;
-    output += '\n';
-
-    return { success: true, output };
+    return { success: false, error: '% Ping requires network context' };
 }
 
 /**

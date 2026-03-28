@@ -2583,7 +2583,7 @@ export function NetworkTopology({
     }
 
     // Find path between source and target
-    const path = connectivity.hops;
+    const path = connectivity.hopIds;
 
     if (!path || path.length < 2) {
       // No path found - show error
@@ -2647,6 +2647,18 @@ export function NetworkTopology({
 
     pingAnimationRef.current = requestAnimationFrame(animate);
   }, [connections, deviceStates, devices, findPath]);
+
+  // Listen for global ping animation trigger
+  useEffect(() => {
+    const handlePingTrigger = (event: any) => {
+      const { sourceId, targetId } = event.detail;
+      if (sourceId && targetId) {
+        startPingAnimation(sourceId, targetId);
+      }
+    };
+    window.addEventListener('trigger-ping-animation', handlePingTrigger);
+    return () => window.removeEventListener('trigger-ping-animation', handlePingTrigger);
+  }, [startPingAnimation]);
 
   // Toast notification state
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);

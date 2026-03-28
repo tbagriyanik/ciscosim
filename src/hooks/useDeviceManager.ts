@@ -255,7 +255,7 @@ export function useDeviceManager() {
         deviceId
       );
 
-      const { requiresConfirmation, confirmationMessage, confirmationAction, success, newState, error } = result;
+      const { requiresConfirmation, confirmationMessage, confirmationAction, success, newState, error, triggerPingAnimation } = result as any;
       const trimmedCommand = command.trim().toLowerCase();
       const isInternalCommand = command === '__CONSOLE_CONNECT__';
 
@@ -271,7 +271,14 @@ export function useDeviceManager() {
             handleCommandForDevice(deviceId, command, topologyDevices, setActiveDeviceId, setActiveDeviceType, topologyConnections, true);
           }
         });
-        return result;
+
+      if (triggerPingAnimation) {
+        window.dispatchEvent(new CustomEvent('trigger-ping-animation', {
+          detail: { sourceId: deviceId, targetId: triggerPingAnimation }
+        }));
+      }
+
+      return result;
       }
 
       if (requiresConfirmation && !skipConfirm) {
@@ -285,7 +292,14 @@ export function useDeviceManager() {
             handleCommandForDevice(deviceId, command, topologyDevices, setActiveDeviceId, setActiveDeviceType, topologyConnections, true);
           }
         });
-        return result;
+
+      if (triggerPingAnimation) {
+        window.dispatchEvent(new CustomEvent('trigger-ping-animation', {
+          detail: { sourceId: deviceId, targetId: triggerPingAnimation }
+        }));
+      }
+
+      return result;
       }
 
       const newOutputs: TerminalOutput[] = [];
@@ -418,7 +432,14 @@ export function useDeviceManager() {
         if (result.reloadDevice) {
           if ((result as any).requiresReloadConfirm) {
             setDeviceStates(prev => new Map(prev).set(deviceId, { ...deviceState, awaitingReloadConfirm: true } as any));
-            return result;
+
+      if (triggerPingAnimation) {
+        window.dispatchEvent(new CustomEvent('trigger-ping-animation', {
+          detail: { sourceId: deviceId, targetId: triggerPingAnimation }
+        }));
+      }
+
+      return result;
           }
           const baseState = deviceId.includes('router') ? createInitialRouterState() : createInitialState();
           const startupConfig = deviceState.startupConfig;
@@ -455,7 +476,14 @@ export function useDeviceManager() {
             { id: `boot-ready-${reloadedState.macAddress}`, type: 'output', content: '\nReady!\n' }
           ];
           void appendOutputsWithDelay(deviceId, bootOutputs, { clearFirst: true, minDelay: 120, maxDelay: 420 });
-          return result;
+
+      if (triggerPingAnimation) {
+        window.dispatchEvent(new CustomEvent('trigger-ping-animation', {
+          detail: { sourceId: deviceId, targetId: triggerPingAnimation }
+        }));
+      }
+
+      return result;
         }
 
         if (result.telnetTarget && topologyDevices) {
@@ -491,6 +519,13 @@ export function useDeviceManager() {
         } else {
           setDeviceOutputs(prev => new Map(prev).set(deviceId, [...(prev.get(deviceId) || []), ...newOutputs]));
         }
+      }
+
+
+      if (triggerPingAnimation) {
+        window.dispatchEvent(new CustomEvent('trigger-ping-animation', {
+          detail: { sourceId: deviceId, targetId: triggerPingAnimation }
+        }));
       }
 
       return result;

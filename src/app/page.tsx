@@ -59,11 +59,13 @@ import {
 import { useLanguage, Translations } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { toast } from "@/hooks/use-toast";
+
 import {
   topologyTasks,
   portTasks,
   vlanTasks,
   securityTasks,
+  wirelessTasks,
   calculateTaskScore,
   TaskContext,
   getTaskStatus
@@ -539,13 +541,16 @@ export default function Home() {
   };
 
   // Calculate total score
-  const totalScore = calculateTaskScore([...topologyTasks, ...portTasks, ...vlanTasks, ...securityTasks], state, taskContext);
+  const totalScore = calculateTaskScore([...topologyTasks, ...portTasks, ...vlanTasks, ...securityTasks, ...wirelessTasks], state, taskContext);
 
   // Calculate max possible score
-  const maxScore = [...topologyTasks, ...portTasks, ...vlanTasks, ...securityTasks].reduce((acc, task) => acc + task.weight, 0);
+  const maxScore = [...topologyTasks, ...portTasks, ...vlanTasks, ...securityTasks, ...wirelessTasks].reduce((acc, task) => acc + task.weight, 0);
 
   // Per-tab task completion counts for badges
-  const completedTasks = portTasks.filter(task => getTaskStatus(task, state, taskContext)).length + vlanTasks.filter(task => getTaskStatus(task, state, taskContext)).length + securityTasks.filter(task => getTaskStatus(task, state, taskContext)).length;
+  const completedTasks = portTasks.filter(task => getTaskStatus(task, state, taskContext)).length + 
+                   vlanTasks.filter(task => getTaskStatus(task, state, taskContext)).length + 
+                   securityTasks.filter(task => getTaskStatus(task, state, taskContext)).length +
+                   wirelessTasks.filter(task => getTaskStatus(task, state, taskContext)).length;
 
   // Unsaved changes tracking
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -2710,7 +2715,7 @@ export default function Home() {
                   </div>
                   <div>
                     <TaskCard
-                      tasks={[...portTasks, ...vlanTasks, ...securityTasks]}
+                      tasks={[...portTasks, ...vlanTasks, ...securityTasks, ...wirelessTasks]}
                       state={state}
                       context={taskContext}
                       color="from-red-500 to-rose-500"

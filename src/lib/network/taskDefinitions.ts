@@ -200,12 +200,61 @@ export const securityTasks: TaskDefinition[] = [
   },
 ];
 
+// Kablosuz görevler - TOPLAM: 100
+export const wirelessTasks: TaskDefinition[] = [
+  {
+    id: 'wlan-active',
+    name: { tr: 'WLAN Aktif', en: 'WLAN Active' },
+    description: { tr: 'Kablosuz arayüzü (wlan0) aktif edin', en: 'Activate wireless interface (wlan0)' },
+    tip: { tr: 'interface wlan0 altında no shutdown kullanın', en: 'Use no shutdown under interface wlan0' },
+    weight: 20,
+    checkFn: (state) => {
+      const wlan = state.ports['wlan0'];
+      return wlan && !wlan.shutdown;
+    },
+  },
+  {
+    id: 'wlan-ssid',
+    name: { tr: 'SSID Yapılandır', en: 'Configure SSID' },
+    description: { tr: 'Kablosuz ağ adı (SSID) belirleyin', en: 'Set wireless network name (SSID)' },
+    tip: { tr: 'ssid HomeWiFi komutunu kullanın', en: 'Use ssid HomeWiFi command' },
+    weight: 20,
+    checkFn: (state) => {
+      const wlan = state.ports['wlan0'];
+      return !!wlan?.wifi?.ssid;
+    },
+  },
+  {
+    id: 'wlan-security',
+    name: { tr: 'WPA2 Güvenliği', en: 'WPA2 Security' },
+    description: { tr: 'Kablosuz ağa WPA2 şifreleme ekleyin', en: 'Add WPA2 encryption to wireless' },
+    tip: { tr: 'encryption wpa2 ve wifi-password kullanın', en: 'Use encryption wpa2 and wifi-password' },
+    weight: 30,
+    checkFn: (state) => {
+      const wlan = state.ports['wlan0'];
+      return !!(wlan?.wifi && wlan.wifi.mode !== 'disabled' && wlan.wifi.security === 'wpa2' && wlan.wifi.password);
+    },
+  },
+  {
+    id: 'wlan-connection',
+    name: { tr: 'WLAN Bağlantısı', en: 'WLAN Connection' },
+    description: { tr: 'Sağlıklı kablosuz bağlantı kurun', en: 'Establish healthy wireless connection' },
+    tip: { tr: 'SSID ve şifrenin PC ile eşleştiğinden emin olun', en: 'Ensure SSID and password match the PC' },
+    weight: 30,
+    checkFn: (state) => {
+      const wlan = state.ports['wlan0'];
+      return !!(wlan && !wlan.shutdown && wlan.wifi?.mode === 'ap' && wlan.wifi.ssid);
+    },
+  },
+];
+
 // Tüm görevleri birleştir
 export const allTaskGroups = {
   topology: topologyTasks,
   ports: portTasks,
   vlan: vlanTasks,
   security: securityTasks,
+  wireless: wirelessTasks,
 };
 
 // Görev hesaplama yardımcı fonksiyonu

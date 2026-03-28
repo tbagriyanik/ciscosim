@@ -16,7 +16,8 @@ export function checkConnectivity(
   devices: CanvasDevice[],
   _connections: CanvasConnection[],
   deviceStates?: Map<string, SwitchState>
-): { success: boolean; hops: string[]; error?: string } {
+): { success: boolean; hops: string[]; hopIds: string[]; targetId?: string; error?: string } {
+
   // 1.5. Implicit Wireless Connections
   const connections = [..._connections];
   if (deviceStates) {
@@ -75,7 +76,7 @@ export function checkConnectivity(
   }
 
   if (!targetDevice) {
-    return { success: false, hops: [], error: 'Request timed out.' };
+    return { success: false, hops: [], hopIds: [], error: 'Request timed out.' };
   }
 
   const getPortVlan = (port: any): number => {
@@ -165,7 +166,7 @@ export function checkConnectivity(
   }
 
   if (!visited.has(targetDevice.id)) {
-    return { success: false, hops: [], error: 'Destination host unreachable.' };
+    return { success: false, hops: [], hopIds: [], error: 'Destination host unreachable.' };
   }
 
   // Construct path
@@ -176,13 +177,30 @@ export function checkConnectivity(
     curr = parent.get(curr);
   }
 
+  const hopNames = path.map(id => devices.find(d => d.id === id)?.name || id);
+
   // 2.5. Check subnet compatibility (Layer 3)
   const sourceDeviceForSubnet = devices.find(d => d.id === sourceId);
   if (sourceDeviceForSubnet && targetDevice) {
-    const sourceIp = sourceDeviceForSubnet.ip;
+    const sourceIp = sourceDeviceForSubnet.ip || '';
     const sourceSubnet = sourceDeviceForSubnet.subnet || '255.255.255.0';
-    const targetIp_check = targetDevice.ip;
-    const targetSubnet = targetDevice.subnet || '255.255.255.0';
+    const targetIp_check = targetIp;
+    
+    // Resolve target subnet mask
+    let targetSubnet = '255.255.255.0';
+    if (targetDevice.type === 'pc') {
+      targetSubnet = targetDevice.subnet || '255.255.255.0';
+    } else if (deviceStates) {
+      const state = deviceStates.get(targetDevice.id);
+      if (state) {
+        for (const pId in state.ports) {
+          if (state.ports[pId].ipAddress === targetIp) {
+            targetSubnet = state.ports[pId].subnetMask || '255.255.255.0';
+            break;
+          }
+        }
+      }
+    }
 
     // Check if source and target are in the same subnet
     const isInSameSubnet = isIpInSubnet(sourceIp, targetIp_check, sourceSubnet);
@@ -202,7 +220,9 @@ export function checkConnectivity(
       if (!hasRouter) {
         return {
           success: false,
-          hops: path.map(id => devices.find(d => d.id === id)?.name || id),
+          hops: hopNames,
+          hopIds: path,
+          targetId: targetDevice.id,
           error: `Subnet uyumsuzluğu: Kaynak ${sourceIp}/${sourceSubnet}, Hedef ${targetIp_check}/${targetSubnet}. Router ile routing gerekli.`
         };
       }
@@ -236,7 +256,9 @@ export function checkConnectivity(
         if (swPort?.mode !== 'trunk' && swVlan !== pcVlan) {
           return {
             success: false,
-            hops: path.slice(0, i + 2).map(id => devices.find(d => d.id === id)?.name || id),
+            hops: hopNames.slice(0, i + 2),
+            hopIds: path.slice(0, i + 2),
+            targetId: targetDevice.id,
             error: `VLAN mismatch: ${pc.name} is in VLAN ${pcVlan}, but ${sw.name} port ${swPortId} is VLAN ${swVlan}.`,
           };
         }
@@ -282,7 +304,9 @@ export function checkConnectivity(
             if (ingressPort?.mode !== 'trunk' && egressPort?.mode !== 'trunk') {
               return {
                 success: false,
-                hops: path.slice(0, i + 1).map(id => devices.find(d => d.id === id)?.name || id),
+                hops: hopNames.slice(0, i + 1),
+                hopIds: path.slice(0, i + 1),
+                targetId: targetDevice.id,
                 error: `VLAN mismatch on ${device.name}. Port ${ingressPortId} is in VLAN ${ingressVlan}, but port ${egressPortId} is in VLAN ${egressVlan}.`
               };
             }
@@ -321,7 +345,19 @@ export function checkConnectivity(
     };
 
     const sourceDevice = devices.find(d => d.id === sourceId);
-    const sourceIp = sourceDevice?.ip || deviceStates.get(sourceId)?.ports['vlan1']?.ipAddress || '';
+    let resolvedSourceIp = sourceDevice?.ip || '';
+    if (!resolvedSourceIp && deviceStates) {
+      const state = deviceStates.get(sourceId);
+      if (state) {
+        for (const pId in state.ports) {
+          if (state.ports[pId].ipAddress) {
+            resolvedSourceIp = state.ports[pId].ipAddress!;
+            break;
+          }
+        }
+      }
+    }
+    const sourceIp = resolvedSourceIp;
     const sourceVlan = sourceIp ? getDeviceVlanForIp(sourceId, sourceIp) : null;
     const targetVlan = getDeviceVlanForIp(targetDevice.id, targetIp);
 
@@ -337,13 +373,17 @@ export function checkConnectivity(
         // PCs in same VLAN can ping each other
         return {
           success: true,
-          hops: path.map(id => devices.find(d => d.id === id)?.name || id)
+          hops: hopNames,
+          hopIds: path,
+          targetId: targetDevice.id
         };
       }
       // Different VLANs: block (unless L3 routing handles it)
       return {
         success: false,
-        hops: path.map(id => devices.find(d => d.id === id)?.name || id),
+        hops: hopNames,
+        hopIds: path,
+        targetId: targetDevice.id,
         error: `VLAN mismatch: source VLAN ${sourceVlan}, target VLAN ${targetVlan}.`
       };
     }
@@ -363,7 +403,9 @@ export function checkConnectivity(
         // Route found - allow communication through L3 routing
         return {
           success: true,
-          hops: path.map(id => devices.find(d => d.id === id)?.name || id),
+          hops: hopNames,
+          hopIds: path,
+          targetId: targetDevice.id,
           error: undefined
         };
       }
@@ -386,7 +428,9 @@ export function checkConnectivity(
         if (sourceRoute && targetRoute) {
           return {
             success: true,
-            hops: path.map(id => devices.find(d => d.id === id)?.name || id),
+            hops: hopNames,
+            hopIds: path,
+            targetId: targetDevice.id,
             error: undefined
           };
         }
@@ -401,12 +445,14 @@ export function checkConnectivity(
 
   const sourceDevice = devices.find(d => d.id === sourceId);
   if (!sourceDevice?.ip && !isManagementIpSet(sourceId, deviceStates)) {
-    return { success: false, hops: [], error: 'Source has no IP address.' };
+    return { success: false, hops: [], hopIds: [], error: 'Source has no IP address.' };
   }
 
   return {
     success: true,
-    hops: path.map(id => devices.find(d => d.id === id)?.name || id)
+    hops: hopNames,
+    hopIds: path,
+    targetId: targetDevice.id
   };
 }
 
@@ -416,17 +462,35 @@ export function checkDeviceConnectivity(
   devices: CanvasDevice[],
   connections: CanvasConnection[],
   deviceStates?: Map<string, SwitchState>
-): { success: boolean; hops: string[]; error?: string } {
+): { success: boolean; hops: string[]; hopIds: string[]; targetId?: string; error?: string } {
   const sourceDevice = devices.find(d => d.id === sourceId);
   const targetDevice = devices.find(d => d.id === targetId);
 
   if (!sourceDevice || !targetDevice) {
-    return { success: false, hops: [], error: 'Destination host unreachable.' };
+    return { success: false, hops: [], hopIds: [], error: 'Destination host unreachable.' };
   }
 
-  const targetIp = targetDevice.ip || deviceStates?.get(targetId)?.ports['vlan1']?.ipAddress || '';
+  let resolvedTargetIp = targetDevice.ip;
+  if (!resolvedTargetIp && deviceStates) {
+    const targetState = deviceStates.get(targetId);
+    if (targetState) {
+      for (const pId in targetState.ports) {
+        if (targetState.ports[pId].ipAddress) {
+          if (sourceDevice.ip) {
+            const subnet = sourceDevice.subnet || '255.255.255.0';
+            if (isIpInSubnet(sourceDevice.ip, targetState.ports[pId].ipAddress, subnet)) {
+              resolvedTargetIp = targetState.ports[pId].ipAddress;
+              break;
+            }
+          }
+          if (!resolvedTargetIp) resolvedTargetIp = targetState.ports[pId].ipAddress;
+        }
+      }
+    }
+  }
+  const targetIp = resolvedTargetIp || '';
   if (!targetIp) {
-    return { success: false, hops: [], error: 'Request timed out.' };
+    return { success: false, hops: [], hopIds: [], error: 'Request timed out.' };
   }
 
   return checkConnectivity(sourceId, targetIp, devices, connections, deviceStates);
@@ -444,7 +508,20 @@ export function getPingDiagnostics(
 ): { success: boolean; reasons: string[] } {
   const reasons: string[] = [];
   const sourceDevice = devices.find(d => d.id === sourceId);
-  const targetDevice = devices.find(d => d.ip === targetIp);
+  let targetDevice = devices.find(d => d.ip === targetIp);
+  
+  // Resolve target for routers/switches if not found in topology IPs
+  if (!targetDevice && deviceStates) {
+    for (const [id, state] of deviceStates.entries()) {
+      for (const pId in state.ports) {
+        if (state.ports[pId].ipAddress === targetIp) {
+          targetDevice = devices.find(d => d.id === id);
+          break;
+        }
+      }
+      if (targetDevice) break;
+    }
+  }
 
   // 1. Check source device exists and is powered on
   if (!sourceDevice) {
@@ -458,7 +535,18 @@ export function getPingDiagnostics(
   }
 
   // 2. Check source has IP address
-  const sourceIp = sourceDevice.ip || deviceStates?.get(sourceId)?.ports['vlan1']?.ipAddress;
+  let sourceIp = sourceDevice.ip || '';
+  if (!sourceIp && deviceStates) {
+    const state = deviceStates.get(sourceId);
+    if (state) {
+      for (const pId in state.ports) {
+        if (state.ports[pId].ipAddress) {
+          sourceIp = state.ports[pId].ipAddress!;
+          break;
+        }
+      }
+    }
+  }
   if (!sourceIp) {
     reasons.push('Kaynak cihazın IP adresi yok');
     return { success: false, reasons };
@@ -529,7 +617,7 @@ export function getPingDiagnostics(
 
   const targetConn = connections.find(c => c.sourceDeviceId === targetDevice.id || c.targetDeviceId === targetDevice.id);
   if (targetConn) {
-    const targetPortId = targetConn.sourceDeviceId === targetDevice.id ? targetConn.sourcePort : targetConn.targetPort;
+    const targetPortId = targetConn.sourceDeviceId === targetDevice.id ? targetConn.targetPort : targetConn.sourcePort;
     if (isPortShutdown(targetDevice.id, targetPortId, devices, deviceStates)) {
       reasons.push(`Hedef interface kapalı: ${targetPortId}`);
       return { success: false, reasons };
