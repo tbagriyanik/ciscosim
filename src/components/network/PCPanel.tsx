@@ -1646,7 +1646,7 @@ export function PCPanel({
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3 text-purple-500">
                     <Network className="w-5 h-5" />
-                    <h3 className="text-sm font-black tracking-widest uppercase">
+                    <h3 className="text-sm font-black tracking-widest ">
                       {language === 'tr' ? 'Wi-Fi (Wireless Fidelity) Bağlantısı' : 'Wi-Fi (Wireless Fidelity) Connection'}
                     </h3>
                   </div>
@@ -1669,7 +1669,7 @@ export function PCPanel({
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black tracking-widest uppercase text-slate-500 ml-1">SSID (Service Set Identifier)</label>
+                    <label className="text-[10px] font-black tracking-widest text-slate-500 ml-1">SSID (Service Set Identifier)</label>
                     <div className="relative">
                       <select
                         value={wifiBSSID ? `${wifiBSSID}|${wifiSSID}` : wifiSSID}
@@ -1766,8 +1766,9 @@ export function PCPanel({
                       if (!wlan || wlan.shutdown || wlan.wifi?.mode !== 'ap') return false;
                       if (wifiBSSID && wifiBSSID !== id) return false;
                       if (wlan.wifi?.ssid !== wifiSSID) return false;
-                      // Password check
-                      if (wlan.wifi?.password && wlan.wifi.password !== wifiPassword) return false;
+                      const apSecurity = wlan.wifi?.security || 'open';
+                      if (apSecurity !== wifiSecurity) return false;
+                      if (apSecurity !== 'open' && wlan.wifi?.password !== wifiPassword) return false;
                       return true;
                     });
                     return isConnected ? 'text-emerald-500 bg-emerald-500/10' : 'text-amber-500 bg-amber-500/10';
@@ -1780,7 +1781,9 @@ export function PCPanel({
                         if (!wlan || wlan.shutdown || wlan.wifi?.mode !== 'ap') return false;
                         if (wifiBSSID && wifiBSSID !== id) return false;
                         if (wlan.wifi?.ssid !== wifiSSID) return false;
-                        if (wlan.wifi?.password && wlan.wifi.password !== wifiPassword) return false;
+                        const apSecurity = wlan.wifi?.security || 'open';
+                        if (apSecurity !== wifiSecurity) return false;
+                        if (apSecurity !== 'open' && wlan.wifi?.password !== wifiPassword) return false;
                         return true;
                       });
                       return isConnected ? 'bg-emerald-500/20' : 'bg-amber-500/20';
@@ -1801,7 +1804,9 @@ export function PCPanel({
                             if (!wlan || wlan.shutdown || wlan.wifi?.mode !== 'ap') return false;
                             if (wifiBSSID && wifiBSSID !== id) return false;
                             if (wlan.wifi?.ssid !== wifiSSID) return false;
-                            if (wlan.wifi?.password && wlan.wifi.password !== wifiPassword) return false;
+                            const apSecurity = wlan.wifi?.security || 'open';
+                            if (apSecurity !== wifiSecurity) return false;
+                            if (apSecurity !== 'open' && wlan.wifi?.password !== wifiPassword) return false;
                             return true;
                           });
                           if (apEntry) return language === 'tr' ? `Bağlı • SSID: ${wifiSSID}` : `Connected • SSID: ${wifiSSID}`;

@@ -3067,6 +3067,7 @@ export function NetworkTopology({
                 // PC: check if SSID matches an active AP wlan0 on another device
                 const pcSsid = pcWifi?.ssid || wlanState?.wifi?.ssid || '';
                 const pcPass = pcWifi?.password || wlanState?.wifi?.password || '';
+                const pcSecurity = pcWifi?.security || wlanState?.wifi?.security || 'open';
                 const pcBssid = pcWifi?.bssid;
                 if (pcSsid) {
                   deviceStates.forEach((state, stateId) => {
@@ -3075,7 +3076,9 @@ export function NetworkTopology({
                     if (!apWlan || apWlan.shutdown || apWlan.wifi?.mode !== 'ap') return;
                     if (pcBssid && pcBssid !== stateId) return; // Must match specific bssid if set
                     if (apWlan.wifi?.ssid !== pcSsid) return;
-                    if (apWlan.wifi?.password && apWlan.wifi.password !== pcPass) return;
+                    const apSecurity = apWlan.wifi?.security || 'open';
+                    if (apSecurity !== pcSecurity) return;
+                    if (apSecurity !== 'open' && apWlan.wifi?.password !== pcPass) return;
                     isConnected = true;
                   });
                 }
@@ -3083,6 +3086,7 @@ export function NetworkTopology({
                 // Switch acting as AP: check if any PC is associated to this device
                 const apSsid = wlanState?.wifi?.ssid || '';
                 const apPass = wlanState?.wifi?.password || '';
+                const apSecurity = wlanState?.wifi?.security || 'open';
                 if (apSsid && wlanState?.wifi?.mode === 'ap') {
                   devices.forEach(otherDev => {
                     if (otherDev.id === device.id || otherDev.type !== 'pc') return;
@@ -3091,8 +3095,9 @@ export function NetworkTopology({
                     const otherWlan = otherState?.ports['wlan0'];
                     const clientSsid = pcwifi?.ssid || otherWlan?.wifi?.ssid || '';
                     const clientPass = pcwifi?.password || otherWlan?.wifi?.password || '';
+                    const clientSecurity = pcwifi?.security || otherWlan?.wifi?.security || 'open';
                     const clientBssid = pcwifi?.bssid;
-                    if ((!clientBssid || clientBssid === device.id) && clientSsid === apSsid && (apPass === '' || apPass === clientPass)) {
+                    if ((!clientBssid || clientBssid === device.id) && clientSsid === apSsid && clientSecurity === apSecurity && (apSecurity === 'open' || apPass === clientPass)) {
                       isConnected = true;
                     }
                   });

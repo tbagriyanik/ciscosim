@@ -30,16 +30,20 @@ export function checkConnectivity(
         const wlan = apState?.ports['wlan0'];
         if (wlan && !wlan.shutdown && wlan.wifi?.mode === 'ap' && wlan.wifi?.ssid === pcWifi.ssid) {
           if (!pcWifi.bssid || pcWifi.bssid === ap.id) {
-            if (!wlan.wifi.password || wlan.wifi.password === pcWifi.password) {
-              connections.push({
-                id: `wireless-${pc.id}-${ap.id}`,
-                sourceDeviceId: pc.id,
-                sourcePort: 'wlan0',
-                targetDeviceId: ap.id,
-                targetPort: 'wlan0',
-                cableType: 'wireless',
-                active: true
-              } as CanvasConnection);
+            const apSecurity = wlan.wifi.security || 'open';
+            const pcSecurity = pcWifi.security || 'open';
+            if (apSecurity === pcSecurity) {
+              if (apSecurity === 'open' || wlan.wifi.password === pcWifi.password) {
+                connections.push({
+                  id: `wireless-${pc.id}-${ap.id}`,
+                  sourceDeviceId: pc.id,
+                  sourcePort: 'wlan0',
+                  targetDeviceId: ap.id,
+                  targetPort: 'wlan0',
+                  cableType: 'wireless',
+                  active: true
+                } as CanvasConnection);
+              }
             }
           }
         }
