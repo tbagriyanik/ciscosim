@@ -275,6 +275,8 @@ export interface Translations {
   termsText: string;
   licenseInfo: string;
   close: string;
+  gitAddressLabel: string;
+  openSourceInfo: string;
 
   // Network Topology
   connectDevices: string;
@@ -541,6 +543,8 @@ const translations: Record<Language, Translations> = {
     termsText: 'Bu yazılım eğitim amaçlıdır. Ticari olmayan amaçlarla özgürce kullanılabilir ve dağıtılabilir.',
     licenseInfo: 'Tuzla Mesleki ve Teknik Anadolu Lisesi',
     close: 'Kapat',
+    gitAddressLabel: 'Git Adresi',
+    openSourceInfo: 'Bu proje ak kaynakldr ve GitHub zerinden gelitirilmektedir.',
     connectDevices: 'Cihazları Bağla',
     addDevice: 'Cihaz Ekle',
     addPc: 'PC Ekle',
@@ -807,6 +811,8 @@ const translations: Record<Language, Translations> = {
     termsText: 'This software is for educational purposes. It can be freely used and distributed for non-commercial purposes.',
     licenseInfo: 'Tuzla Vocational and Technical Anatolian High School',
     close: 'Close',
+    gitAddressLabel: 'Git Address',
+    openSourceInfo: 'This project is open-source and developed on GitHub.',
     connectDevices: 'Connect Devices',
     addDevice: 'Add Device',
     addPc: 'Add PC',

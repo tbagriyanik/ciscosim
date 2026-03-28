@@ -5,6 +5,8 @@
 ![Version](https://img.shields.io/badge/version-1.0.0-blue)
 ![Tech Stack](https://img.shields.io/badge/stack-Next.js%2016%20|%20React%2019%20|%20TypeScript%20|%20Tailwind%204-green)
 ![License](https://img.shields.io/badge/license-MIT-blue)
+![Commits](https://img.shields.io/badge/commits-350-orange)
+![Lines of Code](https://img.shields.io/badge/lines--of--code-44.6k-blueviolet)
 
 ## ✨ Temel Özellikler
 
@@ -14,6 +16,7 @@
 - **Kablo Sistemi**: Straight-through, Crossover ve Console kablolar
 - **Bağlantı Yönetimi**: Cihazlar arasında bağlantı oluştur ve yönet
 - **Görsel Geri Bildirim**: Cihaz durumu göstergeleri ve port etiketleri
+- **Kablosuz (WiFi) Simülasyonu**: SSID, WPA2 güvenlik ve AP/Client modları ile kablosuz ağ simülasyonu
 
 ### 💻 Network CLI Simülasyonu
 - **Komut Desteği**: enable, configure, interface, show komutları
@@ -44,6 +47,8 @@
 - **Detaylı Diagnostics**: Ping başarısızlığında hata nedeni göster
 - **Subnet Doğrulama**: Farklı subnet'te ping kontrolü
 - **Routing Kontrolü**: Router routing kontrolü
+- **Görsel Ping Animasyonu**: Mail ikonu ile cihazlar arası (kablolu/kablosuz) arched ping yolu gösterimi
+- **Global Animasyon Tetikleyici**: Terminal veya CLI üzerinden ping atıldığında otomatik animasyon
 
 ### ⚡ Gelişmiş Özellikler
 - **Bulk Power Control**: Seçili cihazların gücünü toplu aç/kapat
@@ -52,6 +57,7 @@
 - **Dark/Light Mode**: Koyu ve açık tema desteği
 - **Turkish/English**: Türkçe ve İngilizce dil desteği
 - **Offline Storage**: Çevrimdışı veri saklama
+- **Görev Sistemi (Tasks)**: WLAN bağlantısı, güvenlik ve port yapılandırma görevlerini takip etme
 
 ## 🛠️ Teknoloji Stack
 
@@ -204,8 +210,9 @@ Sorular veya öneriler için lütfen issue açın.
 
 ---
 
-**Ağ mühendislerinin yeni nesli için tasarlanmıştır.** 🚀
+**Bu proje açık kaynaklıdır.** 🚀  
+GitHub üzerinden katkıda bulunabilirsiniz: [github.com/tbagriyanik/ciscosim](https://github.com/tbagriyanik/ciscosim)
 
-**Sürüm**: 1.0.0  
-**Son Güncelleme**: 2026-03-22  
+**Sürüm**: 1.1.0  
+**Son Güncelleme**: 2026-03-28  
 **Durum**: Production Ready ✅

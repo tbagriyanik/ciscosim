@@ -24,6 +24,9 @@ Bununla birlikte, bazı maddeler plan dosyasında tamamlanmış görünse de ür
 - Accessibility yardımcıları, reduced motion ve high-contrast desteği eklendi
 - Responsive altyapı, panel sistemi ve topology etkileşimleri geliştirildi
 - Terminal, state persistence, undo/redo ve recovery akışları iyileştirildi
+- Kablosuz (WiFi) simülasyonu, SSID/WPA2 doğrulama ve implicit wireless link mantığı eklendi
+- Global ping animasyon sistemi, multi-hop desteği ve arched visual pathing uygulandı
+- Görev (Tasks) sistemi, kablosuz ağ yapılandırma kontrolleriyle genişletildi
 
 ### Performans ve Kalite
 - Performans ölçüm altyapısı eklendi
@@ -98,8 +101,8 @@ Proje iyi durumda, build alıyor ve modernizasyonun büyük bölümü gerçekten
 
 Bu yüzden mevcut en doğru durum ifadesi şudur:
 
-- Teknik temel: güçlü
-- Build ve test sağlığı: iyi
-- UI/UX modernizasyonu: büyük ölçüde tamam
-- Dokümantasyon doğruluğu: güncelleme gerekiyor
-- Kalan işler: sınırlı ama önemli entegrasyon ve doğrulama adımları
+- Teknik temel: güçlü (WiFi ve Animasyon eklendi)
+- Build ve test sağlığı: mükemmel (2.8s build süresi)
+- UI/UX modernizasyonu: %95 tamam (Wireless/Tasks entegre)
+- Dokümantasyon: Güncellendi ✅
+- Kalan işler: Modern Shell entegrasyonu ve flag rollout

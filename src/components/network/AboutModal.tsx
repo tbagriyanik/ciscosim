@@ -35,15 +35,18 @@ export function AboutModal({ isOpen, onClose }: AboutModalProps) {
             {t.termsText}
           </p>
           <div className="mt-4 p-3 bg-cyan-500/5 rounded-lg border border-cyan-500/20">
-            <p className="text-sm font-bold text-cyan-600 dark:text-cyan-400 mb-1">Project Website:</p>
+            <p className="text-sm font-bold text-cyan-600 dark:text-cyan-400 mb-1">{t.gitAddressLabel}:</p>
             <a 
-              href="http://yunus.sf.net" 
+              href="https://github.com/tbagriyanik/ciscosim" 
               target="_blank" 
               rel="noopener noreferrer" 
               className="text-sm text-blue-500 hover:underline break-all"
             >
-              http://yunus.sf.net
+              https://github.com/tbagriyanik/ciscosim
             </a>
+            <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+              {t.openSourceInfo}
+            </p>
           </div>
           <div className="mt-4">
             <a 
