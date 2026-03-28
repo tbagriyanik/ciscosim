@@ -10,6 +10,7 @@ interface PingAnimationOverlayProps {
     success: boolean | null;
     sourceId: string;
     targetId: string;
+    hopCount: number;
   } | null;
   devices: CanvasDevice[];
   connections: CanvasConnection[];
@@ -29,7 +30,7 @@ export function PingAnimationOverlay({
   const animationElement = useMemo(() => {
     if (!pingAnimation) return null;
 
-    const { path, currentHopIndex, progress, success, frame } = pingAnimation;
+    const { path, currentHopIndex, progress, success, frame, hopCount } = pingAnimation;
     if (!path || path.length < 2 || success !== null) return null;
 
     // Get current hop devices
@@ -107,6 +108,27 @@ export function PingAnimationOverlay({
         <g
           transform={`translate(${bezierX + envelopeOffsetX}, ${bezierY + envelopeOffsetY})`}
         >
+          {/* Hop Count Badge */}
+          {hopCount > 0 && (
+            <g transform="translate(0, -22)">
+              <rect 
+                x="-12" y="-10" width="24" height="14" rx="4" 
+                fill="#0891b2" 
+                stroke="white" 
+                strokeWidth="1"
+              />
+              <text
+                textAnchor="middle"
+                dominantBaseline="middle"
+                fontSize="10"
+                fontWeight="bold"
+                fill="white"
+                y="-2"
+              >
+                {language === 'tr' ? `Hop: ${hopCount}` : `Hop: ${hopCount}`}
+              </text>
+            </g>
+          )}
 
           {/* Envelope body */}
           <rect
@@ -126,7 +148,7 @@ export function PingAnimationOverlay({
         </g>
       </g>
     );
-  }, [pingAnimation, devices, connections, getPortPosition, getDeviceCenter]);
+  }, [pingAnimation, devices, connections, getPortPosition, getDeviceCenter, language]);
 
   return animationElement;
 }

@@ -523,6 +523,7 @@ export function NetworkTopology({
     success: boolean | null;
     frame: number; // Frame counter for smooth animations
     error?: string; // Error message if ping failed
+    hopCount: number; // Current hop number
   } | null>(null);
 
   // Refs
@@ -2631,7 +2632,8 @@ export function NetworkTopology({
         progress: 1,
         success: false,
         frame: 0,
-        error: errorMessage
+        error: errorMessage,
+        hopCount: 0
       });
 
       setTimeout(() => setPingAnimation(null), 3000);
@@ -2651,7 +2653,8 @@ export function NetworkTopology({
         progress: 1,
         success: false,
         frame: 0,
-        error: 'Fiziksel bağlantı yok'
+        error: 'Fiziksel bağlantı yok',
+        hopCount: 0
       });
 
       setTimeout(() => setPingAnimation(null), 3000);
@@ -2666,7 +2669,8 @@ export function NetworkTopology({
       currentHopIndex: 0,
       progress: 0,
       success: null,
-      frame: 0
+      frame: 0,
+      hopCount: 0
     });
 
     // Animate ping - each hop takes 800ms
@@ -2680,23 +2684,55 @@ export function NetworkTopology({
       const progress = Math.min(elapsed / hopDuration, 1);
       frameCount++;
 
-      setPingAnimation(prev => {
-        if (!prev) return null;
-        return { ...prev, currentHopIndex: currentHop, progress, frame: frameCount };
-      });
-
       if (progress < 1) {
+        setPingAnimation(prev => {
+          if (!prev) return null;
+          return { ...prev, currentHopIndex: currentHop, progress, frame: frameCount };
+        });
         pingAnimationRef.current = requestAnimationFrame(animate);
       } else {
-        // Move to next hop
-        currentHop++;
-        if (currentHop < path.length - 1) {
-          startTime = Date.now();
-          pingAnimationRef.current = requestAnimationFrame(animate);
-        } else {
-          // Animation complete - show success
-          setPingAnimation(prev => prev ? { ...prev, success: true } : null);
-          setTimeout(() => setPingAnimation(null), 3000);
+        // Check if this segment was a hop before moving to next
+        const fromId = path[currentHop];
+        const toId = path[currentHop + 1];
+        
+        const conn = connections.find(c => 
+          (c.sourceDeviceId === fromId && c.targetDeviceId === toId) ||
+          (c.sourceDeviceId === toId && c.targetDeviceId === fromId)
+        );
+        const toDevice = devices.find(d => d.id === toId);
+        const isWifi = conn?.cableType === 'wireless';
+        const isRouter = toDevice?.type === 'router';
+
+        // Calculate currentSegmentHopCountIncrement for the segment that just finished
+        const currentSegmentHopCountIncrement = (isWifi || isRouter) ? 1 : 0;
+        
+        if (currentHop < path.length - 1) { // If there are more segments to animate
+          // Prepare for the NEXT segment
+          currentHop++; // Increment hop index
+          startTime = Date.now(); // Reset timer for the NEW segment
+
+          setPingAnimation(prev => {
+            if (!prev) return null;
+            return {
+              ...prev,
+              currentHopIndex: currentHop,
+              progress: 0, // Start progress for the NEW segment
+              frame: frameCount,
+              hopCount: prev.hopCount + currentSegmentHopCountIncrement // Update hopCount with increment from previous segment
+            };
+          });
+          pingAnimationRef.current = requestAnimationFrame(animate); // Schedule next frame for the NEW segment
+
+        } else { // This was the LAST segment. Animation complete.
+          setPingAnimation(prev => {
+            if (!prev) return null;
+            return {
+              ...prev,
+              success: true, // Mark as successful
+              hopCount: prev.hopCount + currentSegmentHopCountIncrement // Update hopCount with increment from last segment
+            };
+          });
+          setTimeout(() => setPingAnimation(null), 3000); // Clear animation after delay
         }
       }
     };
