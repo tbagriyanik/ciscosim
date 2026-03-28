@@ -12,7 +12,7 @@ import { checkConnectivity } from '@/lib/network/connectivity';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Laptop, Monitor, Terminal as TerminalIcon, X, CornerDownLeft, Command, Globe, Network, ShieldCheck, History, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Search, Copy, Save, Trash2, Download, Settings } from 'lucide-react';
+import { Laptop, Monitor, Terminal as TerminalIcon, X, CornerDownLeft, Command, Globe, Network, ShieldCheck, History, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Search, Copy, Save, Trash2, Download, Settings, Wifi } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from "@/hooks/use-toast";
 import { isValidMAC, normalizeMAC, cn } from "@/lib/utils";
@@ -1275,7 +1275,7 @@ export function PCPanel({
     `}>
       {/* Tablet Frame - Full screen on mobile */}
       <div className={`
-        w-full h-full max-w-4xl mx-auto overflow-hidden
+        w-full h-full max-w-full lg:max-w-4xl mx-auto overflow-hidden
         relative
         ${isDark 
           ? 'bg-gradient-to-br from-slate-900 via-indigo-900/50 via-violet-900/40 to-slate-900 sm:border-4 sm:border-slate-600 sm:shadow-2xl sm:shadow-purple-500/20 sm:rounded-3xl' 
@@ -1391,7 +1391,7 @@ export function PCPanel({
         {/* Screen Bezel */}
         <div className={`
           h-[calc(100%-40px)] overflow-hidden relative
-          ${isDark ? 'bg-black' : 'bg-slate-900'}
+          ${isDark ? 'bg-transparent' : 'bg-white/50'}
         `}>
           {/* Power Off Overlay */}
           {isPcPoweredOff && (
@@ -1410,13 +1410,9 @@ export function PCPanel({
             collapsible={false}
             hideTitle
             hideHeader
-            className={`
-              w-full h-full min-w-0 
-              ${isMobile ? 'max-w-none' : 'max-w-none'} 
-              ${isDesktop ? '2xl:max-w-[1400px] 2xl:mx-auto' : ''}
-            `}
+            className="w-full h-full min-w-0"
           >
-            <div className="flex flex-col h-full overflow-hidden bg-background">
+            <div className={`flex flex-col h-full overflow-hidden ${isDark ? 'bg-transparent' : 'bg-white/30'}`}>
         <Dialog open={searchOpen} onOpenChange={setSearchOpen}>
           <DialogContent className={`${isDark ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white'} sm:max-w-md`}>
             <DialogHeader>
@@ -1504,10 +1500,10 @@ export function PCPanel({
               <div className="grid grid-cols-3 sm:grid-cols-4 gap-6 sm:gap-8 rounded-3xl p-6 sm:p-8 bg-white/10 backdrop-blur-xl border border-white/20 shadow-xl">
                 <button
                   onClick={() => setActiveTab('desktop')}
-                  className={`flex flex-col items-center gap-3 p-4 rounded-2xl transition-all hover:scale-105 ${isDark ? 'hover:bg-white/10' : 'hover:bg-white/40'}`}
+                  className={`flex flex-col items-center gap-3 p-4 rounded-2xl transition-all duration-300 hover:scale-105 hover:-translate-y-1 group ${isDark ? 'hover:bg-white/10 hover:shadow-lg hover:shadow-blue-500/20' : 'hover:bg-white/40 hover:shadow-xl'}`}
                 >
-                  <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-2xl flex items-center justify-center ${isDark ? 'bg-gradient-to-br from-blue-500/30 to-blue-600/20 border border-blue-400/20' : 'bg-gradient-to-br from-blue-400 to-blue-500'} backdrop-blur-md`}>
-                    <Command className={`w-8 h-8 sm:w-10 sm:h-10 ${isDark ? 'text-blue-300' : 'text-white'}`} />
+                  <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-2xl flex items-center justify-center shadow-lg ${isDark ? 'bg-gradient-to-br from-blue-500/40 to-blue-600/30 border border-blue-400/30' : 'bg-gradient-to-br from-blue-400 to-blue-500'} group-hover:scale-105 transition-transform duration-300`}>
+                    <TerminalIcon className={`w-8 h-8 sm:w-10 sm:h-10 ${isDark ? 'text-blue-200' : 'text-white'} drop-shadow-md`} />
                   </div>
                   <span className={`text-xs sm:text-sm font-medium ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
                     {language === 'tr' ? 'CMD' : 'CMD'}
@@ -1515,10 +1511,10 @@ export function PCPanel({
                 </button>
                 <button
                   onClick={() => setActiveTab('terminal')}
-                  className={`flex flex-col items-center gap-3 p-4 rounded-2xl transition-all hover:scale-105 ${isDark ? 'hover:bg-white/10' : 'hover:bg-white/40'}`}
+                  className={`flex flex-col items-center gap-3 p-4 rounded-2xl transition-all duration-300 hover:scale-105 hover:-translate-y-1 group ${isDark ? 'hover:bg-white/10 hover:shadow-lg hover:shadow-emerald-500/20' : 'hover:bg-white/40 hover:shadow-xl'}`}
                 >
-                  <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-2xl flex items-center justify-center ${isDark ? 'bg-gradient-to-br from-emerald-500/30 to-emerald-600/20 border border-emerald-400/20' : 'bg-gradient-to-br from-emerald-400 to-emerald-500'} backdrop-blur-md`}>
-                    <TerminalIcon className={`w-8 h-8 sm:w-10 sm:h-10 ${isDark ? 'text-emerald-300' : 'text-white'}`} />
+                  <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-2xl flex items-center justify-center shadow-lg ${isDark ? 'bg-gradient-to-br from-emerald-500/40 to-emerald-600/30 border border-emerald-400/30' : 'bg-gradient-to-br from-emerald-400 to-emerald-500'} group-hover:scale-105 transition-transform duration-300`}>
+                    <Laptop className={`w-8 h-8 sm:w-10 sm:h-10 ${isDark ? 'text-emerald-200' : 'text-white'} drop-shadow-md`} />
                   </div>
                   <span className={`text-xs sm:text-sm font-medium ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
                     {language === 'tr' ? 'Konsol' : 'Console'}
@@ -1526,10 +1522,10 @@ export function PCPanel({
                 </button>
                 <button
                   onClick={() => setActiveTab('settings')}
-                  className={`flex flex-col items-center gap-3 p-4 rounded-2xl transition-all hover:scale-105 ${isDark ? 'hover:bg-white/10' : 'hover:bg-white/40'}`}
+                  className={`flex flex-col items-center gap-3 p-4 rounded-2xl transition-all duration-300 hover:scale-105 hover:-translate-y-1 group ${isDark ? 'hover:bg-white/10 hover:shadow-lg hover:shadow-purple-500/20' : 'hover:bg-white/40 hover:shadow-xl'}`}
                 >
-                  <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-2xl flex items-center justify-center ${isDark ? 'bg-gradient-to-br from-purple-500/30 to-purple-600/20 border border-purple-400/20' : 'bg-gradient-to-br from-purple-400 to-purple-500'} backdrop-blur-md`}>
-                    <ShieldCheck className={`w-8 h-8 sm:w-10 sm:h-10 ${isDark ? 'text-purple-300' : 'text-white'}`} />
+                  <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-2xl flex items-center justify-center shadow-lg ${isDark ? 'bg-gradient-to-br from-purple-500/40 to-purple-600/30 border border-purple-400/30' : 'bg-gradient-to-br from-purple-400 to-purple-500'} group-hover:scale-105 transition-transform duration-300`}>
+                    <Settings className={`w-8 h-8 sm:w-10 sm:h-10 ${isDark ? 'text-purple-200' : 'text-white'} drop-shadow-md group-hover:rotate-45 transition-transform duration-300`} />
                   </div>
                   <span className={`text-xs sm:text-sm font-medium ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
                     {language === 'tr' ? 'Ayarlar' : 'Settings'}
@@ -1537,10 +1533,10 @@ export function PCPanel({
                 </button>
                 <button
                   onClick={() => setActiveTab('services')}
-                  className={`flex flex-col items-center gap-3 p-4 rounded-2xl transition-all hover:scale-105 ${isDark ? 'hover:bg-white/10' : 'hover:bg-white/40'}`}
+                  className={`flex flex-col items-center gap-3 p-4 rounded-2xl transition-all duration-300 hover:scale-105 hover:-translate-y-1 group ${isDark ? 'hover:bg-white/10 hover:shadow-lg hover:shadow-amber-500/20' : 'hover:bg-white/40 hover:shadow-xl'}`}
                 >
-                  <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-2xl flex items-center justify-center ${isDark ? 'bg-gradient-to-br from-amber-500/30 to-amber-600/20 border border-amber-400/20' : 'bg-gradient-to-br from-amber-400 to-amber-500'} backdrop-blur-md`}>
-                    <Globe className={`w-8 h-8 sm:w-10 sm:h-10 ${isDark ? 'text-amber-300' : 'text-white'}`} />
+                  <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-2xl flex items-center justify-center shadow-lg ${isDark ? 'bg-gradient-to-br from-amber-500/40 to-amber-600/30 border border-amber-400/30' : 'bg-gradient-to-br from-amber-400 to-amber-500'} group-hover:scale-105 transition-transform duration-300`}>
+                    <Globe className={`w-8 h-8 sm:w-10 sm:h-10 ${isDark ? 'text-amber-200' : 'text-white'} drop-shadow-md group-hover:scale-110 transition-transform duration-300`} />
                   </div>
                   <span className={`text-xs sm:text-sm font-medium ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
                     {language === 'tr' ? 'Servisler' : 'Services'}
@@ -1548,10 +1544,10 @@ export function PCPanel({
                 </button>
                 <button
                   onClick={() => setActiveTab('wireless')}
-                  className={`flex flex-col items-center gap-3 p-4 rounded-2xl transition-all hover:scale-105 ${isDark ? 'hover:bg-white/10' : 'hover:bg-white/40'}`}
+                  className={`flex flex-col items-center gap-3 p-4 rounded-2xl transition-all duration-300 hover:scale-105 hover:-translate-y-1 group ${isDark ? 'hover:bg-white/10 hover:shadow-lg hover:shadow-cyan-500/20' : 'hover:bg-white/40 hover:shadow-xl'}`}
                 >
-                  <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-2xl flex items-center justify-center ${isDark ? 'bg-gradient-to-br from-cyan-500/30 to-cyan-600/20 border border-cyan-400/20' : 'bg-gradient-to-br from-cyan-400 to-cyan-500'} backdrop-blur-md`}>
-                    <Network className={`w-8 h-8 sm:w-10 sm:h-10 ${isDark ? 'text-cyan-300' : 'text-white'}`} />
+                  <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-2xl flex items-center justify-center shadow-lg ${isDark ? 'bg-gradient-to-br from-cyan-500/40 to-cyan-600/30 border border-cyan-400/30' : 'bg-gradient-to-br from-cyan-400 to-cyan-500'} group-hover:scale-105 transition-transform duration-300`}>
+                    <Wifi className={`w-8 h-8 sm:w-10 sm:h-10 ${isDark ? 'text-cyan-200' : 'text-white'} drop-shadow-md group-hover:scale-110 transition-transform duration-300`} />
                   </div>
                   <span className={`text-xs sm:text-sm font-medium ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
                     {language === 'tr' ? 'Kablosuz' : 'Wireless'}
@@ -2290,11 +2286,11 @@ export function PCPanel({
 
               {/* Quick Command Buttons */}
               {activeTab === 'desktop' && !isPcPoweredOff && (
-                <div className={`px-3 sm:px-4 pb-3 border-t ${isDark ? 'border-slate-800 bg-slate-900/40' : 'border-slate-200 bg-slate-50'}`}>
+                <div className={`px-1 sm:px-4 pb-1 sm:pb-3 border-t ${isDark ? 'border-slate-800 bg-slate-900/40' : 'border-slate-200 bg-slate-50'}`}>
                   {isMobile ? (
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-2 gap-1">
                       <div className="col-span-2 space-y-2">
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-1">
                           <Button
                             size="sm"
                             variant="outline"
@@ -2302,7 +2298,7 @@ export function PCPanel({
                               setInput('ipconfig');
                               executeCommand('ipconfig');
                             }}
-                            className="text-xs font-mono h-8"
+                            className="text-[10px] sm:text-xs font-mono h-6 sm:h-8"
                           >
                             ipconfig
                           </Button>
@@ -2313,7 +2309,7 @@ export function PCPanel({
                               setInput('ping 8.8.8.8');
                               executeCommand('ping 8.8.8.8');
                             }}
-                            className="text-xs font-mono h-8"
+                            className="text-[10px] sm:text-xs font-mono h-6 sm:h-8"
                           >
                             ping
                           </Button>
@@ -2324,7 +2320,7 @@ export function PCPanel({
                               setInput('tracert 8.8.8.8');
                               executeCommand('tracert 8.8.8.8');
                             }}
-                            className="text-xs font-mono h-8"
+                            className="text-[10px] sm:text-xs font-mono h-6 sm:h-8"
                           >
                             tracert
                           </Button>
@@ -2335,12 +2331,12 @@ export function PCPanel({
                               setInput('nslookup google.com');
                               executeCommand('nslookup google.com');
                             }}
-                            className="text-xs font-mono h-8"
+                            className="text-[10px] sm:text-xs font-mono h-6 sm:h-8"
                           >
                             nslookup
                           </Button>
                         </div>
-                        <div className="grid grid-cols-2 gap-2">
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-1">
                           <Button
                             size="sm"
                             variant="outline"
@@ -2348,7 +2344,7 @@ export function PCPanel({
                               setInput('arp -a');
                               executeCommand('arp -a');
                             }}
-                            className="text-xs font-mono h-8"
+                            className="text-[10px] sm:text-xs font-mono h-6 sm:h-8"
                           >
                             arp -a
                           </Button>
@@ -2359,7 +2355,7 @@ export function PCPanel({
                               setInput('netstat -an');
                               executeCommand('netstat -an');
                             }}
-                            className="text-xs font-mono h-8"
+                            className="text-[10px] sm:text-xs font-mono h-6 sm:h-8"
                           >
                             netstat
                           </Button>
@@ -2370,7 +2366,7 @@ export function PCPanel({
                               setInput('dir');
                               executeCommand('dir');
                             }}
-                            className="text-xs font-mono h-8"
+                            className="text-[10px] sm:text-xs font-mono h-6 sm:h-8"
                           >
                             dir
                           </Button>
@@ -2381,7 +2377,7 @@ export function PCPanel({
                               setInput('ver');
                               executeCommand('ver');
                             }}
-                            className="text-xs font-mono h-8"
+                            className="text-[10px] sm:text-xs font-mono h-6 sm:h-8"
                           >
                             ver
                           </Button>
@@ -2397,7 +2393,7 @@ export function PCPanel({
                           setInput('ipconfig');
                           executeCommand('ipconfig');
                         }}
-                        className="text-xs font-mono h-8"
+                        className="text-[10px] sm:text-xs font-mono h-6 sm:h-8"
                       >
                         ipconfig
                       </Button>
@@ -2408,7 +2404,7 @@ export function PCPanel({
                           setInput('ping 8.8.8.8');
                           executeCommand('ping 8.8.8.8');
                         }}
-                        className="text-xs font-mono h-8"
+                        className="text-[10px] sm:text-xs font-mono h-6 sm:h-8"
                       >
                         ping
                       </Button>
@@ -2419,7 +2415,7 @@ export function PCPanel({
                           setInput('tracert 8.8.8.8');
                           executeCommand('tracert 8.8.8.8');
                         }}
-                        className="text-xs font-mono h-8"
+                        className="text-[10px] sm:text-xs font-mono h-6 sm:h-8"
                       >
                         tracert
                       </Button>
@@ -2430,7 +2426,7 @@ export function PCPanel({
                           setInput('nslookup google.com');
                           executeCommand('nslookup google.com');
                         }}
-                        className="text-xs font-mono h-8"
+                        className="text-[10px] sm:text-xs font-mono h-6 sm:h-8"
                       >
                         nslookup
                       </Button>
@@ -2441,7 +2437,7 @@ export function PCPanel({
                           setInput('arp -a');
                           executeCommand('arp -a');
                         }}
-                        className="text-xs font-mono h-8"
+                        className="text-[10px] sm:text-xs font-mono h-6 sm:h-8"
                       >
                         arp -a
                       </Button>
@@ -2452,7 +2448,7 @@ export function PCPanel({
                           setInput('netstat -an');
                           executeCommand('netstat -an');
                         }}
-                        className="text-xs font-mono h-8"
+                        className="text-[10px] sm:text-xs font-mono h-6 sm:h-8"
                       >
                         netstat
                       </Button>
@@ -2463,7 +2459,7 @@ export function PCPanel({
                           setInput('dir');
                           executeCommand('dir');
                         }}
-                        className="text-xs font-mono h-8"
+                        className="text-[10px] sm:text-xs font-mono h-6 sm:h-8"
                       >
                         dir
                       </Button>
@@ -2474,7 +2470,7 @@ export function PCPanel({
                           setInput('ver');
                           executeCommand('ver');
                         }}
-                        className="text-xs font-mono h-8"
+                        className="text-[10px] sm:text-xs font-mono h-6 sm:h-8"
                       >
                         ver
                       </Button>
