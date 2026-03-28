@@ -1322,7 +1322,7 @@ export function PCPanel({
           <div className="flex items-center gap-2">
             <div className={`w-2 h-2 rounded-full ${isPcPoweredOff ? 'bg-red-500' : 'bg-green-500 animate-pulse'}`} />
             <span className={`text-xs font-medium  ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-              {deviceId} - {pcIP}
+              {internalPcHostname} - {pcIP}
             </span>
           </div>
           <div className="flex items-center gap-1">
@@ -1405,7 +1405,7 @@ export function PCPanel({
           )}
           <ModernPanel
             id={deviceId}
-            title={deviceId}
+            title={internalPcHostname}
             onClose={onClose}
             collapsible={false}
             hideTitle
