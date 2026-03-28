@@ -82,6 +82,11 @@ export const DeviceNode = memo(function DeviceNode({
     return false; // Re-render et
   }
 
+  // WiFi config değişmişse re-render et
+  if (JSON.stringify(prevProps.device.wifi) !== JSON.stringify(nextProps.device.wifi)) {
+    return false;
+  }
+
   // Port sayısı değişmişse re-render et
   if (prevProps.device.ports.length !== nextProps.device.ports.length) {
     return false; // Re-render et

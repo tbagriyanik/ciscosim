@@ -205,9 +205,17 @@ export function NetworkTopology({
   const canvasRef = useRef<HTMLDivElement>(null);
 
   const { visibleDevices, visibleConnections } = useMemo(() => {
-    if (!canvasRef.current) return { visibleDevices: devices, visibleConnections: connections };
+    // If not active, or no canvas, return all items to prevent them from disappearing
+    // when calculating visibility while the container has 0 width/height.
+    if (!isActive || !canvasRef.current) return { visibleDevices: devices, visibleConnections: connections };
 
     const { width, height } = canvasRef.current.getBoundingClientRect();
+    
+    // If container has 0 width or height (e.g. hidden by CSS), don't filter out things
+    if (width === 0 || height === 0 || !zoom || zoom <= 0) {
+      return { visibleDevices: devices, visibleConnections: connections };
+    }
+
     const margin = 100; // Extra margin to prevent pop-in
 
     const vDevices = devices.filter(device => {
@@ -248,7 +256,7 @@ export function NetworkTopology({
     });
 
     return { visibleDevices: vDevices, visibleConnections: vConnections };
-  }, [devices, connections, pan, zoom]);
+  }, [devices, connections, pan, zoom, isActive]);
 
   const devicesSortedForRender = useMemo(() => {
     return [...visibleDevices].sort((a, b) => {
