@@ -3267,19 +3267,26 @@ export function NetworkTopology({
                     />
                   </g>
                 </TooltipTrigger>
-                <TooltipContent>
+                <TooltipContent
+                  hideArrow
+                  className="p-0 bg-transparent border-none shadow-none"
+                  sideOffset={8}
+                >
                   <div
-
+                    className={`relative px-3 py-2 rounded-xl shadow-2xl border backdrop-blur-md ${isDark
+                      ? 'bg-slate-900/90 border-slate-700 text-white shadow-cyan-500/10'
+                      : 'bg-white/90 border-slate-200 text-slate-900 shadow-slate-200/50'
+                      }`}
                   >
                     <div className="flex items-center gap-2 mb-1">
-                      <div className={`w-2 h-2  ${device.status === 'offline' || !isEnabled
+                      <div className={`w-2 h-2 rounded-full ${device.status === 'offline' || !isEnabled
                         ? 'bg-red-500'
                         : isConnected
                           ? 'bg-green-500'
                           : 'bg-orange-500'
                         }`} />
                       <span className="text-[10px] font-black tracking-widest opacity-60">
-                        WiFi
+                        WIFI
                       </span>
                     </div>
                     <div className="space-y-0.5">
@@ -3320,6 +3327,10 @@ export function NetworkTopology({
                         </>
                       )}
                     </div>
+
+                    {/* Arrow */}
+                    <div className={`absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-full w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] ${isDark ? 'border-t-slate-800' : 'border-t-white'
+                      }`} />
                   </div>
                 </TooltipContent>
               </Tooltip>
