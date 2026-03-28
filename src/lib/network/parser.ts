@@ -724,6 +724,36 @@ const commandPatterns: Record<string, CommandPattern> = {
     minArgs: 1,
     maxArgs: 1
   },
+  'ssid': {
+    pattern: /^ssid\s+(.+)$/i,
+    modes: ['interface'],
+    minArgs: 1,
+    maxArgs: 1
+  },
+  'encryption': {
+    pattern: /^encryption\s+(open|wpa|wpa2|wpa3)$/i,
+    modes: ['interface'],
+    minArgs: 1,
+    maxArgs: 1
+  },
+  'wifi-password': {
+    pattern: /^wifi-password\s+(.+)$/i,
+    modes: ['interface'],
+    minArgs: 1,
+    maxArgs: 1
+  },
+  'wifi-channel': {
+    pattern: /^wifi-channel\s+(2\.4ghz|5ghz)$/i,
+    modes: ['interface'],
+    minArgs: 1,
+    maxArgs: 1
+  },
+  'wifi-mode': {
+    pattern: /^wifi-mode\s+(ap|client|disabled)$/i,
+    modes: ['interface'],
+    minArgs: 1,
+    maxArgs: 1
+  },
   'ip address': {
     pattern: /^ip\s+address\s+(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s+(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})(\s+secondary)?$/i,
     modes: ['interface'],
@@ -1941,6 +1971,11 @@ Mevcut komutlar:
   spanning-tree bpduguard enable - BPDU Guard etkinleştir
   storm-control broadcast level <rate> - Storm control
   power inline <auto|static|never> - PoE kontrolü
+  ssid <isim>               - Wireless SSID ayarla
+  encryption <tip>          - Şifreleme (open|wpa|wpa2|wpa3)
+  wifi-password <şifre>     - Wireless parola
+  wifi-channel <2.4|5ghz>   - Kanal/Frekans ayarla
+  wifi-mode <ap|client|disabled> - Wireless çalışma modu
   exit                      - Config mode'a dön
   end                       - Privileged mode'a dön
 
@@ -2108,6 +2143,11 @@ Available commands:
   spanning-tree bpduguard enable - Enable BPDU Guard
   storm-control broadcast level <rate> - Storm control
   power inline <auto|static|never> - PoE control
+  ssid <name>               - Set Wireless SSID
+  encryption <type>         - Set encryption (open|wpa|wpa2|wpa3)
+  wifi-password <pass>      - Set Wireless password
+  wifi-channel <2.4|5ghz>   - Set Wireless channel
+  wifi-mode <ap|client|disabled> - Set Wireless mode
   exit                      - Return to config mode
   end                       - Return to privileged mode
 

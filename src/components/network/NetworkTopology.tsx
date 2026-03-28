@@ -3036,6 +3036,71 @@ export function NetworkTopology({
           className={isDragging ? '' : 'transition-all duration-150'}
         />
 
+        {/* WiFi Status Icon */}
+        {(() => {
+          const wlanPort = device.ports.find(p => p.id === 'wlan0');
+          const pcWifi = device.wifi;
+          const isPC = device.type === 'pc';
+          const isSwitch = device.type === 'switch';
+          const isRouter = device.type === 'router';
+          const devState = deviceStates?.get(device.id);
+          const wlanState = devState?.ports['wlan0'];
+
+          let wifiColor = '#94a3b8'; // Grey (Off)
+          const showWifi = isPC || isSwitch || isRouter;
+
+          // Check if WiFi is enabled
+          let isEnabled = false;
+          if (isPC) {
+            isEnabled = pcWifi?.enabled || (wlanState ? (wlanState.wifi?.mode !== 'disabled') : false);
+          } else if (isSwitch || isRouter) {
+            // Enhanced check for switch/router even if port is not in visual ports list
+            isEnabled = wlanState ? (wlanState.wifi?.mode !== 'ap' && wlanState.wifi?.mode !== 'client' ? false : !wlanState.shutdown) : (wlanPort ? !wlanPort.shutdown : false);
+          }
+
+          if (showWifi) {
+            if (!isEnabled || device.status === 'offline') {
+              wifiColor = isDark ? '#475569' : '#94a3b8'; // Grey
+            } else {
+              // Check if connected
+              const isConnected = connections.some(c =>
+                (c.sourceDeviceId === device.id && c.sourcePort === 'wlan0' && c.active !== false) ||
+                (c.targetDeviceId === device.id && c.targetPort === 'wlan0' && c.active !== false)
+              );
+              wifiColor = isConnected ? '#22c55e' : '#f59e0b'; // Green or Orange
+            }
+
+            return (
+              <g transform="translate(2, 0) scale(0.9)" filter="url(#wifiIconShadow)">
+                <path
+                  d="M5 10.55a11 11 0 0 1 14.08 0"
+                  stroke={wifiColor}
+                  fill="none"
+                  strokeWidth="1"
+                  strokeLinecap="round"
+                  className="transition-colors duration-300"
+                />
+                <path
+                  d="M8.53 13.11a6 6 0 0 1 6.95 0"
+                  stroke={wifiColor}
+                  fill="none"
+                  strokeWidth="1"
+                  strokeLinecap="round"
+                  className="transition-colors duration-300"
+                />
+                <circle
+                  cx="12"
+                  cy="16"
+                  r="1"
+                  fill={wifiColor}
+                  className="transition-colors duration-300"
+                />
+              </g>
+            );
+          }
+          return null;
+        })()}
+
         {/* PC monitor stand */}
         {device.type === 'pc' && (
           <>
@@ -3816,6 +3881,10 @@ export function NetworkTopology({
                   <clipPath id="canvasClip">
                     <rect x="0" y="0" width={getCanvasDimensions().width} height={getCanvasDimensions().height} />
                   </clipPath>
+                  {/* WiFi Icon Shadow Filter */}
+                  <filter id="wifiIconShadow" x="-50%" y="-50%" width="200%" height="200%">
+                    <feDropShadow dx="0" dy="0.5" stdDeviation="0.6" floodOpacity={isDark ? "0.8" : "0.4"} />
+                  </filter>
                   {/* Canvas background gradient */}
                   <radialGradient id="canvasBgGradient" cx="46%" cy="30%" r="88%">
                     {isDark ? (

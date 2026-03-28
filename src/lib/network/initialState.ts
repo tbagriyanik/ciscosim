@@ -60,6 +60,26 @@ function createInitialPorts(): Record<string, Port> {
     type: 'fastethernet'
   };
   
+  // WLAN interface
+  ports['wlan0'] = {
+    id: 'wlan0',
+    name: '',
+    status: 'notconnect',
+    vlan: 1,
+    mode: 'access',
+    duplex: 'auto',
+    speed: 'auto',
+    shutdown: false,
+    type: 'fastethernet',
+    wifi: {
+      ssid: '',
+      security: 'open',
+      password: '',
+      channel: '2.4GHz',
+      mode: 'disabled'
+    }
+  };
+  
   return ports;
 }
 
@@ -197,6 +217,26 @@ function createInitialRouterPorts(): Record<string, Port> {
       channelProtocol: undefined
     };
   }
+  
+  // WLAN interface
+  ports['wlan0'] = {
+    id: 'wlan0',
+    name: '',
+    status: 'notconnect',
+    vlan: 1,
+    mode: 'access',
+    duplex: 'auto',
+    speed: 'auto',
+    shutdown: false,
+    type: 'fastethernet',
+    wifi: {
+      ssid: '',
+      security: 'open',
+      password: '',
+      channel: '2.4GHz',
+      mode: 'disabled'
+    }
+  };
   
   return ports;
 }
@@ -363,6 +403,11 @@ export function normalizePortId(input: string): string | null {
   const giMatch = lower.match(/^(?:gi|gig|gigabit|gigabitethernet)(\d+)\/(\d+)$/);
   if (giMatch) {
     return `gi${giMatch[1]}/${giMatch[2]}`;
+  }
+  
+  // Wlan0 formatını kabul et
+  if (lower === 'wlan0') {
+    return 'wlan0';
   }
   
   return null;
