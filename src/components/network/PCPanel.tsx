@@ -1498,7 +1498,7 @@ export function PCPanel({
         </div>
 
         {/* Content Area */}
-        <div className={`flex-1 flex flex-col overflow-hidden ${terminalBg} relative min-h-0`}>
+        <div className={`flex-1 flex flex-col overflow-y-auto ${terminalBg} relative`}>
           {activeTab === 'home' ? (
             <div className="flex-1 flex items-center justify-center p-8">
               <div className="grid grid-cols-3 sm:grid-cols-4 gap-6 sm:gap-8 rounded-3xl p-6 sm:p-8 bg-white/10 backdrop-blur-xl border border-white/20 shadow-xl">
