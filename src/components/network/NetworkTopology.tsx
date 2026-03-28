@@ -3454,26 +3454,39 @@ export function NetworkTopology({
             let portStroke: string;
 
             if (isShutdown || isDeviceOffline) {
+              // Güç kapalı - içi kırmızı, çerçeve gri
               portFill = '#ef4444';
-              portStroke = '#991b1b';
+              portStroke = '#4b5563';
             } else if (isConnected) {
+              // Güç açık ve bağlı - içi mavi, çerçeve açık mavi
               if (isConsole) {
                 portFill = '#06b6d4';
-                portStroke = '#22c55e';
+                portStroke = '#67e8f9';
               } else if (isGigabit) {
                 portFill = '#f97316';
-                portStroke = '#22c55e';
+                portStroke = '#fdba74';
               } else if (isFastEthernet) {
                 portFill = '#3b82f6';
-                portStroke = '#22c55e';
+                portStroke = '#60a5fa';
               } else {
-                portFill = '#22c55e';
-                portStroke = '#22c55e';
+                portFill = '#3b82f6';
+                portStroke = '#60a5fa';
               }
             } else {
-              // Not connected - Gray
-              portFill = '#6b7280';
-              portStroke = '#4b5563';
+              // Güç açık ama bağlı değil - içi mavi, çerçeve gri
+              if (isConsole) {
+                portFill = '#06b6d4';
+                portStroke = '#4b5563';
+              } else if (isGigabit) {
+                portFill = '#f97316';
+                portStroke = '#4b5563';
+              } else if (isFastEthernet) {
+                portFill = '#3b82f6';
+                portStroke = '#4b5563';
+              } else {
+                portFill = '#3b82f6';
+                portStroke = '#4b5563';
+              }
             }
 
             return (
