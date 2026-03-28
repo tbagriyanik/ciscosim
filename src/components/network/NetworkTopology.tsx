@@ -2583,7 +2583,7 @@ export function NetworkTopology({
     }
 
     // Find path between source and target
-    const path = findPath(sourceId, targetId);
+    const path = connectivity.hops;
 
     if (!path || path.length < 2) {
       // No path found - show error
