@@ -387,12 +387,14 @@ function cmdShowInterfaces(
 
   Object.keys(state.ports || {}).forEach(portName => {
     const port = state.ports[portName];
+    const description = port.description || '';
+    
     output += `${portName} is ${port.shutdown ? 'administratively down' : 'up'}, line protocol is ${port.shutdown ? 'down' : 'up'}\n`;
     output += `  Hardware is Fast Ethernet, address is ${port.macAddress || '0000.0000.0000'}\n`;
     if (port.ipAddress && port.subnetMask) {
       output += `  Internet address is ${port.ipAddress}/${port.subnetMask}\n`;
     }
-    output += `  Description: ${port.description || ''}\n`;
+    output += `  Description: ${description}\n`;
     output += `  MTU 1500 bytes, BW 100000 Kbit/sec\n`;
     output += `  Full-duplex, ${port.speed || 'auto'}Mb/s\n`;
     output += `  input flow-control is off, output flow-control is unsupported\n`;
