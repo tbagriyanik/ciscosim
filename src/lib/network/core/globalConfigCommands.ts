@@ -13,8 +13,11 @@ export const globalConfigHandlers: Record<string, CommandHandler> = {
   'vtp domain': cmdVtpDomain,
   'spanning-tree mode': cmdSpanningTreeMode,
   'service password-encryption': cmdServicePasswordEncryption,
+  'no service password-encryption': cmdNoServicePasswordEncryption,
   'enable secret': cmdEnableSecret,
+  'no enable secret': cmdNoEnableSecret,
   'enable password': cmdEnablePassword,
+  'no enable password': cmdNoEnablePassword,
   'banner motd': cmdBannerMotd,
   'ip default-gateway': cmdIpDefaultGateway,
   'ip domain-name': cmdIpDomainName,
@@ -229,6 +232,25 @@ function cmdServicePasswordEncryption(state: any, input: string, ctx: any): any 
 }
 
 /**
+ * No Service Password-Encryption
+ */
+function cmdNoServicePasswordEncryption(state: any, input: string, ctx: any): any {
+  if (state.currentMode !== 'config') {
+    return { success: false, error: '% Invalid command at this mode' };
+  }
+
+  return {
+    success: true,
+    newState: {
+      security: {
+        ...state.security,
+        servicePasswordEncryption: false
+      }
+    }
+  };
+}
+
+/**
  * Enable Secret
  */
 function cmdEnableSecret(state: any, input: string, ctx: any): any {
@@ -271,6 +293,44 @@ function cmdEnablePassword(state: any, input: string, ctx: any): any {
       security: {
         ...state.security,
         enablePassword: match[1]
+      }
+    }
+  };
+}
+
+/**
+ * No Enable Secret
+ */
+function cmdNoEnableSecret(state: any, input: string, ctx: any): any {
+  if (state.currentMode !== 'config') {
+    return { success: false, error: '% Invalid command at this mode' };
+  }
+
+  return {
+    success: true,
+    newState: {
+      security: {
+        ...state.security,
+        enableSecret: ''
+      }
+    }
+  };
+}
+
+/**
+ * No Enable Password
+ */
+function cmdNoEnablePassword(state: any, input: string, ctx: any): any {
+  if (state.currentMode !== 'config') {
+    return { success: false, error: '% Invalid command at this mode' };
+  }
+
+  return {
+    success: true,
+    newState: {
+      security: {
+        ...state.security,
+        enablePassword: ''
       }
     }
   };
