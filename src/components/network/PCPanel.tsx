@@ -1538,59 +1538,59 @@ export function PCPanel({
               <div className={`flex-1 flex flex-col overflow-y-auto ${terminalBg} relative`}>
                 {activeTab === 'home' ? (
                   <div className="flex-1 flex items-center justify-center p-8">
-                    <div className="grid grid-cols-3 md:grid-cols-4 gap-6 md:gap-8 rounded-3xl p-6 md:p-8 bg-white/10 backdrop-blur-xl border border-white/20 shadow-xl">
+                    <div className="grid grid-cols-3 md:grid-cols-4 gap-4 md:gap-8 rounded-3xl p-6 md:p-8 bg-white/10 backdrop-blur-xl border border-white/20 shadow-xl">
                       <button
                         onClick={() => navigateToProgram('desktop')}
-                        className={`flex flex-col items-center gap-3 p-4 rounded-2xl transition-all duration-300 hover:scale-105 hover:-translate-y-1 group ${isDark ? 'hover:bg-white/10 hover:shadow-lg hover:shadow-blue-500/20' : 'hover:bg-white/40 hover:shadow-xl'}`}
+                        className="flex flex-col items-center gap-2 md:gap-3 p-2 md:p-4 rounded-2xl cursor-pointer transition-all duration-200 hover:bg-white/5"
                       >
-                        <div className={`w-16 h-16 md:w-20 md:h-20 rounded-2xl flex items-center justify-center shadow-lg ${isDark ? 'bg-gradient-to-br from-blue-500/40 to-blue-600/30 border border-blue-400/30' : 'bg-gradient-to-br from-blue-400 to-blue-500'} group-hover:scale-105 transition-transform duration-300`}>
-                          <TerminalIcon className={`w-8 h-8 md:w-10 md:h-10 ${isDark ? 'text-blue-200' : 'text-white'} drop-shadow-md`} />
+                        <div className={`w-12 h-12 md:w-20 md:h-20 rounded-2xl flex items-center justify-center ${isDark ? 'bg-gradient-to-br from-blue-500/40 to-blue-600/30 border border-blue-400/30 shadow-lg shadow-blue-500/20' : 'bg-gradient-to-br from-blue-400 to-blue-500 shadow-lg shadow-blue-400/30'}`}>
+                          <TerminalIcon className={`w-6 h-6 md:w-10 md:h-10 ${isDark ? 'text-blue-200' : 'text-white'}`} />
                         </div>
-                        <span className={`text-xs md:text-sm font-medium ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
+                        <span className={`text-[10px] md:text-sm font-medium ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
                           {language === 'tr' ? 'Komut İstemi' : 'Command Prompt'}
                         </span>
                       </button>
                       <button
                         onClick={() => navigateToProgram('terminal')}
-                        className={`flex flex-col items-center gap-3 p-4 rounded-2xl transition-all duration-300 hover:scale-105 hover:-translate-y-1 group ${isDark ? 'hover:bg-white/10 hover:shadow-lg hover:shadow-emerald-500/20' : 'hover:bg-white/40 hover:shadow-xl'}`}
+                        className="flex flex-col items-center gap-2 md:gap-3 p-2 md:p-4 rounded-2xl cursor-pointer transition-all duration-200 hover:bg-white/5"
                       >
-                        <div className={`w-16 h-16 md:w-20 md:h-20 rounded-2xl flex items-center justify-center shadow-lg ${isDark ? 'bg-gradient-to-br from-emerald-500/40 to-emerald-600/30 border border-emerald-400/30' : 'bg-gradient-to-br from-emerald-400 to-emerald-500'} group-hover:scale-105 transition-transform duration-300`}>
-                          <Laptop className={`w-8 h-8 md:w-10 md:h-10 ${isDark ? 'text-emerald-200' : 'text-white'} drop-shadow-md`} />
+                        <div className={`w-12 h-12 md:w-20 md:h-20 rounded-2xl flex items-center justify-center ${isDark ? 'bg-gradient-to-br from-emerald-500/40 to-emerald-600/30 border border-emerald-400/30 shadow-lg shadow-emerald-500/20' : 'bg-gradient-to-br from-emerald-400 to-emerald-500 shadow-lg shadow-emerald-400/30'}`}>
+                          <Laptop className={`w-6 h-6 md:w-10 md:h-10 ${isDark ? 'text-emerald-200' : 'text-white'}`} />
                         </div>
-                        <span className={`text-xs md:text-sm font-medium ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
+                        <span className={`text-[10px] md:text-sm font-medium ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
                           {language === 'tr' ? 'Konsol' : 'Console'}
                         </span>
                       </button>
                       <button
                         onClick={() => navigateToProgram('settings')}
-                        className={`flex flex-col items-center gap-3 p-4 rounded-2xl transition-all duration-300 hover:scale-105 hover:-translate-y-1 group ${isDark ? 'hover:bg-white/10 hover:shadow-lg hover:shadow-purple-500/20' : 'hover:bg-white/40 hover:shadow-xl'}`}
+                        className="flex flex-col items-center gap-2 md:gap-3 p-2 md:p-4 rounded-2xl cursor-pointer transition-all duration-200 hover:bg-white/5"
                       >
-                        <div className={`w-16 h-16 md:w-20 md:h-20 rounded-2xl flex items-center justify-center shadow-lg ${isDark ? 'bg-gradient-to-br from-purple-500/40 to-purple-600/30 border border-purple-400/30' : 'bg-gradient-to-br from-purple-400 to-purple-500'} group-hover:scale-105 transition-transform duration-300`}>
-                          <Settings className={`w-8 h-8 md:w-10 md:h-10 ${isDark ? 'text-purple-200' : 'text-white'} drop-shadow-md group-hover:rotate-45 transition-transform duration-300`} />
+                        <div className={`w-12 h-12 md:w-20 md:h-20 rounded-2xl flex items-center justify-center ${isDark ? 'bg-gradient-to-br from-purple-500/40 to-purple-600/30 border border-purple-400/30 shadow-lg shadow-purple-500/20' : 'bg-gradient-to-br from-purple-400 to-purple-500 shadow-lg shadow-purple-400/30'}`}>
+                          <Settings className={`w-6 h-6 md:w-10 md:h-10 ${isDark ? 'text-purple-200' : 'text-white'}`} />
                         </div>
-                        <span className={`text-xs md:text-sm font-medium ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
+                        <span className={`text-[10px] md:text-sm font-medium ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
                           {language === 'tr' ? 'Ayarlar' : 'Settings'}
                         </span>
                       </button>
                       <button
                         onClick={() => setActiveTab('services')}
-                        className={`flex flex-col items-center gap-3 p-4 rounded-2xl transition-all duration-300 hover:scale-105 hover:-translate-y-1 group ${isDark ? 'hover:bg-white/10 hover:shadow-lg hover:shadow-amber-500/20' : 'hover:bg-white/40 hover:shadow-xl'}`}
+                        className="flex flex-col items-center gap-2 md:gap-3 p-2 md:p-4 rounded-2xl cursor-pointer transition-all duration-200 hover:bg-white/5"
                       >
-                        <div className={`w-16 h-16 md:w-20 md:h-20 rounded-2xl flex items-center justify-center shadow-lg ${isDark ? 'bg-gradient-to-br from-amber-500/40 to-amber-600/30 border border-amber-400/30' : 'bg-gradient-to-br from-amber-400 to-amber-500'} group-hover:scale-105 transition-transform duration-300`}>
-                          <Globe className={`w-8 h-8 md:w-10 md:h-10 ${isDark ? 'text-amber-200' : 'text-white'} drop-shadow-md group-hover:scale-110 transition-transform duration-300`} />
+                        <div className={`w-12 h-12 md:w-20 md:h-20 rounded-2xl flex items-center justify-center ${isDark ? 'bg-gradient-to-br from-amber-500/40 to-amber-600/30 border border-amber-400/30 shadow-lg shadow-amber-500/20' : 'bg-gradient-to-br from-amber-400 to-amber-500 shadow-lg shadow-amber-400/30'}`}>
+                          <Globe className={`w-6 h-6 md:w-10 md:h-10 ${isDark ? 'text-amber-200' : 'text-white'}`} />
                         </div>
-                        <span className={`text-xs md:text-sm font-medium ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
+                        <span className={`text-[10px] md:text-sm font-medium ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
                           {language === 'tr' ? 'Servisler' : 'Services'}
                         </span>
                       </button>
                       <button
                         onClick={() => setActiveTab('wireless')}
-                        className={`flex flex-col items-center gap-3 p-4 rounded-2xl transition-all duration-300 hover:scale-105 hover:-translate-y-1 group ${isDark ? 'hover:bg-white/10 hover:shadow-lg hover:shadow-cyan-500/20' : 'hover:bg-white/40 hover:shadow-xl'}`}
+                        className="flex flex-col items-center gap-2 md:gap-3 p-2 md:p-4 rounded-2xl cursor-pointer transition-all duration-200 hover:bg-white/5"
                       >
-                        <div className={`w-16 h-16 md:w-20 md:h-20 rounded-2xl flex items-center justify-center shadow-lg ${isDark ? 'bg-gradient-to-br from-cyan-500/40 to-cyan-600/30 border border-cyan-400/30' : 'bg-gradient-to-br from-cyan-400 to-cyan-500'} group-hover:scale-105 transition-transform duration-300`}>
-                          <Wifi className={`w-8 h-8 md:w-10 md:h-10 ${isDark ? 'text-cyan-200' : 'text-white'} drop-shadow-md group-hover:scale-110 transition-transform duration-300`} />
+                        <div className={`w-12 h-12 md:w-20 md:h-20 rounded-2xl flex items-center justify-center ${isDark ? 'bg-gradient-to-br from-cyan-500/40 to-cyan-600/30 border border-cyan-400/30 shadow-lg shadow-cyan-500/20' : 'bg-gradient-to-br from-cyan-400 to-cyan-500 shadow-lg shadow-cyan-400/30'}`}>
+                          <Wifi className={`w-6 h-6 md:w-10 md:h-10 ${isDark ? 'text-cyan-200' : 'text-white'}`} />
                         </div>
-                        <span className={`text-xs md:text-sm font-medium ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
+                        <span className={`text-[10px] md:text-sm font-medium ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
                           {language === 'tr' ? 'Kablosuz' : 'Wireless'}
                         </span>
                       </button>
@@ -2277,6 +2277,14 @@ export function PCPanel({
                           value={input}
                           onChange={(e) => setInput(e.target.value)}
                           onKeyDown={handleKeyDown}
+                          onFocus={() => {
+                            // Scroll input into view on mobile when keyboard opens
+                            if (typeof window !== 'undefined' && window.innerWidth < 768) {
+                              setTimeout(() => {
+                                inputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                              }, 300);
+                            }
+                          }}
                           className="flex-1 bg-transparent border-none outline-none font-mono text-[13px]"
                           placeholder={
                             activeTab === 'terminal' && isConsoleConnected && (consoleNeedsPassword || consoleConfirmDialog?.show || consoleReloadPending)

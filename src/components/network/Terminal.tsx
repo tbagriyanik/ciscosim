@@ -482,6 +482,14 @@ export function Terminal({
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={handleKeyDown}
+                    onFocus={() => {
+                      // Scroll input into view on mobile when keyboard opens
+                      if (isMobile) {
+                        setTimeout(() => {
+                          inputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                        }, 300);
+                      }
+                    }}
                     disabled={isInputDisabled}
                     className="flex-1 bg-transparent border-none outline-none font-mono text-[13px] placeholder:text-muted-foreground/50"
                     placeholder={
