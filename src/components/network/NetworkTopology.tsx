@@ -43,6 +43,7 @@ interface NetworkTopologyProps {
   onUndo?: () => void;
   onRedo?: () => void;
   onDeviceRename?: (deviceId: string, newName: string) => void;
+  onRefreshNetwork?: () => void;
 }
 
 // Drag item from palette
@@ -112,6 +113,7 @@ export function NetworkTopology({
   activeDeviceId,
   deviceStates,
   onDeviceRename,
+  onRefreshNetwork,
 }: NetworkTopologyProps) {
   const { language, t } = useLanguage();
   const { theme } = useTheme();
@@ -198,6 +200,12 @@ export function NetworkTopology({
   const setDevicesState = setDevices;
   const setConnectionsState = setConnections;
   const setNotesState = setNotes;
+
+  // Force re-render when deviceStates changes (for WiFi icon updates)
+  const [, setDeviceStatesVersion] = useState(0);
+  useEffect(() => {
+    setDeviceStatesVersion(prev => prev + 1);
+  }, [deviceStates]);
 
   const [zoom, setZoom] = useState(DEFAULT_ZOOM);
   const [pan, setPan] = useState({ x: 0, y: 0 });
@@ -4102,6 +4110,30 @@ export function NetworkTopology({
               </TooltipTrigger>
               <TooltipContent>{language === 'tr' ? 'Not Ekle' : 'Add Note'}</TooltipContent>
             </Tooltip>
+
+            {/* Refresh Network Button */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => {
+                    // Refresh network by checking all connections and device states
+                    if (onRefreshNetwork) {
+                      onRefreshNetwork();
+                    }
+                  }}
+                  className={`cursor-pointer hidden md:flex items-center gap-1.5 px-3 sm:px-4 py-1.5 rounded-xl text-xs font-semibold shadow-sm transition-all ${isDark
+                    ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                    : 'bg-emerald-500 hover:bg-emerald-600 text-white'
+                    }`}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  <span className="hidden sm:inline">{language === 'tr' ? 'Ağı Yenile' : 'Refresh Network'}</span>
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>{language === 'tr' ? 'Ağı Yenile' : 'Refresh Network'}</TooltipContent>
+            </Tooltip>
           </div>
         </div>
       </div>
@@ -4260,7 +4292,24 @@ export function NetworkTopology({
                 setConnectionStart(null);
               }
             }}
-            onContextMenu={(e) => handleContextMenu(e as unknown as ReactMouseEvent)}
+            onContextMenu={(e) => {
+              // Show text editing options if editing a note
+              const target = e.target as HTMLElement;
+              const noteElement = target.closest('[data-note-id]');
+              const textareaElement = noteElement?.querySelector('textarea');
+              const contentEditableElement = noteElement?.querySelector('[contenteditable]');
+
+              const isEditingNote = textareaElement?.matches(':focus') || contentEditableElement?.matches(':focus');
+
+              if (isEditingNote) {
+                e.preventDefault();
+                e.stopPropagation();
+                // Allow native text editing context menu on mobile/desktop
+                // The browser will show copy, cut, paste, select all options
+              } else {
+                handleContextMenu(e as unknown as ReactMouseEvent);
+              }
+            }}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && selectedDeviceIds.length === 1) {
                 const selectedDevice = devices.find(d => d.id === selectedDeviceIds[0]);

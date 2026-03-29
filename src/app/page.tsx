@@ -11,6 +11,7 @@ import { NetworkTopology } from '@/components/network/NetworkTopology';
 import { CanvasDevice, CanvasConnection, CanvasNote } from '@/components/network/networkTopology.types';
 import { getPrompt } from '@/lib/network/executor';
 import { formatErrorForUser } from '@/lib/errors/errorHandler';
+import { checkDeviceConnectivity } from '@/lib/network/connectivity';
 import type { TerminalOutput } from '@/components/network/Terminal';
 import {
   AlertDialog,
@@ -1672,9 +1673,80 @@ export default function Home() {
     e.currentTarget.style.setProperty('--my', `${e.clientY - rect.top}px`);
   }, []);
 
+  // Refresh network connections and WiFi status
+  const handleRefreshNetwork = useCallback(() => {
+    if (topologyDevices && topologyConnections && deviceStates) {
+      const updatedDeviceStates = new Map(deviceStates);
+
+      // Check each connection's validity
+      topologyConnections.forEach(conn => {
+        const sourceDevice = topologyDevices.find(d => d.id === conn.sourceDeviceId);
+        const targetDevice = topologyDevices.find(d => d.id === conn.targetDeviceId);
+
+        if (sourceDevice && targetDevice) {
+          // Check connectivity between devices
+          const result = checkDeviceConnectivity(
+            conn.sourceDeviceId,
+            conn.targetDeviceId,
+            topologyDevices,
+            topologyConnections,
+            deviceStates
+          );
+
+          // Update connection active state based on connectivity check
+          if (result.success !== conn.active) {
+            conn.active = result.success;
+          }
+        }
+      });
+
+      // Update WiFi status for all PCs
+      topologyDevices.forEach(device => {
+        if (device.type === 'pc' && device.wifi?.enabled) {
+          const deviceState = updatedDeviceStates.get(device.id);
+          if (deviceState) {
+            // Check if WiFi can connect to any AP
+            const apDevices = topologyDevices.filter(d => ['switch', 'router'].includes(d.type));
+            let wifiConnected = false;
+
+            for (const ap of apDevices) {
+              const apState = updatedDeviceStates.get(ap.id);
+              const wlan = apState?.ports['wlan0'];
+
+              if (wlan && !wlan.shutdown && wlan.wifi?.mode === 'ap' && wlan.wifi?.ssid === device.wifi.ssid) {
+                const apSecurity = wlan.wifi.security || 'open';
+                const pcSecurity = device.wifi.security || 'open';
+
+                if (apSecurity === pcSecurity) {
+                  if (apSecurity === 'open' || wlan.wifi.password === device.wifi.password) {
+                    wifiConnected = true;
+                    break;
+                  }
+                }
+              }
+            }
+
+            // Update device state to trigger re-render
+            updatedDeviceStates.set(device.id, { ...deviceState });
+          }
+        }
+      });
+
+      // Update device states to trigger re-render
+      setDeviceStates(updatedDeviceStates);
+    }
+  }, [topologyDevices, topologyConnections, deviceStates, setDeviceStates]);
+
   // Handle key events: ESC to close, ENTER to confirm
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // F5 - Refresh network connections and WiFi status
+      if (e.key === 'F5') {
+        e.preventDefault();
+        handleRefreshNetwork();
+        return;
+      }
+
       if (e.key === 'Escape') {
         setShowMobileMenu(false);
         setConfirmDialog(null);
@@ -1776,7 +1848,7 @@ export default function Home() {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('beforeprint', handleBeforePrint);
     };
-  }, [showMobileMenu, confirmDialog, saveDialog, showPCPanel, showProjectPicker, handleSaveProject, handleNewProject, handleUndo, handleRedo, tabs, setShowMobileMenu, setConfirmDialog, setSaveDialog, setShowPCPanel, setShowProjectPicker, isTopologyFullscreen, setActiveTab, activeTab]);
+  }, [showMobileMenu, confirmDialog, saveDialog, showPCPanel, showProjectPicker, handleSaveProject, handleNewProject, handleUndo, handleRedo, tabs, setShowMobileMenu, setConfirmDialog, setSaveDialog, setShowPCPanel, setShowProjectPicker, isTopologyFullscreen, setActiveTab, activeTab, topologyDevices, topologyConnections, deviceStates, setDeviceStates, handleDeviceDoubleClick, handleRefreshNetwork]);
 
   // Load project from JSON file
   const handleLoadProject = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
@@ -2198,6 +2270,91 @@ export default function Home() {
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>{language === 'tr' ? 'Cihaz veya Kablo Ekle' : 'Add Device or Cable'}</TooltipContent>
+                    </Tooltip>
+
+                    <div className={`w-px h-4 ${isDark ? 'bg-slate-800' : 'bg-slate-200'} mx-0.5`} />
+
+                    {/* Refresh Network Button */}
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-9 w-9 text-emerald-500 hover:bg-emerald-500/10"
+                          onClick={handleRefreshNetwork}
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                          </svg>
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>{language === 'tr' ? 'Ağı Yenile' : 'Refresh Network'}</TooltipContent>
+                    </Tooltip>
+
+                    <div className={`w-px h-4 ${isDark ? 'bg-slate-800' : 'bg-slate-200'} mx-0.5`} />
+
+                    {/* Connect Button */}
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-9 w-9 text-cyan-500 hover:bg-cyan-500/10"
+                          onClick={() => {
+                            const event = new CustomEvent('trigger-topology-connect');
+                            window.dispatchEvent(event);
+                          }}
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 0 0 -5.656 0l-4 4a4 4 0 1 0 5.656 5.656l1.102-1.101m-.758-4.899a4 4 0 0 0 5.656 0l4-4a4 4 0 0 0 -5.656-5.656l-1.1 1.1" />
+                          </svg>
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>{language === 'tr' ? 'Cihazları Bagla' : 'Connect Devices'}</TooltipContent>
+                    </Tooltip>
+                  </div>
+                )}
+              </div>
+
+              {/* Desktop-only Quick Action Tools (Add, Refresh & Connect) */}
+              <div className="hidden items-center gap-1.5 ml-auto">
+                {activeTab === 'topology' && (
+                  <div className={`flex items-center gap-1 p-1 rounded-xl border ${isDark ? 'bg-slate-900/40 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
+                    {/* Add Button (Device, Cable, Note) */}
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="px-2.5 py-1.5 h-auto text-emerald-500 hover:bg-emerald-500/10"
+                          onClick={() => {
+                            const event = new CustomEvent('trigger-topology-palette');
+                            window.dispatchEvent(event);
+                          }}
+                        >
+                          <Plus className="w-5 h-5" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>{language === 'tr' ? 'Cihaz veya Kablo Ekle' : 'Add Device or Cable'}</TooltipContent>
+                    </Tooltip>
+
+                    <div className={`w-px h-4 ${isDark ? 'bg-slate-800' : 'bg-slate-200'} mx-0.5`} />
+
+                    {/* Refresh Network Button */}
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-9 w-9 text-emerald-500 hover:bg-emerald-500/10"
+                          onClick={handleRefreshNetwork}
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                          </svg>
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>{language === 'tr' ? 'Ağı Yenile' : 'Refresh Network'}</TooltipContent>
                     </Tooltip>
 
                     <div className={`w-px h-4 ${isDark ? 'bg-slate-800' : 'bg-slate-200'} mx-0.5`} />
@@ -2707,6 +2864,7 @@ export default function Home() {
                     canRedo={canRedo}
                     onUndo={handleUndo}
                     onRedo={handleRedo}
+                    onRefreshNetwork={handleRefreshNetwork}
                   />
                 </div>
               </div>
@@ -2943,16 +3101,16 @@ export default function Home() {
                   {/* Task Event Notification */}
                   {lastTaskEvent && Date.now() - lastTaskEvent.timestamp < 5000 && (
                     <div className={`hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg border ${lastTaskEvent.type === 'completed'
-                        ? isDark ? 'bg-green-500/10 border-green-500/30' : 'bg-green-50 border-green-200'
-                        : isDark ? 'bg-orange-500/10 border-orange-500/30' : 'bg-orange-50 border-orange-200'
+                      ? isDark ? 'bg-green-500/10 border-green-500/30' : 'bg-green-50 border-green-200'
+                      : isDark ? 'bg-orange-500/10 border-orange-500/30' : 'bg-orange-50 border-orange-200'
                       }`}>
                       <span className={`text-xs font-semibold flex items-center gap-1.5 ${lastTaskEvent.type === 'completed'
-                          ? 'text-green-500'
-                          : 'text-orange-500'
+                        ? 'text-green-500'
+                        : 'text-orange-500'
                         }`}>
                         <span className={`w-2 h-2 rounded-full ${lastTaskEvent.type === 'completed'
-                            ? 'bg-green-500'
-                            : 'bg-orange-500'
+                          ? 'bg-green-500'
+                          : 'bg-orange-500'
                           }`} />
                         {lastTaskEvent.type === 'completed'
                           ? (language === 'tr' ? '✓ Görev Tamamlandı' : '✓ Task Completed')
