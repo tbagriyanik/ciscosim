@@ -66,7 +66,7 @@ function cmdShowRunningConfig(
   output += '!\n';
 
   // Service passwords-encryption
-  if (state.security?.passwordEncryption) {
+  if (state.security?.servicePasswordEncryption) {
     output += 'service password-encryption\n';
   }
   output += '!\n';
@@ -162,7 +162,11 @@ function cmdShowRunningConfig(
   if (state.security?.enableSecret) {
     output += `enable secret ${state.security.enableSecret}\n`;
   } else if (state.security?.enablePassword) {
-    output += `enable password ${state.security.enablePassword}\n`;
+    if (state.security?.servicePasswordEncryption) {
+      output += `enable password 7 ********\n`;
+    } else {
+      output += `enable password ${state.security.enablePassword}\n`;
+    }
   }
 
   output += 'end\n';
@@ -756,7 +760,7 @@ function cmdShowWireless(
       const security = (wifi.security || 'open').padEnd(10);
       const channel = (wifi.channel || '2.4GHz').padEnd(8);
       const status = (port.shutdown ? 'Down' : 'Up');
-      
+
       output += `${portName.padEnd(11)} ${mode}${ssid}${security}${channel}${status}\n`;
     }
   });

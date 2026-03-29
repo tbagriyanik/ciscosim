@@ -605,10 +605,10 @@ export default function Home() {
   const safePcHistories = pcHistories || new Map();
 
   // Legacy state for compatibility with other panels (uses active device's state)
-  const state = (() => {
+  const state = useMemo(() => {
     const activeDevice = (topologyDevices || []).find(d => d.id === activeDeviceId);
     return getOrCreateDeviceState(activeDeviceId, activeDeviceType, activeDevice?.name, activeDevice?.macAddress);
-  })();
+  }, [activeDeviceId, activeDeviceType, topologyDevices, deviceStates, getOrCreateDeviceState]);
   const output = activeTab === 'topology' ? [] : getOrCreateDeviceOutputs(activeDeviceId);
 
   // Redundant declaration of activeTab removed (moved higher)

@@ -3,6 +3,26 @@ import { SwitchState } from '../types';
 const TIMESTAMP = '2026-02-26 22:00:00';
 
 /**
+ * Cisco Type 7 password encryption (simple XOR-based)
+ * This is a simplified version for simulation purposes
+ */
+function simplePasswordEncrypt(password: string): string {
+    const key = [0x64, 0x73, 0x66, 0x64, 0x3b, 0x6b, 0x66, 0x6f, 0x41, 0x2c, 0x2e, 0x69, 0x79, 0x65, 0x77, 0x72, 0x6b, 0x6c, 0x64, 0x4a, 0x4b, 0x44, 0x48, 0x53, 0x55, 0x42];
+    let result = '';
+    let index = 0;
+
+    for (let i = 0; i < password.length; i++) {
+        const encrypted = password.charCodeAt(i) ^ key[index];
+        result += encrypted.toString(16).padStart(2, '0');
+        index = (index + 1) % key.length;
+    }
+
+    // Add random salt at the beginning (Cisco Type 7 format)
+    const salt = Math.floor(Math.random() * 15) + 1;
+    return salt.toString() + result;
+}
+
+/**
  * Pure function that generates the running config lines for a given SwitchState.
  * Returns one config line per array entry (no \n characters).
  * Mirrors the generateConfig() logic in ConfigPanel.tsx.
@@ -41,7 +61,13 @@ export function buildRunningConfig(state: SwitchState): string[] {
         }
     }
     if (state.security.enablePassword) {
-        lines.push(`enable password ${state.security.enablePassword}`);
+        // If service password-encryption is enabled, encrypt the password (type 7)
+        if (state.security.servicePasswordEncryption) {
+            const encrypted = simplePasswordEncrypt(state.security.enablePassword);
+            lines.push(`enable password 7 ${encrypted}`);
+        } else {
+            lines.push(`enable password ${state.security.enablePassword}`);
+        }
     }
     lines.push('!');
 
