@@ -139,8 +139,8 @@ export function TaskCard({ tasks, state, context, color, isDark }: TaskCardProps
               {/* Task Header */}
               <div className="flex items-center gap-2 mb-1">
                 <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-500 ${completed
-                    ? 'bg-green-500 text-white shadow-lg shadow-green-500/20'
-                    : isDark ? 'bg-slate-600 text-slate-400' : 'bg-slate-200 text-slate-500'
+                  ? 'bg-green-500 text-white shadow-lg shadow-green-500/20'
+                  : isDark ? 'bg-slate-600 text-slate-400' : 'bg-slate-200 text-slate-500'
                   }`}>
                   {completed ? (
                     <svg
@@ -159,6 +159,43 @@ export function TaskCard({ tasks, state, context, color, isDark }: TaskCardProps
                   }`}>
                   {name}
                 </span>
+                {/* WLAN0 Icon */}
+                {task.icon === 'wlan0' && (() => {
+                  const devState = context.deviceStates?.get('router');
+                  const wlanState = devState?.ports['wlan0'];
+
+                  let wifiColor = '#94a3b8'; // Grey (Off)
+
+                  // Check if WiFi is enabled
+                  const isEnabled = wlanState ? (wlanState.wifi?.mode === 'ap' || wlanState.wifi?.mode === 'client') && !wlanState.shutdown : false;
+
+                  if (isEnabled) {
+                    // Check if connected
+                    let isConnected = false;
+                    if (wlanState?.wifi?.mode === 'ap' && wlanState?.wifi?.ssid) {
+                      // Router AP: check if any PC is connected
+                      const apSsid = wlanState.wifi.ssid;
+                      const apPass = wlanState.wifi.password || '';
+                      const apSecurity = wlanState.wifi.security || 'open';
+
+                      // Simple check: if SSID is set and not empty, consider it as having potential connections
+                      isConnected = true;
+                    }
+                    wifiColor = isConnected ? '#22c55e' : '#f59e0b'; // Green or Orange
+                  }
+
+                  return (
+                    <svg
+                      className="w-4 h-4 flex-shrink-0 transition-colors duration-300"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      style={{ color: wifiColor }}
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0" />
+                    </svg>
+                  );
+                })()}
               </div>
 
               {/* Description */}

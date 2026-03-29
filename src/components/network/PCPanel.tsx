@@ -1977,7 +1977,7 @@ export function PCPanel({
                               <SelectValue placeholder={language === 'tr' ? 'Ağ Seçiniz...' : 'Select Network...'} />
                             </SelectTrigger>
                             <SelectContent>
-                              {availableSSIDs.length === 0 && <SelectItem value="no-networks" disabled>{language === 'tr' ? 'Etrafta Ağ Bulunamadı' : 'No Networks Found'}</SelectItem>}
+                              {availableSSIDs.length === 0 && <SelectItem value="no-networks" disabled>{language === 'tr' ? 'Çevrede Ağ Bulunamadı' : 'No Networks Found'}</SelectItem>}
                               {availableSSIDs.map((entry) => {
                                 const hasDupe = availableSSIDs.filter(e => e.ssid === entry.ssid).length > 1;
                                 const label = hasDupe ? `${entry.ssid} (${entry.deviceName})` : entry.ssid;

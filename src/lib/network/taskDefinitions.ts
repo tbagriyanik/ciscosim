@@ -9,6 +9,7 @@ export interface TaskDefinition {
   tip: { tr: string; en: string };
   weight: number;
   checkFn: (state: SwitchState, context: TaskContext) => boolean;
+  icon?: 'wlan0'; // Optional icon identifier
 }
 
 export interface TaskContext {
@@ -208,6 +209,7 @@ export const wirelessTasks: TaskDefinition[] = [
     description: { tr: 'Kablosuz arayüzü (wlan0) aktif edin', en: 'Activate wireless interface (wlan0)' },
     tip: { tr: 'interface wlan0 altında no shutdown kullanın', en: 'Use no shutdown under interface wlan0' },
     weight: 20,
+    icon: 'wlan0',
     checkFn: (state) => {
       const wlan = state.ports['wlan0'];
       return wlan && !wlan.shutdown;
@@ -219,6 +221,7 @@ export const wirelessTasks: TaskDefinition[] = [
     description: { tr: 'Kablosuz ağ adı (SSID) belirleyin', en: 'Set wireless network name (SSID)' },
     tip: { tr: 'ssid HomeWiFi komutunu kullanın', en: 'Use ssid HomeWiFi command' },
     weight: 20,
+    icon: 'wlan0',
     checkFn: (state) => {
       const wlan = state.ports['wlan0'];
       return !!wlan?.wifi?.ssid;
@@ -230,6 +233,7 @@ export const wirelessTasks: TaskDefinition[] = [
     description: { tr: 'Kablosuz ağa WPA2 şifreleme ekleyin', en: 'Add WPA2 encryption to wireless' },
     tip: { tr: 'encryption wpa2 ve wifi-password kullanın', en: 'Use encryption wpa2 and wifi-password' },
     weight: 30,
+    icon: 'wlan0',
     checkFn: (state) => {
       const wlan = state.ports['wlan0'];
       return !!(wlan?.wifi && wlan.wifi.mode !== 'disabled' && wlan.wifi.security === 'wpa2' && wlan.wifi.password);
@@ -241,6 +245,7 @@ export const wirelessTasks: TaskDefinition[] = [
     description: { tr: 'Sağlıklı kablosuz bağlantı kurun', en: 'Establish healthy wireless connection' },
     tip: { tr: 'SSID ve şifrenin PC ile eşleştiğinden emin olun', en: 'Ensure SSID and password match the PC' },
     weight: 30,
+    icon: 'wlan0',
     checkFn: (state) => {
       const wlan = state.ports['wlan0'];
       return !!(wlan && !wlan.shutdown && wlan.wifi?.mode === 'ap' && wlan.wifi.ssid);

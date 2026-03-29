@@ -625,6 +625,41 @@ export default function Home() {
     topologyConnections,
   };
 
+  // Track task completion changes globally
+  const prevTaskStatusRef = useRef<Map<string, boolean>>(new Map());
+  const shownToastsRef = useRef<Set<string>>(new Set());
+  const [lastTaskEvent, setLastTaskEvent] = useState<{ type: 'completed' | 'failed'; taskName: string; timestamp: number } | null>(null);
+
+  useEffect(() => {
+    const allTasks = [...topologyTasks, ...portTasks, ...vlanTasks, ...securityTasks, ...wirelessTasks];
+
+    allTasks.forEach(task => {
+      const currentStatus = getTaskStatus(task, state, taskContext);
+      const previousStatus = prevTaskStatusRef.current.get(task.id) ?? false;
+      const toastKey = `${task.id}-${currentStatus}`;
+
+      // Task completed - show in footer only once
+      if (currentStatus && !previousStatus && !shownToastsRef.current.has(toastKey)) {
+        const taskName = task.name[language];
+        setLastTaskEvent({ type: 'completed', taskName, timestamp: Date.now() });
+        shownToastsRef.current.add(toastKey);
+        // Remove the failed toast key if it exists
+        shownToastsRef.current.delete(`${task.id}-false`);
+      }
+      // Task failed (was completed but now it's not) - show in footer only once
+      else if (!currentStatus && previousStatus && !shownToastsRef.current.has(toastKey)) {
+        const taskName = task.name[language];
+        setLastTaskEvent({ type: 'failed', taskName, timestamp: Date.now() });
+        shownToastsRef.current.add(toastKey);
+        // Remove the completed toast key if it exists
+        shownToastsRef.current.delete(`${task.id}-true`);
+      }
+
+      // Update previous status
+      prevTaskStatusRef.current.set(task.id, currentStatus);
+    });
+  }, [state, taskContext, language]);
+
   // Calculate total score
   const totalScore = calculateTaskScore([...topologyTasks, ...portTasks, ...vlanTasks, ...securityTasks, ...wirelessTasks], state, taskContext);
 
@@ -2904,6 +2939,30 @@ export default function Home() {
                       )}
                     </span>
                   </div>
+
+                  {/* Task Event Notification */}
+                  {lastTaskEvent && Date.now() - lastTaskEvent.timestamp < 5000 && (
+                    <div className={`hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg border ${lastTaskEvent.type === 'completed'
+                        ? isDark ? 'bg-green-500/10 border-green-500/30' : 'bg-green-50 border-green-200'
+                        : isDark ? 'bg-orange-500/10 border-orange-500/30' : 'bg-orange-50 border-orange-200'
+                      }`}>
+                      <span className={`text-xs font-semibold flex items-center gap-1.5 ${lastTaskEvent.type === 'completed'
+                          ? 'text-green-500'
+                          : 'text-orange-500'
+                        }`}>
+                        <span className={`w-2 h-2 rounded-full ${lastTaskEvent.type === 'completed'
+                            ? 'bg-green-500'
+                            : 'bg-orange-500'
+                          }`} />
+                        {lastTaskEvent.type === 'completed'
+                          ? (language === 'tr' ? '✓ Görev Tamamlandı' : '✓ Task Completed')
+                          : (language === 'tr' ? '⚠ Görev Başarısız' : '⚠ Task Failed')}
+                      </span>
+                      <span className={`text-[11px] ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+                        {lastTaskEvent.taskName}
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Lab Progress */}
