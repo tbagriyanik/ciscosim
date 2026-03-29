@@ -1,6 +1,11 @@
 import type { CommandHandler } from './commandTypes';
 import { normalizePortId } from '../initialState';
 
+// Helper function to check if in interface mode (single or range)
+function isInInterfaceMode(state: any): boolean {
+  return state.currentMode === 'interface' || state.currentMode === 'interface-range';
+}
+
 // Interface-level komutlar (interface, shutdown, speed, duplex, switchport, ip address, vs.)
 
 export const interfaceHandlers: Record<string, CommandHandler> = {
@@ -55,7 +60,7 @@ function cmdInterface(state: any, input: string, ctx: any): any {
     return {
       success: true,
       newState: {
-        currentMode: 'interface',
+        currentMode: 'interface-range',
         currentInterface: selectedInterfaces[0],
         selectedInterfaces
       }
@@ -113,7 +118,7 @@ function cmdInterface(state: any, input: string, ctx: any): any {
  * Shutdown - Administratively disable interface
  */
 function cmdShutdown(state: any, input: string, ctx: any): any {
-  if (state.currentMode !== 'interface' || !state.currentInterface) {
+  if (!isInInterfaceMode(state) || !state.currentInterface) {
     return { success: false, error: '% Invalid command at this mode' };
   }
 
@@ -141,7 +146,7 @@ function cmdShutdown(state: any, input: string, ctx: any): any {
  * No Shutdown - Enable interface
  */
 function cmdNoShutdown(state: any, input: string, ctx: any): any {
-  if (state.currentMode !== 'interface' || !state.currentInterface) {
+  if (!isInInterfaceMode(state) || !state.currentInterface) {
     return { success: false, error: '% Invalid command at this mode' };
   }
 
@@ -169,7 +174,7 @@ function cmdNoShutdown(state: any, input: string, ctx: any): any {
  * Speed - Set interface speed
  */
 function cmdSpeed(state: any, input: string, ctx: any): any {
-  if (state.currentMode !== 'interface' || !state.currentInterface) {
+  if (!isInInterfaceMode(state) || !state.currentInterface) {
     return { success: false, error: '% Invalid command at this mode' };
   }
 
@@ -190,7 +195,7 @@ function cmdSpeed(state: any, input: string, ctx: any): any {
  * Duplex - Set duplex mode
  */
 function cmdDuplex(state: any, input: string, ctx: any): any {
-  if (state.currentMode !== 'interface' || !state.currentInterface) {
+  if (!isInInterfaceMode(state) || !state.currentInterface) {
     return { success: false, error: '% Invalid command at this mode' };
   }
 
@@ -211,7 +216,7 @@ function cmdDuplex(state: any, input: string, ctx: any): any {
  * Description - Set interface description
  */
 function cmdDescription(state: any, input: string, ctx: any): any {
-  if (state.currentMode !== 'interface' || !state.currentInterface) {
+  if (!isInInterfaceMode(state) || !state.currentInterface) {
     return { success: false, error: '% Invalid command at this mode' };
   }
 
@@ -232,7 +237,7 @@ function cmdDescription(state: any, input: string, ctx: any): any {
  * Switchport Mode Access
  */
 function cmdSwitchportModeAccess(state: any, input: string, ctx: any): any {
-  if (state.currentMode !== 'interface' || !state.currentInterface) {
+  if (!isInInterfaceMode(state) || !state.currentInterface) {
     return { success: false, error: '% Invalid command at this mode' };
   }
 
@@ -248,7 +253,7 @@ function cmdSwitchportModeAccess(state: any, input: string, ctx: any): any {
  * Switchport Mode Trunk
  */
 function cmdSwitchportModeTrunk(state: any, input: string, ctx: any): any {
-  if (state.currentMode !== 'interface' || !state.currentInterface) {
+  if (!isInInterfaceMode(state) || !state.currentInterface) {
     return { success: false, error: '% Invalid command at this mode' };
   }
 
@@ -264,7 +269,7 @@ function cmdSwitchportModeTrunk(state: any, input: string, ctx: any): any {
  * Switchport Access VLAN
  */
 function cmdSwitchportAccessVlan(state: any, input: string, ctx: any): any {
-  if (state.currentMode !== 'interface' || !state.currentInterface) {
+  if (!isInInterfaceMode(state) || !state.currentInterface) {
     return { success: false, error: '% Invalid command at this mode' };
   }
 
@@ -291,7 +296,7 @@ function cmdSwitchportAccessVlan(state: any, input: string, ctx: any): any {
  * Switchport Trunk Native VLAN
  */
 function cmdSwitchportTrunkNativeVlan(state: any, input: string, ctx: any): any {
-  if (state.currentMode !== 'interface' || !state.currentInterface) {
+  if (!isInInterfaceMode(state) || !state.currentInterface) {
     return { success: false, error: '% Invalid command at this mode' };
   }
 
@@ -312,7 +317,7 @@ function cmdSwitchportTrunkNativeVlan(state: any, input: string, ctx: any): any 
  * Switchport Trunk Allowed VLAN
  */
 function cmdSwitchportTrunkAllowedVlan(state: any, input: string, ctx: any): any {
-  if (state.currentMode !== 'interface' || !state.currentInterface) {
+  if (!isInInterfaceMode(state) || !state.currentInterface) {
     return { success: false, error: '% Invalid command at this mode' };
   }
 
@@ -333,7 +338,7 @@ function cmdSwitchportTrunkAllowedVlan(state: any, input: string, ctx: any): any
  * Switchport Port-Security
  */
 function cmdSwitchportPortSecurity(state: any, input: string, ctx: any): any {
-  if (state.currentMode !== 'interface' || !state.currentInterface) {
+  if (!isInInterfaceMode(state) || !state.currentInterface) {
     return { success: false, error: '% Invalid command at this mode' };
   }
 
@@ -353,7 +358,7 @@ function cmdSwitchportPortSecurity(state: any, input: string, ctx: any): any {
  * Switchport Port-Security Maximum
  */
 function cmdSwitchportPortSecurityMaximum(state: any, input: string, ctx: any): any {
-  if (state.currentMode !== 'interface' || !state.currentInterface) {
+  if (!isInInterfaceMode(state) || !state.currentInterface) {
     return { success: false, error: '% Invalid command at this mode' };
   }
 
@@ -378,7 +383,7 @@ function cmdSwitchportPortSecurityMaximum(state: any, input: string, ctx: any): 
  * Switchport Port-Security Violation
  */
 function cmdSwitchportPortSecurityViolation(state: any, input: string, ctx: any): any {
-  if (state.currentMode !== 'interface' || !state.currentInterface) {
+  if (!isInInterfaceMode(state) || !state.currentInterface) {
     return { success: false, error: '% Invalid command at this mode' };
   }
 
@@ -403,7 +408,7 @@ function cmdSwitchportPortSecurityViolation(state: any, input: string, ctx: any)
  * Switchport Port-Security MAC-Address Sticky
  */
 function cmdSwitchportPortSecuritySticky(state: any, input: string, ctx: any): any {
-  if (state.currentMode !== 'interface' || !state.currentInterface) {
+  if (!isInInterfaceMode(state) || !state.currentInterface) {
     return { success: false, error: '% Invalid command at this mode' };
   }
 
@@ -423,7 +428,7 @@ function cmdSwitchportPortSecuritySticky(state: any, input: string, ctx: any): a
  * Spanning-Tree Portfast
  */
 function cmdSpanningTreePortfast(state: any, input: string, ctx: any): any {
-  if (state.currentMode !== 'interface' || !state.currentInterface) {
+  if (!isInInterfaceMode(state) || !state.currentInterface) {
     return { success: false, error: '% Invalid command at this mode' };
   }
 
@@ -443,7 +448,7 @@ function cmdSpanningTreePortfast(state: any, input: string, ctx: any): any {
  * Spanning-Tree BPDU Guard
  */
 function cmdSpanningTreeBpduguard(state: any, input: string, ctx: any): any {
-  if (state.currentMode !== 'interface' || !state.currentInterface) {
+  if (!isInInterfaceMode(state) || !state.currentInterface) {
     return { success: false, error: '% Invalid command at this mode' };
   }
 
@@ -463,7 +468,7 @@ function cmdSpanningTreeBpduguard(state: any, input: string, ctx: any): any {
  * IP Address - Assign IP to routed port or VLAN interface
  */
 function cmdIpAddress(state: any, input: string, ctx: any): any {
-  if (state.currentMode !== 'interface' || !state.currentInterface) {
+  if (!isInInterfaceMode(state) || !state.currentInterface) {
     return { success: false, error: '% No interface selected' };
   }
 
@@ -511,7 +516,7 @@ function cmdIpAddress(state: any, input: string, ctx: any): any {
  * No IP Address - Remove IP from interface
  */
 function cmdNoIpAddress(state: any, input: string, ctx: any): any {
-  if (state.currentMode !== 'interface' || !state.currentInterface) {
+  if (!isInInterfaceMode(state) || !state.currentInterface) {
     return { success: false, error: '% No interface selected' };
   }
 
@@ -596,7 +601,7 @@ function applyToSelectedPorts(state: any, updater: (port: any) => any) {
  * SSID - Set Wireless SSID
  */
 function cmdSsid(state: any, input: string, ctx: any): any {
-  if (state.currentMode !== 'interface' || !state.currentInterface) {
+  if (!isInInterfaceMode(state) || !state.currentInterface) {
     return { success: false, error: '% No interface selected' };
   }
   if (!state.currentInterface.toLowerCase().startsWith('wlan')) {
@@ -619,7 +624,7 @@ function cmdSsid(state: any, input: string, ctx: any): any {
  * Encryption - Set Wireless Security
  */
 function cmdEncryption(state: any, input: string, ctx: any): any {
-  if (state.currentMode !== 'interface' || !state.currentInterface) {
+  if (!isInInterfaceMode(state) || !state.currentInterface) {
     return { success: false, error: '% No interface selected' };
   }
   if (!state.currentInterface.toLowerCase().startsWith('wlan')) {
@@ -642,7 +647,7 @@ function cmdEncryption(state: any, input: string, ctx: any): any {
  * Wifi-Password - Set Wireless Key
  */
 function cmdWifiPassword(state: any, input: string, ctx: any): any {
-  if (state.currentMode !== 'interface' || !state.currentInterface) {
+  if (!isInInterfaceMode(state) || !state.currentInterface) {
     return { success: false, error: '% No interface selected' };
   }
   if (!state.currentInterface.toLowerCase().startsWith('wlan')) {
@@ -665,7 +670,7 @@ function cmdWifiPassword(state: any, input: string, ctx: any): any {
  * Channel - Set Wireless Channel/Band
  */
 function cmdWifiChannel(state: any, input: string, ctx: any): any {
-  if (state.currentMode !== 'interface' || !state.currentInterface) {
+  if (!isInInterfaceMode(state) || !state.currentInterface) {
     return { success: false, error: '% No interface selected' };
   }
   if (!state.currentInterface.toLowerCase().startsWith('wlan')) {
@@ -688,7 +693,7 @@ function cmdWifiChannel(state: any, input: string, ctx: any): any {
  * Wifi-Mode - Set Wireless Mode
  */
 function cmdWifiMode(state: any, input: string, ctx: any): any {
-  if (state.currentMode !== 'interface' || !state.currentInterface) {
+  if (!isInInterfaceMode(state) || !state.currentInterface) {
     return { success: false, error: '% No interface selected' };
   }
   if (!state.currentInterface.toLowerCase().startsWith('wlan')) {

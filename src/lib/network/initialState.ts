@@ -4,7 +4,7 @@ import { SwitchState, Port, Vlan, SecurityConfig, CommandMode, StartupConfig } f
 // 24 FastEthernet + 2 GigabitEthernet portu oluştur
 function createInitialPorts(): Record<string, Port> {
   const ports: Record<string, Port> = {};
-  
+
   // FastEthernet 0/1 - 0/24 - HEPSİ AÇIK (no shutdown) BAŞLANGIÇTA
   for (let i = 1; i <= 24; i++) {
     const portId = `fa0/${i}`;
@@ -25,7 +25,7 @@ function createInitialPorts(): Record<string, Port> {
       channelProtocol: undefined
     };
   }
-  
+
   // GigabitEthernet 0/1 - 0/2 (Uplink) - BUNLAR DA AÇIK
   for (let i = 1; i <= 2; i++) {
     const portId = `gi0/${i}`;
@@ -59,7 +59,7 @@ function createInitialPorts(): Record<string, Port> {
     shutdown: false, // BAŞLANGIÇTA AÇIK
     type: 'fastethernet'
   };
-  
+
   // WLAN interface
   ports['wlan0'] = {
     id: 'wlan0',
@@ -79,7 +79,7 @@ function createInitialPorts(): Record<string, Port> {
       mode: 'disabled'
     }
   };
-  
+
   return ports;
 }
 
@@ -142,7 +142,7 @@ export function createInitialState(mac?: string): SwitchState {
   const ports = createInitialPorts();
   const vlans = createInitialVlans();
   const macAddress = mac || '0011.2233.4401';
-  
+
   // VLAN'lara portları ata
   Object.values(ports).forEach(port => {
     const vlanId = Number((port as any).accessVlan || port.vlan || 1);
@@ -150,7 +150,7 @@ export function createInitialState(mac?: string): SwitchState {
       vlans[vlanId].ports.push(port.id.toUpperCase());
     }
   });
-  
+
   return {
     hostname: 'Switch',
     macAddress,
@@ -196,7 +196,7 @@ export function createInitialState(mac?: string): SwitchState {
 // Router için başlangıç portları oluştur
 function createInitialRouterPorts(): Record<string, Port> {
   const ports: Record<string, Port> = {};
-  
+
   // GigabitEthernet 0/0 - 0/3 (Router portları)
   for (let i = 0; i <= 3; i++) {
     const portId = `gi0/${i}`;
@@ -217,7 +217,7 @@ function createInitialRouterPorts(): Record<string, Port> {
       channelProtocol: undefined
     };
   }
-  
+
   // WLAN interface
   ports['wlan0'] = {
     id: 'wlan0',
@@ -237,7 +237,7 @@ function createInitialRouterPorts(): Record<string, Port> {
       mode: 'disabled'
     }
   };
-  
+
   return ports;
 }
 
@@ -246,7 +246,7 @@ export function createInitialRouterState(mac?: string): SwitchState {
   const ports = createInitialRouterPorts();
   const vlans = createInitialVlans();
   const macAddress = mac || '00D0.D3A2.810B';
-  
+
   return {
     hostname: 'Router',
     macAddress,
@@ -373,6 +373,8 @@ export function getModePrompt(mode: CommandMode, hostname: string, context?: str
       return `${hostname}(config)#`;
     case 'interface':
       return `${hostname}(config-if)#`;
+    case 'interface-range':
+      return `${hostname}(config-if-range)#`;
     case 'line':
       return `${hostname}(config-line)#`;
     case 'vlan':
@@ -392,24 +394,24 @@ export function normalizePortId(input: string): string | null {
     const prefix = lower.startsWith('fa') || lower.startsWith('fast') ? 'fa' : 'gi';
     return `${prefix}${subMatch[1]}/${subMatch[2]}.${subMatch[3]}`;
   }
-  
+
   // Fa0/1, fa0/1, FastEthernet0/1, fastethernet0/1, fast 0/1 formatlarını kabul et
   const faMatch = lower.match(/^(?:fa|fastethernet|fast)(\d+)\/(\d+)$/);
   if (faMatch) {
     return `fa${faMatch[1]}/${faMatch[2]}`;
   }
-  
+
   // Gi0/1, gi0/1, GigabitEthernet0/1, gigabitethernet0/1, gig 0/1 formatlarını kabul et
   const giMatch = lower.match(/^(?:gi|gig|gigabit|gigabitethernet)(\d+)\/(\d+)$/);
   if (giMatch) {
     return `gi${giMatch[1]}/${giMatch[2]}`;
   }
-  
+
   // Wlan0 formatını kabul et
   if (lower === 'wlan0') {
     return 'wlan0';
   }
-  
+
   return null;
 }
 
@@ -421,7 +423,7 @@ export const commandAliases: Record<string, string> = {
   'enab': 'enable',
   'dis': 'disable',
   'disa': 'disable',
-  
+
   // Configure
   'conf': 'configure',
   'conf t': 'configure terminal',
@@ -448,7 +450,7 @@ export const commandAliases: Record<string, string> = {
   'c': 'configure',
   'c t': 'configure terminal',
   'ct': 'configure terminal',
-  
+
   // Show commands
   'sh': 'show',
   'sho': 'show',
@@ -465,7 +467,7 @@ export const commandAliases: Record<string, string> = {
   'sh running-conf': 'show running-config',
   'sh runn-c': 'show running-config',
   'sh runn-co': 'show running-config',
-  
+
   'sh i': 'show interfaces',
   'sh in': 'show interfaces',
   'sh int': 'show interfaces',
@@ -476,7 +478,7 @@ export const commandAliases: Record<string, string> = {
   'sh interfac': 'show interfaces',
   'sh interface': 'show interfaces',
   'sh interfaces': 'show interfaces',
-  
+
   'sh vl': 'show vlan',
   'sh vla': 'show vlan',
   'sh vlan': 'show vlan brief',
@@ -487,14 +489,14 @@ export const commandAliases: Record<string, string> = {
   'sh vl b': 'show vlan brief',
   'sh vl br': 'show vlan brief',
   'sh vl bre': 'show vlan brief',
-  
+
   'sh v': 'show version',
   'sh ve': 'show version',
   'sh ver': 'show version',
   'sh vers': 'show version',
   'sh versi': 'show version',
   'sh versio': 'show version',
-  
+
   'sh m': 'show mac address-table',
   'sh ma': 'show mac address-table',
   'sh mac': 'show mac address-table',
@@ -506,7 +508,7 @@ export const commandAliases: Record<string, string> = {
   'sh mac-addres': 'show mac address-table',
   'sh mac address': 'show mac address-table',
   'sh mac addres': 'show mac address-table',
-  
+
   'sh cdp': 'show cdp neighbors',
   'sh cdp n': 'show cdp neighbors',
   'sh cdp ne': 'show cdp neighbors',
@@ -516,26 +518,26 @@ export const commandAliases: Record<string, string> = {
   'sh cdp neighb': 'show cdp neighbors',
   'sh cdp neighbo': 'show cdp neighbors',
   'sh cdp neighbor': 'show cdp neighbors',
-  
+
   'sh cdp ne de': 'show cdp neighbors detail',
   'sh cdp nei d': 'show cdp neighbors detail',
   'sh cdp det': 'show cdp neighbors detail',
   'sh cdp deta': 'show cdp neighbors detail',
-  
+
   'sh ip int br': 'show ip interface brief',
   'sh ip int brie': 'show ip interface brief',
   'sh ip int brief': 'show ip interface brief',
   'sh ip interface br': 'show ip interface brief',
   'sh ip interface brief': 'show ip interface brief',
   'sh ip int': 'show ip interface brief',
-  
+
   'sh int sta': 'show interfaces status',
   'sh int stat': 'show interfaces status',
   'sh int statu': 'show interfaces status',
   'sh inte sta': 'show interfaces status',
   'sh inter sta': 'show interfaces status',
   'sh interf sta': 'show interfaces status',
-  
+
   'sh spanning-tree': 'show spanning-tree',
   'sh span': 'show spanning-tree',
   'sh spann': 'show spanning-tree',
@@ -546,7 +548,7 @@ export const commandAliases: Record<string, string> = {
   'sh spanning-tr': 'show spanning-tree',
   'sh spanning-tre': 'show spanning-tree',
   'sh sp': 'show spanning-tree',
-  
+
   'sh port-security': 'show port-security',
   'sh port': 'show port-security',
   'sh port-s': 'show port-security',
@@ -556,7 +558,7 @@ export const commandAliases: Record<string, string> = {
   'sh port-secur': 'show port-security',
   'sh port-securi': 'show port-security',
   'sh port-securit': 'show port-security',
-  
+
   'sh run | include': 'show running-config | include',
   'sh run | inc': 'show running-config | include',
   'sh run | i': 'show running-config | include',
@@ -564,7 +566,7 @@ export const commandAliases: Record<string, string> = {
   'sh run | sec': 'show running-config | section',
   'sh run | begin': 'show running-config | begin',
   'sh run | beg': 'show running-config | begin',
-  
+
   // Interface commands
   'int': 'interface',
   'inte': 'interface',
@@ -573,7 +575,7 @@ export const commandAliases: Record<string, string> = {
   'interfa': 'interface',
   'interfac': 'interface',
   'i': 'interface',
-  
+
   // Interface range
   'int r': 'interface range',
   'int ra': 'interface range',
@@ -593,7 +595,7 @@ export const commandAliases: Record<string, string> = {
   'interface ra': 'interface range',
   'interface ran': 'interface range',
   'interface rang': 'interface range',
-  
+
   // Shutdown commands
   'no sh': 'no shutdown',
   'no shu': 'no shutdown',
@@ -605,7 +607,7 @@ export const commandAliases: Record<string, string> = {
   'shutd': 'shutdown',
   'shutdo': 'shutdown',
   'shutdow': 'shutdown',
-  
+
   // Switchport commands
   'sw': 'switchport',
   'swi': 'switchport',
@@ -615,7 +617,7 @@ export const commandAliases: Record<string, string> = {
   'switchp': 'switchport',
   'switchpo': 'switchport',
   'switchpor': 'switchport',
-  
+
   'sw m': 'switchport mode',
   'sw mo': 'switchport mode',
   'sw mod': 'switchport mode',
@@ -639,7 +641,7 @@ export const commandAliases: Record<string, string> = {
   'switchpor mod': 'switchport mode',
   'switchport m': 'switchport mode',
   'switchport mo': 'switchport mode',
-  
+
   'sw m a': 'switchport mode access',
   'sw mo a': 'switchport mode access',
   'sw mod a': 'switchport mode access',
@@ -655,7 +657,7 @@ export const commandAliases: Record<string, string> = {
   'sw m acces': 'switchport mode access',
   'sw mo acces': 'switchport mode access',
   'sw mod acces': 'switchport mode access',
-  
+
   'sw m t': 'switchport mode trunk',
   'sw mo t': 'switchport mode trunk',
   'sw mod t': 'switchport mode trunk',
@@ -668,7 +670,7 @@ export const commandAliases: Record<string, string> = {
   'sw m trun': 'switchport mode trunk',
   'sw mo trun': 'switchport mode trunk',
   'sw mod trun': 'switchport mode trunk',
-  
+
   'sw a': 'switchport access',
   'sw ac': 'switchport access',
   'sw acc': 'switchport access',
@@ -679,7 +681,7 @@ export const commandAliases: Record<string, string> = {
   'swi acc': 'switchport access',
   'swi acce': 'switchport access',
   'swi acces': 'switchport access',
-  
+
   'sw a v': 'switchport access vlan',
   'sw ac v': 'switchport access vlan',
   'sw acc v': 'switchport access vlan',
@@ -698,7 +700,7 @@ export const commandAliases: Record<string, string> = {
   'sw acc vlan': 'switchport access vlan',
   'sw acce vlan': 'switchport access vlan',
   'sw acces vlan': 'switchport access vlan',
-  
+
   'sw t': 'switchport trunk',
   'sw tr': 'switchport trunk',
   'sw tru': 'switchport trunk',
@@ -740,14 +742,14 @@ export const commandAliases: Record<string, string> = {
   'sw tru al v': 'switchport trunk allowed vlan',
   'sw trun al v': 'switchport trunk allowed vlan',
   'sw trunk all vlan': 'switchport trunk allowed vlan',
-  
+
   // Speed and Duplex
   'spe': 'speed',
   'spee': 'speed',
   'dup': 'duplex',
   'dupl': 'duplex',
   'duple': 'duplex',
-  
+
   // Description
   'desc': 'description',
   'descr': 'description',
@@ -756,14 +758,14 @@ export const commandAliases: Record<string, string> = {
   'descript': 'description',
   'descripti': 'description',
   'descriptio': 'description',
-  
+
   // VLAN commands
   'vl': 'vlan',
   'vla': 'vlan',
   'vl n': 'vlan name',
   'vla n': 'vlan name',
   'vlan n': 'vlan name',
-  
+
   // Write/Copy commands (Patterns now handle these natively)
   'cop': 'copy',
   'copy': 'copy',
@@ -784,7 +786,7 @@ export const commandAliases: Record<string, string> = {
   'erase startup-con': 'erase startup-config',
   'erase startup-conf': 'erase startup-config',
   'erase startup-confi': 'erase startup-config',
-  
+
   // Enable secret/password
   'en s': 'enable secret',
   'en se': 'enable secret',
@@ -804,7 +806,7 @@ export const commandAliases: Record<string, string> = {
   'enab secr': 'enable secret',
   'enab secre': 'enable secret',
   'enab secret': 'enable secret',
-  
+
   'en p': 'enable password',
   'en pa': 'enable password',
   'en pas': 'enable password',
@@ -819,7 +821,7 @@ export const commandAliases: Record<string, string> = {
   'ena passw': 'enable password',
   'ena passwo': 'enable password',
   'ena passwor': 'enable password',
-  
+
   // Service password-encryption
   'ser': 'service',
   'serv': 'service',
@@ -876,7 +878,7 @@ export const commandAliases: Record<string, string> = {
   'service password-encrypt': 'service password-encryption',
   'service password-encrypti': 'service password-encryption',
   'service password-encryptio': 'service password-encryption',
-  
+
   // Username
   'use': 'username',
   'user': 'username',
@@ -904,7 +906,7 @@ export const commandAliases: Record<string, string> = {
   'username passw': 'username password',
   'username passwo': 'username password',
   'username passwor': 'username password',
-  
+
   // Banner
   'ban': 'banner',
   'bann': 'banner',
@@ -921,7 +923,7 @@ export const commandAliases: Record<string, string> = {
   'bann mot': 'banner motd',
   'banne mot': 'banner motd',
   'banner mot': 'banner motd',
-  
+
   // Line commands
   'lin': 'line',
   'line': 'line',
@@ -940,24 +942,24 @@ export const commandAliases: Record<string, string> = {
   'line console 0': 'line console 0',
   'lin con 0': 'line console 0',
   'line con 0': 'line console 0',
-  
+
   'lin v': 'line vty',
   'line v': 'line vty',
   'lin vt': 'line vty',
   'line vt': 'line vty',
   'lin vty': 'line vty',
   'line vty': 'line vty',
-  
+
   // Password on line
   'pass': 'password',
   'passw': 'password',
   'passwo': 'password',
   'passwor': 'password',
-  
+
   // Login
   'log': 'login',
   'logi': 'login',
-  
+
   // Transport
   'tra': 'transport',
   'tran': 'transport',
@@ -993,19 +995,19 @@ export const commandAliases: Record<string, string> = {
   'transpo inpu': 'transport input',
   'transpor inpu': 'transport input',
   'transport inpu': 'transport input',
-  
+
   // Hostname
   'host': 'hostname',
   'hostn': 'hostname',
   'hostna': 'hostname',
   'hostnam': 'hostname',
-  
+
   // Exit/End
   'ex': 'exit',
   'exi': 'exit',
   // Note: 'en' already maps to 'enable', use 'end' or 'e' to exit config mode
   'e': 'end',   // In config mode
-  
+
   // Do command (execute privileged commands from config mode)
   'do': 'do',
   'do sh': 'do show',
@@ -1017,7 +1019,7 @@ export const commandAliases: Record<string, string> = {
   'do sh vl': 'do show vlan',
   'do sh vlan': 'do show vlan brief',
   'do sh ver': 'do show version',
-  
+
   // CDP commands
   'cdp r': 'cdp run',
   'cdp ru': 'cdp run',
@@ -1037,7 +1039,7 @@ export const commandAliases: Record<string, string> = {
   'no cdp enab': 'no cdp enable',
   'no cdp enabl': 'no cdp enable',
   'no cdp enable': 'no cdp enable',
-  
+
   // Port-security commands
   'sw p': 'switchport port-security',
   'sw po': 'switchport port-security',
@@ -1063,7 +1065,7 @@ export const commandAliases: Record<string, string> = {
   'switchport port-secur': 'switchport port-security',
   'switchport port-securi': 'switchport port-security',
   'switchport port-securit': 'switchport port-security',
-  
+
   'sw p m': 'switchport port-security maximum',
   'sw po m': 'switchport port-security maximum',
   'sw por m': 'switchport port-security maximum',
@@ -1076,7 +1078,7 @@ export const commandAliases: Record<string, string> = {
   'switchport port-security maxi': 'switchport port-security maximum',
   'switchport port-security maxim': 'switchport port-security maximum',
   'switchport port-security maximu': 'switchport port-security maximum',
-  
+
   'sw p v': 'switchport port-security violation',
   'sw po v': 'switchport port-security violation',
   'sw por v': 'switchport port-security violation',
@@ -1091,7 +1093,7 @@ export const commandAliases: Record<string, string> = {
   'switchport port-security violat': 'switchport port-security violation',
   'switchport port-security violati': 'switchport port-security violation',
   'switchport port-security violatio': 'switchport port-security violation',
-  
+
   'sw p m-a': 'switchport port-security mac-address',
   'sw po m-a': 'switchport port-security mac-address',
   'sw por m-a': 'switchport port-security mac-address',
@@ -1105,7 +1107,7 @@ export const commandAliases: Record<string, string> = {
   'switchport port-security mac-addr': 'switchport port-security mac-address',
   'switchport port-security mac-addre': 'switchport port-security mac-address',
   'switchport port-security mac-addres': 'switchport port-security mac-address',
-  
+
   // Spanning-tree
   'span': 'spanning-tree',
   'spann': 'spanning-tree',
@@ -1116,7 +1118,7 @@ export const commandAliases: Record<string, string> = {
   'spanning-t': 'spanning-tree',
   'spanning-tr': 'spanning-tree',
   'spanning-tre': 'spanning-tree',
-  
+
   'span m': 'spanning-tree mode',
   'spann m': 'spanning-tree mode',
   'spanni m': 'spanning-tree mode',
@@ -1129,7 +1131,7 @@ export const commandAliases: Record<string, string> = {
   'spanning-tree m': 'spanning-tree mode',
   'spanning-tree mo': 'spanning-tree mode',
   'spanning-tree mod': 'spanning-tree mode',
-  
+
   'span m r': 'spanning-tree mode rapid-pvst',
   'spann m r': 'spanning-tree mode rapid-pvst',
   'span m ra': 'spanning-tree mode rapid-pvst',
@@ -1157,7 +1159,7 @@ export const commandAliases: Record<string, string> = {
   'spanning-tree mode rapid-p': 'spanning-tree mode rapid-pvst',
   'spanning-tree mode rapid-pv': 'spanning-tree mode rapid-pvst',
   'spanning-tree mode rapid-pvs': 'spanning-tree mode rapid-pvst',
-  
+
   'span m p': 'spanning-tree mode pvst',
   'spann m p': 'spanning-tree mode pvst',
   'span m pv': 'spanning-tree mode pvst',
@@ -1167,7 +1169,7 @@ export const commandAliases: Record<string, string> = {
   'spanning-tree mode p': 'spanning-tree mode pvst',
   'spanning-tree mode pv': 'spanning-tree mode pvst',
   'spanning-tree mode pvs': 'spanning-tree mode pvst',
-  
+
   // Channel-group (EtherChannel)
   'chan': 'channel-group',
   'chann': 'channel-group',
@@ -1184,7 +1186,7 @@ export const commandAliases: Record<string, string> = {
   'ch gro': 'channel-group',
   'ch grou': 'channel-group',
   'ch group': 'channel-group',
-  
+
   // IP commands
   'ip d': 'ip default-gateway',
   'ip de': 'ip default-gateway',
@@ -1200,7 +1202,7 @@ export const commandAliases: Record<string, string> = {
   'ip default-gate': 'ip default-gateway',
   'ip default-gatew': 'ip default-gateway',
   'ip default-gatewa': 'ip default-gateway',
-  
+
   // Management IP on VLAN interface
   'ip a': 'ip address',
   'ip ad': 'ip address',
@@ -1208,7 +1210,7 @@ export const commandAliases: Record<string, string> = {
   'ip addr': 'ip address',
   'ip addre': 'ip address',
   'ip addres': 'ip address',
-  
+
   // No commands
   'no int': 'no interface',
   'no vlan': 'no vlan',
@@ -1229,7 +1231,7 @@ export const commandAliases: Record<string, string> = {
   'no spanning-t': 'no spanning-tree',
   'no spanning-tr': 'no spanning-tree',
   'no spanning-tre': 'no spanning-tree',
-  
+
   // Errdisable recovery
   'err': 'errdisable',
   'errd': 'errdisable',
@@ -1254,7 +1256,7 @@ export const commandAliases: Record<string, string> = {
   'errdisable recove': 'errdisable recovery',
   'errdisable recover': 'errdisable recovery',
   'errdisable recovery': 'errdisable recovery',
-  
+
   // Logging
   'log s': 'logging synchronous',
   'log sy': 'logging synchronous',
@@ -1277,7 +1279,7 @@ export const commandAliases: Record<string, string> = {
   'logg synchrono': 'logging synchronous',
   'logg synchronou': 'logging synchronous',
   'logging synchronous': 'logging synchronous',
-  
+
   // Exec-timeout
   'exec': 'exec-timeout',
   'exec-': 'exec-timeout',
@@ -1287,7 +1289,7 @@ export const commandAliases: Record<string, string> = {
   'exec-time': 'exec-timeout',
   'exec-timeo': 'exec-timeout',
   'exec-timeou': 'exec-timeout',
-  
+
   // History
   'hist': 'history',
   'histo': 'history',
@@ -1299,7 +1301,7 @@ export const commandAliases: Record<string, string> = {
   'history s': 'history size',
   'history si': 'history size',
   'history siz': 'history size',
-  
+
   // Terminal
   'term': 'terminal',
   'termi': 'terminal',
@@ -1316,16 +1318,16 @@ export const commandAliases: Record<string, string> = {
   'term no mon': 'terminal no monitor',
   'terminal mon': 'terminal monitor',
   'term mon': 'terminal monitor',
-  
+
   // Reload
   'rel': 'reload',
   'relo': 'reload',
   'reloa': 'reload',
-  
+
   // Ping
   'pi': 'ping',
   'pin': 'ping',
-  
+
   // Traceroute
   'trac': 'traceroute',
   'trace': 'traceroute',
@@ -1333,16 +1335,16 @@ export const commandAliases: Record<string, string> = {
   'tracero': 'traceroute',
   'tracerou': 'traceroute',
   'tracerout': 'traceroute',
-  
+
   // Telnet
   'tel': 'telnet',
   'teln': 'telnet',
   'telne': 'telnet',
-  
+
   // SSH
   'ss': 'ssh',
   'ssh': 'ssh',
-  
+
   // Crypto key generate
   'cry': 'crypto',
   'cryp': 'crypto',
@@ -1368,7 +1370,7 @@ export const commandAliases: Record<string, string> = {
   'crypto key generate r': 'crypto key generate rsa',
   'crypto key generate rs': 'crypto key generate rsa',
   'crypto key generate rsa': 'crypto key generate rsa',
-  
+
   // Ip domain-name
   'ip dn': 'ip domain-name',
   'ip dom': 'ip domain-name',
@@ -1379,7 +1381,7 @@ export const commandAliases: Record<string, string> = {
   'ip domain-n': 'ip domain-name',
   'ip domain-na': 'ip domain-name',
   'ip domain-nam': 'ip domain-name',
-  
+
   // Ip ssh version
   'ip ssh': 'ip ssh',
   'ip ssh v': 'ip ssh version',
@@ -1388,7 +1390,7 @@ export const commandAliases: Record<string, string> = {
   'ip ssh vers': 'ip ssh version',
   'ip ssh versi': 'ip ssh version',
   'ip ssh versio': 'ip ssh version',
-  
+
   // Mac address-table static
   'mac a': 'mac address-table static',
   'mac ad': 'mac address-table static',
@@ -1408,12 +1410,12 @@ export const commandAliases: Record<string, string> = {
   'mac address-table sta': 'mac address-table static',
   'mac address-table stat': 'mac address-table static',
   'mac address-table stati': 'mac address-table static',
-  
+
   // Alias command
   'ali': 'alias',
   'alia': 'alias',
   'alias': 'alias',
-  
+
   // Default interface
   'def': 'default',
   'defa': 'default',
@@ -1427,11 +1429,11 @@ export const commandAliases: Record<string, string> = {
   'default interf': 'default interface',
   'default interfa': 'default interface',
   'default interfac': 'default interface',
-  
+
   // More commands
   'mo': 'more',
   'mor': 'more',
-  
+
   // Debug
   'deb': 'debug',
   'debu': 'debug',
@@ -1442,12 +1444,12 @@ export const commandAliases: Record<string, string> = {
   'undeb': 'undebug',
   'undebu': 'undebug',
   'undebug': 'undebug',
-  
+
   // Show debug
   'sh deb': 'show debug',
   'sh debu': 'show debug',
   'sh debug': 'show debug',
-  
+
   // Show processes
   'sh pro': 'show processes',
   'sh proc': 'show processes',
@@ -1455,26 +1457,26 @@ export const commandAliases: Record<string, string> = {
   'sh proces': 'show processes',
   'sh process': 'show processes',
   'sh processes': 'show processes',
-  
+
   // Show memory
   'sh mem': 'show memory',
   'sh memo': 'show memory',
   'sh memor': 'show memory',
-  
+
   // Show clock
   'sh cl': 'show clock',
   'sh clo': 'show clock',
   'sh cloc': 'show clock',
-  
+
   // Show flash
   'sh fl': 'show flash',
   'sh fla': 'show flash',
   'sh flas': 'show flash',
-  
+
   // Show boot
   'sh bo': 'show boot',
   'sh boo': 'show boot',
-  
+
   // Show environment
   'sh env': 'show environment',
   'sh envi': 'show environment',
@@ -1484,7 +1486,7 @@ export const commandAliases: Record<string, string> = {
   'sh environm': 'show environment',
   'sh environme': 'show environment',
   'sh environmen': 'show environment',
-  
+
   // Show inventory
   'sh inv': 'show inventory',
   'sh inve': 'show inventory',
@@ -1492,26 +1494,26 @@ export const commandAliases: Record<string, string> = {
   'sh invent': 'show inventory',
   'sh invento': 'show inventory',
   'sh inventor': 'show inventory',
-  
+
   // Show users
   'sh u': 'show users',
   'sh us': 'show users',
   'sh use': 'show users',
   'sh user': 'show users',
-  
+
   // Show sessions
   'sh ses': 'show sessions',
   'sh sess': 'show sessions',
   'sh sessi': 'show sessions',
   'sh sessio': 'show sessions',
   'sh session': 'show sessions',
-  
+
   // Disconnect
   'discon': 'disconnect',
   'disconn': 'disconnect',
   'discconne': 'disconnect',
   'disconnect': 'disconnect',
-  
+
   // Clear commands
   'cle': 'clear',
   'clea': 'clear',
@@ -1524,7 +1526,7 @@ export const commandAliases: Record<string, string> = {
   'clear arp-ca': 'clear arp-cache',
   'clear arp-cac': 'clear arp-cache',
   'clear arp-cache': 'clear arp-cache',
-  
+
   'cle cou': 'clear counters',
   'clea cou': 'clear counters',
   'clear cou': 'clear counters',
@@ -1532,7 +1534,7 @@ export const commandAliases: Record<string, string> = {
   'clear count': 'clear counters',
   'clear counte': 'clear counters',
   'clear counter': 'clear counters',
-  
+
   'cle mac': 'clear mac address-table',
   'clea mac': 'clear mac address-table',
   'clear mac': 'clear mac address-table',
@@ -1549,13 +1551,13 @@ export const commandAliases: Record<string, string> = {
   'clear mac-address-tab': 'clear mac address-table',
   'clear mac-address-tabl': 'clear mac address-table',
   'clear mac-address-table': 'clear mac address-table',
-  
+
   // Archive
   'arc': 'archive',
   'arch': 'archive',
   'archi': 'archive',
   'archiv': 'archive',
-  
+
   // Configure replace
   'conf r': 'configure replace',
   'conf re': 'configure replace',
@@ -1569,14 +1571,14 @@ export const commandAliases: Record<string, string> = {
   'configure repl': 'configure replace',
   'configure repla': 'configure replace',
   'configure replac': 'configure replace',
-  
+
   // Template
   'tem': 'template',
   'temp': 'template',
   'templ': 'template',
   'templa': 'template',
   'templat': 'template',
-  
+
   // Policy-map
   'pol': 'policy-map',
   'poli': 'policy-map',
@@ -1585,7 +1587,7 @@ export const commandAliases: Record<string, string> = {
   'policy-': 'policy-map',
   'policy-m': 'policy-map',
   'policy-ma': 'policy-map',
-  
+
   // Class-map
   'cla': 'class-map',
   'clas': 'class-map',
@@ -1593,7 +1595,7 @@ export const commandAliases: Record<string, string> = {
   'class-': 'class-map',
   'class-m': 'class-map',
   'class-ma': 'class-map',
-  
+
   // Access-list
   'ac': 'access-list',
   'acc': 'access-list',
@@ -1604,7 +1606,7 @@ export const commandAliases: Record<string, string> = {
   'access-l': 'access-list',
   'access-li': 'access-list',
   'access-lis': 'access-list',
-  
+
   // Mac access-list
   'mac acc': 'mac access-list',
   'mac acce': 'mac access-list',
@@ -1614,7 +1616,7 @@ export const commandAliases: Record<string, string> = {
   'mac access-l': 'mac access-list',
   'mac access-li': 'mac access-list',
   'mac access-lis': 'mac access-list',
-  
+
   // Arp inspection
   'ip arp i': 'ip arp inspection',
   'ip arp in': 'ip arp inspection',
@@ -1625,7 +1627,7 @@ export const commandAliases: Record<string, string> = {
   'ip arp inspect': 'ip arp inspection',
   'ip arp inspecti': 'ip arp inspection',
   'ip arp inspectio': 'ip arp inspection',
-  
+
   // DHCP snooping
   'ip dhcp s': 'ip dhcp snooping',
   'ip dhcp sn': 'ip dhcp snooping',
@@ -1634,7 +1636,7 @@ export const commandAliases: Record<string, string> = {
   'ip dhcp snoop': 'ip dhcp snooping',
   'ip dhcp snoopi': 'ip dhcp snooping',
   'ip dhcp snoopin': 'ip dhcp snooping',
-  
+
   // Storm control
   'sto': 'storm-control',
   'stor': 'storm-control',
@@ -1646,7 +1648,7 @@ export const commandAliases: Record<string, string> = {
   'storm-cont': 'storm-control',
   'storm-contr': 'storm-control',
   'storm-contro': 'storm-control',
-  
+
   // UDLD
   'ud': 'udld',
   'udl': 'udld',
@@ -1657,7 +1659,7 @@ export const commandAliases: Record<string, string> = {
   'udld enab': 'udld enable',
   'udld enabl': 'udld enable',
   'udld enable': 'udld enable',
-  
+
   // LACP
   'lacp': 'lacp',
   'lacp p': 'lacp port-priority',
@@ -1672,10 +1674,10 @@ export const commandAliases: Record<string, string> = {
   'lacp port-prior': 'lacp port-priority',
   'lacp port-priori': 'lacp port-priority',
   'lacp port-priorit': 'lacp port-priority',
-  
+
   // PAgP
   'pagp': 'pagp',
-  
+
   // Monitor (SPAN)
   'mon': 'monitor',
   'moni': 'monitor',
@@ -1687,7 +1689,7 @@ export const commandAliases: Record<string, string> = {
   'monitor sess': 'monitor session',
   'monitor sessi': 'monitor session',
   'monitor sessio': 'monitor session',
-  
+
   // VTP
   'vtp': 'vtp',
   'vtp m': 'vtp mode',
@@ -1718,7 +1720,7 @@ export const commandAliases: Record<string, string> = {
   'vtp dom': 'vtp domain',
   'vtp doma': 'vtp domain',
   'vtp domai': 'vtp domain',
-  
+
   // Snmp
   'snmp': 'snmp-server',
   'snmp-': 'snmp-server',
@@ -1727,7 +1729,7 @@ export const commandAliases: Record<string, string> = {
   'snmp-ser': 'snmp-server',
   'snmp-serv': 'snmp-server',
   'snmp-serve': 'snmp-server',
-  
+
   // Ntp
   'ntp': 'ntp',
   'ntp s': 'ntp server',
@@ -1735,7 +1737,7 @@ export const commandAliases: Record<string, string> = {
   'ntp ser': 'ntp server',
   'ntp serv': 'ntp server',
   'ntp serve': 'ntp server',
-  
+
   // Clock
   'clo': 'clock',
   'cloc': 'clock',
@@ -1746,7 +1748,7 @@ export const commandAliases: Record<string, string> = {
   'clock timez': 'clock timezone',
   'clock timezo': 'clock timezone',
   'clock timezon': 'clock timezone',
-  
+
   // System MTU
   'sys': 'system',
   'syst': 'system',
@@ -1754,7 +1756,7 @@ export const commandAliases: Record<string, string> = {
   'system m': 'system mtu',
   'system mt': 'system mtu',
   'system mtu': 'system mtu',
-  
+
   // SDM prefer
   'sdm': 'sdm',
   'sdm p': 'sdm prefer',
@@ -1762,7 +1764,7 @@ export const commandAliases: Record<string, string> = {
   'sdm pre': 'sdm prefer',
   'sdm pref': 'sdm prefer',
   'sdm prefe': 'sdm prefer',
-  
+
   // Power inline (PoE)
   'pow': 'power',
   'powe': 'power',
@@ -1780,7 +1782,7 @@ export const commandAliases: Record<string, string> = {
   'power inline st': 'power inline static',
   'power inline sta': 'power inline static',
   'power inline stat': 'power inline static',
-  
+
   // Voice VLAN
   'sw v': 'switchport voice',
   'sw vo': 'switchport voice',
@@ -1794,7 +1796,7 @@ export const commandAliases: Record<string, string> = {
   'switchport voice v': 'switchport voice vlan',
   'switchport voice vl': 'switchport voice vlan',
   'switchport voice vla': 'switchport voice vlan',
-  
+
   // MLs QoS
   'mls': 'mls',
   'mls q': 'mls qos',
@@ -1809,7 +1811,7 @@ export const commandAliases: Record<string, string> = {
   'mls qos trust d': 'mls qos trust dscp',
   'mls qos trust ds': 'mls qos trust dscp',
   'mls qos trust dsc': 'mls qos trust dscp',
-  
+
   // Priority-queue
   'pri': 'priority-queue',
   'prio': 'priority-queue',
@@ -1826,7 +1828,7 @@ export const commandAliases: Record<string, string> = {
   'priority-queue o': 'priority-queue out',
   'priority-queue ou': 'priority-queue out',
   'priority-queue out': 'priority-queue out',
-  
+
   // Queue-set
   'que': 'queue-set',
   'queu': 'queue-set',
@@ -1835,11 +1837,11 @@ export const commandAliases: Record<string, string> = {
   'queue-s': 'queue-set',
   'queue-se': 'queue-set',
   'queue-set': 'queue-set',
-  
+
   // Test
   'tes': 'test',
   'test': 'test',
-  
+
   // Setup
   'set': 'setup',
   'setu': 'setup',
