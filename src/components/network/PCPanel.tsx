@@ -284,6 +284,15 @@ export function PCPanel({
     setWifiChannel(deviceFromTopology?.wifi?.channel ?? '2.4GHz');
   }, [deviceId, deviceFromTopology?.services, deviceFromTopology?.wifi]);
 
+  // When tablet powers on, navigate to home screen
+  useEffect(() => {
+    if (!isPcPoweredOff && isTablet) {
+      setActiveTab('home');
+      tabletHistoryRef.current = ['home'];
+      tabletHistoryIndexRef.current = 0;
+    }
+  }, [isPcPoweredOff, isTablet]);
+
   const validateIP = (ip: string) => /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/.test(ip);
 
   // Validate and sync global state
@@ -2356,7 +2365,7 @@ export function PCPanel({
                                   variant="outline"
                                   onClick={() => {
                                     setInput('ping 8.8.8.8');
-                                    executeCommand('ping 8.8.8.8');
+                                    //executeCommand('ping 8.8.8.8');
                                   }}
                                   className="text-[10px] sm:text-xs font-mono h-6 sm:h-8"
                                 >
@@ -2367,7 +2376,7 @@ export function PCPanel({
                                   variant="outline"
                                   onClick={() => {
                                     setInput('tracert 8.8.8.8');
-                                    executeCommand('tracert 8.8.8.8');
+                                    //executeCommand('tracert 8.8.8.8');
                                   }}
                                   className="text-[10px] sm:text-xs font-mono h-6 sm:h-8"
                                 >
@@ -2377,8 +2386,8 @@ export function PCPanel({
                                   size="sm"
                                   variant="outline"
                                   onClick={() => {
-                                    setInput('nslookup google.com');
-                                    executeCommand('nslookup google.com');
+                                    setInput('nslookup test.com');
+                                    //executeCommand('nslookup test.com');
                                   }}
                                   className="text-[10px] sm:text-xs font-mono h-6 sm:h-8"
                                 >
@@ -2451,7 +2460,7 @@ export function PCPanel({
                               variant="outline"
                               onClick={() => {
                                 setInput('ping 8.8.8.8');
-                                executeCommand('ping 8.8.8.8');
+                                //executeCommand('ping 8.8.8.8');
                               }}
                               className="text-[10px] sm:text-xs font-mono h-6 sm:h-8"
                             >
@@ -2462,7 +2471,7 @@ export function PCPanel({
                               variant="outline"
                               onClick={() => {
                                 setInput('tracert 8.8.8.8');
-                                executeCommand('tracert 8.8.8.8');
+                                //executeCommand('tracert 8.8.8.8');
                               }}
                               className="text-[10px] sm:text-xs font-mono h-6 sm:h-8"
                             >
@@ -2472,8 +2481,8 @@ export function PCPanel({
                               size="sm"
                               variant="outline"
                               onClick={() => {
-                                setInput('nslookup google.com');
-                                executeCommand('nslookup google.com');
+                                setInput('nslookup test.com');
+                                //executeCommand('nslookup test.com');
                               }}
                               className="text-[10px] sm:text-xs font-mono h-6 sm:h-8"
                             >

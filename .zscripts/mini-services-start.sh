@@ -1,56 +1,59 @@
 #!/bin/sh
 
-# 配置项
+# Configuration
 DIST_DIR="./mini-services-dist"
 
-# 存储所有子进程的 PID
+# Store all subprocess PIDs
 pids=""
 
-# 清理函数：优雅关闭所有服务
+# Cleanup function: gracefully shutdown all services
 cleanup() {
     echo ""
-    echo "🛑 正在关闭所有服务..."
+    echo "🛑 Shutting down all services..."
     
-    # 发送 SIGTERM 信号给所有子进程
+    # Send SIGTERM to all child processes
     for pid in $pids; do
         if kill -0 "$pid" 2>/dev/null; then
             service_name=$(ps -p "$pid" -o comm= 2>/dev/null || echo "unknown")
-            echo "   关闭进程 $pid ($service_name)..."
-            kill -TERM "$pid" 2>/dev/null
+            echo "   Stopping process $pid ($service_name)..."
+            kill -TERM "$pid" 2>/dev/null || true
         fi
     done
     
-    # 等待所有进程退出（最多等待 5 秒）
+    # Wait for all processes to exit (max 5 seconds)
     sleep 1
     for pid in $pids; do
         if kill -0 "$pid" 2>/dev/null; then
-            # 如果还在运行，等待最多 4 秒
+            # If still running, wait max 4 more seconds
             timeout=4
             while [ $timeout -gt 0 ] && kill -0 "$pid" 2>/dev/null; do
                 sleep 1
                 timeout=$((timeout - 1))
             done
-            # 如果仍然在运行，强制关闭
+            # If still running, force kill
             if kill -0 "$pid" 2>/dev/null; then
-                echo "   强制关闭进程 $pid..."
-                kill -KILL "$pid" 2>/dev/null
+                echo "   Force killing process $pid..."
+                kill -KILL "$pid" 2>/dev/null || true
             fi
         fi
     done
     
-    echo "✅ 所有服务已关闭"
+    echo "✅ All services shut down"
 }
 
+# Set trap for cleanup on exit
+trap cleanup EXIT INT TERM
+
 main() {
-    echo "🚀 开始启动所有 mini services..."
+    echo "🚀 Starting all mini services..."
     
-    # 检查 dist 目录是否存在
+    # Check if dist directory exists
     if [ ! -d "$DIST_DIR" ]; then
-        echo "ℹ️  目录 $DIST_DIR 不存在"
-        return
+        echo "ℹ️  Directory $DIST_DIR does not exist"
+        return 0
     fi
     
-    # 查找所有 mini-service-*.js 文件
+    # Find all mini-service-*.js files
     service_files=""
     for file in "$DIST_DIR"/mini-service-*.js; do
         if [ -f "$file" ]; then
@@ -62,46 +65,50 @@ main() {
         fi
     done
     
-    # 计算服务文件数量
+    # Count service files
     service_count=0
     for file in $service_files; do
         service_count=$((service_count + 1))
     done
     
     if [ $service_count -eq 0 ]; then
-        echo "ℹ️  未找到任何 mini service 文件"
-        return
+        echo "ℹ️  No mini service files found"
+        return 0
     fi
     
-    echo "📦 找到 $service_count 个服务，开始启动..."
+    echo "📦 Found $service_count service(s), starting..."
     echo ""
     
-    # 启动每个服务
+    # Start each service
     for file in $service_files; do
         service_name=$(basename "$file" .js | sed 's/mini-service-//')
-        echo "▶️  启动服务: $service_name..."
+        echo "▶️  Starting service: $service_name..."
         
-        # 使用 bun 运行服务（后台运行）
-        bun "$file" &
-        pid=$!
-        if [ -z "$pids" ]; then
-            pids="$pid"
+        # Run service with bun (background)
+        if bun "$file" &
+        then
+            pid=$!
+            if [ -z "$pids" ]; then
+                pids="$pid"
+            else
+                pids="$pids $pid"
+            fi
+            
+            # Wait a moment to check if process started successfully
+            sleep 0.5
+            if ! kill -0 "$pid" 2>/dev/null; then
+                echo "❌ $service_name failed to start"
+                # Remove failed PID from list
+                pids=$(echo "$pids" | sed "s/\b$pid\b//" | sed 's/  */ /g' | sed 's/^ *//' | sed 's/ *$//')
+            else
+                echo "✅ $service_name started (PID: $pid)"
+            fi
         else
-            pids="$pids $pid"
-        fi
-        
-        # 等待一小段时间检查进程是否成功启动
-        sleep 0.5
-        if ! kill -0 "$pid" 2>/dev/null; then
-            echo "❌ $service_name 启动失败"
-            # 从字符串中移除失败的 PID
-            pids=$(echo "$pids" | sed "s/\b$pid\b//" | sed 's/  */ /g' | sed 's/^ *//' | sed 's/ *$//')
-        else
-            echo "✅ $service_name 已启动 (PID: $pid)"
+            echo "❌ Failed to start $service_name"
         fi
     done
     
-    # 计算运行中的服务数量
+    # Count running services
     running_count=0
     for pid in $pids; do
         if kill -0 "$pid" 2>/dev/null; then
@@ -110,12 +117,12 @@ main() {
     done
     
     echo ""
-    echo "🎉 所有服务已启动！共 $running_count 个服务正在运行"
+    echo "🎉 All services started! $running_count service(s) running"
     echo ""
-    echo "💡 按 Ctrl+C 停止所有服务"
+    echo "💡 Press Ctrl+C to stop all services"
     echo ""
     
-    # 等待所有后台进程
+    # Wait for all background processes
     wait
 }
 

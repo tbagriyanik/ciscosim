@@ -1,32 +1,44 @@
 #!/bin/bash
 
-# 配置项
-ROOT_DIR="/home/z/my-project/mini-services"
-DIST_DIR="/tmp/build_fullstack_$BUILD_ID/mini-services-dist"
+# Configuration
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+ROOT_DIR="$PROJECT_ROOT/mini-services"
+DIST_DIR="/tmp/build_fullstack_${BUILD_ID:-$(date +%s)}/mini-services-dist"
+
+# Validate required tools
+check_required_tool() {
+    if ! command -v "$1" &> /dev/null; then
+        echo "❌ Error: Required tool '$1' is not installed or not in PATH"
+        exit 1
+    fi
+}
+
+check_required_tool "bun"
 
 main() {
-    echo "🚀 开始批量构建..."
+    echo "🚀 Starting batch build..."
     
-    # 检查 rootdir 是否存在
+    # Check if root directory exists
     if [ ! -d "$ROOT_DIR" ]; then
-        echo "ℹ️  目录 $ROOT_DIR 不存在，跳过构建"
-        return
+        echo "ℹ️  Directory $ROOT_DIR does not exist, skipping build"
+        return 0
     fi
     
-    # 创建输出目录（如果不存在）
+    # Create output directory
     mkdir -p "$DIST_DIR"
     
-    # 统计变量
+    # Statistics
     success_count=0
     fail_count=0
     
-    # 遍历 mini-services 目录下的所有文件夹
+    # Iterate through all folders in mini-services directory
     for dir in "$ROOT_DIR"/*; do
-        # 检查是否是目录且包含 package.json
+        # Check if it's a directory with package.json
         if [ -d "$dir" ] && [ -f "$dir/package.json" ]; then
             project_name=$(basename "$dir")
             
-            # 智能查找入口文件 (按优先级查找)
+            # Intelligently find entry file (by priority)
             entry_path=""
             for entry in "src/index.ts" "index.ts" "src/index.js" "index.js"; do
                 if [ -f "$dir/$entry" ]; then
@@ -36,41 +48,44 @@ main() {
             done
             
             if [ -z "$entry_path" ]; then
-                echo "⚠️  跳过 $project_name: 未找到入口文件 (index.ts/js)"
+                echo "⚠️  Skipping $project_name: No entry file found (index.ts/js)"
                 continue
             fi
             
             echo ""
-            echo "📦 正在构建: $project_name..."
+            echo "📦 Building: $project_name..."
             
-            # 使用 bun build CLI 构建
+            # Use bun build CLI
             output_file="$DIST_DIR/mini-service-$project_name.js"
             
             if bun build "$entry_path" \
                 --outfile "$output_file" \
                 --target bun \
-                --minify; then
-                echo "✅ $project_name 构建成功 -> $output_file"
+                --minify 2>/dev/null; then
+                echo "✅ $project_name built successfully -> $output_file"
                 success_count=$((success_count + 1))
             else
-                echo "❌ $project_name 构建失败"
+                echo "❌ $project_name build failed"
                 fail_count=$((fail_count + 1))
             fi
         fi
     done
     
-    if [ -f ./.zscripts/mini-services-start.sh ]; then
-        cp ./.zscripts/mini-services-start.sh "$DIST_DIR/mini-services-start.sh"
+    # Copy startup script if it exists
+    if [ -f "$SCRIPT_DIR/mini-services-start.sh" ]; then
+        cp "$SCRIPT_DIR/mini-services-start.sh" "$DIST_DIR/mini-services-start.sh"
         chmod +x "$DIST_DIR/mini-services-start.sh"
     fi
     
     echo ""
-    echo "🎉 所有任务完成！"
+    echo "🎉 Build completed!"
     if [ $success_count -gt 0 ] || [ $fail_count -gt 0 ]; then
-        echo "✅ 成功: $success_count 个"
+        echo "✅ Successful: $success_count"
         if [ $fail_count -gt 0 ]; then
-            echo "❌ 失败: $fail_count 个"
+            echo "❌ Failed: $fail_count"
         fi
+    else
+        echo "ℹ️  No services found to build"
     fi
 }
 
