@@ -1678,8 +1678,8 @@ export default function Home() {
     if (topologyDevices && topologyConnections && deviceStates) {
       const updatedDeviceStates = new Map(deviceStates);
 
-      // Check each connection's validity
-      topologyConnections.forEach(conn => {
+      // Check each connection's validity and create updated connections array
+      const updatedConnections = topologyConnections.map(conn => {
         const sourceDevice = topologyDevices.find(d => d.id === conn.sourceDeviceId);
         const targetDevice = topologyDevices.find(d => d.id === conn.targetDeviceId);
 
@@ -1695,9 +1695,10 @@ export default function Home() {
 
           // Update connection active state based on connectivity check
           if (result.success !== conn.active) {
-            conn.active = result.success;
+            return { ...conn, active: result.success };
           }
         }
+        return conn;
       });
 
       // Update WiFi status for all PCs
@@ -1705,37 +1706,17 @@ export default function Home() {
         if (device.type === 'pc' && device.wifi?.enabled) {
           const deviceState = updatedDeviceStates.get(device.id);
           if (deviceState) {
-            // Check if WiFi can connect to any AP
-            const apDevices = topologyDevices.filter(d => ['switch', 'router'].includes(d.type));
-            let wifiConnected = false;
-
-            for (const ap of apDevices) {
-              const apState = updatedDeviceStates.get(ap.id);
-              const wlan = apState?.ports['wlan0'];
-
-              if (wlan && !wlan.shutdown && wlan.wifi?.mode === 'ap' && wlan.wifi?.ssid === device.wifi.ssid) {
-                const apSecurity = wlan.wifi.security || 'open';
-                const pcSecurity = device.wifi.security || 'open';
-
-                if (apSecurity === pcSecurity) {
-                  if (apSecurity === 'open' || wlan.wifi.password === device.wifi.password) {
-                    wifiConnected = true;
-                    break;
-                  }
-                }
-              }
-            }
-
             // Update device state to trigger re-render
             updatedDeviceStates.set(device.id, { ...deviceState });
           }
         }
       });
 
-      // Update device states to trigger re-render
+      // Update both states to trigger re-render
       setDeviceStates(updatedDeviceStates);
+      setTopologyConnections(updatedConnections);
     }
-  }, [topologyDevices, topologyConnections, deviceStates, setDeviceStates]);
+  }, [topologyDevices, topologyConnections, deviceStates, setDeviceStates, setTopologyConnections]);
 
   // Handle key events: ESC to close, ENTER to confirm
   useEffect(() => {

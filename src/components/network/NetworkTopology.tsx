@@ -3543,8 +3543,32 @@ export function NetworkTopology({
           </g>
         </g>
 
-        {/* Status LED */}
-        <circle cx={deviceWidth - 10} cy={10} r={5} className={`${statusColor} transition-colors duration-300`} />
+        {/* Power Status Icon with Lightning - Clickable with Tooltip */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <g
+              className="cursor-pointer"
+              onClick={(e) => {
+                e.stopPropagation();
+                saveToHistory();
+                togglePowerDevices([device.id]);
+              }}
+            >
+              {/* Background circle - 2px margin from top-right */}
+              <circle cx={deviceWidth - 12} cy={10} r={8} className={isPoweredOff ? (isDark ? 'fill-slate-800' : 'fill-slate-200') : (isDark ? 'fill-slate-700' : 'fill-slate-100')} />
+              {/* Lightning bolt - centered in circle */}
+              <path
+                d="M0 -4l-4 5h3l-1 4 4-5h-3l1-4z"
+                transform={`translate(${deviceWidth - 11}, 10) scale(1)`}
+                className={`${statusColor} transition-colors duration-300`}
+                fill="currentColor"
+              />
+            </g>
+          </TooltipTrigger>
+          <TooltipContent>
+            {isPoweredOff ? (language === 'tr' ? 'Gücü Aç' : 'Power On') : (language === 'tr' ? 'Gücü Kapat' : 'Power Off')}
+          </TooltipContent>
+        </Tooltip>
 
         {/* Device name */}
         <text x={deviceWidth / 2} y={58} fill={isDark ? '#f1f5f9' : '#1e293b'} fontSize="10" textAnchor="middle" fontWeight="bold" className="select-none pointer-events-none">
