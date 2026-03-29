@@ -438,17 +438,18 @@ function cmdShowIpInterfaceBrief(
   input: string,
   ctx: any
 ): any {
-  let output = '\nInterface              IP-Address      OK? Method Status                Protocol\n';
-
+  let output = '\nInterface              IP-Address      OK? Method Status                Protocol                 Description\n';
+  
   Object.keys(state.ports || {}).forEach(portName => {
     const port = state.ports[portName];
     const status = port.shutdown ? 'administratively down' : 'up';
     const protocol = port.shutdown ? 'down' : 'up';
+    const description = port.description || '';
 
     if (port.ipAddress && port.subnetMask) {
-      output += `${portName.padEnd(22)} ${port.ipAddress.padEnd(15)} YES manual ${status.padEnd(23)} ${protocol}\n`;
+      output += `${portName.padEnd(22)} ${port.ipAddress.padEnd(15)} YES manual ${status.padEnd(23)} ${protocol.padEnd(23)} ${description.padEnd(25)}\n`;
     } else {
-      output += `${portName.padEnd(22)} unassigned      YES unset  ${status.padEnd(23)} ${protocol}\n`;
+      output += `${portName.padEnd(22)} unassigned      YES unset  ${status.padEnd(23)} ${protocol.padEnd(23)} ${description.padEnd(25)}\n`;
     }
   });
 

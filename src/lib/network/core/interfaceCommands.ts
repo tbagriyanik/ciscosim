@@ -591,22 +591,32 @@ function isValidIP(ip: string): boolean {
 
 function expandInterfaceRange(rangeSpec: string, state: any): string[] {
   const normalized = rangeSpec.replace(/\s+/g, '').toLowerCase();
-  const match = normalized.match(/^(fastethernet|gigabitethernet|gigabit|fastethernet|fa|gig|gi)(\d+)\/(\d+)(?:-(\d+))?$/);
-  if (!match) return [];
-
-  const prefix = match[1].startsWith('f') ? 'fa' : 'gi';
-  const moduleNum = match[2];
-  const startPort = parseInt(match[3], 10);
-  const endPort = match[4] ? parseInt(match[4], 10) : startPort;
-  if (Number.isNaN(startPort) || Number.isNaN(endPort) || endPort < startPort) return [];
-
-  const available = Object.keys(state.ports || {});
-  const ports: string[] = [];
-  for (let port = startPort; port <= endPort; port++) {
-    const normalizedId = `${prefix}${moduleNum}/${port}`;
-    if (available.includes(normalizedId)) ports.push(normalizedId);
+  
+  // Handle comma-separated ranges: fa0/1,3,6 or fa0/1-4,7-9
+  const parts = normalized.split(',');
+  const allPorts: string[] = [];
+  
+  for (const part of parts) {
+    const match = part.match(/^(fastethernet|gigabitethernet|gigabit|fastethernet|fa|gig|gi)(\d+)\/(\d+)(?:-(\d+))?$/);
+    if (!match) continue;
+    
+    const prefix = match[1].startsWith('f') ? 'fa' : 'gi';
+    const moduleNum = match[2];
+    const startPort = parseInt(match[3], 10);
+    const endPort = match[4] ? parseInt(match[4], 10) : startPort;
+    
+    if (Number.isNaN(startPort) || Number.isNaN(endPort) || endPort < startPort) continue;
+    
+    const available = Object.keys(state.ports || {});
+    for (let port = startPort; port <= endPort; port++) {
+      const normalizedId = `${prefix}${moduleNum}/${port}`;
+      if (available.includes(normalizedId) && !allPorts.includes(normalizedId)) {
+        allPorts.push(normalizedId);
+      }
+    }
   }
-  return ports;
+  
+  return allPorts;
 }
 
 function applyToSelectedPorts(state: any, updater: (port: any) => any) {
