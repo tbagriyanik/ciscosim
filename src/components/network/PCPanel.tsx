@@ -1559,7 +1559,10 @@ export function PCPanel({
         {/* Screen Bezel */}
         <div className={`
           h-[calc(100%-40px)] overflow-hidden relative
-          ${isDark ? 'bg-transparent' : 'bg-white/50'}
+          ${isDark 
+            ? 'bg-gradient-to-br from-slate-900/95 via-blue-900/20 to-purple-900/20 border border-slate-800/50' 
+            : 'bg-gradient-to-br from-white/70 via-blue-50/50 to-purple-50/50 border border-slate-200/50'
+          }
         `}>
           {/* Power Off Overlay */}
           {isPcPoweredOff && (
@@ -2245,7 +2248,7 @@ export function PCPanel({
                     )}
                     <div
                       ref={outputRef}
-                      className={`flex-1 overflow-y-auto scroll-smooth custom-scrollbar p-4 md:p-6 space-y-2 font-mono text-sm leading-relaxed flex flex-col ${isPcPoweredOff ? 'bg-black' : ''}`}
+                      className={`flex-1 overflow-y-auto scroll-smooth custom-scrollbar p-4 md:p-6 space-y-2 font-mono text-sm leading-relaxed flex flex-col ${isPcPoweredOff ? 'bg-red-500' : ''}`}
                     >
                       {isPcPoweredOff ? (
                         <div className="flex-1 flex items-center justify-center text-slate-700">OFFLINE</div>
