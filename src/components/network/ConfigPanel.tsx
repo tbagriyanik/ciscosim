@@ -20,12 +20,14 @@ interface ConfigPanelProps {
   title?: string;
 }
 
+export type { ConfigPanelProps };
+
 const TIMESTAMP = '2026-02-26 22:00:00';
 
 export function ConfigPanel({ state, onExecuteCommand, isDevicePoweredOff = false, t, theme, className, title }: ConfigPanelProps) {
   const [isSaving, setIsSaving] = useState(false);
   const isDark = theme === 'dark';
-  
+
   // Responsive hooks
   const isMobile = useIsMobile();
   const isTablet = useIsTablet();

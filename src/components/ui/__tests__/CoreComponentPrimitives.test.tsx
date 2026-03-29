@@ -283,7 +283,10 @@ describe('Dialog Component', () => {
     it('renders DialogContent with proper styling', () => {
         render(
             <Dialog open>
-                <DialogContent>Dialog content</DialogContent>
+                <DialogContent>
+                    <DialogTitle>Test</DialogTitle>
+                    Dialog content
+                </DialogContent>
             </Dialog>
         );
         const content = screen.getByText(/dialog content/i);
@@ -295,6 +298,7 @@ describe('Dialog Component', () => {
         render(
             <Dialog open>
                 <DialogContent>
+                    <DialogTitle>Test</DialogTitle>
                     <DialogHeader>Header</DialogHeader>
                 </DialogContent>
             </Dialog>
@@ -336,7 +340,10 @@ describe('Dialog Component', () => {
     it('renders close button by default', () => {
         render(
             <Dialog open>
-                <DialogContent>Dialog content</DialogContent>
+                <DialogContent>
+                    <DialogTitle>Test</DialogTitle>
+                    Dialog content
+                </DialogContent>
             </Dialog>
         );
         const closeButton = screen.getByRole('button', { name: /close/i });
@@ -346,7 +353,10 @@ describe('Dialog Component', () => {
     it('hides close button when showCloseButton is false', () => {
         render(
             <Dialog open>
-                <DialogContent showCloseButton={false}>Dialog content</DialogContent>
+                <DialogContent showCloseButton={false}>
+                    <DialogTitle>Test</DialogTitle>
+                    Dialog content
+                </DialogContent>
             </Dialog>
         );
         const closeButtons = screen.queryAllByRole('button', { name: /close/i });
@@ -356,7 +366,10 @@ describe('Dialog Component', () => {
     it('applies overlay styling', () => {
         render(
             <Dialog open>
-                <DialogContent>Dialog content</DialogContent>
+                <DialogContent>
+                    <DialogTitle>Test</DialogTitle>
+                    Dialog content
+                </DialogContent>
             </Dialog>
         );
         // The overlay should have backdrop blur styling
@@ -367,7 +380,10 @@ describe('Dialog Component', () => {
     it('applies focus-visible styling to close button', () => {
         render(
             <Dialog open>
-                <DialogContent>Dialog content</DialogContent>
+                <DialogContent>
+                    <DialogTitle>Test</DialogTitle>
+                    Dialog content
+                </DialogContent>
             </Dialog>
         );
         const closeButton = screen.getByRole('button', { name: /close/i });

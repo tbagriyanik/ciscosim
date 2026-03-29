@@ -183,7 +183,7 @@ Sorunlar için `kiro/` klasöründeki belgelendirmeyi kontrol edin.
 
 ## 📝 Lisans
 
-MIT License
+FOSS License
 
 ## ✅ Kontrol Listesi
 

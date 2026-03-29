@@ -17,6 +17,8 @@ interface SecurityPanelProps {
   onTogglePower?: (deviceId: string) => void;
 }
 
+export type { SecurityPanelProps };
+
 interface SecurityItem {
   name: string;
   enabled: boolean;

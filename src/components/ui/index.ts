@@ -1,5 +1,7 @@
 export { Button, buttonVariants } from './button';
 export { AppSkeleton } from './AppSkeleton';
+export { SkeletonWrapper } from './SkeletonWrapper';
+export { Skeleton } from './skeleton';
 export { AppErrorBoundary } from './AppErrorBoundary';
 export { ModernPanel, PanelContainer } from './ModernPanel';
 export { Input } from './input';

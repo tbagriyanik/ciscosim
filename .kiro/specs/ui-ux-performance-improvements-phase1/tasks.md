@@ -41,7 +41,7 @@ This implementation plan addresses critical performance issues in the Network Si
     - **Validates: Requirements 2.2, 2.3**
     - Test that NetworkTopologyView doesn't re-render on unrelated prop changes
 
-- [ ] 3. Replace Framer Motion with CSS Animations
+- [x] 3. Replace Framer Motion with CSS Animations
   - [x] 3.1 Add CSS animation utility classes to globals.css
     - Create fade-in/fade-out classes
     - Create scale-in/scale-out classes
@@ -78,7 +78,7 @@ This implementation plan addresses critical performance issues in the Network Si
     - **Validates: Requirements 3.3**
     - Test that CSS animations match framer-motion output
 
-- [ ] 4. Audit and Remove Unused Radix UI Components
+- [x] 4. Audit and Remove Unused Radix UI Components
   - [x] 4.1 Audit Radix UI component usage
     - Identify all Radix UI components in use
     - Identify unused Radix UI components
@@ -100,7 +100,7 @@ This implementation plan addresses critical performance issues in the Network Si
     - **Validates: Requirements 4.4**
     - Test that bundle size is reduced after cleanup
 
-- [-] 5. Performance Validation
+- [x] 5. Performance Validation
   - [x] 5.1 Verify no visual regressions
     - Test all components visually
     - Compare before/after screenshots

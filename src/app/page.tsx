@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useCallback, useRef, useEffect, useMemo, useLayoutEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import dynamic from 'next/dynamic';
 
 import { SwitchState, CableInfo } from '@/lib/network/types';
@@ -86,7 +85,7 @@ const SecurityPanel = dynamic(() => import('@/components/network/SecurityPanel')
 const ConfigPanel = dynamic(() => import('@/components/network/ConfigPanel').then((m) => m.ConfigPanel), { ssr: false });
 const QuickCommands = dynamic(() => import('@/components/network/QuickCommands').then((m) => m.QuickCommands), { ssr: false });
 const TaskCard = dynamic(() => import('@/components/network/TaskCard').then((m) => m.TaskCard), { ssr: false });
-const AboutModal = dynamic(() => import('@/components/network/AboutModal').then((m) => m.AboutModal), { ssr: false });
+const LazyAboutModal = dynamic(() => import('@/components/network/LazyAboutModal').then((m) => m.LazyAboutModal), { ssr: false });
 
 type TabType = 'topology' | 'cmd' | 'terminal' | 'tasks';
 
@@ -253,26 +252,26 @@ export default function Home() {
       setActiveTab(tab);
       return;
     }
-    
+
     // Add to history
     const newState = { tab, deviceId: undefined, program: undefined };
     const currentIndex = currentNavIndexRef.current;
-    
+
     // Remove any forward history
     if (currentIndex < navigationHistoryRef.current.length - 1) {
       navigationHistoryRef.current = navigationHistoryRef.current.slice(0, currentIndex + 1);
     }
-    
+
     // Don't add duplicate consecutive states
     const lastState = navigationHistoryRef.current[navigationHistoryRef.current.length - 1];
     if (lastState && lastState.tab === tab) {
       setActiveTab(tab);
       return;
     }
-    
+
     navigationHistoryRef.current.push(newState);
     currentNavIndexRef.current = navigationHistoryRef.current.length - 1;
-    
+
     // Push to browser history
     window.history.pushState({ tab }, '');
     setActiveTab(tab);
@@ -287,22 +286,22 @@ export default function Home() {
       setActiveTab(tab);
       return;
     }
-    
+
     // Add to history
     const newState = { tab, deviceId, program: undefined };
     const currentIndex = currentNavIndexRef.current;
-    
+
     // Remove any forward history
     if (currentIndex < navigationHistoryRef.current.length - 1) {
       navigationHistoryRef.current = navigationHistoryRef.current.slice(0, currentIndex + 1);
     }
-    
+
     navigationHistoryRef.current.push(newState);
     currentNavIndexRef.current = navigationHistoryRef.current.length - 1;
-    
+
     // Push to browser history
     window.history.pushState({ tab, deviceId }, '');
-    
+
     setActiveDeviceId(deviceId);
     setActiveDeviceType(deviceType);
     setActiveTab(tab);
@@ -633,10 +632,10 @@ export default function Home() {
   const maxScore = [...topologyTasks, ...portTasks, ...vlanTasks, ...securityTasks, ...wirelessTasks].reduce((acc, task) => acc + task.weight, 0);
 
   // Per-tab task completion counts for badges
-  const completedTasks = portTasks.filter(task => getTaskStatus(task, state, taskContext)).length + 
-                   vlanTasks.filter(task => getTaskStatus(task, state, taskContext)).length + 
-                   securityTasks.filter(task => getTaskStatus(task, state, taskContext)).length +
-                   wirelessTasks.filter(task => getTaskStatus(task, state, taskContext)).length;
+  const completedTasks = portTasks.filter(task => getTaskStatus(task, state, taskContext)).length +
+    vlanTasks.filter(task => getTaskStatus(task, state, taskContext)).length +
+    securityTasks.filter(task => getTaskStatus(task, state, taskContext)).length +
+    wirelessTasks.filter(task => getTaskStatus(task, state, taskContext)).length;
 
   // Unsaved changes tracking
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -1043,11 +1042,11 @@ export default function Home() {
     } else {
       // Switch or Router - set as CLI device and switch to terminal
       const actualType = actualDeviceType as 'switch' | 'router';
-      
+
       const deviceObj = topologyDevices?.find(d => d.id === deviceId);
       getOrCreateDeviceState(deviceId, actualType, deviceObj?.name, deviceObj?.macAddress);
       getOrCreateDeviceOutputs(deviceId);
-      
+
       setDeviceTabWithHistory('terminal', deviceId, actualType);
     }
   }, [getOrCreateDeviceState, getOrCreateDeviceOutputs, topologyDevices, setDeviceTabWithHistory, setShowPCDeviceId, setShowPCPanel]);
@@ -1490,7 +1489,7 @@ export default function Home() {
   useEffect(() => {
     const handlePopState = (e: PopStateEvent) => {
       const state = e.state as { tab?: TabType; deviceId?: string; program?: string; modal?: boolean } | null;
-      
+
       // Close modals first
       setShowMobileMenu(false);
       setConfirmDialog(null);
@@ -1499,14 +1498,14 @@ export default function Home() {
       setShowProjectPicker(false);
       setShowOnboarding(false);
       window.dispatchEvent(new CustomEvent('close-menus-broadcast', { detail: { source: 'back' } }));
-      
+
       // Handle navigation state
       if (state && state.tab) {
         isInternalNavRef.current = true;
-        
+
         // Update history index
         currentNavIndexRef.current = Math.max(0, currentNavIndexRef.current - 1);
-        
+
         // Navigate to the state
         if (state.tab === 'cmd' || state.tab === 'terminal') {
           if (state.deviceId) {
@@ -1519,7 +1518,7 @@ export default function Home() {
         }
       }
     };
-    
+
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
   }, [setShowMobileMenu, setConfirmDialog, setSaveDialog, setShowPCPanel, setShowProjectPicker, setShowOnboarding, setActiveTab, setActiveDeviceId, setActiveDeviceType]);
@@ -1652,7 +1651,7 @@ export default function Home() {
       // Ctrl Shortcuts
       if (e.ctrlKey || e.metaKey) {
         const key = e.key.toLowerCase();
-        
+
         // Print - switch to topology tab first
         if (key === 'p') {
           e.preventDefault();
@@ -1663,7 +1662,7 @@ export default function Home() {
             window.print();
           }
         }
-        
+
         if (key === 'z') {
           if (activeTabRef.current === 'topology') {
             e.preventDefault();
@@ -1727,7 +1726,7 @@ export default function Home() {
       }
     };
     window.addEventListener('keydown', handleKeyDown);
-    
+
     // Handle print dialog (from browser menu or Ctrl+P)
     const handleBeforePrint = () => {
       if (activeTabRef.current !== 'topology') {
@@ -1735,7 +1734,7 @@ export default function Home() {
       }
     };
     window.addEventListener('beforeprint', handleBeforePrint);
-    
+
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('beforeprint', handleBeforePrint);
@@ -1824,11 +1823,7 @@ export default function Home() {
         {/* App Loading Screen */}
         {isAppLoading && (
           <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-slate-950">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="flex flex-col items-center"
-            >
+            <div className="flex flex-col items-center animate-scale-in">
               <div className="relative mb-8">
                 <div className="p-2 animate-glitch">
                   <img src="/favicon.png" alt="Logo" className="w-16 h-16 object-contain" />
@@ -1851,7 +1846,7 @@ export default function Home() {
                   {t.initializingSystem}
                 </span>
               </div>
-            </motion.div>
+            </div>
 
             {/* Background scanline effect */}
             <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.1)_50%),linear-gradient(90deg,rgba(255,0,0,0.03),rgba(0,255,0,0.01),rgba(0,0,255,0.03))] bg-[length:100%_4px,3px_100%]" />
@@ -1866,12 +1861,7 @@ export default function Home() {
         )}
 
         {/* Main Content with transition */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: showContent ? 1 : 0 }}
-          transition={{ duration: 0.5 }}
-          className="flex flex-col flex-1"
-        >
+        <div className="flex flex-col flex-1 animate-fade-in">
           {/* Header */}
           <header className={`liquid-glass sticky top-0 z-50 border-b px-5 py-3 pb-0`}>
             <div className="w-full">
@@ -1901,28 +1891,21 @@ export default function Home() {
                       <span className={`text-[10px] font-black tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                         {t.labProgress}
                       </span>
-                      <motion.span
+                      <span
                         key={totalScore}
-                        initial={{ opacity: 0.5, y: -2 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className={`text-[10px] font-black tabular-nums px-1.5 py-0.5 rounded-full ${totalScore >= maxScore * 0.7 ? 'bg-emerald-500/10 text-emerald-400' :
+                        className={`text-[10px] font-black tabular-nums px-1.5 py-0.5 rounded-full animate-scale-in ${totalScore >= maxScore * 0.7 ? 'bg-emerald-500/10 text-emerald-400' :
                           totalScore >= maxScore * 0.4 ? 'bg-amber-500/10 text-amber-400' :
                             'bg-rose-500/10 text-rose-400'
                           }`}
                       >
                         {Math.round((totalScore / maxScore) * 100)}%
-                      </motion.span>
+                      </span>
                     </div>
                     <div className="flex items-center gap-2">
                       <div className={`h-1.5 w-24 rounded-full overflow-hidden p-[px] ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`}>
-                        <motion.div
-                          initial={{ width: 0 }}
-                          animate={{ width: `${(totalScore / maxScore) * 100}%` }}
-                          transition={{ type: "spring", stiffness: 50, damping: 15 }}
-                          className={`h-full rounded-full bg-gradient-to-r shadow-[0_0_8px_rgba(0,0,0,0.2)] ${totalScore >= maxScore * 0.7 ? 'from-emerald-500 via-teal-400 to-emerald-400' :
-                            totalScore >= maxScore * 0.4 ? 'from-amber-500 via-orange-400 to-amber-400' :
-                              'from-rose-500 via-pink-500 to-rose-400'
-                            }`}
+                        <div
+                          className="h-full bg-gradient-to-r from-cyan-400 to-blue-500 rounded-full progress-fill"
+                          style={{ '--progress-width': `${(totalScore / maxScore) * 100}%` } as React.CSSProperties}
                         />
                       </div>
                       <div className="flex items-baseline gap-0.5">
@@ -2401,11 +2384,7 @@ export default function Home() {
                         }}
                       />
                       {isActive && (
-                        <motion.div
-                          layoutId="mobileTabActive"
-                          className="absolute inset-0 bg-blue-500/10 rounded-xl"
-                          transition={{ type: "spring", duration: 0.4, bounce: 0.2 }}
-                        />
+                        <div className="absolute inset-0 bg-blue-500/10 rounded-xl animate-scale-in" />
                       )}
                       <div className={`relative z-10 transition-transform duration-200 ${isActive ? 'scale-110' : ''}`}>
                         {tab.id === 'topology' ? <Network className="w-4 h-4" /> :
@@ -2647,33 +2626,33 @@ export default function Home() {
                 {/* Network Topology fills remaining space */}
                 <div ref={topologyContainerRef} className="flex-1 w-full h-full min-h-0 print:hidden">
                   <NetworkTopology
-                      key={topologyKey}
-                      cableInfo={cableInfo}
-                      onCableChange={setCableInfo}
-                      selectedDevice={selectedDevice}
-                      onDeviceSelect={handleDeviceSelectFromCanvas}
-                      onDeviceDoubleClick={handleDeviceDoubleClick}
-                      onDeviceDelete={handleDeviceDelete}
-                      onDeviceRename={handleDeviceRename}
-                      initialDevices={topologyDevices || undefined}
-                      initialConnections={topologyConnections || undefined}
-                      initialNotes={topologyNotes || undefined}
-                      isActive={activeTab === 'topology'}
-                      activeDeviceId={activeDeviceId}
-                      deviceStates={deviceStates}
-                      isFullscreen={isTopologyFullscreen}
-                      onFullscreenChange={setIsTopologyFullscreen}
-                      zoom={zoom}
-                      onZoomChange={setZoom}
-                      pan={pan}
-                      onPanChange={setPan}
-                      canUndo={canUndo}
-                      canRedo={canRedo}
-                      onUndo={handleUndo}
-                      onRedo={handleRedo}
-                    />
-                  </div>
+                    key={topologyKey}
+                    cableInfo={cableInfo}
+                    onCableChange={setCableInfo}
+                    selectedDevice={selectedDevice}
+                    onDeviceSelect={handleDeviceSelectFromCanvas}
+                    onDeviceDoubleClick={handleDeviceDoubleClick}
+                    onDeviceDelete={handleDeviceDelete}
+                    onDeviceRename={handleDeviceRename}
+                    initialDevices={topologyDevices || undefined}
+                    initialConnections={topologyConnections || undefined}
+                    initialNotes={topologyNotes || undefined}
+                    isActive={activeTab === 'topology'}
+                    activeDeviceId={activeDeviceId}
+                    deviceStates={deviceStates}
+                    isFullscreen={isTopologyFullscreen}
+                    onFullscreenChange={setIsTopologyFullscreen}
+                    zoom={zoom}
+                    onZoomChange={setZoom}
+                    pan={pan}
+                    onPanChange={setPan}
+                    canUndo={canUndo}
+                    canRedo={canRedo}
+                    onUndo={handleUndo}
+                    onRedo={handleRedo}
+                  />
                 </div>
+              </div>
 
               {/* CMD Terminal Sekmesi */}
               {/* CMD Terminal Sekmesi - Always mounted, hidden via CSS */}
@@ -2926,8 +2905,8 @@ export default function Home() {
             </div>
           </footer>
 
-          <AboutModal isOpen={showAboutModal} onClose={() => setShowAboutModal(false)} />
-        </motion.div>
+          <LazyAboutModal isOpen={showAboutModal} onClose={() => setShowAboutModal(false)} />
+        </div>
       </div>
     </AppErrorBoundary>
   );

@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useRef, useEffect, KeyboardEvent, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useSwitchState } from '@/lib/store/appStore';
 import { SwitchState } from '@/lib/network/types';
 import { useLanguage, Translations } from '@/contexts/LanguageContext';
@@ -52,6 +51,8 @@ interface TerminalProps {
   className?: string;
   title?: string;
 }
+
+export type { TerminalProps };
 
 export function Terminal({
   deviceId,
@@ -530,7 +531,7 @@ export function Terminal({
                   <CornerDownLeft className={cn("w-5 h-5", isMobile && "w-4 h-4")} />
                 </Button>
               </form>
-              
+
               {/* QuickCommands Component - Desktop Only */}
               {!isPoweredOff && !isMobile && !isTablet && (
                 <div className="px-4 pb-3">
@@ -552,7 +553,12 @@ export function Terminal({
       {/* Dialogs */}
       <Dialog open={searchOpen} onOpenChange={setSearchOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle>{t.search}</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>{t.search}</DialogTitle>
+            <DialogDescription>
+              {language === 'tr' ? 'Terminal çıktısında arama yapın' : 'Search in terminal output'}
+            </DialogDescription>
+          </DialogHeader>
           <Input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder={t.search + "..."} autoFocus />
         </DialogContent>
       </Dialog>

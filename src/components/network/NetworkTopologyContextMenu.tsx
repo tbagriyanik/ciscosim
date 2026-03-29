@@ -111,11 +111,17 @@ export default function NetworkTopologyContextMenu({
     disabled?: boolean;
   }) => (
     <button
-      onClick={onClick}
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!disabled) {
+          onClick();
+        }
+      }}
       disabled={disabled}
-      className={`w-full flex items-center justify-between px-3 py-2 text-xs font-semibold transition-colors ${disabled
-        ? 'opacity-30 cursor-not-allowed'
-        : isDark ? 'text-slate-200 hover:bg-slate-700/80 hover:text-cyan-400' : 'text-slate-700 hover:bg-slate-50 hover:text-cyan-600'
+      className={`w-full flex items-center justify-between px-3 py-2 text-xs font-semibold transition-colors group ${disabled
+        ? 'opacity-50 cursor-not-allowed'
+        : isDark ? 'text-slate-200 hover:bg-slate-700/80 hover:text-cyan-400 cursor-pointer' : 'text-slate-700 hover:bg-slate-50 hover:text-cyan-600 cursor-pointer'
         }`}
     >
       <div className="flex items-center gap-3">
@@ -239,53 +245,6 @@ export default function NetworkTopologyContextMenu({
               onClick: () => { onDuplicateNote(contextMenu.noteId!); onClose(); }
             })}
           </div>
-        </div>
-      )}
-
-      {contextMenu.noteId && contextMenu.mode === 'note-edit' && (
-        <div className="px-2 py-2 space-y-1">
-          {(() => {
-            const note = notes.find(n => n.id === contextMenu.noteId);
-            const noteText = note?.text || '';
-            const hasText = noteText.trim().length > 0;
-            return (
-              <>
-                {renderMenuItem({
-                  label: language === 'tr' ? 'Kes' : 'Cut',
-                  icon: 'cut',
-                  shortcut: 'Ctrl+X',
-                  disabled: !hasText,
-                  onClick: () => { onNoteCut(contextMenu.noteId!); onClose(); }
-                })}
-                {renderMenuItem({
-                  label: language === 'tr' ? 'Kopyala' : 'Copy',
-                  icon: 'copy',
-                  shortcut: 'Ctrl+C',
-                  disabled: !hasText,
-                  onClick: () => { onNoteCopy(contextMenu.noteId!); onClose(); }
-                })}
-                {renderMenuItem({
-                  label: language === 'tr' ? 'Yapıştır' : 'Paste',
-                  icon: 'paste',
-                  shortcut: 'Ctrl+V',
-                  onClick: () => { onNotePaste(contextMenu.noteId!); onClose(); }
-                })}
-                {renderMenuItem({
-                  label: language === 'tr' ? 'Sil' : 'Delete',
-                  icon: 'delete',
-                  shortcut: 'Del',
-                  disabled: !hasText,
-                  onClick: () => { onNoteDeleteText(contextMenu.noteId!); onClose(); }
-                })}
-                {renderMenuItem({
-                  label: language === 'tr' ? 'Tümünü Seç' : 'Select All',
-                  icon: 'select',
-                  shortcut: 'Ctrl+A',
-                  onClick: () => { onNoteSelectAllText(contextMenu.noteId!); onClose(); }
-                })}
-              </>
-            );
-          })()}
         </div>
       )}
 

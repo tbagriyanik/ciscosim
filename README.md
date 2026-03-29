@@ -192,7 +192,7 @@ Sorunlar için [INSTALL.md](INSTALL.md) dosyasındaki "Sorun Giderme" bölümün
 
 ## 📝 Lisans
 
-MIT License - Detaylar için [LICENSE](LICENSE) dosyasını kontrol edin.
+FOSS License - Detaylar için [LICENSE](LICENSE) dosyasını kontrol edin.
 
 ## 🤝 Katkıda Bulunma
 

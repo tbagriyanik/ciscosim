@@ -1,5 +1,6 @@
 ---
 inclusion: auto
+description: Project documentation context - references all markdown files in the kiro/ folder for feature implementations, fixes, and verification reports.
 ---
 
 # Kiro Context - Proje Belgeleri

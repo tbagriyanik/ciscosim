@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useRef, useEffect, KeyboardEvent, useCallback, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useSwitchState } from '@/lib/store/appStore';
 import { CableInfo, isCableCompatible, SwitchState } from '@/lib/network/types';
 import { useLanguage } from '@/contexts/LanguageContext';
