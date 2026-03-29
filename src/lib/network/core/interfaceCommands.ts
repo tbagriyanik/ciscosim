@@ -29,6 +29,8 @@ export const interfaceHandlers: Record<string, CommandHandler> = {
   'spanning-tree bpduguard enable': cmdSpanningTreeBpduguard,
   'ip address': cmdIpAddress,
   'no ip address': cmdNoIpAddress,
+  'ip default-gateway': cmdIpDefaultGateway,
+  'no ip default-gateway': cmdNoIpDefaultGateway,
   'ssid': cmdSsid,
   'encryption': cmdEncryption,
   'wifi-password': cmdWifiPassword,
@@ -91,7 +93,7 @@ function cmdInterface(state: any, input: string, ctx: any): any {
     return {
       success: true,
       newState: {
-        currentMode: 'vlan',
+        currentMode: 'interface',
         currentInterface: vlanPortId,
         selectedInterfaces: [vlanPortId],
         ports: newPorts
@@ -573,6 +575,39 @@ function cmdNoIpAddress(state: any, input: string, ctx: any): any {
   return {
     success: true,
     newState: { ports: newPorts }
+  };
+}
+
+/**
+ * IP Default-Gateway - Configured from interface mode
+ */
+function cmdIpDefaultGateway(state: any, input: string, ctx: any): any {
+  if (!isInInterfaceMode(state) || !state.currentInterface) {
+    return { success: false, error: '% No interface selected' };
+  }
+
+  const match = input.match(/^ip\s+default-gateway\s+([0-9.]+)$/i);
+  if (!match) {
+    return { success: false, error: '% Invalid default-gateway command' };
+  }
+
+  return {
+    success: true,
+    newState: { defaultGateway: match[1] }
+  };
+}
+
+/**
+ * No IP Default-Gateway - Configured from interface mode
+ */
+function cmdNoIpDefaultGateway(state: any, input: string, ctx: any): any {
+  if (!isInInterfaceMode(state) || !state.currentInterface) {
+    return { success: false, error: '% No interface selected' };
+  }
+
+  return {
+    success: true,
+    newState: { defaultGateway: undefined }
   };
 }
 
