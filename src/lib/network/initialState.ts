@@ -470,6 +470,19 @@ export const commandAliases: Record<string, string> = {
   'sh runn-c': 'show running-config',
   'sh runn-co': 'show running-config',
 
+  // Show startup-config commands
+  'sh st': 'show startup-config',
+  'sh sta': 'show startup-config',
+  'sh star': 'show startup-config',
+  'sh start': 'show startup-config',
+  'sh startu': 'show startup-config',
+  'sh startup': 'show startup-config',
+  'sh startup-': 'show startup-config',
+  'sh startup-c': 'show startup-config',
+  'sh startup-co': 'show startup-config',
+  'sh startup-con': 'show startup-config',
+  'sh startup-conf': 'show startup-config',
+
   'sh i': 'show interfaces',
   'sh in': 'show interfaces',
   'sh int': 'show interfaces',
