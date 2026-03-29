@@ -155,7 +155,7 @@ export function createInitialState(mac?: string): SwitchState {
     hostname: 'Switch',
     macAddress,
     currentMode: 'user',
-    consoleAuthenticated: true, // no console login by default
+    consoleAuthenticated: false,
     ports,
     vlans,
     security: createInitialSecurity(),
@@ -251,7 +251,7 @@ export function createInitialRouterState(mac?: string): SwitchState {
     hostname: 'Router',
     macAddress,
     currentMode: 'user',
-    consoleAuthenticated: true,
+    consoleAuthenticated: false,
     ports,
     vlans,
     security: createInitialSecurity(),
@@ -379,6 +379,8 @@ export function getModePrompt(mode: CommandMode, hostname: string, context?: str
       return `${hostname}(config-line)#`;
     case 'vlan':
       return `${hostname}(config-vlan)#`;
+    case 'router-config':
+      return `${hostname}(config-router)#`;
     default:
       return `${hostname}>`;
   }
