@@ -6,7 +6,7 @@
 ![Tech Stack](https://img.shields.io/badge/stack-Next.js%2016%20|%20React%2019%20|%20TypeScript%20|%20Tailwind%204-green)
 ![FOSS](https://img.shields.io/badge/FOSS-Free%20Open%20Source-brightgreen)
 ![Commits](https://img.shields.io/badge/commits-350-orange)
-![Lines of Code](https://img.shields.io/badge/lines--of--code-44.6k-blueviolet)
+![Lines of Code](https://img.shields.io/badge/lines--of--code-58.4k-blueviolet)
 
 ## ✨ Temel Özellikler
 
