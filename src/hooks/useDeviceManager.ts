@@ -424,6 +424,19 @@ export function useDeviceManager() {
             }
             return next;
           });
+          
+          // Show toast notification for config save
+          const device = topologyDevices?.find(d => d.id === deviceId);
+          const deviceName = device?.name || deviceId;
+          const timestamp = new Date().toLocaleString();
+          
+          toast({
+            title: language === 'tr' ? 'Yapılandırma Kaydedildi' : 'Configuration Saved',
+            description: language === 'tr' 
+              ? `${deviceName} - running-config → startup-config (${timestamp})`
+              : `${deviceName} - running-config → startup-config (${timestamp})`,
+            variant: "default"
+          });
         }
         if ((result as any).eraseConfig) {
           setDeviceStates(prev => {
@@ -441,6 +454,20 @@ export function useDeviceManager() {
             }
             return next;
           });
+          
+          // Show toast notification for config erase
+          const device = topologyDevices?.find(d => d.id === deviceId);
+          const deviceName = device?.name || deviceId;
+          const timestamp = new Date().toLocaleString();
+          
+          toast({
+            title: language === 'tr' ? 'Yapılandırma Silindi' : 'Configuration Erased',
+            description: language === 'tr'
+              ? `${deviceName} - startup-config silindi (${timestamp})`
+              : `${deviceName} - startup-config erased (${timestamp})`,
+            variant: "destructive"
+          });
+          
           setDeviceOutputs(prev => new Map(prev).set(deviceId, []));
         }
         if (result.reloadDevice) {

@@ -5,6 +5,7 @@ import type { CommandHandler } from './commandTypes';
 export const showHandlers: Record<string, CommandHandler> = {
   'show': cmdShow,
   'show running-config': cmdShowRunningConfig,
+  'show startup-config': cmdShowStartupConfig,
   'show version': cmdShowVersion,
   'show interfaces': cmdShowInterfaces,
   'show interface': cmdShowInterface,
@@ -181,6 +182,162 @@ function cmdShowRunningConfig(
       output += `enable password 7 ********\n`;
     } else {
       output += `enable password ${state.security.enablePassword}\n`;
+    }
+  }
+
+  output += 'end\n';
+
+  return { success: true, output };
+}
+
+/**
+ * Show Startup Configuration
+ */
+function cmdShowStartupConfig(
+  state: any,
+  input: string,
+  ctx: any
+): any {
+  // Check if startup config exists
+  if (!state.startupConfig) {
+    return {
+      success: true,
+      output: '\n% No startup configuration available\n'
+    };
+  }
+
+  let output = '\nBuilding configuration...\n\n';
+  output += 'Startup configuration : 1024 bytes\n\n';
+  output += '!\n';
+  output += `version ${state.startupConfig.version || '15.0'}\n`;
+  output += `hostname ${state.startupConfig.hostname || state.hostname || 'Switch'}\n`;
+
+  // Banner MOTD from startup config
+  if (state.startupConfig.bannerMOTD) {
+    const escapedBanner = state.startupConfig.bannerMOTD.replace(/\n/g, '\\n');
+    output += `banner motd #${escapedBanner}#\n`;
+    output += '!\n';
+  }
+
+  // Boot system from startup config
+  output += 'boot system flash:c2960-lanbase-mz.150-2.SE4.bin\n';
+  output += '!\n';
+
+  // Service passwords-encryption from startup config
+  if (state.startupConfig.security?.servicePasswordEncryption) {
+    output += 'service password-encryption\n';
+  }
+  output += '!\n';
+
+  // Spanning-tree mode from startup config
+  output += `spanning-tree mode ${state.startupConfig.spanningTree?.mode || 'pvst'}\n`;
+  output += '!\n';
+
+  // VLANs from startup config
+  const startupVlans = state.startupConfig.vlans || {};
+  const vlanIds = Object.keys(startupVlans).filter(v => v !== '1');
+  if (vlanIds.length > 0) {
+    vlanIds.forEach(vlanId => {
+      const vlan = startupVlans[vlanId];
+      output += `vlan ${vlanId}\n`;
+      output += ` name ${vlan?.name || `VLAN${vlanId}`}\n`;
+      output += ` state ${vlan?.status || 'active'}\n`;
+      output += '!\n';
+    });
+  }
+
+  // Interfaces from startup config
+  const startupPorts = state.startupConfig.ports || {};
+  Object.keys(startupPorts).forEach(portName => {
+    const port = startupPorts[portName];
+    output += `interface ${portName}\n`;
+
+    if (port.description) {
+      output += ` description ${port.description}\n`;
+    }
+
+    if (port.mode === 'trunk') {
+      output += ' switchport mode trunk\n';
+      if (port.nativeVlan) {
+        output += ` switchport trunk native vlan ${port.nativeVlan}\n`;
+      }
+      if (port.allowedVlans) {
+        output += ` switchport trunk allowed vlan ${port.allowedVlans}\n`;
+      }
+    } else {
+      output += ` switchport access vlan ${port.accessVlan || 1}\n`;
+    }
+
+    if (port.speed && port.speed !== 'auto') {
+      output += ` speed ${port.speed}\n`;
+    }
+
+    if (port.duplex && port.duplex !== 'auto') {
+      output += ` duplex ${port.duplex}\n`;
+    }
+
+    if (port.shutdown) {
+      output += ' shutdown\n';
+    }
+
+    if (port.ipAddress && port.subnetMask) {
+      output += ` ip address ${port.ipAddress} ${port.subnetMask}\n`;
+    }
+
+    if (port.spanningTree?.portfast) {
+      output += ' spanning-tree portfast\n';
+    }
+
+    if (port.spanningTree?.bpduguard) {
+      output += ' spanning-tree bpduguard enable\n';
+    }
+
+    output += '!\n';
+  });
+
+  // Line console from startup config
+  output += 'line console 0\n';
+  if (state.startupConfig.security?.consoleLine?.password) {
+    if (state.startupConfig.security.servicePasswordEncryption) {
+      output += ` password 7 ********\n`;
+    } else {
+      output += ` password ${state.startupConfig.security.consoleLine.password}\n`;
+    }
+  }
+  if (state.startupConfig.security?.consoleLine?.login) {
+    output += ' login\n';
+  }
+  output += '!\n';
+
+  // VTY lines from startup config
+  output += 'line vty 0 4\n';
+  if (state.startupConfig.security?.vtyLines?.password) {
+    if (state.startupConfig.security.servicePasswordEncryption) {
+      output += ` password 7 ********\n`;
+    } else {
+      output += ` password ${state.startupConfig.security.vtyLines.password}\n`;
+    }
+  }
+  if (state.startupConfig.security?.vtyLines?.login) {
+    output += ' login\n';
+  }
+  if (state.startupConfig.security?.vtyLines?.transportInput) {
+    output += ` transport input ${state.startupConfig.security.vtyLines.transportInput.join(' ')}\n`;
+  }
+  output += '!\n';
+
+  // Enable secret from startup config
+  if (state.startupConfig.security?.enableSecret) {
+    if (state.startupConfig.security.enableSecretEncrypted) {
+      output += `enable secret 5 ********\n`;
+    } else {
+      output += `enable secret ${state.startupConfig.security.enableSecret}\n`;
+    }
+  } else if (state.startupConfig.security?.enablePassword) {
+    if (state.startupConfig.security.servicePasswordEncryption) {
+      output += `enable password 7 ********\n`;
+    } else {
+      output += `enable password ${state.startupConfig.security.enablePassword}\n`;
     }
   }
 
@@ -715,6 +872,8 @@ function cmdDoShow(
   if (cmd === 'show') {
     if (subCmd.startsWith('running-config')) {
       return cmdShowRunningConfig(state, showCommand, ctx);
+    } else if (subCmd.startsWith('startup-config')) {
+      return cmdShowStartupConfig(state, showCommand, ctx);
     } else if (subCmd.startsWith('version')) {
       return cmdShowVersion(state, showCommand, ctx);
     } else if (subCmd.startsWith('interfaces')) {
