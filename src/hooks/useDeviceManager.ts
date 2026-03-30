@@ -118,7 +118,7 @@ export function useDeviceManager() {
 
           const bootOutputs: TerminalOutput[] = [
             { id: `boot-1-${reloadedState.macAddress}`, type: 'output', content: isRouter ? '\n\nSystem Bootstrap, Version 15.1(4)M4, RELEASE SOFTWARE (fc1)\nTechnical Support: http://yunus.sf.net\nCopyright (c) 1986-2026 by Systems, Inc.\n' : '\n\nSystem Bootstrap, Version 12.1(11r)EA1, RELEASE SOFTWARE (fc1)\nTechnical Support: http://yunus.sf.net\nCopyright (c) 1986-2026 by Systems, Inc.\n' },
-            { id: `boot-2-${reloadedState.macAddress}`, type: 'output', content: isRouter ? 'C1900 platform with 524288K bytes of main memory\nMain memory configured to 64 bit mode with ECC disabled\n' : 'C2960 platform with 262144K bytes of main memory\nMain memory configured to 32 bit mode with ECC enabled\n' },
+            { id: `boot-2-${reloadedState.macAddress}`, type: 'output', content: isRouter ? 'C1900 platform with 524288K bytes of main memory\nMain memory configured to 64 bit mode with ECC disabled\n' : (reloadedState.switchModel === 'WS-C3560-24PS' ? 'C3560 platform with 262144K bytes of main memory\nMain memory configured to 64 bit mode with ECC disabled' : 'C2960 platform with 262144K bytes of main memory\nMain memory configured to 32 bit mode with ECC enabled\n') },
             { id: `boot-3-${reloadedState.macAddress}`, type: 'output', content: '\nLoading the runtime image: ######################################## [OK]\n' },
             // Insert banner MOTD here if present so it's visible during boot
             ...(reloadedState.bannerMOTD ? [{ id: `banner-${reloadedState.macAddress}`, type: 'output' as const, content: `\n${reloadedState.bannerMOTD}\n` }] : []),
@@ -148,8 +148,9 @@ export function useDeviceManager() {
     const defaultName = deviceType === 'router' ? 'Router' : 'Switch';
 
     if (!deviceState) {
-      const model = (switchModel as any) || 'WS-C2960-24TT-L';
-      deviceState = deviceType === 'router' ? createInitialRouterState(initialMac) : createInitialState(initialMac, model);
+      // Use the provided switchModel, default to L2 for switches, or L3 for routers
+      const model = switchModel || (deviceType === 'router' ? 'WS-C3560-24PS' : 'WS-C2960-24TT-L');
+      deviceState = deviceType === 'router' ? createInitialRouterState(initialMac) : createInitialState(initialMac, model as any);
       const hostname = initialHostname || defaultName;
       deviceState = { ...deviceState, hostname };
 
@@ -179,7 +180,7 @@ export function useDeviceManager() {
       const isRouter = deviceId.includes('router');
       outputs = [
         { id: `boot-1`, type: 'output', content: isRouter ? '\n\nSystem Bootstrap, Version 15.1(4)M4, RELEASE SOFTWARE (fc1)\nTechnical Support: http://yunus.sf.net\nCopyright (c) 1986-2026 by Systems, Inc.\n' : '\n\nSystem Bootstrap, Version 12.1(11r)EA1, RELEASE SOFTWARE (fc1)\nTechnical Support: http://yunus.sf.net\nCopyright (c) 1986-2026 by Systems, Inc.\n' },
-        { id: `boot-2`, type: 'output', content: isRouter ? 'C1900 platform with 524288K bytes of main memory\nMain memory configured to 64 bit mode with ECC disabled\n' : 'C2960 platform with 262144K bytes of main memory\nMain memory configured to 32 bit mode with ECC enabled\n' },
+        { id: `boot-2`, type: 'output', content: isRouter ? 'C1900 platform with 524288K bytes of main memory\nMain memory configured to 64 bit mode with ECC disabled\n' : (state?.switchModel === 'WS-C3560-24PS' ? 'C3560 platform with 262144K bytes of main memory\nMain memory configured to 64 bit mode with ECC disabled' : 'C2960 platform with 262144K bytes of main memory\nMain memory configured to 32 bit mode with ECC enabled\n') },
         { id: `boot-3`, type: 'output', content: '\nLoading the runtime image: ######################################## [OK]\n' }
       ];
 
@@ -512,7 +513,7 @@ export function useDeviceManager() {
           const isRouter = deviceId.includes('router');
           const bootOutputs: TerminalOutput[] = [
             { id: `boot-1-${reloadedState.macAddress}`, type: 'output', content: isRouter ? '\n\nSystem Bootstrap, Version 15.1(4)M4, RELEASE SOFTWARE (fc1)\nTechnical Support: http://yunus.sf.net\nCopyright (c) 1986-2026 by Systems, Inc.\n' : '\n\nSystem Bootstrap, Version 12.1(11r)EA1, RELEASE SOFTWARE (fc1)\nTechnical Support: http://yunus.sf.net\nCopyright (c) 1986-2026 by Systems, Inc.\n' },
-            { id: `boot-2-${reloadedState.macAddress}`, type: 'output', content: isRouter ? 'C1900 platform with 524288K bytes of main memory\nMain memory configured to 64 bit mode with ECC disabled\n' : 'C2960 platform with 262144K bytes of main memory\nMain memory configured to 32 bit mode with ECC enabled\n' },
+            { id: `boot-2-${reloadedState.macAddress}`, type: 'output', content: isRouter ? 'C1900 platform with 524288K bytes of main memory\nMain memory configured to 64 bit mode with ECC disabled\n' : (reloadedState.switchModel === 'WS-C3560-24PS' ? 'C3560 platform with 262144K bytes of main memory\nMain memory configured to 64 bit mode with ECC disabled' : 'C2960 platform with 262144K bytes of main memory\nMain memory configured to 32 bit mode with ECC enabled\n') },
             { id: `boot-3-${reloadedState.macAddress}`, type: 'output', content: '\nLoading the runtime image: ######################################## [OK]\n' },
             ...(reloadedState.bannerMOTD ? [{ id: `banner-${reloadedState.macAddress}`, type: 'output' as const, content: `\n${reloadedState.bannerMOTD}\n` }] : []),
             { id: `boot-beep-${reloadedState.macAddress}`, type: 'output', content: '\nSystem is powering on...\n' },

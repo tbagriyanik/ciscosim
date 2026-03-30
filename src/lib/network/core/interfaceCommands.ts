@@ -26,6 +26,7 @@ export const interfaceHandlers: Record<string, CommandHandler> = {
   'switchport port-security maximum': cmdSwitchportPortSecurityMaximum,
   'switchport port-security violation': cmdSwitchportPortSecurityViolation,
   'switchport port-security mac-address sticky': cmdSwitchportPortSecuritySticky,
+  'no switchport': cmdNoSwitchport,
   'spanning-tree portfast': cmdSpanningTreePortfast,
   'spanning-tree bpduguard enable': cmdSpanningTreeBpduguard,
   'ip address': cmdIpAddress,
@@ -261,6 +262,50 @@ function cmdDescription(state: any, input: string, ctx: any): any {
 
   return {
     success: true,
+    newState: { ports: newPorts }
+  };
+}
+
+/**
+ * No Switchport - Convert physical port to routed port (L3 switch only)
+ */
+function cmdNoSwitchport(state: any, input: string, ctx: any): any {
+  if (!isInInterfaceMode(state) || !state.currentInterface) {
+    return { success: false, error: '% Invalid command at this mode' };
+  }
+
+  // Check if device supports L3 routing
+  if (!canAssignIPToPhysicalPort(state.switchModel)) {
+    return {
+      success: false,
+      error: `% Invalid command. Layer 2 switch (${state.switchModel}) does not support routed ports.\nno switchport is only available on Layer 3 switches.`
+    };
+  }
+
+  // Don't allow on VLAN interfaces
+  if (state.currentInterface.startsWith('vlan')) {
+    return { success: false, error: '% Invalid command on VLAN interface' };
+  }
+
+  // Don't allow on WLAN interface
+  if (state.currentInterface.toLowerCase().startsWith('wlan')) {
+    return { success: false, error: '% Invalid command on WLAN interface' };
+  }
+
+  const newPorts = applyToSelectedPorts(state, (port: any) => ({
+    ...port,
+    mode: 'routed',
+    // Clear Layer 2 specific settings
+    accessVlan: undefined,
+    nativeVlan: undefined,
+    allowedVlans: undefined,
+    portSecurity: undefined,
+    spanningTree: undefined,
+  }));
+
+  return {
+    success: true,
+    output: `Interface ${state.currentInterface} converted to routed port`,
     newState: { ports: newPorts }
   };
 }

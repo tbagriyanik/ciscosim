@@ -1,6 +1,7 @@
 'use client';
 
 import type { CommandHandler } from './commandTypes';
+import { canAssignIPToPhysicalPort } from '../switchModels';
 
 // Global config (hostname, vlan, vtp, spanning-tree, security, ip domain-name, etc.)
 
@@ -444,6 +445,14 @@ function cmdRouterRip(state: any, input: string, ctx: any): any {
     return { success: false, error: '% Invalid command at this mode' };
   }
 
+  // Check if device supports routing (L3 switch only)
+  if (!canAssignIPToPhysicalPort(state.switchModel)) {
+    return {
+      success: false,
+      error: `% Invalid command. Layer 2 switch (${state.switchModel}) does not support routing protocols.\nRouting protocols are only supported on Layer 3 switches.`
+    };
+  }
+
   const lang = ctx.language || 'en';
   return {
     success: true,
@@ -464,6 +473,14 @@ function cmdRouterRip(state: any, input: string, ctx: any): any {
 function cmdRouterOspf(state: any, input: string, ctx: any): any {
   if (state.currentMode !== 'config') {
     return { success: false, error: '% Invalid command at this mode' };
+  }
+
+  // Check if device supports routing (L3 switch only)
+  if (!canAssignIPToPhysicalPort(state.switchModel)) {
+    return {
+      success: false,
+      error: `% Invalid command. Layer 2 switch (${state.switchModel}) does not support routing protocols.\nRouting protocols are only supported on Layer 3 switches.`
+    };
   }
 
   // Parse OSPF process ID (optional)

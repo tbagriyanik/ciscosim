@@ -66,6 +66,7 @@ import {
   vlanTasks,
   securityTasks,
   wirelessTasks,
+  routingTasks,
   calculateTaskScore,
   TaskContext,
   getTaskStatus
@@ -90,7 +91,7 @@ const QuickCommands = dynamic(() => import('@/components/network/QuickCommands')
 const TaskCard = dynamic(() => import('@/components/network/TaskCard').then((m) => m.TaskCard), { ssr: false });
 const LazyAboutModal = dynamic(() => import('@/components/network/LazyAboutModal').then((m) => m.LazyAboutModal), { ssr: false });
 
-type TabType = 'topology' | 'cmd' | 'terminal' | 'tasks';
+type TabType = 'topology' | 'cmd' | 'terminal' | 'tasks' | 'routing';
 
 // PC Output type for PCPanel
 interface PCOutputLine {
@@ -140,6 +141,14 @@ const ALL_TABS: TabDefinition[] = [
     tasks: [...portTasks, ...vlanTasks, ...securityTasks],
     color: 'from-red-500 to-rose-500',
     showFor: ['switch', 'router']
+  },
+  {
+    id: 'routing',
+    labelKey: 'routing',
+    icon: <Network className="w-4 h-4" />,
+    tasks: routingTasks,
+    color: 'from-purple-500 to-indigo-500',
+    showFor: ['switch'] // Only for L3 switches
   },
 ];
 
@@ -1001,7 +1010,7 @@ export default function Home() {
 
     if (actualDeviceType !== 'pc') {
       const deviceObj = topologyDevices?.find(d => d.id === deviceId);
-      getOrCreateDeviceState(deviceId, actualDeviceType, deviceObj?.name, deviceObj?.macAddress);
+      getOrCreateDeviceState(deviceId, actualDeviceType, deviceObj?.name, deviceObj?.macAddress, deviceObj?.switchModel);
       getOrCreateDeviceOutputs(deviceId);
     }
   }, [getOrCreateDeviceState, getOrCreateDeviceOutputs, topologyDevices, setSelectedDevice, setActiveDeviceId, setActiveDeviceType]);
@@ -1110,7 +1119,7 @@ export default function Home() {
       const actualType = actualDeviceType as 'switch' | 'router';
 
       const deviceObj = topologyDevices?.find(d => d.id === deviceId);
-      getOrCreateDeviceState(deviceId, actualType, deviceObj?.name, deviceObj?.macAddress);
+      getOrCreateDeviceState(deviceId, actualType, deviceObj?.name, deviceObj?.macAddress, deviceObj?.switchModel);
       getOrCreateDeviceOutputs(deviceId);
 
       setDeviceTabWithHistory('terminal', deviceId, actualType);
@@ -3001,7 +3010,7 @@ export default function Home() {
                       t={t}
                       theme={theme}
                       deviceName={state.hostname}
-                      deviceModel={activeDeviceType === 'router' ? 'NETWORK-1941' : 'WS-C2960-24TT-L'}
+                      deviceModel={activeDeviceType === 'router' ? 'NETWORK-1941' : (state.switchModel || 'WS-C2960-24TT-L')}
                       activeDeviceId={activeDeviceId}
                       isDevicePoweredOff={topologyDevices.some(d => d.id === activeDeviceId && d.status === 'offline')}
                       topologyDevices={topologyDevices}
@@ -3012,7 +3021,7 @@ export default function Home() {
                       vlans={state.vlans}
                       ports={state.ports}
                       deviceName={state.hostname}
-                      deviceModel={activeDeviceType === 'router' ? 'NETWORK-1941' : 'WS-C2960-24TT-L'}
+                      deviceModel={activeDeviceType === 'router' ? 'NETWORK-1941' : (state.switchModel || 'WS-C2960-24TT-L')}
                       deviceId={activeDeviceId}
                       onTogglePower={toggleDevicePower}
                       onExecuteCommand={handleCommand}
@@ -3036,6 +3045,56 @@ export default function Home() {
                       state={state}
                       context={taskContext}
                       color="from-red-500 to-rose-500"
+                      isDark={isDark}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Routing Sekmesi */}
+              {activeTab === 'routing' && (
+                <div className="grid lg:grid-cols-3 gap-4 flex-1 min-h-0 overflow-y-auto custom-scrollbar">
+                  <div className="lg:col-span-2">
+                    <PortPanel
+                      ports={state.ports}
+                      t={t}
+                      theme={theme}
+                      deviceName={state.hostname}
+                      deviceModel={activeDeviceType === 'router' ? 'NETWORK-1941' : (state.switchModel || 'WS-C2960-24TT-L')}
+                      activeDeviceId={activeDeviceId}
+                      isDevicePoweredOff={topologyDevices.some(d => d.id === activeDeviceId && d.status === 'offline')}
+                      topologyDevices={topologyDevices}
+                      onTogglePower={toggleDevicePower}
+                      topologyConnections={topologyConnections || undefined}
+                    />
+                    <VlanPanel
+                      vlans={state.vlans}
+                      ports={state.ports}
+                      deviceName={state.hostname}
+                      deviceModel={activeDeviceType === 'router' ? 'NETWORK-1941' : (state.switchModel || 'WS-C2960-24TT-L')}
+                      deviceId={activeDeviceId}
+                      onTogglePower={toggleDevicePower}
+                      onExecuteCommand={handleCommand}
+                      t={t}
+                      theme={theme}
+                      activeDeviceType={activeDeviceType}
+                      isDevicePoweredOff={topologyDevices.some(d => d.id === activeDeviceId && d.status === 'offline')}
+                    />
+                    <SecurityPanel
+                      security={state.security}
+                      t={t}
+                      theme={theme}
+                      deviceId={activeDeviceId}
+                      isDevicePoweredOff={topologyDevices.some(d => d.id === activeDeviceId && d.status === 'offline')}
+                      onTogglePower={toggleDevicePower}
+                    />
+                  </div>
+                  <div>
+                    <TaskCard
+                      tasks={routingTasks}
+                      state={state}
+                      context={taskContext}
+                      color="from-purple-500 to-indigo-500"
                       isDark={isDark}
                     />
                   </div>

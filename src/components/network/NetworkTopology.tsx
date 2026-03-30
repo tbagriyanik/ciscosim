@@ -119,7 +119,7 @@ export function NetworkTopology({
   const { theme } = useTheme();
   const isDark = theme === 'dark';
 
-  // Helper function to generate all switch ports
+  // Helper function to generate all switch ports - 24 FastEthernet ports
   const generateSwitchPorts = () => {
     const ports = [{ id: 'console', label: 'Console', status: 'disconnected' as const }];
     // 24 FastEthernet ports
@@ -129,6 +129,22 @@ export function NetworkTopology({
     // 2 GigabitEthernet ports
     ports.push({ id: 'gi0/1', label: 'Gi0/1', status: 'disconnected' as const });
     ports.push({ id: 'gi0/2', label: 'Gi0/2', status: 'disconnected' as const });
+    ports.push({ id: 'wlan0', label: 'WLAN0', status: 'disconnected' as const });
+    return ports;
+  };
+
+  // Helper function to generate L3 switch ports - with routing capabilities
+  const generateL3SwitchPorts = () => {
+    const ports = [{ id: 'console', label: 'Console', status: 'disconnected' as const }];
+    // 24 FastEthernet ports
+    for (let i = 1; i <= 24; i++) {
+      ports.push({ id: `fa0/${i}`, label: `Fa0/${i}`, status: 'disconnected' as const });
+    }
+    // 4 GigabitEthernet ports (L3 switches have more)
+    ports.push({ id: 'gi0/1', label: 'Gi0/1', status: 'disconnected' as const });
+    ports.push({ id: 'gi0/2', label: 'Gi0/2', status: 'disconnected' as const });
+    ports.push({ id: 'gi0/3', label: 'Gi0/3', status: 'disconnected' as const });
+    ports.push({ id: 'gi0/4', label: 'Gi0/4', status: 'disconnected' as const });
     ports.push({ id: 'wlan0', label: 'WLAN0', status: 'disconnected' as const });
     return ports;
   };
@@ -215,10 +231,10 @@ export function NetworkTopology({
   const [snapToGrid, setSnapToGrid] = useState(true); // Snap-to-grid toggle
   const canvasRef = useRef<HTMLDivElement>(null);
 
-  // Zoom input editing state
-  const [isEditingZoom, setIsEditingZoom] = useState(false);
-  const [zoomInputValue, setZoomInputValue] = useState('');
-  const zoomInputRef = useRef<HTMLInputElement>(null);
+  // Zoom mouse drag state
+  const [isDraggingZoom, setIsDraggingZoom] = useState(false);
+  const [zoomDragStart, setZoomDragStart] = useState({ x: 0, zoom: 0 });
+  const zoomDragRef = useRef({ isDragging: false, startX: 0, startZoom: 0 });
 
   // Use spatial partitioning for efficient visibility culling
   const { visibleDeviceIds, visibleConnectionIds, updateViewport } = useSpatialPartitioning(
@@ -707,32 +723,32 @@ export function NetworkTopology({
     };
   }, [pan, zoom]);
 
-  // Zoom input editing handlers
-  const startEditingZoom = useCallback(() => {
-    setIsEditingZoom(true);
-    setZoomInputValue(Math.round(zoom * 100).toString());
-    // Focus input after render
-    setTimeout(() => {
-      zoomInputRef.current?.focus();
-      zoomInputRef.current?.select();
-    }, 0);
-  }, [zoom]);
-
-  const cancelEditingZoom = useCallback(() => {
-    setIsEditingZoom(false);
-    setZoomInputValue('');
-  }, []);
-
-  const confirmEditingZoom = useCallback(() => {
-    const value = parseFloat(zoomInputValue);
-    if (!isNaN(value) && value >= MIN_ZOOM * 100 && value <= MAX_ZOOM * 100) {
-      const newZoom = value / 100;
+  // Zoom mouse drag/scroll handlers
+  const handleZoomMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startZoom = zoom;
+    
+    setIsDraggingZoom(true);
+    setZoomDragStart({ x: startX, zoom: startZoom });
+    zoomDragRef.current = { isDragging: true, startX, startZoom };
+    
+    // Add global mouse event listeners
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      if (!zoomDragRef.current.isDragging) return;
+      
+      const deltaX = moveEvent.clientX - zoomDragRef.current.startX;
+      const zoomDelta = deltaX * 0.002; // Sensitivity adjustment
+      let newZoom = zoomDragRef.current.startZoom + zoomDelta;
+      
+      // Clamp to min/max zoom
+      newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, newZoom));
+      
       if (!canvasRef.current) {
         setZoom(newZoom);
-        setIsEditingZoom(false);
-        setZoomInputValue('');
         return;
       }
+      
       const rect = canvasRef.current.getBoundingClientRect();
       const cursorX = rect.width / 2;
       const cursorY = rect.height / 2;
@@ -741,18 +757,41 @@ export function NetworkTopology({
         y: cursorY - (cursorY - prevPan.y) * (newZoom / zoom)
       }));
       setZoom(newZoom);
-    }
-    setIsEditingZoom(false);
-    setZoomInputValue('');
-  }, [zoomInputValue, zoom]);
+    };
+    
+    const handleMouseUp = () => {
+      setIsDraggingZoom(false);
+      zoomDragRef.current = { isDragging: false, startX: 0, startZoom: 0 };
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+    
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  }, [zoom]);
 
-  const handleZoomInputKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      confirmEditingZoom();
-    } else if (e.key === 'Escape') {
-      cancelEditingZoom();
+  const handleZoomWheel = useCallback((e: React.WheelEvent) => {
+    e.preventDefault();
+    const zoomDelta = e.deltaY * -0.001; // Reverse direction and adjust sensitivity
+    let newZoom = zoom + zoomDelta;
+    
+    // Clamp to min/max zoom
+    newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, newZoom));
+    
+    if (!canvasRef.current) {
+      setZoom(newZoom);
+      return;
     }
-  }, [confirmEditingZoom, cancelEditingZoom]);
+    
+    const rect = canvasRef.current.getBoundingClientRect();
+    const cursorX = rect.width / 2;
+    const cursorY = rect.height / 2;
+    setPan(prevPan => ({
+      x: cursorX - (cursorX - prevPan.x) * (newZoom / zoom),
+      y: cursorY - (cursorY - prevPan.y) * (newZoom / zoom)
+    }));
+    setZoom(newZoom);
+  }, [zoom]);
 
 
   // Close context menu when clicking outside
@@ -1809,7 +1848,7 @@ export function NetworkTopology({
             { id: 'com1', label: 'COM1', status: 'disconnected' as const },
           ]
           : type === 'switch'
-            ? generateSwitchPorts()
+            ? switchLayer === 'L3' ? generateL3SwitchPorts() : generateSwitchPorts()
             : generateRouterPorts(),
     };
     setDevices((prev) => [...prev, newDevice]);
@@ -3604,7 +3643,7 @@ export function NetworkTopology({
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth={2}
-                stroke={isDark ? '#14b8a6' : '#0d9488'}
+                stroke={isDark ? (device.switchModel === 'WS-C3560-24PS' ? '#c084fc' : '#14b8a6') : (device.switchModel === 'WS-C3560-24PS' ? '#a855f7' : '#0d9488')}
                 fill="none"
                 d="M5 12h14M5 12a2 2 0 0 1 -2-2V6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1 -2 2M5 12a2 2 0 0 0 -2 2v4a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4a2 2 0 0 0 -2-2m-2-4h.01M17 16h.01"
                 transform="scale(1.2)"
@@ -4056,26 +4095,18 @@ export function NetworkTopology({
           >
             −
           </button>
-          {isEditingZoom ? (
-            <input
-              ref={zoomInputRef}
-              type="number"
-              value={zoomInputValue}
-              onChange={(e) => setZoomInputValue(e.target.value)}
-              onBlur={confirmEditingZoom}
-              onKeyDown={handleZoomInputKeyDown}
-              className="text-xs font-mono w-10 text-center bg-slate-700 text-slate-300 rounded border border-slate-600 focus:outline-none focus:border-blue-500"
-              min={Math.round(MIN_ZOOM * 100)}
-              max={Math.round(MAX_ZOOM * 100)}
-            />
-          ) : (
-            <span
-              onClick={startEditingZoom}
-              className="text-xs font-mono w-10 text-center text-slate-300 cursor-pointer hover:bg-slate-700 rounded transition-colors"
-            >
-              {Math.round(zoom * 100)}%
-            </span>
-          )}
+          <span
+            onMouseDown={handleZoomMouseDown}
+            onWheel={handleZoomWheel}
+            className={`text-xs font-mono w-10 text-center cursor-pointer select-none transition-colors ${
+              isDraggingZoom 
+                ? 'text-blue-400' 
+                : 'text-slate-300 hover:bg-slate-700'
+            } rounded`}
+            title={language === 'tr' ? "Sürükleyerek büyütün" : "Drag to zoom or scroll"}
+          >
+            {Math.round(zoom * 100)}%
+          </span>
           <button
             onClick={() => setZoom((z) => {
               const newZoom = Math.min(MAX_ZOOM, z + 0.25);
@@ -5020,7 +5051,18 @@ export function NetworkTopology({
             >
               −
             </button>
-            <span className={`text-xs font-mono w-12 text-center ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+            <span
+              onMouseDown={handleZoomMouseDown}
+              onWheel={handleZoomWheel}
+              className={`text-xs font-mono w-12 text-center cursor-pointer select-none rounded transition-colors ${
+                isDraggingZoom 
+                  ? 'text-blue-400' 
+                  : isDark 
+                    ? 'text-slate-300 hover:bg-slate-700' 
+                    : 'text-slate-600 hover:bg-slate-100'
+              }`}
+              title={language === 'tr' ? "Sürükleyerek büyütün" : "Drag to zoom or scroll"}
+            >
               {Math.round(zoom * 100)}%
             </span>
             <button
@@ -5080,7 +5122,18 @@ export function NetworkTopology({
             >
               −
             </button>
-            <span className={`text-xs font-mono w-12 text-center ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+            <span
+              onMouseDown={handleZoomMouseDown}
+              onWheel={handleZoomWheel}
+              className={`text-xs font-mono w-12 text-center cursor-pointer select-none rounded transition-colors ${
+                isDraggingZoom 
+                  ? 'text-blue-400' 
+                  : isDark 
+                    ? 'text-slate-300 hover:bg-slate-700' 
+                    : 'text-slate-600 hover:bg-slate-100'
+              }`}
+              title={language === 'tr' ? "Sürükleyerek büyütün" : "Drag to zoom or scroll"}
+            >
               {Math.round(zoom * 100)}%
             </span>
             <button
@@ -5238,7 +5291,7 @@ export function NetworkTopology({
               {devicesSortedForRender.map((device) => {
                 const deviceWidth = device.type === 'pc' ? 90 : device.type === 'router' ? 90 : 130;
                 const deviceHeight = device.type === 'pc' ? 99 : 80;
-                const color = device.type === 'pc' ? '#3b82f6' : device.type === 'switch' ? '#22c55e' : '#a855f7';
+                const color = device.type === 'pc' ? '#3b82f6' : device.type === 'switch' ? (device.switchModel === 'WS-C3560-24PS' ? '#a855f7' : '#22c55e') : '#a855f7';
 
                 return (
                   <g key={device.id}>

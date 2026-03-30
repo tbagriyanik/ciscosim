@@ -253,6 +253,55 @@ export const wirelessTasks: TaskDefinition[] = [
   },
 ];
 
+// Routing görevleri - TOPLAM: 100 (L3 Switch only)
+export const routingTasks: TaskDefinition[] = [
+  {
+    id: 'enable-ip-routing',
+    name: { tr: 'IP Routing', en: 'IP Routing' },
+    description: { tr: 'IP routing özelliğini aktifleştirin', en: 'Enable IP routing feature' },
+    tip: { tr: 'L3 switch üzerinde routing komutlarını kullanın', en: 'Use routing commands on L3 switch' },
+    weight: 25,
+    checkFn: (state, ctx) => {
+      // Only check for L3 switches
+      const device = ctx.deviceStates?.get(ctx.selectedDevice || '');
+      return device?.ipRouting === true;
+    },
+  },
+  {
+    id: 'configure-rip',
+    name: { tr: 'RIP Protokolü', en: 'RIP Protocol' },
+    description: { tr: 'RIP routing protokolünü yapılandırın', en: 'Configure RIP routing protocol' },
+    tip: { tr: 'router rip komutu ile RIP etkinleştirin', en: 'Enable RIP with router rip command' },
+    weight: 30,
+    checkFn: (state, ctx) => {
+      const device = ctx.deviceStates?.get(ctx.selectedDevice || '');
+      return device?.routingProtocol === 'rip';
+    },
+  },
+  {
+    id: 'configure-ospf',
+    name: { tr: 'OSPF Protokolü', en: 'OSPF Protocol' },
+    description: { tr: 'OSPF routing protokolünü yapılandırın', en: 'Configure OSPF routing protocol' },
+    tip: { tr: 'router ospf komutu ile OSPF etkinleştirin', en: 'Enable OSPF with router ospf command' },
+    weight: 30,
+    checkFn: (state, ctx) => {
+      const device = ctx.deviceStates?.get(ctx.selectedDevice || '');
+      return device?.routingProtocol === 'ospf';
+    },
+  },
+  {
+    id: 'routed-port',
+    name: { tr: 'Routed Port', en: 'Routed Port' },
+    description: { tr: 'Fiziksel portu routed moduna alın', en: 'Configure physical port as routed port' },
+    tip: { tr: 'no switchport komutu ile L3 port yapın', en: 'Make L3 port with no switchport command' },
+    weight: 15,
+    checkFn: (state, ctx) => {
+      const device = ctx.deviceStates?.get(ctx.selectedDevice || '');
+      return Object.values(device?.ports || {}).some(port => port.mode === 'routed' && !port.id.startsWith('vlan'));
+    },
+  },
+];
+
 // Tüm görevleri birleştir
 export const allTaskGroups = {
   topology: topologyTasks,
@@ -260,6 +309,7 @@ export const allTaskGroups = {
   vlan: vlanTasks,
   security: securityTasks,
   wireless: wirelessTasks,
+  routing: routingTasks,
 };
 
 // Görev hesaplama yardımcı fonksiyonu
