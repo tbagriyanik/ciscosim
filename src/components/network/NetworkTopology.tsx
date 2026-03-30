@@ -3353,6 +3353,7 @@ export function NetworkTopology({
             : '#cbd5e1'}
           strokeWidth={isSelected ? 2.5 : 1.5}
           className={isDragging ? '' : 'transition-all duration-150'}
+          filter="url(#deviceShadow)"
         />
         {/* Device body highlight for 3D effect in dark mode */}
         {isDark && (
@@ -3500,7 +3501,7 @@ export function NetworkTopology({
             return (
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <g transform="translate(2, 0) scale(0.9)" filter="url(#wifiIconShadow)" style={{ cursor: 'pointer' }}>
+                  <g transform="translate(2, 0) scale(0.9)" filter="url(#deviceShadow)" style={{ cursor: 'pointer' }}>
                     {/* Invisible rect for easier hover */}
                     <rect x="0" y="5" width="24" height="20" fill="transparent" />
                     <path
@@ -3625,7 +3626,7 @@ export function NetworkTopology({
         {/* Device icon */}
         {/* Removed powered-off icon background — keep original icon only */}
 
-        <g transform={`translate(${deviceWidth / 2 - 12}, 10)`}>
+        <g transform={`translate(${deviceWidth / 2 - 12}, 10)`} filter="url(#deviceShadow)">
           <g style={{ color: iconColor }}>
             {device.type === 'pc' && (
               <path
@@ -3663,6 +3664,7 @@ export function NetworkTopology({
           <TooltipTrigger asChild>
             <g
               className="cursor-pointer"
+              filter="url(#deviceShadow)"
               onClick={(e) => {
                 e.stopPropagation();
                 saveToHistory();
@@ -4536,6 +4538,10 @@ export function NetworkTopology({
                   <clipPath id="canvasClip">
                     <rect x="0" y="0" width={getCanvasDimensions().width} height={getCanvasDimensions().height} />
                   </clipPath>
+                  {/* Device Shadow Filter */}
+                  <filter id="deviceShadow" x="-50%" y="-50%" width="200%" height="200%">
+                    <feDropShadow dx="2" dy="3" stdDeviation="3" floodOpacity={isDark ? "0.3" : "0.2"} />
+                  </filter>
                   {/* WiFi Icon Shadow Filter */}
                   <filter id="wifiIconShadow" x="-50%" y="-50%" width="200%" height="200%">
                     <feDropShadow dx="0" dy="0.5" stdDeviation="0.6" floodOpacity={isDark ? "0.8" : "0.4"} />
