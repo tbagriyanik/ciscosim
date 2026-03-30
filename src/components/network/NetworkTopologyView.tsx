@@ -148,6 +148,7 @@ const arePropsEqual = (prevProps: NetworkTopologyViewProps, nextProps: NetworkTo
 export const NetworkTopologyView = React.memo(
   (props: NetworkTopologyViewProps) => {
     const { t } = useLanguage();
+    const zoomInputRef = React.useRef<HTMLInputElement>(null);
     const {
       isDark,
       language,
@@ -600,9 +601,23 @@ export const NetworkTopologyView = React.memo(
           >
             -
           </button>
-          <span className={`text-xs font-mono w-12 text-center ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-            {Math.round(zoom * 100)}%
-          </span>
+          <input
+            ref={zoomInputRef}
+            type="number"
+            min={Math.round(MIN_ZOOM * 100)}
+            max={Math.round(MAX_ZOOM * 100)}
+            value={Math.round(zoom * 100)}
+            onChange={(e) => {
+              const value = parseInt(e.target.value, 10);
+              if (!isNaN(value)) {
+                const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, value / 100));
+                props.setZoom(newZoom);
+              }
+            }}
+            className={`text-xs font-mono w-12 text-center px-1 rounded border ${isDark
+              ? 'bg-slate-700 border-slate-600 text-white'
+              : 'bg-white border-slate-300 text-slate-900'}`}
+          />
           <button
             onClick={() => trackInteraction(() => props.setZoom((z: number) => {
               const newZoom = Math.min(MAX_ZOOM, z + 0.25);

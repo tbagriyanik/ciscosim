@@ -7,9 +7,14 @@ import { X } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 function Dialog({
+  open,
+  onOpenChange,
   ...props
-}: React.ComponentProps<typeof DialogPrimitive.Root>) {
-  return <DialogPrimitive.Root data-slot="dialog" {...props} />
+}: React.ComponentProps<typeof DialogPrimitive.Root> & {
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+}) {
+  return <DialogPrimitive.Root data-slot="dialog" open={open} onOpenChange={onOpenChange} {...props} />
 }
 
 function DialogTrigger({

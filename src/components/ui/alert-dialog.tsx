@@ -5,9 +5,14 @@ import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog"
 import { cn } from "@/lib/utils"
 
 function AlertDialog({
+    open,
+    onOpenChange,
     ...props
-}: React.ComponentProps<typeof AlertDialogPrimitive.Root>) {
-    return <AlertDialogPrimitive.Root data-slot="alert-dialog" {...props} />
+}: React.ComponentProps<typeof AlertDialogPrimitive.Root> & {
+    open?: boolean;
+    onOpenChange?: (open: boolean) => void;
+}) {
+    return <AlertDialogPrimitive.Root data-slot="alert-dialog" open={open} onOpenChange={onOpenChange} {...props} />
 }
 
 function AlertDialogTrigger({

@@ -82,9 +82,14 @@ export interface SecurityConfig {
   vtyLines: LineConfig;
 }
 
+export type SwitchModel = 'WS-C2960-24TT-L' | 'WS-C3560-24PS';
+export type SwitchLayer = 'L2' | 'L3';
+
 export interface SwitchState {
   hostname: string;
   macAddress: string; // Unique base MAC address for the device
+  switchModel: SwitchModel; // Switch model (L2 or L3)
+  switchLayer: SwitchLayer; // Layer 2 or Layer 3
   currentMode: CommandMode;
   currentInterface?: string;
   selectedInterfaces?: string[];  // interface range için çoklu port seçimi

@@ -77,6 +77,8 @@ import { performanceMonitor } from '@/lib/performance/monitoring';
 import { DeviceIcon } from '@/components/network/DeviceIcon';
 import { AppSkeleton } from '@/components/ui/AppSkeleton';
 import { AppErrorBoundary } from '@/components/ui/AppErrorBoundary';
+import { SwitchModelSelector } from '@/components/network/SwitchModelSelector';
+import { SwitchModel } from '@/lib/network/switchModels';
 
 const PCPanel = dynamic(() => import('@/components/network/PCPanel').then((m) => m.PCPanel), { ssr: false });
 const Terminal = dynamic(() => import('@/components/network/Terminal').then((m) => m.Terminal), { ssr: false });
@@ -240,6 +242,7 @@ export default function Home() {
   // Currently active device in terminal
   const [activeDeviceId, setActiveDeviceId] = useState<string>('switch-1');
   const [activeDeviceType, setActiveDeviceType] = useState<'pc' | 'switch' | 'router'>('switch');
+  const [showSwitchModelSelector, setShowSwitchModelSelector] = useState(false);
 
   // Navigation history for back/forward support
   const navigationHistoryRef = useRef<{ tab: TabType; deviceId?: string; program?: string }[]>([{ tab: 'topology' }]);
@@ -398,6 +401,7 @@ export default function Home() {
     }
   }, []);
   const [isMobile, setIsMobile] = useState(false);
+  const [currentSwitchModel, setCurrentSwitchModel] = useState<SwitchModel>('WS-C2960-24TT-L');
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
@@ -428,6 +432,30 @@ export default function Home() {
       return nextDevices;
     });
   }, [setTopologyDevices, setTopologyConnections]);
+
+  const handleSwitchModelSelect = useCallback((model: SwitchModel) => {
+    setCurrentSwitchModel(model);
+    setShowSwitchModelSelector(false);
+
+    // Update the switch device with new model
+    const switchDevice = topologyDevices.find(d => d.id === 'switch-1');
+    if (switchDevice) {
+      // Create new state with selected model
+      const newState = getOrCreateDeviceState('switch-1', 'switch', switchDevice.name);
+      setDeviceStates(prev => {
+        const next = new Map(prev);
+        next.set('switch-1', { ...newState, switchModel: model, switchLayer: model.startsWith('WS-C2960') ? 'L2' : 'L3' });
+        return next;
+      });
+
+      // Show toast notification
+      toast({
+        title: language === 'tr' ? 'Switch Modeli Değiştirildi' : 'Switch Model Changed',
+        description: `${model}`,
+        variant: 'default'
+      });
+    }
+  }, [topologyDevices, getOrCreateDeviceState, setDeviceStates, language, toast]);
 
   const [cableInfo, setCableInfo] = useState<CableInfo>({
     connected: true,
@@ -607,7 +635,7 @@ export default function Home() {
   // Legacy state for compatibility with other panels (uses active device's state)
   const state = useMemo(() => {
     const activeDevice = (topologyDevices || []).find(d => d.id === activeDeviceId);
-    return getOrCreateDeviceState(activeDeviceId, activeDeviceType, activeDevice?.name, activeDevice?.macAddress);
+    return getOrCreateDeviceState(activeDeviceId, activeDeviceType, activeDevice?.name, activeDevice?.macAddress, activeDevice?.switchModel);
   }, [activeDeviceId, activeDeviceType, topologyDevices, deviceStates, getOrCreateDeviceState]);
   const output = activeTab === 'topology' ? [] : getOrCreateDeviceOutputs(activeDeviceId);
 
@@ -2068,6 +2096,19 @@ export default function Home() {
                     {/* Info & Settings */}
                     <Tooltip>
                       <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className={`h-8 w-8 ui-hover-surface ${isDark ? 'text-slate-300 hover:text-purple-400' : 'text-slate-600 hover:text-purple-600'}`}
+                          onClick={() => setShowSwitchModelSelector(true)}
+                        >
+                          <Layers className="w-4 h-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>{language === 'tr' ? 'Switch Modeli' : 'Switch Model'}</TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
                         <Button variant="ghost" size="icon" className={`h-8 w-8 ui-hover-surface ${isDark ? 'text-slate-300 hover:text-sky-400' : 'text-slate-600 hover:text-sky-600'}`} onClick={() => setShowAboutModal(true)}>
                           <Info className="w-4 h-4" />
                         </Button>
@@ -3107,6 +3148,13 @@ export default function Home() {
           </footer>
 
           <LazyAboutModal isOpen={showAboutModal} onClose={() => setShowAboutModal(false)} />
+          <SwitchModelSelector
+            isOpen={showSwitchModelSelector}
+            onSelect={handleSwitchModelSelect}
+            onCancel={() => setShowSwitchModelSelector(false)}
+            currentModel={currentSwitchModel}
+            language={language}
+          />
         </div>
       </div>
     </AppErrorBoundary>

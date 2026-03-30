@@ -1,5 +1,6 @@
 import type { CommandHandler } from './commandTypes';
 import { normalizePortId } from '../initialState';
+import { canAssignIPToPhysicalPort } from '../switchModels';
 
 // Helper function to check if in interface mode (single or range)
 function isInInterfaceMode(state: any): boolean {
@@ -534,7 +535,18 @@ function cmdIpAddress(state: any, input: string, ctx: any): any {
     };
   }
 
-  // Fiziksel port'a IP atama
+  // Layer 2 switch kontrolü - fastethernet portlarına IP ataması engelle
+  if (!canAssignIPToPhysicalPort(state.switchModel)) {
+    const port = state.ports[state.currentInterface];
+    if (port && (port.type === 'fastethernet' || port.type === 'gigabitethernet')) {
+      return {
+        success: false,
+        error: `% Invalid command. Layer 2 switch (${state.switchModel}) does not support IP addressing on physical ports.\nUse VLAN interface instead: interface vlan <vlan-id>`
+      };
+    }
+  }
+
+  // Fiziksel port'a IP atama (Layer 3 switch veya routed port)
   const newPorts = applyToSelectedPorts(state, (port: any) => ({ ...port, ipAddress: ip, subnetMask: mask, mode: 'routed' }));
 
   return {
@@ -626,22 +638,22 @@ function isValidIP(ip: string): boolean {
 
 function expandInterfaceRange(rangeSpec: string, state: any): string[] {
   const normalized = rangeSpec.replace(/\s+/g, '').toLowerCase();
-  
+
   // Handle comma-separated ranges: fa0/1,3,6 or fa0/1-4,7-9
   const parts = normalized.split(',');
   const allPorts: string[] = [];
-  
+
   for (const part of parts) {
     const match = part.match(/^(fastethernet|gigabitethernet|gigabit|fastethernet|fa|gig|gi)(\d+)\/(\d+)(?:-(\d+))?$/);
     if (!match) continue;
-    
+
     const prefix = match[1].startsWith('f') ? 'fa' : 'gi';
     const moduleNum = match[2];
     const startPort = parseInt(match[3], 10);
     const endPort = match[4] ? parseInt(match[4], 10) : startPort;
-    
+
     if (Number.isNaN(startPort) || Number.isNaN(endPort) || endPort < startPort) continue;
-    
+
     const available = Object.keys(state.ports || {});
     for (let port = startPort; port <= endPort; port++) {
       const normalizedId = `${prefix}${moduleNum}/${port}`;
@@ -650,7 +662,7 @@ function expandInterfaceRange(rangeSpec: string, state: any): string[] {
       }
     }
   }
-  
+
   return allPorts;
 }
 

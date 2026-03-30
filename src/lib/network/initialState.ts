@@ -1,5 +1,6 @@
 // Network Switch Initial State
 import { SwitchState, Port, Vlan, SecurityConfig, CommandMode, StartupConfig } from './types';
+import { getSwitchLayer } from './switchModels';
 
 // 24 FastEthernet + 2 GigabitEthernet portu oluştur
 function createInitialPorts(): Record<string, Port> {
@@ -46,19 +47,6 @@ function createInitialPorts(): Record<string, Port> {
       channelProtocol: undefined
     };
   }
-
-  // Management VLAN interface
-  ports['vlan1'] = {
-    id: 'vlan1',
-    name: '',
-    status: 'notconnect',
-    vlan: 1,
-    mode: 'access',
-    duplex: 'auto',
-    speed: 'auto',
-    shutdown: false, // BAŞLANGIÇTA AÇIK
-    type: 'fastethernet'
-  };
 
   // WLAN interface
   ports['wlan0'] = {
@@ -138,10 +126,13 @@ function generateMacAddress(): string {
 }
 
 // Ana başlangıç durumu
-export function createInitialState(mac?: string): SwitchState {
+export function createInitialState(mac?: string, switchModel: 'WS-C2960-24TT-L' | 'WS-C3560-24PS' = 'WS-C2960-24TT-L'): SwitchState {
   const ports = createInitialPorts();
   const vlans = createInitialVlans();
   const macAddress = mac || '0011.2233.4401';
+
+  // Switch modeline göre Layer belirle
+  const switchLayer = getSwitchLayer(switchModel as any);
 
   // VLAN'lara portları ata
   Object.values(ports).forEach(port => {
@@ -154,6 +145,8 @@ export function createInitialState(mac?: string): SwitchState {
   return {
     hostname: 'Switch',
     macAddress,
+    switchModel: switchModel as any,
+    switchLayer,
     currentMode: 'user',
     consoleAuthenticated: false,
     ports,
@@ -183,7 +176,7 @@ export function createInitialState(mac?: string): SwitchState {
     bannerMOTD: 'Welcome to the Network Simulator 2026\nUnauthorized access is strictly prohibited.',
     version: {
       nosVersion: '15.0(2)SE4',
-      modelName: 'WS-C2960-24TT-L',
+      modelName: switchModel,
       serialNumber: 'FOC1234X5YZ',
       uptime: '2 weeks, 3 days, 5 hours'
     },
@@ -250,6 +243,8 @@ export function createInitialRouterState(mac?: string): SwitchState {
   return {
     hostname: 'Router',
     macAddress,
+    switchModel: 'WS-C3560-24PS' as any,
+    switchLayer: 'L3',
     currentMode: 'user',
     consoleAuthenticated: false,
     ports,
@@ -776,7 +771,7 @@ export const commandAliases: Record<string, string> = {
 
   // VLAN commands
   'vl': 'vlan',
-  'vla': 'vlan',  
+  'vla': 'vlan',
   'vl n': 'vlan name',
   'vla n': 'vlan name',
   'vlan n': 'vlan name',

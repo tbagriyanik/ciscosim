@@ -87,6 +87,7 @@ export interface CanvasDevice {
   x: number;
   y: number;
   status: 'online' | 'offline' | 'error';
+  switchModel?: string; // WS-C2960-24TT-L (L2) veya WS-C3560-24PS (L3)
   ports: CanvasPort[];
   wifi?: {
     enabled: boolean;

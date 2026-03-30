@@ -597,6 +597,14 @@ export function NetworkTopology({
     setConnections((prev) =>
       prev.filter((c) => c.sourceDeviceId !== deviceId && c.targetDeviceId !== deviceId)
     );
+    // Eğer kablo çizimi bu cihazdan başlamışsa iptal et
+    setConnectionStart((prev) => {
+      if (prev?.deviceId === deviceId) {
+        setIsDrawingConnection(false);
+        return null;
+      }
+      return prev;
+    });
     if (onDeviceDelete) {
       onDeviceDelete(deviceId);
     }
@@ -1718,7 +1726,7 @@ export function NetworkTopology({
   }, [devices]);
 
   // Add device from palette button
-  const addDevice = useCallback((type: 'pc' | 'switch' | 'router') => {
+  const addDevice = useCallback((type: 'pc' | 'switch' | 'router', layer?: 'L2' | 'L3') => {
     saveToHistory();
     deviceCounterRef.current[type]++;
 
@@ -1726,6 +1734,10 @@ export function NetworkTopology({
     const deviceCount = devices.length;
     const offsetX = (deviceCount % 4) * 100;
     const offsetY = Math.floor(deviceCount / 4) * 100;
+
+    // Determine switch layer (default L2)
+    const switchLayer = layer || 'L2';
+    const switchModel = switchLayer === 'L3' ? 'WS-C3560-24PS' : 'WS-C2960-24TT-L';
 
     const newDevice: CanvasDevice = {
       id: `${type}-${deviceCounterRef.current[type]}`,
@@ -1736,7 +1748,8 @@ export function NetworkTopology({
       // Position near top-left with staggered layout
       x: 100 + offsetX + Math.random() * 30,
       y: 80 + offsetY + Math.random() * 30,
-      status: 'offline',
+      status: 'online',
+      switchModel: type === 'switch' ? switchModel : undefined,
       ports:
         type === 'pc'
           ? [
@@ -3212,8 +3225,8 @@ export function NetworkTopology({
     const iconColor = isPoweredOff
       ? '#ef4444'
       : (hasConnection
-        ? '#22c55e'
-        : (device.type === 'pc' ? '#3b82f6' : device.type === 'switch' ? '#14b8a6' : '#a855f7'));
+        ? (device.type === 'switch' && device.switchModel === 'WS-C3560-24PS' ? '#a855f7' : '#22c55e')
+        : (device.type === 'pc' ? '#3b82f6' : device.type === 'switch' ? (device.switchModel === 'WS-C3560-24PS' ? '#a855f7' : '#22c55e') : '#a855f7'));
 
     return (
       <g
@@ -3657,7 +3670,10 @@ export function NetworkTopology({
           })
         ) : (
           // Switch/Router - wrap 8 ports per row for wider device
-          (device.type === 'router' ? device.ports.filter(p => p.id !== 'wlan0') : device.ports).map((port, idx) => {
+          (device.type === 'router'
+            ? device.ports.filter(p => p.id !== 'wlan0')
+            : device.ports.filter(p => !p.id.startsWith('vlan') && p.id !== 'wlan0')
+          ).map((port, idx) => {
             const portsPerRow = 8;
             const col = idx % portsPerRow;
             const row = Math.floor(idx / portsPerRow);
@@ -4052,15 +4068,28 @@ export function NetworkTopology({
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <button
-                        onClick={() => addDevice('switch')}
-                        className={`p-1.5 rounded-lg ui-hover-surface ${isDark ? 'text-emerald-500 hover:text-emerald-400' : 'text-emerald-600 hover:text-emerald-700'}`}
+                        onClick={() => addDevice('switch', 'L2')}
+                        className={`p-1.5 rounded-lg ui-hover-surface ${isDark ? 'text-green-500 hover:text-green-400' : 'text-green-600 hover:text-green-700'}`}
                       >
                         <svg className="w-5 h-5" fill="none" stroke="#22c55e" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 12h14M5 12a2 2 0 0 1 -2-2V6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1 -2 2M5 12a2 2 0 0 0 -2 2v4a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4a2 2 0 0 0 -2-2m-2-4h.01M17 16h.01" />
                         </svg>
                       </button>
                     </TooltipTrigger>
-                    <TooltipContent>{language === 'tr' ? 'Switch Ekle' : 'Add Switch'}</TooltipContent>
+                    <TooltipContent>{language === 'tr' ? 'L2 Switch Ekle' : 'Add L2 Switch'}</TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={() => addDevice('switch', 'L3')}
+                        className={`p-1.5 rounded-lg ui-hover-surface ${isDark ? 'text-purple-500 hover:text-purple-400' : 'text-purple-600 hover:text-purple-700'}`}
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="#a855f7" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 12h14M5 12a2 2 0 0 1 -2-2V6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1 -2 2M5 12a2 2 0 0 0 -2 2v4a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4a2 2 0 0 0 -2-2m-2-4h.01M17 16h.01" />
+                        </svg>
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>{language === 'tr' ? 'L3 Switch Ekle' : 'Add L3 Switch'}</TooltipContent>
                   </Tooltip>
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -4189,22 +4218,57 @@ export function NetworkTopology({
                 {/* Devices Section */}
                 <div className="space-y-4">
                   <p className="text-[10px] font-bold  tracking-widest text-slate-500 ml-1">{t.devices}</p>
-                  <div className="grid grid-cols-3 gap-3">
-                    {(['pc', 'switch', 'router'] as const).map((type) => (
-                      <button
-                        key={type}
-                        onClick={() => { addDevice(type); setIsPaletteOpen(false); }}
-                        className={`flex flex-col items-center gap-2 p-4 rounded-2xl border transition-all ${isDark ? 'bg-slate-800 border-slate-700 active:bg-slate-700' : 'bg-slate-50 border-slate-200 active:bg-slate-100'
-                          }`}
-                      >
-                        <div className={type === 'pc' ? 'text-blue-500' : type === 'switch' ? 'text-green-500' : 'text-purple-500'}>
-                          {DEVICE_ICONS[type]}
-                        </div>
-                        <span className="text-xs font-bold capitalize">
-                          {type === 'pc' ? t.addPcShort : type === 'switch' ? t.addSwitchShort : t.addRouterShort}
-                        </span>
-                      </button>
-                    ))}
+                  <div className="grid grid-cols-4 gap-3">
+                    <button
+                      onClick={() => { addDevice('pc'); setIsPaletteOpen(false); }}
+                      className={`flex flex-col items-center gap-2 p-4 rounded-2xl border transition-all ${isDark ? 'bg-slate-800 border-slate-700 active:bg-slate-700' : 'bg-slate-50 border-slate-200 active:bg-slate-100'
+                        }`}
+                    >
+                      <div className='text-blue-500'>
+                        {DEVICE_ICONS['pc']}
+                      </div>
+                      <span className="text-xs font-bold text-center">
+                        {language === 'tr' ? 'PC Ekle' : 'Add PC'}
+                      </span>
+                    </button>
+                    <button
+                      onClick={() => { addDevice('switch'); setIsPaletteOpen(false); }}
+                      className={`flex flex-col items-center gap-2 p-4 rounded-2xl border transition-all ${isDark ? 'bg-slate-800 border-slate-700 active:bg-slate-700' : 'bg-slate-50 border-slate-200 active:bg-slate-100'
+                        }`}
+                    >
+                      <div className='text-green-500'>
+                        {DEVICE_ICONS['switch']}
+                      </div>
+                      <span className="text-xs font-bold text-center">
+                        {language === 'tr' ? 'L2 Switch' : 'L2 Switch'}
+                      </span>
+                    </button>
+                    <button
+                      onClick={() => { addDevice('switch', 'L3'); setIsPaletteOpen(false); }}
+                      className={`flex flex-col items-center gap-2 p-4 rounded-2xl border transition-all ${isDark ? 'bg-slate-800 border-slate-700 active:bg-slate-700' : 'bg-slate-50 border-slate-200 active:bg-slate-100'
+                        }`}
+                    >
+                      <div className='text-purple-500'>
+                        <svg className="w-6 h-6 sm:w-8 sm:h-8" fill="none" stroke="#a855f7" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 12h14M5 12a2 2 0 0 1 -2-2V6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1 -2 2M5 12a2 2 0 0 0 -2 2v4a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4a2 2 0 0 0 -2-2m-2-4h.01M17 16h.01" />
+                        </svg>
+                      </div>
+                      <span className="text-xs font-bold text-center">
+                        {language === 'tr' ? 'L3 Switch' : 'L3 Switch'}
+                      </span>
+                    </button>
+                    <button
+                      onClick={() => { addDevice('router'); setIsPaletteOpen(false); }}
+                      className={`flex flex-col items-center gap-2 p-4 rounded-2xl border transition-all ${isDark ? 'bg-slate-800 border-slate-700 active:bg-slate-700' : 'bg-slate-50 border-slate-200 active:bg-slate-100'
+                        }`}
+                    >
+                      <div className='text-purple-500'>
+                        {DEVICE_ICONS['router']}
+                      </div>
+                      <span className="text-xs font-bold text-center">
+                        {language === 'tr' ? 'Router Ekle' : 'Add Router'}
+                      </span>
+                    </button>
                   </div>
                 </div>
 

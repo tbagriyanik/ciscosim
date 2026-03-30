@@ -143,12 +143,13 @@ export function useDeviceManager() {
     return () => window.removeEventListener('trigger-topology-toggle-power', handlePowerToggle as EventListener);
   }, [deviceStates]);
 
-  const getOrCreateDeviceState = useCallback((deviceId: string, deviceType: 'pc' | 'switch' | 'router', initialHostname?: string, initialMac?: string): SwitchState => {
+  const getOrCreateDeviceState = useCallback((deviceId: string, deviceType: 'pc' | 'switch' | 'router', initialHostname?: string, initialMac?: string, switchModel?: string): SwitchState => {
     let deviceState = deviceStates.get(deviceId);
     const defaultName = deviceType === 'router' ? 'Router' : 'Switch';
 
     if (!deviceState) {
-      deviceState = deviceType === 'router' ? createInitialRouterState(initialMac) : createInitialState(initialMac);
+      const model = (switchModel as any) || 'WS-C2960-24TT-L';
+      deviceState = deviceType === 'router' ? createInitialRouterState(initialMac) : createInitialState(initialMac, model);
       const hostname = initialHostname || defaultName;
       deviceState = { ...deviceState, hostname };
 
@@ -424,15 +425,15 @@ export function useDeviceManager() {
             }
             return next;
           });
-          
+
           // Show toast notification for config save
           const device = topologyDevices?.find(d => d.id === deviceId);
           const deviceName = device?.name || deviceId;
           const timestamp = new Date().toLocaleString();
-          
+
           toast({
             title: language === 'tr' ? 'Yapılandırma Kaydedildi' : 'Configuration Saved',
-            description: language === 'tr' 
+            description: language === 'tr'
               ? `${deviceName} - running-config → startup-config (${timestamp})`
               : `${deviceName} - running-config → startup-config (${timestamp})`,
             variant: "default"
@@ -454,12 +455,12 @@ export function useDeviceManager() {
             }
             return next;
           });
-          
+
           // Show toast notification for config erase
           const device = topologyDevices?.find(d => d.id === deviceId);
           const deviceName = device?.name || deviceId;
           const timestamp = new Date().toLocaleString();
-          
+
           toast({
             title: language === 'tr' ? 'Yapılandırma Silindi' : 'Configuration Erased',
             description: language === 'tr'
@@ -467,7 +468,7 @@ export function useDeviceManager() {
               : `${deviceName} - startup-config erased (${timestamp})`,
             variant: "destructive"
           });
-          
+
           setDeviceOutputs(prev => new Map(prev).set(deviceId, []));
         }
         if (result.reloadDevice) {
