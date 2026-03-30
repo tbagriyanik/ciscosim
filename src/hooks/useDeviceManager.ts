@@ -75,10 +75,13 @@ export function useDeviceManager() {
       if (nextStatus === 'online') {
         // Power on: reset device state and show boot sequence
         const isRouter = deviceId.includes('router');
-        const baseState = isRouter ? createInitialRouterState() : createInitialState();
+        const existingState = deviceStates.get(deviceId);
+        
+        // Get the switch model from existing state or default
+        const switchModel = existingState?.switchModel || (isRouter ? 'WS-C3560-24PS' : 'WS-C2960-24TT-L');
+        const baseState = isRouter ? createInitialRouterState() : createInitialState(undefined, switchModel as any);
 
         // Get existing state to preserve saved configuration and identity
-        const existingState = deviceStates.get(deviceId);
         const startupConfig = existingState?.startupConfig;
         const defaultHostname = isRouter ? 'Router' : 'Switch';
         const hostname = startupConfig ? (existingState?.hostname || defaultHostname) : defaultHostname;
@@ -87,6 +90,8 @@ export function useDeviceManager() {
           ...baseState,
           hostname,
           macAddress: existingState?.macAddress || baseState.macAddress,
+          switchModel: switchModel as any,
+          switchLayer: baseState.switchLayer,
           version: existingState?.version || baseState.version
         };
 
@@ -194,7 +199,8 @@ export function useDeviceManager() {
       ];
 
       // Add banner MOTD if available
-      const deviceState = state || (isRouter ? createInitialRouterState() : createInitialState());
+      const fallbackState = deviceStates.get(deviceId);
+      const deviceState = state || (isRouter ? createInitialRouterState() : createInitialState(undefined, fallbackState?.switchModel as any));
       if (deviceState?.bannerMOTD) {
         outputs.push({ id: `banner-initial`, type: 'output', content: `\n${deviceState.bannerMOTD}\n` });
       }

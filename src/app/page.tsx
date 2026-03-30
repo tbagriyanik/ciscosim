@@ -970,7 +970,7 @@ export default function Home() {
     setActiveTab(isCompatible ? tabId : 'topology');
   }, [activeDeviceId, activeDeviceType, topologyDevices, setActiveTab]);
 
-  const applyDeviceSelection = useCallback((device: 'pc' | 'switch' | 'router', deviceId?: string) => {
+  const applyDeviceSelection = useCallback((device: 'pc' | 'switch' | 'router', deviceId?: string, switchModel?: string) => {
     setSelectedDevice(device);
     if (!deviceId) return;
 
@@ -980,19 +980,21 @@ export default function Home() {
 
     if (actualDeviceType !== 'pc') {
       const deviceObj = topologyDevices?.find(d => d.id === deviceId);
-      getOrCreateDeviceState(deviceId, actualDeviceType, deviceObj?.name, deviceObj?.macAddress, deviceObj?.switchModel);
+      // Use the passed switchModel or fall back to deviceObj's switchModel
+      const modelToUse = switchModel || deviceObj?.switchModel;
+      getOrCreateDeviceState(deviceId, actualDeviceType, deviceObj?.name, deviceObj?.macAddress, modelToUse);
       getOrCreateDeviceOutputs(deviceId);
     }
   }, [getOrCreateDeviceState, getOrCreateDeviceOutputs, topologyDevices, setSelectedDevice, setActiveDeviceId, setActiveDeviceType]);
 
   // Topology canvas click: selects device only (no zoom/pan).
-  const handleDeviceSelectFromCanvas = useCallback((device: 'pc' | 'switch' | 'router', deviceId?: string) => {
-    applyDeviceSelection(device, deviceId);
+  const handleDeviceSelectFromCanvas = useCallback((device: 'pc' | 'switch' | 'router', deviceId?: string, switchModel?: string) => {
+    applyDeviceSelection(device, deviceId, switchModel);
   }, [applyDeviceSelection]);
 
   // Device dropdown/menu click: focus the selected device at 100% zoom.
-  const handleDeviceSelectFromMenu = useCallback((device: 'pc' | 'switch' | 'router', deviceId?: string) => {
-    applyDeviceSelection(device, deviceId);
+  const handleDeviceSelectFromMenu = useCallback((device: 'pc' | 'switch' | 'router', deviceId?: string, switchModel?: string) => {
+    applyDeviceSelection(device, deviceId, switchModel);
     if (!deviceId) return;
 
     switchTabOrTopology('topology');

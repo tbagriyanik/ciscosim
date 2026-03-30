@@ -22,7 +22,7 @@ interface NetworkTopologyProps {
   cableInfo: CableInfo;
   onCableChange: (cableInfo: CableInfo) => void;
   selectedDevice: 'pc' | 'switch' | 'router' | null;
-  onDeviceSelect: (device: 'pc' | 'switch' | 'router', deviceId?: string) => void;
+  onDeviceSelect: (device: 'pc' | 'switch' | 'router', deviceId?: string, switchModel?: string) => void;
   onDeviceDoubleClick?: (device: 'pc' | 'switch' | 'router', deviceId: string) => void;
   onTopologyChange?: (devices: CanvasDevice[], connections: CanvasConnection[], notes: CanvasNote[]) => void;
   onDeviceDelete?: (deviceId: string) => void;
@@ -1860,7 +1860,8 @@ export function NetworkTopology({
     };
     setDevices((prev) => [...prev, newDevice]);
     setSelectedDeviceIds([newDevice.id]);
-    onDeviceSelect(type === 'router' ? 'switch' : type, newDevice.id);
+    // Pass the switchModel directly to avoid race condition
+    onDeviceSelect(type === 'router' ? 'switch' : type, newDevice.id, newDevice.switchModel);
 
   }, [devices.length, saveToHistory, generateUniqueIp, onDeviceSelect]);
 
