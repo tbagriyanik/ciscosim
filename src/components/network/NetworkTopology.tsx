@@ -1840,7 +1840,7 @@ export function NetworkTopology({
     const newDevice: CanvasDevice = {
       id: `${type}-${deviceCounterRef.current[type]}`,
       type,
-      name: `${type.toUpperCase()}-${deviceCounterRef.current[type]}`,
+      name: type === 'switch' && switchLayer === 'L3' ? `C3560-${deviceCounterRef.current[type]}` : `${type.toUpperCase()}-${deviceCounterRef.current[type]}`,
       macAddress: generateMacAddress(),
       ip: type === 'pc' ? generateUniqueIp() : '',
       // Position near top-left with staggered layout

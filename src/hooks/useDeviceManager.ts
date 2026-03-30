@@ -160,17 +160,26 @@ export function useDeviceManager() {
         );
       }
       setDeviceStates(prev => new Map(prev).set(deviceId, deviceState!));
-    } else if (initialHostname && (deviceState.hostname === 'Switch' || deviceState.hostname === 'Router') && initialHostname !== deviceState.hostname) {
-      const updatedState = { ...deviceState, hostname: initialHostname };
-      if (updatedState.runningConfig) {
-        updatedState.runningConfig = updatedState.runningConfig.map(line =>
-          line.startsWith('hostname') ? `hostname ${initialHostname}` : line
-        );
+    } else {
+      // Update existing device state if switchModel is provided and differs
+      if (switchModel && deviceState.switchModel !== switchModel) {
+        const updatedState = { ...deviceState, switchModel: switchModel as any };
+        setDeviceStates(prev => new Map(prev).set(deviceId, updatedState));
+        deviceState = updatedState;
       }
-      setDeviceStates(prev => new Map(prev).set(deviceId, updatedState));
-      return updatedState;
+      
+      if (initialHostname && (deviceState.hostname === 'Switch' || deviceState.hostname === 'Router') && initialHostname !== deviceState.hostname) {
+        const updatedState = { ...deviceState, hostname: initialHostname };
+        if (updatedState.runningConfig) {
+          updatedState.runningConfig = updatedState.runningConfig.map(line =>
+            line.startsWith('hostname') ? `hostname ${initialHostname}` : line
+          );
+        }
+        setDeviceStates(prev => new Map(prev).set(deviceId, updatedState));
+        deviceState = updatedState;
+      }
     }
-    return deviceState;
+    return deviceState!;
   }, [deviceStates]);
 
   const getOrCreateDeviceOutputs = useCallback((deviceId: string): TerminalOutput[] => {

@@ -20,7 +20,8 @@ export function AppFooter({ state, selectedDevice, activeDeviceId, activeDeviceN
 
   // Get device info
   const deviceName = activeDeviceName || state.hostname;
-  const deviceType = activeDeviceId.includes('pc') ? 'PC' : activeDeviceId.includes('router') ? 'Router' : 'Switch';
+  const deviceType = activeDeviceId.includes('pc') ? 'PC' : activeDeviceId.includes('router') ? 'Router' : 
+    (state.switchModel === 'WS-C3560-24PS' ? 'C3560' : 'Switch');
 
   return (
     <footer
@@ -34,6 +35,7 @@ export function AppFooter({ state, selectedDevice, activeDeviceId, activeDeviceN
           >
             <div className={`p-2 rounded-xl shadow-inner ${deviceType === 'PC' ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' :
               deviceType === 'Router' ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20' :
+                deviceType === 'C3560' ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20' :
                 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
               }`}>
               {deviceType === 'PC' ? (
