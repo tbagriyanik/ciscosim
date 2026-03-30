@@ -1590,8 +1590,13 @@ export function NetworkTopology({
       e.preventDefault(); // prevent window scroll
 
       const rect = canvas.getBoundingClientRect();
-      const cursorX = e.clientX - rect.left;
-      const cursorY = e.clientY - rect.top;
+      // Zoom to center of visible viewport (what user actually sees)
+      const viewportCenterX = rect.width / 2;
+      const viewportCenterY = rect.height / 2;
+      
+      // Convert viewport center to canvas coordinates
+      const cursorX = viewportCenterX + pan.x;
+      const cursorY = viewportCenterY + pan.y;
 
       const zoomSensitivity = 0.0015;
       const delta = -e.deltaY;
@@ -1603,17 +1608,19 @@ export function NetworkTopology({
         // Only adjust pan if zoom actually changed
         if (newZoom !== prevZoom) {
           setPan(prevPan => {
+            // Keep viewport center fixed during zoom
+            const zoomFactor = newZoom / prevZoom;
             return {
-              x: cursorX - (cursorX - prevPan.x) * (newZoom / prevZoom),
-              y: cursorY - (cursorY - prevPan.y) * (newZoom / prevZoom)
+              x: viewportCenterX - (viewportCenterX - prevPan.x) * zoomFactor,
+              y: viewportCenterY - (viewportCenterY - prevPan.y) * zoomFactor
             };
           });
         }
+
         return newZoom;
       });
     };
 
-    // passive: false is required to preventDefault on wheel
     canvas.addEventListener('wheel', handleWheel, { passive: false });
     return () => canvas.removeEventListener('wheel', handleWheel);
   }, []);

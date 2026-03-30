@@ -48,7 +48,7 @@ import {
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { ChevronDown, Menu, Plus, Save, FolderOpen, Languages, Sun, Moon, Network, ShieldCheck, Database, Info, File, Layers, Terminal as TerminalIcon, Undo2, Redo2, Link2, Pencil, StickyNote } from "lucide-react";
+import { ChevronDown, Menu, Plus, Save, FolderOpen, Languages, Sun, Moon, Network, ShieldCheck, Database, Info, File, Layers, Terminal as TerminalIcon, Undo2, Redo2, Link2, Pencil, StickyNote, Monitor, Cpu } from "lucide-react";
 
 import { Button } from '@/components/ui/button';
 import {
@@ -78,7 +78,6 @@ import { performanceMonitor } from '@/lib/performance/monitoring';
 import { DeviceIcon } from '@/components/network/DeviceIcon';
 import { AppSkeleton } from '@/components/ui/AppSkeleton';
 import { AppErrorBoundary } from '@/components/ui/AppErrorBoundary';
-import { SwitchModelSelector } from '@/components/network/SwitchModelSelector';
 import { SwitchModel } from '@/lib/network/switchModels';
 
 const PCPanel = dynamic(() => import('@/components/network/PCPanel').then((m) => m.PCPanel), { ssr: false });
@@ -233,7 +232,26 @@ export default function Home() {
   const zoom = useZoom();
   const pan = usePan();
   const activeTab = useActiveTab();
-  const { setDevices, setConnections, setNotes, setZoom, setPan, setActiveTab } = useAppStore();
+  const { setDevices, setConnections, setNotes, setZoom, setPan, setActiveTab, graphicsQuality, setGraphicsQuality } = useAppStore();
+
+  // Apply graphics quality class to body
+  useEffect(() => {
+    console.log('Graphics quality useEffect triggered:', graphicsQuality);
+    const body = document.body;
+    console.log('Current body classes before:', body.className);
+    
+    if (graphicsQuality === 'low') {
+      body.classList.add('graphics-low');
+      body.classList.remove('graphics-high');
+      console.log('Applied graphics-low, removed graphics-high');
+    } else {
+      body.classList.add('graphics-high');
+      body.classList.remove('graphics-low');
+      console.log('Applied graphics-high, removed graphics-low');
+    }
+    
+    console.log('Current body classes after:', body.className);
+  }, [graphicsQuality]);
 
   // Helper functions for state setters to maintain compatibility
   const setTopologyDevices = setDevices;
@@ -243,7 +261,6 @@ export default function Home() {
   // Currently active device in terminal
   const [activeDeviceId, setActiveDeviceId] = useState<string>('switch-1');
   const [activeDeviceType, setActiveDeviceType] = useState<'pc' | 'switch' | 'router'>('switch');
-  const [showSwitchModelSelector, setShowSwitchModelSelector] = useState(false);
 
   // Navigation history for back/forward support
   const navigationHistoryRef = useRef<{ tab: TabType; deviceId?: string; program?: string }[]>([{ tab: 'topology' }]);
@@ -401,15 +418,6 @@ export default function Home() {
       ]);
     }
   }, []);
-  const [isMobile, setIsMobile] = useState(false);
-  const [currentSwitchModel, setCurrentSwitchModel] = useState<SwitchModel>('WS-C2960-24TT-L');
-
-  useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
 
   const toggleDevicePower = useCallback((deviceId: string) => {
     setTopologyDevices((prev) => {
@@ -433,30 +441,6 @@ export default function Home() {
       return nextDevices;
     });
   }, [setTopologyDevices, setTopologyConnections]);
-
-  const handleSwitchModelSelect = useCallback((model: SwitchModel) => {
-    setCurrentSwitchModel(model);
-    setShowSwitchModelSelector(false);
-
-    // Update the switch device with new model
-    const switchDevice = topologyDevices.find(d => d.id === 'switch-1');
-    if (switchDevice) {
-      // Create new state with selected model
-      const newState = getOrCreateDeviceState('switch-1', 'switch', switchDevice.name);
-      setDeviceStates(prev => {
-        const next = new Map(prev);
-        next.set('switch-1', { ...newState, switchModel: model, switchLayer: model.startsWith('WS-C2960') ? 'L2' : 'L3' });
-        return next;
-      });
-
-      // Show toast notification
-      toast({
-        title: language === 'tr' ? 'Switch Modeli Değiştirildi' : 'Switch Model Changed',
-        description: `${model}`,
-        variant: 'default'
-      });
-    }
-  }, [topologyDevices, getOrCreateDeviceState, setDeviceStates, language, toast]);
 
   const [cableInfo, setCableInfo] = useState<CableInfo>({
     connected: true,
@@ -2064,7 +2048,7 @@ export default function Home() {
                             <File className="w-4 h-4" />
                           </Button>
                         </TooltipTrigger>
-                        <TooltipContent>{t.newProject} {!isMobile && '(Alt+N)'}</TooltipContent>
+                        <TooltipContent>{t.newProject} (Alt+N)</TooltipContent>
                       </Tooltip>
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -2077,7 +2061,7 @@ export default function Home() {
                             <FolderOpen className="w-4 h-4" />
                           </Button>
                         </TooltipTrigger>
-                        <TooltipContent>{t.loadProject} {!isMobile && '(Ctrl+O)'}</TooltipContent>
+                        <TooltipContent>{t.loadProject} (Ctrl+O)</TooltipContent>
                       </Tooltip>
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -2090,7 +2074,7 @@ export default function Home() {
                             <Save className="w-4 h-4" />
                           </Button>
                         </TooltipTrigger>
-                        <TooltipContent>{t.saveProject} {!isMobile && '(Ctrl+S)'}</TooltipContent>
+                        <TooltipContent>{t.saveProject} (Ctrl+S)</TooltipContent>
                       </Tooltip>
                     </div>
                     <input ref={fileInputRef} type="file" accept=".json" onChange={handleLoadProject} className="hidden" />
@@ -2099,19 +2083,6 @@ export default function Home() {
                     )}
 
                     {/* Info & Settings */}
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className={`h-8 w-8 ui-hover-surface ${isDark ? 'text-slate-300 hover:text-purple-400' : 'text-slate-600 hover:text-purple-600'}`}
-                          onClick={() => setShowSwitchModelSelector(true)}
-                        >
-                          <Layers className="w-4 h-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>{language === 'tr' ? 'Switch Modeli' : 'Switch Model'}</TooltipContent>
-                    </Tooltip>
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button variant="ghost" size="icon" className={`h-8 w-8 ui-hover-surface ${isDark ? 'text-slate-300 hover:text-sky-400' : 'text-slate-600 hover:text-sky-600'}`} onClick={() => setShowAboutModal(true)}>
@@ -2141,6 +2112,24 @@ export default function Home() {
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>{isDark ? (language === 'tr' ? 'Açık Tema' : 'Light Mode') : (language === 'tr' ? 'Koyu Tema' : 'Dark Mode')}</TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className={`h-8 w-8 ui-hover-surface ${graphicsQuality === 'high' ? (isDark ? 'text-slate-300 hover:text-green-400' : 'text-slate-600 hover:text-green-600') : (isDark ? 'text-slate-300 hover:text-orange-400' : 'text-slate-600 hover:text-orange-600')}`}
+                          onClick={() => {
+                          console.log('Graphics quality button clicked, current:', graphicsQuality);
+                          const newQuality = graphicsQuality === 'high' ? 'low' : 'high';
+                          console.log('Setting graphics quality to:', newQuality);
+                          setGraphicsQuality(newQuality);
+                        }}
+                        >
+                          {graphicsQuality === 'high' ? <Monitor className="w-4 h-4" /> : <Cpu className="w-4 h-4" />}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>{graphicsQuality === 'high' ? (language === 'tr' ? 'Yüksek Kalite' : 'High Quality') : (language === 'tr' ? 'Düşük Kalite' : 'Low Quality')}</TooltipContent>
                     </Tooltip>
                   </div>
                 </div>
@@ -2425,21 +2414,24 @@ export default function Home() {
                                     ? 'Online'
                                     : 'Unknown';
                             return (
-                              <span
-                                className="w-2 h-2 rounded-full mr-0.5"
-                                title={statusLabel}
-                              >
-                                <span className={`block w-2 h-2 rounded-full ${statusColor} shadow-[0_0_6px_rgba(45,212,191,0.8)]`} />
-                              </span>
+                              <>
+                                <span
+                                  className="w-2 h-2 rounded-full mr-0.5"
+                                  title={statusLabel}
+                                >
+                                  <span className={`block w-2 h-2 rounded-full ${statusColor} shadow-[0_0_6px_rgba(45,212,191,0.8)]`} />
+                                </span>
+                                <DeviceIcon
+                                  type={activeDeviceType}
+                                  switchModel={activeTopologyDevice?.switchModel}
+                                  className="w-5 h-5"
+                                />
+                                <span className="text-xs font-bold">
+                                  {truncateWithEllipsis(deviceStates.get(activeDeviceId)?.hostname || activeDeviceId, 15)}
+                                </span>
+                              </>
                             );
                           })()}
-                          <DeviceIcon
-                            type={activeDeviceType}
-                            className={`${activeDeviceType === 'pc' ? 'text-blue-500' : activeDeviceType === 'router' ? 'text-purple-500' : 'text-emerald-500'} w-5 h-5`}
-                          />
-                          <span className="text-xs font-bold">
-                            {truncateWithEllipsis(deviceStates.get(activeDeviceId)?.hostname || activeDeviceId, 15)}
-                          </span>
                         </>
                       ) : (
                         <>
@@ -2902,54 +2894,11 @@ export default function Home() {
 
               {/* Terminal Sekmesi - Always mounted, hidden via CSS */}
               <div className={`flex-1 min-h-0 flex flex-col gap-4 overflow-y-auto xl:overflow-hidden custom-scrollbar ${activeTab === 'terminal' ? 'flex' : 'hidden'}`}>
-                {isMobile ? (
-                  /* Mobile Layout: Only CLI - Full screen with scroll */
-                  <div className="flex flex-col h-[300px] min-h-[300px]">
-                    <div className="flex-1 min-h-0">
-                      <Terminal
-                        key={`terminal-${activeDeviceId}`}
-                        title="CLI"
-                        className="h-full"
-                        deviceId={activeDeviceId}
-                        deviceName={
-                          (() => {
-                            const deviceState = deviceStates.get(activeDeviceId);
-                            return deviceState?.hostname || activeDeviceId;
-                          })()
-                        }
-                        prompt={prompt}
-                        state={state}
-                        onCommand={handleCommand}
-                        onClear={handleClearTerminal}
-                        output={output}
-                        isLoading={isExecutingCommand}
-                        isConnectionError={topologyDevices.some(d => d.id === activeDeviceId && d.status === 'offline')}
-                        connectionErrorMessage={language === 'tr' ? 'Bağlantı hatası' : 'Connection error'}
-                        isPoweredOff={topologyDevices.some(d => d.id === activeDeviceId && d.status === 'offline')}
-                        onTogglePower={toggleDevicePower}
-                        onClose={() => setActiveTab('topology')}
-                        t={t}
-                        theme={theme}
-                        language={language}
-                        onUpdateHistory={handleUpdateHistory}
-                        confirmDialog={confirmDialog}
-                        setConfirmDialog={setConfirmDialog}
-                        onRequestFocus={() => {
-                          requestAnimationFrame(() => {
-                            const el = document.querySelector('input[placeholder="' + t.typeCommand + '"]') as HTMLInputElement | null;
-                            el?.focus();
-                          });
-                        }}
-                      />
-                    </div>
-                  </div>
-                ) : (
-                  /* Desktop Layout: Terminal + QuickCommands üstte, Running Config en altta */
+                {/* Desktop Layout: Terminal + QuickCommands üstte, Running Config en altta */}
                   <div className="flex flex-col gap-4 flex-1 min-h-0 xl:overflow-hidden">
                     <div className="flex flex-col min-h-[400px] xl:min-h-0 ">
                       <Terminal
                         key={`terminal-${activeDeviceId}`}
-                        title={isMobile ? "CLI" : undefined}
                         className="flex-1"
                         deviceId={activeDeviceId}
                         deviceName={
@@ -2986,7 +2935,6 @@ export default function Home() {
                     <div className="flex flex-col min-h-[400px] xl:min-h-0">
                       <ConfigPanel
                         state={state}
-                        title={isMobile ? (language === "tr" ? "Çalışan Config" : "Running Config") : undefined}
                         className="flex-1"
                         onExecuteCommand={handleCommand}
                         isDevicePoweredOff={topologyDevices.some(d => d.id === activeDeviceId && d.status === 'offline')}
@@ -2995,7 +2943,6 @@ export default function Home() {
                       />
                     </div>
                   </div>
-                )}
               </div>
 
               {/* Tasks Sekmesi */}
@@ -3155,13 +3102,6 @@ export default function Home() {
           </footer>
 
           <LazyAboutModal isOpen={showAboutModal} onClose={() => setShowAboutModal(false)} />
-          <SwitchModelSelector
-            isOpen={showSwitchModelSelector}
-            onSelect={handleSwitchModelSelect}
-            onCancel={() => setShowSwitchModelSelector(false)}
-            currentModel={currentSwitchModel}
-            language={language}
-          />
         </div>
       </div>
     </AppErrorBoundary>

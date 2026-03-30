@@ -115,6 +115,9 @@
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
     -webkit-tap-highlight-color: transparent;
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+    image-rendering: pixelated;
   }
 
   html {
@@ -550,8 +553,17 @@
 }
 
 /* Smooth SVG rendering */
+svg {
+  shape-rendering: crispEdges;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+}
+
 svg text {
   font-feature-settings: "kern" 1;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* Connection line hover optimization */
@@ -808,4 +820,41 @@ svg text {
 
 .particle-explosion {
   animation: particle-explosion 1.5s ease-out forwards;
+}
+
+/* Graphics Quality Settings */
+body.graphics-low * {
+  -webkit-font-smoothing: auto !important;
+  -moz-osx-font-smoothing: auto !important;
+  text-rendering: auto !important;
+  image-rendering: auto !important;
+}
+
+body.graphics-low svg {
+  shape-rendering: auto !important;
+  image-rendering: auto !important;
+}
+
+body.graphics-low svg text {
+  text-rendering: auto !important;
+  -webkit-font-smoothing: auto !important;
+  -moz-osx-font-smoothing: auto !important;
+}
+
+.graphics-low * {
+  -webkit-font-smoothing: auto !important;
+  -moz-osx-font-smoothing: auto !important;
+  text-rendering: auto !important;
+  image-rendering: auto !important;
+}
+
+.graphics-low svg {
+  shape-rendering: auto !important;
+  image-rendering: auto !important;
+}
+
+.graphics-low svg text {
+  text-rendering: auto !important;
+  -webkit-font-smoothing: auto !important;
+  -moz-osx-font-smoothing: auto !important;
 }

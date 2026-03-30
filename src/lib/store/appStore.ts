@@ -29,6 +29,7 @@ interface AppState {
     activeTab: 'topology' | 'cmd' | 'terminal' | 'tasks';
     activePanel: 'port' | 'vlan' | 'security' | 'config' | null;
     sidebarOpen: boolean;
+    graphicsQuality: 'high' | 'low';
 
     // Actions
     setDevices: (devices: CanvasDevice[] | ((prev: CanvasDevice[]) => CanvasDevice[])) => void;
@@ -56,6 +57,7 @@ interface AppState {
     setActiveTab: (tab: 'topology' | 'cmd' | 'terminal' | 'tasks') => void;
     setActivePanel: (panel: 'port' | 'vlan' | 'security' | 'config' | null) => void;
     setSidebarOpen: (open: boolean) => void;
+    setGraphicsQuality: (quality: 'high' | 'low') => void;
 
     // Reset
     resetAll: () => void;
@@ -82,6 +84,7 @@ const initialState: Omit<AppState, keyof ReturnType<typeof createActions>> = {
     activeTab: 'topology',
     activePanel: null,
     sidebarOpen: true,
+    graphicsQuality: 'high',
 };
 
 const STORE_KEY = 'network-simulator-storage';
@@ -135,6 +138,12 @@ function sanitizePersistedState(input: any): Partial<AppState> {
     }
 
     safe.sidebarOpen = typeof input?.sidebarOpen === 'boolean' ? input.sidebarOpen : true;
+
+    if (input?.graphicsQuality === 'high' || input?.graphicsQuality === 'low') {
+        safe.graphicsQuality = input.graphicsQuality;
+    } else {
+        safe.graphicsQuality = 'high';
+    }
 
     return safe;
 }
@@ -263,6 +272,7 @@ const createActions = (set: any, get: any) => ({
     setActiveTab: (tab: 'topology' | 'cmd' | 'terminal' | 'tasks') => set({ activeTab: tab }),
     setActivePanel: (panel: 'port' | 'vlan' | 'security' | 'config' | null) => set({ activePanel: panel }),
     setSidebarOpen: (open: boolean) => set({ sidebarOpen: open }),
+    setGraphicsQuality: (quality: 'high' | 'low') => set({ graphicsQuality: quality }),
 
     // Reset
     resetAll: () => set({
@@ -270,6 +280,7 @@ const createActions = (set: any, get: any) => ({
         deviceStates: initialDeviceStates,
         activeTab: 'topology',
         activePanel: null,
+        graphicsQuality: 'high',
     }),
 });
 
@@ -290,6 +301,7 @@ export const useAppStore = create<AppState>()(
                 activeTab: state.activeTab,
                 activePanel: state.activePanel,
                 sidebarOpen: state.sidebarOpen,
+                graphicsQuality: state.graphicsQuality,
             }),
             migrate: (persistedState: any) => {
                 try {
