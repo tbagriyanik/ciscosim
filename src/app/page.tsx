@@ -48,7 +48,7 @@ import {
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { ChevronDown, Menu, Plus, Save, FolderOpen, Languages, Sun, Moon, Network, ShieldCheck, Database, Info, File, Layers, Terminal as TerminalIcon, Undo2, Redo2, Link2, Pencil, StickyNote, Monitor, Cpu } from "lucide-react";
+import { ChevronDown, Menu, Plus, Save, FolderOpen, Languages, Sun, Moon, Network, ShieldCheck, Database, Info, File, Layers, Terminal as TerminalIcon, Undo2, Redo2, Link2, Pencil, StickyNote, Sparkles, Cloud } from "lucide-react";
 
 import { Button } from '@/components/ui/button';
 import {
@@ -236,21 +236,15 @@ export default function Home() {
 
   // Apply graphics quality class to body
   useEffect(() => {
-    console.log('Graphics quality useEffect triggered:', graphicsQuality);
     const body = document.body;
-    console.log('Current body classes before:', body.className);
     
     if (graphicsQuality === 'low') {
       body.classList.add('graphics-low');
       body.classList.remove('graphics-high');
-      console.log('Applied graphics-low, removed graphics-high');
     } else {
       body.classList.add('graphics-high');
       body.classList.remove('graphics-low');
-      console.log('Applied graphics-high, removed graphics-low');
     }
-    
-    console.log('Current body classes after:', body.className);
   }, [graphicsQuality]);
 
   // Helper functions for state setters to maintain compatibility
@@ -2119,17 +2113,12 @@ export default function Home() {
                           variant="ghost"
                           size="icon"
                           className={`h-8 w-8 ui-hover-surface ${graphicsQuality === 'high' ? (isDark ? 'text-slate-300 hover:text-green-400' : 'text-slate-600 hover:text-green-600') : (isDark ? 'text-slate-300 hover:text-orange-400' : 'text-slate-600 hover:text-orange-600')}`}
-                          onClick={() => {
-                          console.log('Graphics quality button clicked, current:', graphicsQuality);
-                          const newQuality = graphicsQuality === 'high' ? 'low' : 'high';
-                          console.log('Setting graphics quality to:', newQuality);
-                          setGraphicsQuality(newQuality);
-                        }}
+                          onClick={() => setGraphicsQuality(graphicsQuality === 'high' ? 'low' : 'high')}
                         >
-                          {graphicsQuality === 'high' ? <Monitor className="w-4 h-4" /> : <Cpu className="w-4 h-4" />}
+                          {graphicsQuality === 'high' ? <Sparkles className="w-4 h-4" /> : <Cloud className="w-4 h-4" />}
                         </Button>
                       </TooltipTrigger>
-                      <TooltipContent>{graphicsQuality === 'high' ? (language === 'tr' ? 'Yüksek Kalite' : 'High Quality') : (language === 'tr' ? 'Düşük Kalite' : 'Low Quality')}</TooltipContent>
+                      <TooltipContent>{graphicsQuality === 'high' ? (language === 'tr' ? 'Yüksek Çözünürlük' : 'High Resolution') : (language === 'tr' ? 'Düşük Çözünürlük' : 'Low Resolution')}</TooltipContent>
                     </Tooltip>
                   </div>
                 </div>
