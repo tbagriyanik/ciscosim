@@ -728,27 +728,27 @@ export function NetworkTopology({
     e.preventDefault();
     const startX = e.clientX;
     const startZoom = zoom;
-    
+
     setIsDraggingZoom(true);
     setZoomDragStart({ x: startX, zoom: startZoom });
     zoomDragRef.current = { isDragging: true, startX, startZoom };
-    
+
     // Add global mouse event listeners
     const handleMouseMove = (moveEvent: MouseEvent) => {
       if (!zoomDragRef.current.isDragging) return;
-      
+
       const deltaX = moveEvent.clientX - zoomDragRef.current.startX;
       const zoomDelta = deltaX * 0.002; // Sensitivity adjustment
       let newZoom = zoomDragRef.current.startZoom + zoomDelta;
-      
+
       // Clamp to min/max zoom
       newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, newZoom));
-      
+
       if (!canvasRef.current) {
         setZoom(newZoom);
         return;
       }
-      
+
       const rect = canvasRef.current.getBoundingClientRect();
       const cursorX = rect.width / 2;
       const cursorY = rect.height / 2;
@@ -758,14 +758,14 @@ export function NetworkTopology({
       }));
       setZoom(newZoom);
     };
-    
+
     const handleMouseUp = () => {
       setIsDraggingZoom(false);
       zoomDragRef.current = { isDragging: false, startX: 0, startZoom: 0 };
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
-    
+
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
   }, [zoom]);
@@ -774,15 +774,15 @@ export function NetworkTopology({
     e.preventDefault();
     const zoomDelta = e.deltaY * -0.001; // Reverse direction and adjust sensitivity
     let newZoom = zoom + zoomDelta;
-    
+
     // Clamp to min/max zoom
     newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, newZoom));
-    
+
     if (!canvasRef.current) {
       setZoom(newZoom);
       return;
     }
-    
+
     const rect = canvasRef.current.getBoundingClientRect();
     const cursorX = rect.width / 2;
     const cursorY = rect.height / 2;
@@ -1122,6 +1122,13 @@ export function NetworkTopology({
       draggedDeviceRef.current = null;
       setDragStartPos(null);
       dragStartPosRef.current = null;
+
+      // Eğer cihaz gerçekten sürüklendiyse ve kablo çizimi başlamışsa iptal et
+      if (isActuallyDraggingRef.current && isDrawingConnectionRef.current) {
+        setIsDrawingConnection(false);
+        setConnectionStart(null);
+      }
+
       setIsActuallyDragging(false);
       isActuallyDraggingRef.current = false;
       setDragStartDevicePositions({});
@@ -1223,6 +1230,13 @@ export function NetworkTopology({
       touchDraggedDeviceRef.current = null;
       setTouchDragStartPos(null);
       touchDragStartPosRef.current = null;
+
+      // Touch sürükleme olduysa ve kablo çizimi başlamışsa iptal et
+      if (currentIsTouchDragging && isDrawingConnectionRef.current) {
+        setIsDrawingConnection(false);
+        setConnectionStart(null);
+      }
+
       setIsTouchDragging(false);
       isTouchDraggingRef.current = false;
       setLastTouchDistance(null);
@@ -1593,7 +1607,7 @@ export function NetworkTopology({
       // Zoom to center of visible viewport (what user actually sees)
       const viewportCenterX = rect.width / 2;
       const viewportCenterY = rect.height / 2;
-      
+
       // Convert viewport center to canvas coordinates
       const cursorX = viewportCenterX + pan.x;
       const cursorY = viewportCenterY + pan.y;
@@ -3742,10 +3756,7 @@ export function NetworkTopology({
               <g
                 key={port.id}
                 transform={`translate(${portX}, ${portY})`}
-                className="cursor-pointer"
-                onClick={(e) => {
-                  handlePortClick(e as unknown as ReactMouseEvent, device.id, port.id);
-                }}
+                style={{ cursor: 'pointer', pointerEvents: 'all' }}
                 onMouseEnter={(e) => handlePortHover(e, device.id, port.id)}
                 onMouseLeave={handlePortMouseLeave}
               >
@@ -3753,7 +3764,11 @@ export function NetworkTopology({
                 <circle
                   r={12}
                   fill="transparent"
-                  className="pointer-events-auto"
+                  style={{ pointerEvents: 'all', cursor: 'pointer' }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handlePortClick(e as unknown as ReactMouseEvent, device.id, port.id);
+                  }}
                 />
                 {/* Visible port circle */}
                 <circle
@@ -3761,9 +3776,9 @@ export function NetworkTopology({
                   fill={portColor}
                   stroke={isShutdown || isDeviceOffline ? '#991b1b' : isConnected ? '#22c55e' : '#4b5563'}
                   strokeWidth={isShutdown || isDeviceOffline || isConnected ? 2 : 1}
-                  className="pointer-events-none"
+                  style={{ pointerEvents: 'none' }}
                 />
-                <text y={1} fill="#fff" fontSize="7" textAnchor="middle" dominantBaseline="middle" className="select-none pointer-events-none">
+                <text y={1} fill="#fff" fontSize="7" textAnchor="middle" dominantBaseline="middle" style={{ userSelect: 'none', pointerEvents: 'none' }}>
                   {portLabel}
                 </text>
               </g>
@@ -3846,10 +3861,7 @@ export function NetworkTopology({
               <g
                 key={port.id}
                 transform={`translate(${portX}, ${portY})`}
-                className="cursor-pointer"
-                onClick={(e) => {
-                  handlePortClick(e as unknown as ReactMouseEvent, device.id, port.id);
-                }}
+                style={{ cursor: 'pointer', pointerEvents: 'all' }}
                 onMouseEnter={(e) => handlePortHover(e, device.id, port.id)}
                 onMouseLeave={handlePortMouseLeave}
               >
@@ -3857,7 +3869,11 @@ export function NetworkTopology({
                 <circle
                   r={10}
                   fill="transparent"
-                  className="pointer-events-auto"
+                  style={{ pointerEvents: 'all', cursor: 'pointer' }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handlePortClick(e as unknown as ReactMouseEvent, device.id, port.id);
+                  }}
                 />
                 {/* Visible port circle */}
                 <circle
@@ -3865,9 +3881,9 @@ export function NetworkTopology({
                   fill={portFill}
                   stroke={isShutdown || isDeviceOffline || isConnected ? portStroke : '#4b5563'}
                   strokeWidth={isShutdown || isDeviceOffline || isConnected ? 2 : 1}
-                  className="pointer-events-none"
+                  style={{ pointerEvents: 'none' }}
                 />
-                <text y={1} fill="#fff" fontSize="6" textAnchor="middle" dominantBaseline="middle" className="select-none pointer-events-none">
+                <text y={1} fill="#fff" fontSize="6" textAnchor="middle" dominantBaseline="middle" style={{ userSelect: 'none', pointerEvents: 'none' }}>
                   {displayNum}
                 </text>
               </g>
@@ -4147,11 +4163,10 @@ export function NetworkTopology({
           <span
             onMouseDown={handleZoomMouseDown}
             onWheel={handleZoomWheel}
-            className={`text-xs font-mono w-10 text-center cursor-pointer select-none transition-colors ${
-              isDraggingZoom 
-                ? 'text-blue-400' 
-                : 'text-slate-300 hover:bg-slate-700'
-            } rounded`}
+            className={`text-xs font-mono w-10 text-center cursor-pointer select-none transition-colors ${isDraggingZoom
+              ? 'text-blue-400'
+              : 'text-slate-300 hover:bg-slate-700'
+              } rounded`}
             title={language === 'tr' ? "Sürükleyerek büyütün" : "Drag to zoom or scroll"}
           >
             {Math.round(zoom * 100)}%
@@ -5107,13 +5122,12 @@ export function NetworkTopology({
             <span
               onMouseDown={handleZoomMouseDown}
               onWheel={handleZoomWheel}
-              className={`text-xs font-mono w-12 text-center cursor-pointer select-none rounded transition-colors ${
-                isDraggingZoom 
-                  ? 'text-blue-400' 
-                  : isDark 
-                    ? 'text-slate-300 hover:bg-slate-700' 
-                    : 'text-slate-600 hover:bg-slate-100'
-              }`}
+              className={`text-xs font-mono w-12 text-center cursor-pointer select-none rounded transition-colors ${isDraggingZoom
+                ? 'text-blue-400'
+                : isDark
+                  ? 'text-slate-300 hover:bg-slate-700'
+                  : 'text-slate-600 hover:bg-slate-100'
+                }`}
               title={language === 'tr' ? "Sürükleyerek büyütün" : "Drag to zoom or scroll"}
             >
               {Math.round(zoom * 100)}%
@@ -5178,13 +5192,12 @@ export function NetworkTopology({
             <span
               onMouseDown={handleZoomMouseDown}
               onWheel={handleZoomWheel}
-              className={`text-xs font-mono w-12 text-center cursor-pointer select-none rounded transition-colors ${
-                isDraggingZoom 
-                  ? 'text-blue-400' 
-                  : isDark 
-                    ? 'text-slate-300 hover:bg-slate-700' 
-                    : 'text-slate-600 hover:bg-slate-100'
-              }`}
+              className={`text-xs font-mono w-12 text-center cursor-pointer select-none rounded transition-colors ${isDraggingZoom
+                ? 'text-blue-400'
+                : isDark
+                  ? 'text-slate-300 hover:bg-slate-700'
+                  : 'text-slate-600 hover:bg-slate-100'
+                }`}
               title={language === 'tr' ? "Sürükleyerek büyütün" : "Drag to zoom or scroll"}
             >
               {Math.round(zoom * 100)}%
@@ -5822,7 +5835,7 @@ export function NetworkTopology({
               }`}
             style={{
               left: portTooltip.x,
-              top: portTooltip.y - 10,
+              top: portTooltip.y - 35, // Increased distance from port (was -10)
               transform: 'translate(-50%, -100%)',
             }}
           >
