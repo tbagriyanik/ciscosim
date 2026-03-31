@@ -46,15 +46,7 @@ interface LazyNetworkTopologyContextMenuProps {
 }
 
 function ContextMenuFallback() {
-    return (
-        <div className="fixed z-50 py-1 rounded-lg shadow-xl min-w-[140px] max-w-[240px] bg-slate-800 border border-slate-700 animate-pulse">
-            <div className="px-2 py-2 space-y-2">
-                <div className="h-6 bg-slate-700 rounded" />
-                <div className="h-6 bg-slate-700 rounded" />
-                <div className="h-6 bg-slate-700 rounded" />
-            </div>
-        </div>
-    );
+    return null; // Don't show any fallback to prevent top-left corner box
 }
 
 export default function LazyNetworkTopologyContextMenu(

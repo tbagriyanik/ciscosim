@@ -1696,12 +1696,6 @@ export function NetworkTopology({
     const port = device.ports.find((p) => p.id === portId);
     if (!port) return;
 
-    // If device is not selected, select it first
-    if (!selectedDeviceIds.includes(deviceId)) {
-      setSelectedDeviceIds([deviceId]);
-      onDeviceSelect(device.type, deviceId);
-    }
-
     // Check if port is already connected
     if (port.status === 'connected') {
       // Port is already in use - cannot connect
