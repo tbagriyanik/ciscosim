@@ -101,6 +101,18 @@ export function buildRunningConfig(state: SwitchState): string[] {
                 lines.push(` switchport access vlan ${vlanId}`);
             }
         }
+
+        // WiFi configuration for WLAN interfaces
+        if (port.wifi && port.wifi.ssid) {
+            lines.push(` wifi-mode ${port.wifi.mode}`);
+            lines.push(` ssid ${port.wifi.ssid}`);
+            lines.push(` encryption ${port.wifi.security}`);
+            if (port.wifi.password) {
+                lines.push(` wifi-password ${port.wifi.password}`);
+            }
+            lines.push(` wifi-channel ${port.wifi.channel}`);
+        }
+
         if (port.ipAddress && port.subnetMask) {
             lines.push(` ip address ${port.ipAddress} ${port.subnetMask}`);
         }

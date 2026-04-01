@@ -21,6 +21,7 @@ export interface CanvasPort {
     ssid: string;
     security: 'open' | 'wpa' | 'wpa2' | 'wpa3';
     channel: '2.4GHz' | '5GHz';
+    mode?: 'ap' | 'client' | 'disabled';
   };
 }
 

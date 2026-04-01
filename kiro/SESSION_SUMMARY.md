@@ -120,6 +120,15 @@
 
 ---
 
+## 🛠️ Live Fix Updates (2026-04-01)
+- L3 switch ilk oluşturma uyumsuzluğu giderildi: `getOrCreateDeviceState` sonucu `getOrCreateDeviceOutputs` içinde kullanılıyor.
+- `getBootMemoryLine` (L3: WS-C3560-24PS -> C3560, L2: WS-C2960-24TT-L -> C2960) mantığı onaylandı.
+- `page.tsx` satır 1007 ve `useDeviceManager.ts` satır 74 ana müdahale noktalarıdır.
+- Gereksiz / otomatik üretilmiş `.js` dosyaları için tarama başlatıldı; çalışma sırasında ek derlenmiş çıktı tespit edilemiyorsa zaten temiz.
+- `planning.md` ve `kiro/SESSION_SUMMARY.md` güncellendi.
+
+---
+
 ## 🔍 Key Findings
 
 ### Strengths

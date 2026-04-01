@@ -393,7 +393,23 @@ export default function Home() {
           status: 'online',
           ports: [
             { id: 'eth0', label: 'Eth0', status: 'disconnected' as const },
-            { id: 'com1', label: 'COM1', status: 'disconnected' as const }
+            { id: 'com1', label: 'COM1', status: 'disconnected' as const },
+            { id: 'wlan0', label: 'WLAN0', status: 'disconnected' as const, wifi: { ssid: '', security: 'open', channel: '2.4GHz', mode: 'client' } }
+          ]
+        },
+        {
+          id: 'pc-2',
+          type: 'pc',
+          name: 'PC-2',
+          x: 50,
+          y: 150,
+          ip: '192.168.1.20',
+          macAddress: '00E0.F701.A1B2',
+          status: 'online',
+          ports: [
+            { id: 'eth0', label: 'Eth0', status: 'disconnected' as const },
+            { id: 'com1', label: 'COM1', status: 'disconnected' as const },
+            { id: 'wlan0', label: 'WLAN0', status: 'disconnected' as const, wifi: { ssid: '', security: 'open', channel: '2.4GHz', mode: 'client' } }
           ]
         },
         {
@@ -1378,7 +1394,23 @@ export default function Home() {
         status: 'online',
         ports: [
           { id: 'eth0', label: 'Eth0', status: 'disconnected' as const },
-          { id: 'com1', label: 'COM1', status: 'disconnected' as const }
+          { id: 'com1', label: 'COM1', status: 'disconnected' as const },
+          { id: 'wlan0', label: 'WLAN0', status: 'disconnected' as const, wifi: { ssid: '', security: 'open', channel: '2.4GHz', mode: 'client' } }
+        ]
+      },
+      {
+        id: 'pc-2',
+        type: 'pc',
+        name: 'PC-2',
+        x: 50,
+        y: 150,
+        ip: '192.168.1.20',
+        macAddress: '00E0.F701.A1B2',
+        status: 'online',
+        ports: [
+          { id: 'eth0', label: 'Eth0', status: 'disconnected' as const },
+          { id: 'com1', label: 'COM1', status: 'disconnected' as const },
+          { id: 'wlan0', label: 'WLAN0', status: 'disconnected' as const, wifi: { ssid: '', security: 'open', channel: '2.4GHz', mode: 'client' } }
         ]
       },
       {

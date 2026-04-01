@@ -1297,28 +1297,30 @@ export function NetworkTopology({
     wasDraggingRef.current = false;
 
     // Shift key for multi-selection
+    let newSelectedIds: string[];
     if (e.shiftKey) {
-      setSelectedDeviceIds(prev =>
-        prev.includes(deviceId) ? prev.filter(id => id !== deviceId) : [...prev, deviceId]
-      );
+      newSelectedIds = selectedDeviceIds.includes(deviceId)
+        ? selectedDeviceIds.filter(id => id !== deviceId)
+        : [...selectedDeviceIds, deviceId];
+      setSelectedDeviceIds(newSelectedIds);
+      selectedDeviceIdsRef.current = newSelectedIds;
     } else {
       // If clicking a device that's not selected, make it the only selection
       // If it IS already selected, keep selection for group dragging
       if (!selectedDeviceIds.includes(deviceId)) {
-        setSelectedDeviceIds([deviceId]);
+        newSelectedIds = [deviceId];
+        setSelectedDeviceIds(newSelectedIds);
+        selectedDeviceIdsRef.current = newSelectedIds;
         onDeviceSelect(device.type, deviceId, isSwitchDeviceType(device.type) ? device.switchModel : undefined);
+      } else {
+        newSelectedIds = selectedDeviceIds;
       }
     }
 
     // Store starting positions of all selected devices for group dragging
-    // Use the latest selected set
-    const currentSelectedIds = e.shiftKey
-      ? (selectedDeviceIds.includes(deviceId) ? selectedDeviceIds.filter(id => id !== deviceId) : [...selectedDeviceIds, deviceId])
-      : (selectedDeviceIds.includes(deviceId) ? selectedDeviceIds : [deviceId]);
-
     const initialPositions: { [key: string]: { x: number, y: number } } = {};
     devices.forEach(d => {
-      if (currentSelectedIds.includes(d.id)) {
+      if (newSelectedIds.includes(d.id)) {
         initialPositions[d.id] = { x: d.x, y: d.y };
       }
     });
@@ -2828,7 +2830,7 @@ export function NetworkTopology({
 
     // Validate target device IP
     const targetDevice = devices.find(d => d.id === targetId);
-    const targetIp = targetDevice?.ip || deviceStates?.get(targetId)?.ports['vlan1']?.ipAddress || '';
+    const targetIp = targetDevice?.ip || deviceStates?.get(targetId)?.ports['vlan1']?.ipAddress || deviceStates?.get(targetId)?.ports['wlan0']?.ipAddress || '';
     const isTargetIpValid = /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/.test(targetIp);
 
     // Check if both IPs are valid
@@ -3327,12 +3329,12 @@ export function NetworkTopology({
       if (!source || !target) return false;
       return conn.cableType === 'console'
         ? !isCableCompatible({
-        connected: true,
-        cableType: conn.cableType,
-        sourceDevice: source.type,
-        targetDevice: target.type,
-        sourcePort: conn.sourcePort,
-        targetPort: conn.targetPort,
+          connected: true,
+          cableType: conn.cableType,
+          sourceDevice: source.type,
+          targetDevice: target.type,
+          sourcePort: conn.sourcePort,
+          targetPort: conn.targetPort,
         })
         : false;
     });

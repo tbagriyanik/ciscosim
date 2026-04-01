@@ -214,7 +214,7 @@ export const exampleProjects = (language: 'tr' | 'en'): ExampleProject[] => {
     channel: '2.4GHz',
     mode: 'ap'
   };
-  // Configure PCs for WiFi (Clients)
+  // Configure PCs for WiFi (Clients) - Keep static IPs for now
   wifiDevices[0].wifi = {
     enabled: true,
     ssid: 'HomeWiFi',
@@ -261,6 +261,22 @@ export const exampleProjects = (language: 'tr' | 'en'): ExampleProject[] => {
       password: '',
       channel: '2.4GHz',
       mode: 'ap'
+    }
+  };
+
+  // Add DHCP service to R1 for WiFi clients
+  wifiR1State.services = {
+    ...wifiR1State.services,
+    dhcp: {
+      enabled: true,
+      pools: [{
+        poolName: 'wifi-pool',
+        defaultGateway: '192.168.1.1',
+        dnsServer: '8.8.8.8',
+        startIp: '192.168.1.100',
+        subnetMask: '255.255.255.0',
+        maxUsers: 50
+      }]
     }
   };
 

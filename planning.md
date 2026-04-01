@@ -95,6 +95,13 @@ Kalan işler için önerilen sıra:
 3. Coverage ve browser test altyapısını kurmak
 4. Sonrasında plan dosyalarında “tam tamamlandı” statüsünü tekrar doğrulamak
 
+## Güncel Müdahale (2026-04-01)
+
+- L3 cihaz yaratma (`deviceType === 'switchL3'`) ile L3 switch model (`WS-C3560-24PS`) kesinleştirildi.
+- `getOrCreateDeviceOutputs` artık `deviceState` argümana dayanarak boot logda C2960 yerine C3560 yazmasını sağlıyor.
+- `page.tsx` 1007, `useDeviceManager.ts` 74 referansları düzeltme noktasıdır.
+- Local `*.js` geçici/üretim dosyaları tarandı; varsa silme adımı ekleniyor.
+
 ## Özet
 
 Proje iyi durumda, build alıyor ve modernizasyonun büyük bölümü gerçekten uygulanmış durumda. Ancak birkaç önemli başlıkta “altyapı var ama ürün geneline tam bağlanmamış” durumu bulunuyor.
