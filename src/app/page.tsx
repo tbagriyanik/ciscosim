@@ -378,6 +378,15 @@ export default function Home() {
     return () => window.removeEventListener('update-topology-device-config', handleDeviceUpdate);
   }, []); // Actions from useAppStore are stable, and functional updates avoid stale data issues.
 
+  // Initialize graphics quality to 'high' for first-time visitors
+  useEffect(() => {
+    const appStoreData = localStorage.getItem('network-simulator-storage');
+    if (!appStoreData) {
+      // First-time visitor: ensure graphics quality is set to high
+      setGraphicsQuality('high');
+    }
+  }, [setGraphicsQuality]);
+
   // Initialize defaults on mount to avoid hydration mismatch
   useEffect(() => {
     const savedData = localStorage.getItem('netsim_autosave');
@@ -394,8 +403,7 @@ export default function Home() {
           status: 'online',
           ports: [
             { id: 'eth0', label: 'Eth0', status: 'disconnected' as const },
-            { id: 'com1', label: 'COM1', status: 'disconnected' as const },
-            { id: 'wlan0', label: 'WLAN0', status: 'disconnected' as const, wifi: { ssid: '', security: 'open', channel: '2.4GHz', mode: 'client' } }
+            { id: 'com1', label: 'COM1', status: 'disconnected' as const }
           ]
         },
         {
@@ -409,8 +417,7 @@ export default function Home() {
           status: 'online',
           ports: [
             { id: 'eth0', label: 'Eth0', status: 'disconnected' as const },
-            { id: 'com1', label: 'COM1', status: 'disconnected' as const },
-            { id: 'wlan0', label: 'WLAN0', status: 'disconnected' as const, wifi: { ssid: '', security: 'open', channel: '2.4GHz', mode: 'client' } }
+            { id: 'com1', label: 'COM1', status: 'disconnected' as const }
           ]
         },
         {
@@ -1396,8 +1403,7 @@ export default function Home() {
         status: 'online',
         ports: [
           { id: 'eth0', label: 'Eth0', status: 'disconnected' as const },
-          { id: 'com1', label: 'COM1', status: 'disconnected' as const },
-          { id: 'wlan0', label: 'WLAN0', status: 'disconnected' as const, wifi: { ssid: '', security: 'open', channel: '2.4GHz', mode: 'client' } }
+          { id: 'com1', label: 'COM1', status: 'disconnected' as const }
         ]
       },
       {
@@ -1411,8 +1417,7 @@ export default function Home() {
         status: 'online',
         ports: [
           { id: 'eth0', label: 'Eth0', status: 'disconnected' as const },
-          { id: 'com1', label: 'COM1', status: 'disconnected' as const },
-          { id: 'wlan0', label: 'WLAN0', status: 'disconnected' as const, wifi: { ssid: '', security: 'open', channel: '2.4GHz', mode: 'client' } }
+          { id: 'com1', label: 'COM1', status: 'disconnected' as const }
         ]
       },
       {
@@ -1707,6 +1712,41 @@ export default function Home() {
         language === 'tr'
           ? 'Sekmelerdeki rozetler (ör. 2/6) o alandaki görev ilerlemeni gösterir.'
           : 'Badges on tabs (e.g., 2/6) show your progress for that area.',
+    },
+    {
+      title: language === 'tr' ? 'Grafik Kalitesi' : 'Graphics Quality',
+      description:
+        language === 'tr'
+          ? 'Sağ üstteki grafik kalitesi düğmesi ile yüksek (✨) veya düşük (☁️) çözünürlük arasında geçiş yap. Yüksek kalite daha detaylı görünüm sağlar.'
+          : 'Toggle graphics quality in the top-right corner between high (✨) and low (☁️) resolution. High quality provides more detail.',
+    },
+    {
+      title: language === 'tr' ? 'Ping Testi' : 'Ping Test',
+      description:
+        language === 'tr'
+          ? 'Cihazlar arasında bağlantı test et. Topoloji sekmesinde cihazı seç ve ping animasyonunu izle. Başarılı bağlantılar yeşil, başarısız olanlar kırmızı gösterilir.'
+          : 'Test connectivity between devices. Select a device in the Topology tab and watch the ping animation. Green = success, Red = failed.',
+    },
+    {
+      title: language === 'tr' ? 'Kablo Türleri' : 'Cable Types',
+      description:
+        language === 'tr'
+          ? 'Farklı kablo türleri kullan: Straight (mavi), Crossover (turuncu), Console (cyan), Wireless (mor). Uyumsuz kablolar kırmızı gösterilir.'
+          : 'Use different cable types: Straight (blue), Crossover (orange), Console (cyan), Wireless (purple). Incompatible cables show in red.',
+    },
+    {
+      title: language === 'tr' ? 'Tema ve Dil' : 'Theme & Language',
+      description:
+        language === 'tr'
+          ? 'Sağ üstteki düğmelerle tema (🌙/☀️) ve dili (🌐) değiştir. Tercihler otomatik kaydedilir.'
+          : 'Change theme (🌙/☀️) and language (🌐) using buttons in the top-right. Your preferences are saved automatically.',
+    },
+    {
+      title: language === 'tr' ? 'Başarılar' : 'You\'re Ready!',
+      description:
+        language === 'tr'
+          ? 'Artık başlamaya hazırsın! Örnek projeleri yükle veya sıfırdan bir topoloji oluştur. İyi eğlenceler!'
+          : 'You\'re all set! Load example projects or create your own topology from scratch. Have fun!',
     },
   ];
 
