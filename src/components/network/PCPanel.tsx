@@ -660,7 +660,7 @@ export function PCPanel({
   const canReachTargetIp = useCallback((targetIp: string) => {
     const result = checkConnectivity(deviceId, targetIp, topologyDevices as any, topologyConnections as any, deviceStates || new Map(), t.language as 'tr' | 'en');
     return result.success;
-  }, [deviceId, topologyDevices, topologyConnections, deviceStates]);
+  }, [deviceId, topologyDevices, topologyConnections, deviceStates, t.language]);
 
   const hasPhysicalPathToDevice = useCallback((targetDeviceId: string) => {
     if (!targetDeviceId || targetDeviceId === deviceId) return false;
@@ -1067,14 +1067,14 @@ export function PCPanel({
 
           // Check connectivity
           const result = checkConnectivity(deviceId, targetIp, topologyDevices as any, topologyConnections as any, deviceStates || new Map(), t.language as 'tr' | 'en');
-          
+
           if (result.success && result.targetId) {
             // Find target device to see if it's a switch or router
             const targetDevice = topologyDevices.find(d => d.id === result.targetId);
             if (targetDevice && ((targetDevice.type === 'switchL2' || targetDevice.type === 'switchL3') || targetDevice.type === 'router')) {
               // Successfully connected - switch to terminal tab and connect
               addLocalOutput('success', `Trying ${targetIp} ${port} ...\nConnected to ${targetIp}.`);
-              
+
               // Give it a tiny delay for the user to see the "Connected" message before switching
               setTimeout(() => {
                 setConnectedDeviceId(result.targetId!);
@@ -1612,8 +1612,8 @@ export function PCPanel({
         {/* Screen Bezel */}
         <div className={`
           h-[calc(100%-40px)] overflow-hidden relative
-          ${isDark 
-            ? 'bg-gradient-to-br from-slate-900/95 via-blue-900/20 to-purple-900/20 border border-slate-800/50' 
+          ${isDark
+            ? 'bg-gradient-to-br from-slate-900/95 via-blue-900/20 to-purple-900/20 border border-slate-800/50'
             : 'bg-gradient-to-br from-white/70 via-blue-50/50 to-purple-50/50 border border-slate-200/50'
           }
         `}>
@@ -1723,61 +1723,61 @@ export function PCPanel({
                   <div className="flex-1 p-4 md:p-8 overflow-auto custom-scrollbar">
                     <div className="min-h-full flex items-center justify-center">
                       <div className="grid grid-cols-3 md:grid-cols-4 gap-4 md:gap-8 rounded-3xl p-6 md:p-8 bg-white/10 backdrop-blur-xl border border-white/20 shadow-xl">
-                      <button
-                        onClick={() => navigateToProgram('desktop')}
-                        className="flex flex-col items-center gap-2 md:gap-3 p-2 md:p-4 rounded-2xl cursor-pointer transition-all duration-200 hover:bg-white/5"
-                      >
-                        <div className={`w-12 h-12 md:w-20 md:h-20 rounded-2xl flex items-center justify-center ${isDark ? 'bg-gradient-to-br from-blue-500/40 to-blue-600/30 border border-blue-400/30 shadow-lg shadow-blue-500/20' : 'bg-gradient-to-br from-blue-400 to-blue-500 shadow-lg shadow-blue-400/30'}`}>
-                          <TerminalIcon className={`w-6 h-6 md:w-10 md:h-10 ${isDark ? 'text-blue-200' : 'text-white'}`} />
-                        </div>
-                        <span className={`text-[10px] md:text-sm font-medium ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
-                          {language === 'tr' ? 'Komut İstemi' : 'Command Prompt'}
-                        </span>
-                      </button>
-                      <button
-                        onClick={() => navigateToProgram('terminal')}
-                        className="flex flex-col items-center gap-2 md:gap-3 p-2 md:p-4 rounded-2xl cursor-pointer transition-all duration-200 hover:bg-white/5"
-                      >
-                        <div className={`w-12 h-12 md:w-20 md:h-20 rounded-2xl flex items-center justify-center ${isDark ? 'bg-gradient-to-br from-emerald-500/40 to-emerald-600/30 border border-emerald-400/30 shadow-lg shadow-emerald-500/20' : 'bg-gradient-to-br from-emerald-400 to-emerald-500 shadow-lg shadow-emerald-400/30'}`}>
-                          <Laptop className={`w-6 h-6 md:w-10 md:h-10 ${isDark ? 'text-emerald-200' : 'text-white'}`} />
-                        </div>
-                        <span className={`text-[10px] md:text-sm font-medium ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
-                          {language === 'tr' ? 'Konsol' : 'Console'}
-                        </span>
-                      </button>
-                      <button
-                        onClick={() => navigateToProgram('settings')}
-                        className="flex flex-col items-center gap-2 md:gap-3 p-2 md:p-4 rounded-2xl cursor-pointer transition-all duration-200 hover:bg-white/5"
-                      >
-                        <div className={`w-12 h-12 md:w-20 md:h-20 rounded-2xl flex items-center justify-center ${isDark ? 'bg-gradient-to-br from-purple-500/40 to-purple-600/30 border border-purple-400/30 shadow-lg shadow-purple-500/20' : 'bg-gradient-to-br from-purple-400 to-purple-500 shadow-lg shadow-purple-400/30'}`}>
-                          <Settings className={`w-6 h-6 md:w-10 md:h-10 ${isDark ? 'text-purple-200' : 'text-white'}`} />
-                        </div>
-                        <span className={`text-[10px] md:text-sm font-medium ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
-                          {language === 'tr' ? 'Ayarlar' : 'Settings'}
-                        </span>
-                      </button>
-                      <button
-                        onClick={() => setActiveTab('services')}
-                        className="flex flex-col items-center gap-2 md:gap-3 p-2 md:p-4 rounded-2xl cursor-pointer transition-all duration-200 hover:bg-white/5"
-                      >
-                        <div className={`w-12 h-12 md:w-20 md:h-20 rounded-2xl flex items-center justify-center ${isDark ? 'bg-gradient-to-br from-amber-500/40 to-amber-600/30 border border-amber-400/30 shadow-lg shadow-amber-500/20' : 'bg-gradient-to-br from-amber-400 to-amber-500 shadow-lg shadow-amber-400/30'}`}>
-                          <Globe className={`w-6 h-6 md:w-10 md:h-10 ${isDark ? 'text-amber-200' : 'text-white'}`} />
-                        </div>
-                        <span className={`text-[10px] md:text-sm font-medium ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
-                          {language === 'tr' ? 'Servisler' : 'Services'}
-                        </span>
-                      </button>
-                      <button
-                        onClick={() => setActiveTab('wireless')}
-                        className="flex flex-col items-center gap-2 md:gap-3 p-2 md:p-4 rounded-2xl cursor-pointer transition-all duration-200 hover:bg-white/5"
-                      >
-                        <div className={`w-12 h-12 md:w-20 md:h-20 rounded-2xl flex items-center justify-center ${isDark ? 'bg-gradient-to-br from-cyan-500/40 to-cyan-600/30 border border-cyan-400/30 shadow-lg shadow-cyan-500/20' : 'bg-gradient-to-br from-cyan-400 to-cyan-500 shadow-lg shadow-cyan-400/30'}`}>
-                          <Wifi className={`w-6 h-6 md:w-10 md:h-10 ${isDark ? 'text-cyan-200' : 'text-white'}`} />
-                        </div>
-                        <span className={`text-[10px] md:text-sm font-medium ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
-                          {language === 'tr' ? 'Kablosuz' : 'Wireless'}
-                        </span>
-                      </button>
+                        <button
+                          onClick={() => navigateToProgram('desktop')}
+                          className="flex flex-col items-center gap-2 md:gap-3 p-2 md:p-4 rounded-2xl cursor-pointer transition-all duration-200 hover:bg-white/5"
+                        >
+                          <div className={`w-12 h-12 md:w-20 md:h-20 rounded-2xl flex items-center justify-center ${isDark ? 'bg-gradient-to-br from-blue-500/40 to-blue-600/30 border border-blue-400/30 shadow-lg shadow-blue-500/20' : 'bg-gradient-to-br from-blue-400 to-blue-500 shadow-lg shadow-blue-400/30'}`}>
+                            <TerminalIcon className={`w-6 h-6 md:w-10 md:h-10 ${isDark ? 'text-blue-200' : 'text-white'}`} />
+                          </div>
+                          <span className={`text-[10px] md:text-sm font-medium ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
+                            {language === 'tr' ? 'Komut İstemi' : 'Command Prompt'}
+                          </span>
+                        </button>
+                        <button
+                          onClick={() => navigateToProgram('terminal')}
+                          className="flex flex-col items-center gap-2 md:gap-3 p-2 md:p-4 rounded-2xl cursor-pointer transition-all duration-200 hover:bg-white/5"
+                        >
+                          <div className={`w-12 h-12 md:w-20 md:h-20 rounded-2xl flex items-center justify-center ${isDark ? 'bg-gradient-to-br from-emerald-500/40 to-emerald-600/30 border border-emerald-400/30 shadow-lg shadow-emerald-500/20' : 'bg-gradient-to-br from-emerald-400 to-emerald-500 shadow-lg shadow-emerald-400/30'}`}>
+                            <Laptop className={`w-6 h-6 md:w-10 md:h-10 ${isDark ? 'text-emerald-200' : 'text-white'}`} />
+                          </div>
+                          <span className={`text-[10px] md:text-sm font-medium ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
+                            {language === 'tr' ? 'Konsol' : 'Console'}
+                          </span>
+                        </button>
+                        <button
+                          onClick={() => navigateToProgram('settings')}
+                          className="flex flex-col items-center gap-2 md:gap-3 p-2 md:p-4 rounded-2xl cursor-pointer transition-all duration-200 hover:bg-white/5"
+                        >
+                          <div className={`w-12 h-12 md:w-20 md:h-20 rounded-2xl flex items-center justify-center ${isDark ? 'bg-gradient-to-br from-purple-500/40 to-purple-600/30 border border-purple-400/30 shadow-lg shadow-purple-500/20' : 'bg-gradient-to-br from-purple-400 to-purple-500 shadow-lg shadow-purple-400/30'}`}>
+                            <Settings className={`w-6 h-6 md:w-10 md:h-10 ${isDark ? 'text-purple-200' : 'text-white'}`} />
+                          </div>
+                          <span className={`text-[10px] md:text-sm font-medium ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
+                            {language === 'tr' ? 'Ayarlar' : 'Settings'}
+                          </span>
+                        </button>
+                        <button
+                          onClick={() => setActiveTab('services')}
+                          className="flex flex-col items-center gap-2 md:gap-3 p-2 md:p-4 rounded-2xl cursor-pointer transition-all duration-200 hover:bg-white/5"
+                        >
+                          <div className={`w-12 h-12 md:w-20 md:h-20 rounded-2xl flex items-center justify-center ${isDark ? 'bg-gradient-to-br from-amber-500/40 to-amber-600/30 border border-amber-400/30 shadow-lg shadow-amber-500/20' : 'bg-gradient-to-br from-amber-400 to-amber-500 shadow-lg shadow-amber-400/30'}`}>
+                            <Globe className={`w-6 h-6 md:w-10 md:h-10 ${isDark ? 'text-amber-200' : 'text-white'}`} />
+                          </div>
+                          <span className={`text-[10px] md:text-sm font-medium ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
+                            {language === 'tr' ? 'Servisler' : 'Services'}
+                          </span>
+                        </button>
+                        <button
+                          onClick={() => setActiveTab('wireless')}
+                          className="flex flex-col items-center gap-2 md:gap-3 p-2 md:p-4 rounded-2xl cursor-pointer transition-all duration-200 hover:bg-white/5"
+                        >
+                          <div className={`w-12 h-12 md:w-20 md:h-20 rounded-2xl flex items-center justify-center ${isDark ? 'bg-gradient-to-br from-cyan-500/40 to-cyan-600/30 border border-cyan-400/30 shadow-lg shadow-cyan-500/20' : 'bg-gradient-to-br from-cyan-400 to-cyan-500 shadow-lg shadow-cyan-400/30'}`}>
+                            <Wifi className={`w-6 h-6 md:w-10 md:h-10 ${isDark ? 'text-cyan-200' : 'text-white'}`} />
+                          </div>
+                          <span className={`text-[10px] md:text-sm font-medium ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
+                            {language === 'tr' ? 'Kablosuz' : 'Wireless'}
+                          </span>
+                        </button>
                       </div>
                     </div>
                   </div>

@@ -75,7 +75,8 @@ export function useDeviceManager() {
     if (deviceType === 'router') {
       return 'C1900 platform with 524288K bytes of main memory\nMain memory configured to 64 bit mode with ECC disabled\n';
     }
-    const resolvedModel = switchModel || 'WS-C2960-24TT-L';
+
+    const resolvedModel = switchModel || (deviceType === 'switchL3' ? 'WS-C3560-24PS' : 'WS-C2960-24TT-L');
 
     if (resolvedModel === 'WS-C3560-24PS') {
       return 'C3560 platform with 131072K bytes of main memory\nMain memory configured to 64 bit mode with ECC disabled\n';
@@ -105,16 +106,17 @@ export function useDeviceManager() {
 
   // Listen for power toggle events from topology and handle device reset
   useEffect(() => {
-    const handlePowerToggle = (event: CustomEvent<{ deviceId: string; nextStatus: 'online' | 'offline'; switchModel?: string }>) => {
-      const { deviceId, nextStatus, switchModel: incomingModel } = event.detail;
+    const handlePowerToggle = (event: CustomEvent<{ deviceId: string; nextStatus: 'online' | 'offline'; switchModel?: string; deviceType?: DeviceType }>) => {
+      const { deviceId, nextStatus, switchModel: incomingModel, deviceType } = event.detail;
 
       if (nextStatus === 'online') {
         // Power on: reset device state and show boot sequence
-        const isRouter = deviceId.includes('router');
         const existingState = deviceStates.get(deviceId);
+        const isRouter = deviceType === 'router' || deviceId.includes('router') || existingState?.switchLayer === 'L3';
+        const isSwitchL3 = deviceType === 'switchL3' || existingState?.switchLayer === 'L3' || existingState?.switchModel === 'WS-C3560-24PS';
 
-        // Get the switch model from existing state or default
-        const switchModel = existingState?.switchModel || incomingModel || (isRouter ? 'WS-C3560-24PS' : 'WS-C2960-24TT-L');
+        // Get the switch model from existing state or default. L3 switches should start as 3560.
+        const switchModel = existingState?.switchModel || incomingModel || (isRouter || isSwitchL3 ? 'WS-C3560-24PS' : 'WS-C2960-24TT-L');
         const baseState = isRouter ? createInitialRouterState() : createInitialState(undefined, switchModel as any);
 
         // Get existing state to preserve saved configuration and identity
@@ -236,14 +238,20 @@ export function useDeviceManager() {
     return deviceState!;
   }, [deviceStates, ensureSwitchModelConsistency]);
 
-  const getOrCreateDeviceOutputs = useCallback((deviceId: string): TerminalOutput[] => {
+  const getOrCreateDeviceOutputs = useCallback((deviceId: string, deviceStateArg?: SwitchState): TerminalOutput[] => {
     let outputs = deviceOutputs.get(deviceId);
     if (!outputs) {
-      const state = deviceStates.get(deviceId);
+      const state = deviceStateArg || deviceStates.get(deviceId);
       const isRouter = deviceId.includes('router');
+      const inferredDeviceType: Exclude<DeviceType, 'pc'> = isRouter
+        ? 'router'
+        : state?.switchLayer === 'L3'
+          ? 'switchL3'
+          : 'switchL2';
+
       outputs = [
         { id: `boot-1`, type: 'output', content: isRouter ? '\n\nSystem Bootstrap, Version 15.1(4)M4, RELEASE SOFTWARE (fc1)\nTechnical Support: http://yunus.sf.net\nCopyright (c) 1986-2026 by Systems, Inc.\n' : '\n\nSystem Bootstrap, Version 12.1(11r)EA1, RELEASE SOFTWARE (fc1)\nTechnical Support: http://yunus.sf.net\nCopyright (c) 1986-2026 by Systems, Inc.\n' },
-        { id: `boot-2`, type: 'output', content: getBootMemoryLine(isRouter ? 'router' : resolveSwitchBootType(state?.switchModel), state?.switchModel) },
+        { id: `boot-2`, type: 'output', content: getBootMemoryLine(inferredDeviceType, state?.switchModel) },
         { id: `boot-3`, type: 'output', content: '\nLoading the runtime image: ######################################## [OK]\n' }
       ];
 
