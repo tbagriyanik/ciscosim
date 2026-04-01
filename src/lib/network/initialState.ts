@@ -2,8 +2,8 @@
 import { SwitchState, Port, Vlan, SecurityConfig, CommandMode, StartupConfig } from './types';
 import { getSwitchLayer } from './switchModels';
 
-// 24 FastEthernet + 2 GigabitEthernet portu oluştur
-function createInitialPorts(): Record<string, Port> {
+// 24 FastEthernet + configurable GigabitEthernet ports oluştur
+function createInitialPorts(gigabitPortCount: number = 2): Record<string, Port> {
   const ports: Record<string, Port> = {};
 
   // FastEthernet 0/1 - 0/24 - HEPSİ AÇIK (no shutdown) BAŞLANGIÇTA
@@ -27,8 +27,8 @@ function createInitialPorts(): Record<string, Port> {
     };
   }
 
-  // GigabitEthernet 0/1 - 0/2 (Uplink) - BUNLAR DA AÇIK
-  for (let i = 1; i <= 2; i++) {
+  // GigabitEthernet uplink/routed ports
+  for (let i = 1; i <= gigabitPortCount; i++) {
     const portId = `gi0/${i}`;
     ports[portId] = {
       id: portId,
@@ -127,12 +127,11 @@ function generateMacAddress(): string {
 
 // Ana başlangıç durumu
 export function createInitialState(mac?: string, switchModel: 'WS-C2960-24TT-L' | 'WS-C3560-24PS' = 'WS-C2960-24TT-L'): SwitchState {
-  const ports = createInitialPorts();
-  const vlans = createInitialVlans();
-  const macAddress = mac || '0011.2233.4401';
-
   // Switch modeline göre Layer belirle
   const switchLayer = getSwitchLayer(switchModel as any);
+  const ports = createInitialPorts(switchLayer === 'L3' ? 4 : 2);
+  const vlans = createInitialVlans();
+  const macAddress = mac || '0011.2233.4401';
 
   // VLAN'lara portları ata
   Object.values(ports).forEach(port => {

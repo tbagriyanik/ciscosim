@@ -1085,7 +1085,6 @@ export default function Home() {
       // PC - open CMD tab directly
       setDeviceTabWithHistory('cmd', deviceId, 'pc');
       setShowPCDeviceId(deviceId);
-      setShowPCPanel(true);
     } else {
       // Switch or Router - set as CLI device and switch to terminal
       const actualType = actualDeviceType as 'switch' | 'router';
@@ -1096,7 +1095,7 @@ export default function Home() {
 
       setDeviceTabWithHistory('terminal', deviceId, actualType);
     }
-  }, [getOrCreateDeviceState, getOrCreateDeviceOutputs, topologyDevices, setDeviceTabWithHistory, setShowPCDeviceId, setShowPCPanel]);
+  }, [getOrCreateDeviceState, getOrCreateDeviceOutputs, topologyDevices, setDeviceTabWithHistory, setShowPCDeviceId]);
 
   // Handle topology change from NetworkTopology component
   const handleTopologyChange = useCallback((devices: CanvasDevice[], connections: CanvasConnection[], notes: CanvasNote[]) => {

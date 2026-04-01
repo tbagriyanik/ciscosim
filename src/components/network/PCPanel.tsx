@@ -18,7 +18,7 @@ import { toast } from "@/hooks/use-toast";
 import { isValidMAC, normalizeMAC, cn } from "@/lib/utils";
 import { commandHelp } from '@/lib/network/executor';
 import { ModernPanel } from '@/components/ui/ModernPanel';
-import { useIsMobile, useIsTablet, useIsDesktop } from '@/hooks/use-breakpoint';
+import { useIsMobile, useIsDesktop } from '@/hooks/use-breakpoint';
 
 // PC Icon component matching the main screen
 const PCIcon = ({ className = "w-5 h-5" }: { className?: string }) => (
@@ -100,7 +100,6 @@ export function PCPanel({
 
   // Responsive hooks
   const isMobile = useIsMobile();
-  const isTablet = useIsTablet();
   const isDesktop = useIsDesktop();
 
   // Use granular selector for device state to prevent cascading re-renders
@@ -116,6 +115,13 @@ export function PCPanel({
   const tabletHistoryRef = useRef<PCActiveTab[]>(['home']);
   const tabletHistoryIndexRef = useRef(0);
   const isInternalTabletNavRef = useRef(false);
+
+  const goHome = useCallback(() => {
+    setActiveTab('home');
+    tabletHistoryRef.current = ['home'];
+    tabletHistoryIndexRef.current = 0;
+    onNavigate?.('home');
+  }, [onNavigate]);
 
   const navigateToProgram = useCallback((program: PCActiveTab) => {
     if (program === 'home') {
@@ -291,12 +297,10 @@ export function PCPanel({
 
   // When tablet powers on, navigate to home screen
   useEffect(() => {
-    if (!isPcPoweredOff && isTablet) {
-      setActiveTab('home');
-      tabletHistoryRef.current = ['home'];
-      tabletHistoryIndexRef.current = 0;
+    if (!isPcPoweredOff) {
+      goHome();
     }
-  }, [isPcPoweredOff, isTablet]);
+  }, [isPcPoweredOff, goHome]);
 
   const validateIP = (ip: string) => /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/.test(ip);
 
@@ -1444,7 +1448,7 @@ export function PCPanel({
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => setActiveTab('home')}
+            onClick={goHome}
             className={`h-8 w-8 rounded-lg ui-hover-surface ${isDark ? 'text-slate-300 hover:text-cyan-400' : 'text-slate-600 hover:text-cyan-600'}`}
             aria-label={language === 'tr' ? 'Ana Ekran' : 'Home'}
           >
@@ -1461,7 +1465,10 @@ export function PCPanel({
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => onTogglePower?.(deviceId)}
+            onClick={() => {
+              goHome();
+              onTogglePower?.(deviceId);
+            }}
             className={`h-8 w-8 rounded-lg ui-hover-surface transition-all ${isPcPoweredOff ? 'text-rose-500 hover:text-rose-400' : 'text-emerald-500 hover:text-emerald-400'}`}
             aria-label={t.power}
             disabled={!onTogglePower}
@@ -1543,7 +1550,7 @@ export function PCPanel({
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => setActiveTab('home')}
+                  onClick={goHome}
                   disabled={isPcPoweredOff}
                   className={`h-7 w-7 rounded-lg ui-hover-surface ${isPcPoweredOff ? 'opacity-30 cursor-not-allowed' : isDark ? 'text-slate-300 hover:text-cyan-400' : 'text-slate-600 hover:text-cyan-600'}`}
                   aria-label={language === 'tr' ? 'Ana Ekran' : 'Home'}
@@ -1562,7 +1569,10 @@ export function PCPanel({
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => onTogglePower?.(deviceId)}
+                  onClick={() => {
+                    goHome();
+                    onTogglePower?.(deviceId);
+                  }}
                   className={`h-7 w-7 rounded-lg ui-hover-surface transition-all ${isPcPoweredOff ? 'text-rose-500 hover:text-rose-400' : 'text-emerald-500 hover:text-emerald-400'}`}
                   aria-label={t.power}
                   disabled={!onTogglePower}
@@ -1708,10 +1718,11 @@ export function PCPanel({
               </div>
 
               {/* Content Area */}
-              <div className={`flex-1 flex flex-col overflow-y-auto ${terminalBg} relative`}>
+              <div className={`flex-1 min-h-0 flex flex-col overflow-hidden ${terminalBg} relative`}>
                 {activeTab === 'home' ? (
-                  <div className="flex-1 flex items-center justify-center p-8">
-                    <div className="grid grid-cols-3 md:grid-cols-4 gap-4 md:gap-8 rounded-3xl p-6 md:p-8 bg-white/10 backdrop-blur-xl border border-white/20 shadow-xl">
+                  <div className="flex-1 p-4 md:p-8 overflow-auto custom-scrollbar">
+                    <div className="min-h-full flex items-center justify-center">
+                      <div className="grid grid-cols-3 md:grid-cols-4 gap-4 md:gap-8 rounded-3xl p-6 md:p-8 bg-white/10 backdrop-blur-xl border border-white/20 shadow-xl">
                       <button
                         onClick={() => navigateToProgram('desktop')}
                         className="flex flex-col items-center gap-2 md:gap-3 p-2 md:p-4 rounded-2xl cursor-pointer transition-all duration-200 hover:bg-white/5"
@@ -1767,10 +1778,11 @@ export function PCPanel({
                           {language === 'tr' ? 'Kablosuz' : 'Wireless'}
                         </span>
                       </button>
+                      </div>
                     </div>
                   </div>
                 ) : activeTab === 'settings' ? (
-                  <div className="p-6 space-y-4 overflow-y-auto custom-scrollbar">
+                  <div className="flex-1 min-h-0 p-6 space-y-4 overflow-y-auto custom-scrollbar">
                     <div className="space-y-2">
                       <label className="text-xs font-bold text-slate-500 ">
                         {t.ipConfigurationLabel}
@@ -1845,7 +1857,7 @@ export function PCPanel({
                     </div>
                   </div>
                 ) : activeTab === 'services' ? (
-                  <div className="p-6 space-y-6 overflow-y-auto custom-scrollbar">
+                  <div className="flex-1 min-h-0 p-6 space-y-6 overflow-y-auto custom-scrollbar">
                     <div className={`rounded-xl border p-4 space-y-4 ${isDark ? 'border-slate-800 bg-slate-900/40' : 'border-slate-200 bg-white'}`}>
                       <div className="flex items-center justify-between gap-3">
                         <div>
@@ -2090,7 +2102,7 @@ export function PCPanel({
                     </div>
                   </div>
                 ) : activeTab === 'wireless' ? (
-                  <div className="p-6 space-y-6 overflow-y-auto custom-scrollbar">
+                  <div className="flex-1 min-h-0 p-6 space-y-6 overflow-y-auto custom-scrollbar">
                     <div className={`rounded-2xl border p-5 space-y-5 ${isDark ? 'border-slate-800 bg-slate-900/40' : 'border-slate-200 bg-white'}`}>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3 text-purple-500">

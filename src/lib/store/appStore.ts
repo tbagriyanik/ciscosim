@@ -88,7 +88,7 @@ const initialState: Omit<AppState, keyof ReturnType<typeof createActions>> = {
 };
 
 const STORE_KEY = 'network-simulator-storage';
-const STORE_VERSION = 2;
+const STORE_VERSION = 3;
 const STORE_BACKUP_KEY = `${STORE_KEY}-backup`;
 
 function isValidTopologyState(value: any): value is TopologyState {
@@ -148,9 +148,16 @@ function sanitizePersistedState(input: any): Partial<AppState> {
     return safe;
 }
 
-export function migrateAndValidatePersistedState(persistedState: any): Partial<AppState> {
+export function migrateAndValidatePersistedState(persistedState: any, persistedVersion?: number): Partial<AppState> {
     const stateCandidate = persistedState?.state ?? persistedState ?? {};
-    return sanitizePersistedState(stateCandidate);
+    const sanitized = sanitizePersistedState(stateCandidate);
+
+    // Reset legacy saved graphics preference so new default opens in high quality.
+    if (typeof persistedVersion === 'number' && persistedVersion < STORE_VERSION) {
+        sanitized.graphicsQuality = 'high';
+    }
+
+    return sanitized;
 }
 
 // Helper to create actions
@@ -303,9 +310,9 @@ export const useAppStore = create<AppState>()(
                 sidebarOpen: state.sidebarOpen,
                 graphicsQuality: state.graphicsQuality,
             }),
-            migrate: (persistedState: any) => {
+            migrate: (persistedState: any, version: number) => {
                 try {
-                    return migrateAndValidatePersistedState(persistedState) as AppState;
+                    return migrateAndValidatePersistedState(persistedState, version) as AppState;
                 } catch {
                     return {
                         ...initialState,
@@ -382,6 +389,7 @@ if (typeof window !== 'undefined') {
                     ...(nextState.activeTab ? { activeTab: nextState.activeTab } : {}),
                     ...(typeof nextState.activePanel !== 'undefined' ? { activePanel: nextState.activePanel } : {}),
                     ...(typeof nextState.sidebarOpen === 'boolean' ? { sidebarOpen: nextState.sidebarOpen } : {}),
+                    ...(nextState.graphicsQuality ? { graphicsQuality: nextState.graphicsQuality } : {}),
                 }));
             } catch {
                 // Ignore malformed payloads from storage.

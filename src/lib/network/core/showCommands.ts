@@ -24,6 +24,23 @@ export const showHandlers: Record<string, CommandHandler> = {
   'do show': cmdDoShow,
 };
 
+function getSwitchDisplayProfile(state: any) {
+  const switchModel = state.switchModel || 'WS-C2960-24TT-L';
+  const isL3 = switchModel === 'WS-C3560-24PS';
+
+  return {
+    switchModel,
+    isL3,
+    bootImage: isL3 ? 'c3560-ipbase-mz.150-2.SE4.bin' : 'c2960-lanbase-mz.150-2.SE4.bin',
+    softwareImage: isL3 ? 'C3560 Software (C3560-IPBASE-M), Version 15.0(2)SE4' : 'C2960 Software (C2960-LANBASE-M), Version 15.0(2)SE4',
+    rom: isL3 ? 'C3560 boot loader' : 'C2960 boot loader',
+    bootldr: isL3 ? 'C3560 Boot Loader (C3560-HBOOT-M) Version 12.2(25)SEE3' : 'C2960 Boot Loader (C2960-HBOOT-M) Version 12.2(25)FX',
+    systemImage: isL3 ? 'flash:c3560-ipbase-mz.150-2.SE4.bin' : 'flash:c2960-lanbase-mz.150-2.SE4.bin',
+    processor: isL3 ? 'WS-C3560-24PS (PowerPC405) processor (revision 01) with 131072K bytes of memory' : 'WS-C2960-24TT-L (PowerPC405) processor (revision C0) with 65536K bytes of memory',
+    gigabitPortCount: isL3 ? 4 : 2,
+  };
+}
+
 /**
  * Show - Display summary information
  */
@@ -56,6 +73,7 @@ function cmdShowRunningConfig(
   input: string,
   ctx: any
 ): any {
+  const { systemImage } = getSwitchDisplayProfile(state);
   let output = '\nBuilding configuration...\n\n';
   output += 'Current configuration : 1024 bytes\n\n';
 
@@ -76,7 +94,7 @@ function cmdShowRunningConfig(
     }
 
     // Boot system
-    output += 'boot system flash:c2960-lanbase-mz.150-2.SE4.bin\n';
+    output += `boot system ${systemImage}\n`;
     output += '!\n';
 
     // Service passwords-encryption
@@ -169,6 +187,7 @@ function cmdShowStartupConfig(
   input: string,
   ctx: any
 ): any {
+  const { systemImage } = getSwitchDisplayProfile(state);
   // Check if startup config exists
   if (!state.startupConfig) {
     return {
@@ -191,7 +210,7 @@ function cmdShowStartupConfig(
   }
 
   // Boot system from startup config
-  output += 'boot system flash:c2960-lanbase-mz.150-2.SE4.bin\n';
+  output += `boot system ${systemImage}\n`;
   output += '!\n';
 
   // Service passwords-encryption from startup config
@@ -325,14 +344,7 @@ function cmdShowVersion(
   input: string,
   ctx: any
 ): any {
-  const switchModel = state.switchModel || 'WS-C2960-24TT-L';
-  const isL3 = switchModel === 'WS-C3560-24PS';
-  
-  const softwareImage = isL3 ? 'C3560 Software (C3560-IPBASE-M), Version 15.0(2)SE4' : 'C2960 Software (C2960-LANBASE-M), Version 15.0(2)SE4';
-  const rom = isL3 ? 'C3560 boot loader' : 'C2960 boot loader';
-  const bootldr = isL3 ? 'C3560 Boot Loader (C3560-HBOOT-M) Version 12.2(25)SEE3' : 'C2960 Boot Loader (C2960-HBOOT-M) Version 12.2(25)FX';
-  const systemImage = isL3 ? 'flash:c3560-ipbase-mz.150-2.SE4.bin' : 'flash:c2960-lanbase-mz.150-2.SE4.bin';
-  const processor = isL3 ? 'WS-C3560-24PS (PowerPC405) processor (revision 01) with 131072K bytes of memory' : 'WS-C2960-24TT-L (PowerPC405) processor (revision C0) with 65536K bytes of memory';
+  const { switchModel, softwareImage, rom, bootldr, systemImage, processor, gigabitPortCount } = getSwitchDisplayProfile(state);
   
   let output = `\nNetwork NOS Software, ${softwareImage}\n`;
   output += 'Technical Support: http://yunus.sf.net\n';
@@ -345,7 +357,7 @@ function cmdShowVersion(
   output += 'Processor board ID FOC1234X5YZ\n';
   output += 'Last reload reason: power-on\n\n';
   output += '24 FastEthernet/IEEE 802.3 interface(s)\n';
-  output += '2 Gigabit Ethernet/IEEE 802.3 interface(s)\n\n';
+  output += `${gigabitPortCount} Gigabit Ethernet/IEEE 802.3 interface(s)\n\n`;
   output += '64K bytes of flash-simulated non-volatile configuration memory.\n';
   output += 'Base ethernet MAC Address       : 00:1A:2B:3C:4D:5E\n';
   output += 'Motherboard assembly number   : 73-10000-01\n';
@@ -699,11 +711,12 @@ function cmdShowFlash(
   input: string,
   ctx: any
 ): any {
+  const { bootImage } = getSwitchDisplayProfile(state);
   let output = '\n-#- --length-- -----date/time------ path\n';
   output += '1     616      Mar 01 2024 00:00:00 +00:00  vlan.dat\n';
   output += '2     1599     Mar 01 2024 00:00:00 +00:00  config.text\n';
   output += '3     1464     Mar 01 2024 00:00:00 +00:00  private-config.text\n';
-  output += '4     3024     Mar 01 2024 00:00:00 +00:00  c2960-lanbase-mz.150-2.SE4.bin\n';
+  output += `4     3024     Mar 01 2024 00:00:00 +00:00  ${bootImage}\n`;
   output += '\n32505856 bytes available (29720576 bytes used)\n';
 
   return { success: true, output };
@@ -717,7 +730,8 @@ function cmdShowBoot(
   input: string,
   ctx: any
 ): any {
-  let output = '\nBOOT path-list      : flash:c2960-lanbase-mz.150-2.SE4.bin\n';
+  const { systemImage } = getSwitchDisplayProfile(state);
+  let output = `\nBOOT path-list      : ${systemImage}\n`;
   output += 'Config file         : flash:config.text\n';
   output += 'Private Config file : flash:private-config.text\n';
   output += 'Enable Break        : no\n';
@@ -929,4 +943,3 @@ function cmdShowWireless(
   output += '!\n';
   return { success: true, output };
 }
-

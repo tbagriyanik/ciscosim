@@ -48,6 +48,7 @@ describe('appStore persistence migration and validation', () => {
         activeTab: 'tasks',
         activePanel: 'security',
         sidebarOpen: false,
+        graphicsQuality: 'low',
       },
     };
 
@@ -57,6 +58,32 @@ describe('appStore persistence migration and validation', () => {
     expect(migrated.activeTab).toBe('tasks');
     expect(migrated.activePanel).toBe('security');
     expect(migrated.sidebarOpen).toBe(false);
+    expect(migrated.graphicsQuality).toBe('low');
+  });
+
+  it('should reset legacy graphics quality to high during version migration', () => {
+    const legacy = {
+      state: {
+        topology: {
+          devices: [],
+          connections: [],
+          notes: [],
+          selectedDeviceId: null,
+          zoom: 1,
+          pan: { x: 0, y: 0 },
+        },
+        deviceStates: {
+          switchStates: {},
+          pcOutputs: {},
+        },
+        activeTab: 'topology',
+        activePanel: null,
+        sidebarOpen: true,
+        graphicsQuality: 'low',
+      },
+    };
+
+    const migrated = migrateAndValidatePersistedState(legacy, 2);
+    expect(migrated.graphicsQuality).toBe('high');
   });
 });
-

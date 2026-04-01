@@ -108,6 +108,31 @@ export function PortPanel({ ports, t, theme, deviceName, deviceModel, activeDevi
       return aNum - bNum;
     });
 
+  const systemLedColor: PortLEDColor = isDevicePoweredOff
+    ? 'gray'
+    : Object.values(ports).some((port) => port.status === 'blocked')
+      ? 'orange'
+      : 'green';
+
+  const renderStatusLed = (label: 'PWR' | 'SYST', color: PortLEDColor, tooltipText: string) => (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <div className="flex items-center gap-1.5 cursor-default">
+          <div className="relative">
+            <div className={`w-2.5 h-2.5 rounded-full ${ledColorClasses[color]} transition-all duration-300`} />
+            {color === 'green' && (
+              <div className="absolute inset-0 rounded-full bg-green-400 animate-ping opacity-40" />
+            )}
+          </div>
+          <span className={`text-xs font-mono ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{label}</span>
+        </div>
+      </TooltipTrigger>
+      <TooltipContent hideArrow side="bottom" className={`${isDark ? 'bg-slate-900 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'} p-2 text-xs rounded-[18px] shadow-2xl`}>
+        {tooltipText}
+      </TooltipContent>
+    </Tooltip>
+  );
+
   const renderPort = (port: Port) => {
     const isConnectedInTopology = isPortConnectedInTopology(port.id);
     const peerId = isConnectedInTopology ? getPeerDeviceIdForPort(port.id) : null;
@@ -293,8 +318,20 @@ export function PortPanel({ ports, t, theme, deviceName, deviceModel, activeDevi
                 <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{deviceModel || 'WS-C2960-24TT-L'}</span>
               </div>
               <div className="flex gap-2">
-                <span className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>PWR</span>
-                <span className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>SYST</span>
+                {renderStatusLed(
+                  'PWR',
+                  isDevicePoweredOff ? 'gray' : 'green',
+                  t.language === 'tr'
+                    ? `Güç durumu: ${isDevicePoweredOff ? 'Kapalı' : 'Açık'}`
+                    : `Power status: ${isDevicePoweredOff ? 'Off' : 'On'}`
+                )}
+                {renderStatusLed(
+                  'SYST',
+                  systemLedColor,
+                  t.language === 'tr'
+                    ? `Sistem durumu: ${isDevicePoweredOff ? 'Kapalı' : systemLedColor === 'orange' ? 'Uyarı' : 'Çalışıyor'}`
+                    : `System status: ${isDevicePoweredOff ? 'Off' : systemLedColor === 'orange' ? 'Warning' : 'Operational'}`
+                )}
               </div>
             </div>
 
