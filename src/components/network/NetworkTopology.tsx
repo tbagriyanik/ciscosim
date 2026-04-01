@@ -198,7 +198,6 @@ export function NetworkTopology({
       ports: [
         { id: 'eth0', label: 'Eth0', status: 'disconnected' },
         { id: 'com1', label: 'COM1', status: 'disconnected' },
-        { id: 'wlan0', label: 'WLAN0', status: 'disconnected' },
       ],
     },
     {
@@ -4389,7 +4388,7 @@ export function NetworkTopology({
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 0 0 -5.656 0l-4 4a4 4 0 1 0 5.656 5.656l1.102-1.101m-.758-4.899a4 4 0 0 0 5.656 0l4-4a4 4 0 0 0 -5.656-5.656l-1.1 1.1" />
               </svg>
-              <span className="hidden sm:inline">{language === 'tr' ? 'Cihazları Bağla' : 'Connect Devices'}</span>
+              <span className="hidden sm:inline">{language === 'tr' ? 'Bağla' : 'Connect'}</span>
               <span className="sm:hidden">{language === 'tr' ? 'Bağla' : 'Connect'}</span>
             </button>
 
@@ -4434,10 +4433,10 @@ export function NetworkTopology({
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 0 0 -2 2v11a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-5m-1.414-9.414a2 2 0 1 1 2.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                   </svg>
-                  <span className="hidden sm:inline">{language === 'tr' ? 'Not Ekle' : 'Add Note'}</span>
+                  <span className="hidden sm:inline">{language === 'tr' ? 'Not' : 'Note'}</span>
                 </button>
               </TooltipTrigger>
-              <TooltipContent>{language === 'tr' ? 'Not Ekle' : 'Add Note'}</TooltipContent>
+              <TooltipContent>{language === 'tr' ? 'Not' : 'Note'}</TooltipContent>
             </Tooltip>
 
             {/* Refresh Network Button */}
@@ -4458,7 +4457,7 @@ export function NetworkTopology({
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                   </svg>
-                  <span className="hidden sm:inline">{language === 'tr' ? 'Ağı Yenile' : 'Refresh Network'}</span>
+                  <span className="hidden sm:inline">{language === 'tr' ? 'Yenile' : 'Refresh'}</span>
                 </button>
               </TooltipTrigger>
               <TooltipContent>{language === 'tr' ? 'Ağı Yenile (F5)' : 'Refresh Network (F5) '}</TooltipContent>

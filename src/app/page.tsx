@@ -48,7 +48,8 @@ import {
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { ChevronDown, Menu, Plus, Save, FolderOpen, Languages, Sun, Moon, Network, ShieldCheck, Database, Info, File, Layers, Terminal as TerminalIcon, Undo2, Redo2, Link2, Pencil, StickyNote, Sparkles, Cloud } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { ChevronDown, Menu, Plus, Save, FolderOpen, Languages, Sun, Moon, Network, ShieldCheck, Database, Info, File, Layers, Terminal as TerminalIcon, Undo2, Redo2, Link2, Pencil, StickyNote, Sparkles, Cloud, Search } from "lucide-react";
 
 import { Button } from '@/components/ui/button';
 import {
@@ -478,6 +479,7 @@ export default function Home() {
   const [selectedDevice, setSelectedDevice] = useState<DeviceType | null>(null);
   const [showPCPanel, setShowPCPanel] = useState(false);
   const [showPCDeviceId, setShowPCDeviceId] = useState<string>('pc-1');
+  const [deviceSearchQuery, setDeviceSearchQuery] = useState('');
 
   // Get current state helper
   const getCurrentState = useCallback((): ProjectState => ({
@@ -2432,7 +2434,7 @@ export default function Home() {
               </div>
 
               {/* Active Device Dropdown - Always show if component is rendered */}
-              <DropdownMenu>
+              <DropdownMenu onOpenChange={(open) => { if (!open) setDeviceSearchQuery(''); }}>
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
@@ -2502,40 +2504,62 @@ export default function Home() {
                     {topologyDevices.length > 0 ? t.selectDevice : t.addDevicesFirst}
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
+                  {topologyDevices.length > 0 && (
+                    <div className="px-2 pb-1.5">
+                      <div className="relative">
+                        <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
+                        <Input
+                          value={deviceSearchQuery}
+                          onChange={e => setDeviceSearchQuery(e.target.value)}
+                          placeholder={language === 'tr' ? 'Ara...' : 'Search...'}
+                          className="h-7 pl-6 text-xs"
+                          autoFocus
+                          onKeyDown={e => e.stopPropagation()}
+                        />
+                      </div>
+                    </div>
+                  )}
                   <ScrollArea className={topologyDevices.length > 0 ? "h-56" : "h-auto"}>
                     {topologyDevices.length > 0 ? (
-                      topologyDevices.map((device) => {
-                        const currentDeviceState = deviceStates.get(device.id);
-                        const displayName = currentDeviceState?.hostname || device.name;
-                        const status = device.status || 'online';
-                        const statusColor =
-                          status === 'offline'
-                            ? 'bg-rose-500'
-                            : status === 'online'
-                              ? 'bg-emerald-400'
-                              : 'bg-amber-400';
+                      topologyDevices
+                        .filter(device => {
+                          if (!deviceSearchQuery.trim()) return true;
+                          const q = deviceSearchQuery.toLowerCase();
+                          const name = (deviceStates.get(device.id)?.hostname || device.name).toLowerCase();
+                          return name.includes(q) || device.type.toLowerCase().includes(q);
+                        })
+                        .map((device) => {
+                          const currentDeviceState = deviceStates.get(device.id);
+                          const displayName = currentDeviceState?.hostname || device.name;
+                          const status = device.status || 'online';
+                          const statusColor =
+                            status === 'offline'
+                              ? 'bg-rose-500'
+                              : status === 'online'
+                                ? 'bg-emerald-400'
+                                : 'bg-amber-400';
 
-                        return (
-                          <DropdownMenuItem
-                            key={device.id}
-                            className={`flex items-center gap-2 py-1.5 cursor-pointer ${activeDeviceId === device.id ? 'bg-cyan-500/10 text-cyan-400' : ''}`}
-                            onClick={() => handleDeviceSelectFromMenu(device.type, device.id)}
-                          >
-                            <div className="flex items-center gap-2 cursor-pointer">
-                              <span className={`w-1.5 h-1.5 rounded-full ${statusColor}`} />
-                              <DeviceIcon
-                                type={device.type}
-                                switchModel={device.switchModel}
-                                className="w-5 h-5"
-                              />
-                              <div className="flex flex-col">
-                                <span className="text-xs font-bold leading-none">{truncateWithEllipsis(displayName, 12)}</span>
-                                <span className="text-[10px] opacity-50 capitalize">{device.type}</span>
+                          return (
+                            <DropdownMenuItem
+                              key={device.id}
+                              className={`flex items-center gap-2 py-1.5 cursor-pointer ${activeDeviceId === device.id ? 'bg-cyan-500/10 text-cyan-400' : ''}`}
+                              onClick={() => { handleDeviceSelectFromMenu(device.type, device.id); setDeviceSearchQuery(''); }}
+                            >
+                              <div className="flex items-center gap-2 cursor-pointer">
+                                <span className={`w-1.5 h-1.5 rounded-full ${statusColor}`} />
+                                <DeviceIcon
+                                  type={device.type}
+                                  switchModel={device.switchModel}
+                                  className="w-5 h-5"
+                                />
+                                <div className="flex flex-col">
+                                  <span className="text-xs font-bold leading-none">{truncateWithEllipsis(displayName, 12)}</span>
+                                  <span className="text-[10px] opacity-50 capitalize">{device.type}</span>
+                                </div>
                               </div>
-                            </div>
-                          </DropdownMenuItem>
-                        );
-                      })
+                            </DropdownMenuItem>
+                          );
+                        })
                     ) : (
                       <div className="p-3 text-center text-[11px] text-slate-500 italic">
                         {t.noDevicesInTopology}
@@ -3159,7 +3183,7 @@ export default function Home() {
 
           <LazyAboutModal isOpen={showAboutModal} onClose={() => setShowAboutModal(false)} />
         </div>
-      </div>
-    </AppErrorBoundary>
+      </div >
+    </AppErrorBoundary >
   );
 }
