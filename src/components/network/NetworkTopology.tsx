@@ -1311,11 +1311,28 @@ export function NetworkTopology({
     // Shift key for multi-selection
     let newSelectedIds: string[];
     if (e.shiftKey) {
+      // Toggle selection when Shift is pressed
       newSelectedIds = selectedDeviceIds.includes(deviceId)
         ? selectedDeviceIds.filter(id => id !== deviceId)
         : [...selectedDeviceIds, deviceId];
       setSelectedDeviceIds(newSelectedIds);
       selectedDeviceIdsRef.current = newSelectedIds;
+
+      // Update parent component with the first selected device
+      const firstSelectedDevice = devices.find(d => d.id === newSelectedIds[0]);
+      if (firstSelectedDevice && newSelectedIds.length > 0) {
+        onDeviceSelect(firstSelectedDevice.type === 'router' ? 'router' : firstSelectedDevice.type, newSelectedIds[0]);
+      }
+    } else if (e.ctrlKey || e.metaKey) {
+      // Ctrl+Click toggles selection without starting drag
+      newSelectedIds = selectedDeviceIds.includes(deviceId)
+        ? selectedDeviceIds.filter(id => id !== deviceId)
+        : [...selectedDeviceIds, deviceId];
+      setSelectedDeviceIds(newSelectedIds);
+      selectedDeviceIdsRef.current = newSelectedIds;
+
+      // Don't start drag for Ctrl+Click
+      return;
     } else {
       // If clicking a device that's not selected, make it the only selection
       // If it IS already selected, keep selection for group dragging
@@ -1326,6 +1343,7 @@ export function NetworkTopology({
         onDeviceSelect(device.type, deviceId, isSwitchDeviceType(device.type) ? device.switchModel : undefined);
       } else {
         newSelectedIds = selectedDeviceIds;
+        selectedDeviceIdsRef.current = selectedDeviceIds;
       }
     }
 
@@ -1346,7 +1364,7 @@ export function NetworkTopology({
       x: (e.clientX - rect.left - pan.x) - device.x * zoom,
       y: (e.clientY - rect.top - pan.y) - device.y * zoom,
     });
-  }, [devices, pan, zoom, selectedDeviceIds, onDeviceSelect]);
+  }, [devices, pan, zoom, selectedDeviceIds, onDeviceSelect, isSwitchDeviceType]);
 
   // Handle device click (single click - select only)
   const handleDeviceClick = useCallback((e: ReactMouseEvent, device: CanvasDevice) => {
@@ -1372,21 +1390,18 @@ export function NetworkTopology({
       return;
     }
 
+    // Only handle selection if Shift was NOT pressed during mousedown
+    // (Shift+click is already handled in handleDeviceMouseDown)
     if (!e.shiftKey) {
       setSelectedDeviceIds([device.id]);
+      selectedDeviceIdsRef.current = [device.id];
       // Notify parent component - select device, don't open terminal
       onDeviceSelect(device.type, device.id, isSwitchDeviceType(device.type) ? device.switchModel : undefined);
       // Focus canvas for keyboard navigation
       canvasRef.current?.focus();
-    } else {
-      // Toggle selection with Shift+Click
-      setSelectedDeviceIds(prev =>
-        prev.includes(device.id)
-          ? prev.filter(id => id !== device.id)
-          : [...prev, device.id]
-      );
     }
-  }, [onDeviceSelect, pingMode, pingSource, devices, connections, deviceStates]);
+    // If Shift was pressed, selection is already handled in handleDeviceMouseDown
+  }, [onDeviceSelect, pingMode, pingSource, devices, connections, deviceStates, isSwitchDeviceType]);
 
   // Handle device double click - open terminal
   const handleDeviceDoubleClick = useCallback((device: CanvasDevice) => {
