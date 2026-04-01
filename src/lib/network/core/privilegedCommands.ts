@@ -41,7 +41,8 @@ function cmdPing(state: any, input: string, ctx: any): any {
             host,
             ctx.devices,
             ctx.connections || [],
-            ctx.deviceStates
+            ctx.deviceStates,
+            ctx.language
         );
 
         if (connectivity.success) {

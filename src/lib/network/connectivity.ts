@@ -15,7 +15,8 @@ export function checkConnectivity(
   targetIp: string,
   devices: CanvasDevice[],
   _connections: CanvasConnection[],
-  deviceStates?: Map<string, SwitchState>
+  deviceStates?: Map<string, SwitchState>,
+  language: 'tr' | 'en' = 'tr'
 ): { success: boolean; hops: string[]; hopIds: string[]; targetId?: string; error?: string } {
   const isSwitchDeviceType = (type: DeviceType) => type === 'switchL2' || type === 'switchL3';
 
@@ -176,6 +177,27 @@ export function checkConnectivity(
   while (curr) {
     path.unshift(curr);
     curr = parent.get(curr);
+  }
+
+  // 2.5 Block ping over console-only links (console is management, no ICMP)
+  for (let i = 0; i < path.length - 1; i++) {
+    const aId = path[i];
+    const bId = path[i + 1];
+    const conn = connections.find(c =>
+      (c.sourceDeviceId === aId && c.targetDeviceId === bId) ||
+      (c.sourceDeviceId === bId && c.targetDeviceId === aId)
+    );
+    if (conn?.cableType === 'console') {
+      return {
+        success: false,
+        hops: path.slice(0, i + 2).map(id => devices.find(d => d.id === id)?.name || id),
+        hopIds: path.slice(0, i + 2),
+        targetId: targetDevice.id,
+        error: language === 'tr'
+          ? 'Console bağlantısı üzerinden ping yapılamaz.'
+          : 'Ping cannot be sent over a console connection.'
+      };
+    }
   }
 
   const hopNames = path.map(id => devices.find(d => d.id === id)?.name || id);
@@ -505,7 +527,8 @@ export function getPingDiagnostics(
   targetIp: string,
   devices: CanvasDevice[],
   connections: CanvasConnection[],
-  deviceStates?: Map<string, SwitchState>
+  deviceStates?: Map<string, SwitchState>,
+  language: 'tr' | 'en' = 'tr'
 ): { success: boolean; reasons: string[] } {
   const reasons: string[] = [];
   const sourceDevice = devices.find(d => d.id === sourceId);
@@ -596,7 +619,7 @@ export function getPingDiagnostics(
   }
 
   // 7. Check physical connectivity
-  const result = checkConnectivity(sourceId, targetIp, devices, connections, deviceStates);
+  const result = checkConnectivity(sourceId, targetIp, devices, connections, deviceStates, language);
   if (!result.success) {
     if (result.error) {
       reasons.push(result.error);

@@ -658,7 +658,7 @@ export function PCPanel({
   }, []);
 
   const canReachTargetIp = useCallback((targetIp: string) => {
-    const result = checkConnectivity(deviceId, targetIp, topologyDevices as any, topologyConnections as any, deviceStates || new Map());
+    const result = checkConnectivity(deviceId, targetIp, topologyDevices as any, topologyConnections as any, deviceStates || new Map(), t.language as 'tr' | 'en');
     return result.success;
   }, [deviceId, topologyDevices, topologyConnections, deviceStates]);
 
@@ -998,7 +998,7 @@ export function PCPanel({
         if (!target) {
           addLocalOutput('output', 'Usage: ping <target_name_or_address>');
         } else {
-          const result = checkConnectivity(deviceId, target, topologyDevices as any, topologyConnections as any, deviceStates || new Map());
+          const result = checkConnectivity(deviceId, target, topologyDevices as any, topologyConnections as any, deviceStates || new Map(), t.language as 'tr' | 'en');
           if (result.success) {
             if (result.targetId) {
               window.dispatchEvent(new CustomEvent('trigger-ping-animation', {
@@ -1066,7 +1066,7 @@ export function PCPanel({
           }
 
           // Check connectivity
-          const result = checkConnectivity(deviceId, targetIp, topologyDevices as any, topologyConnections as any, deviceStates || new Map());
+          const result = checkConnectivity(deviceId, targetIp, topologyDevices as any, topologyConnections as any, deviceStates || new Map(), t.language as 'tr' | 'en');
           
           if (result.success && result.targetId) {
             // Find target device to see if it's a switch or router
@@ -1102,7 +1102,7 @@ export function PCPanel({
           addLocalOutput('output', 'Usage: tracert <target_name_or_address>');
         } else {
           addLocalOutput('output', `Tracing route to ${target} over a maximum of 30 hops:\n`);
-          const result = checkConnectivity(deviceId, target, topologyDevices as any, topologyConnections as any, deviceStates || new Map());
+          const result = checkConnectivity(deviceId, target, topologyDevices as any, topologyConnections as any, deviceStates || new Map(), t.language as 'tr' | 'en');
 
           if (result.hops && result.hops.length > 0) {
             let hopOutput = '';

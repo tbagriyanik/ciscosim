@@ -111,6 +111,7 @@ export interface Translations {
   pcNslookupError: string;
   pcIpconfigError: string;
   pcTerminalClosing: string;
+  consolePingNotAllowed: string;
   pcLoginSuccess: string;
   pcConnectionClosed: string;
   copyToastSuccessTitle: string;
@@ -391,6 +392,7 @@ const translations: Record<Language, Translations> = {
     pcNslookupError: 'NSLOOKUP: DNS sunucusuyla iletişim kurulamadı.',
     pcIpconfigError: 'IP yapılandırması alınamadı.',
     pcTerminalClosing: 'PC terminali kapatılıyor...',
+    consolePingNotAllowed: 'Console bağlantısı üzerinden ping yapılamaz.',
     pcLoginSuccess: 'Giriş başarılı',
     pcConnectionClosed: 'Bağlantı uzak bilgisayar tarafından kapatıldı.',
     copyToastSuccessTitle: 'Kopyalandı',
@@ -659,6 +661,7 @@ const translations: Record<Language, Translations> = {
     pcNslookupError: 'NSLOOKUP: Cannot communicate with DNS server.',
     pcIpconfigError: 'Could not retrieve IP configuration.',
     pcTerminalClosing: 'Closing PC terminal...',
+    consolePingNotAllowed: 'Ping cannot be sent over a console connection.',
     pcLoginSuccess: 'Login successful',
     pcConnectionClosed: 'Connection closed by foreign host.',
     copyToastSuccessTitle: 'Copied',
