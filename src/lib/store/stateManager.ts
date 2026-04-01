@@ -41,7 +41,7 @@ export class StateManager<T> {
     }
 
     private generateId(): string {
-        return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        return `${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
     }
 
     private startAutoSave() {
@@ -61,9 +61,11 @@ export class StateManager<T> {
         // Truncate redo stack
         this.history = this.history.slice(0, this.currentIndex + 1);
 
-        // Check if state actually changed
+        // Check if state actually changed (deduplication for consecutive identical states)
         const currentState = this.history[this.currentIndex]?.state;
         if (JSON.stringify(currentState) === JSON.stringify(newState)) {
+            // Same state - still notify listeners
+            this.notifyListeners();
             return;
         }
 
@@ -74,12 +76,12 @@ export class StateManager<T> {
         };
 
         this.history.push(snapshot);
+        this.currentIndex++;
 
         // Limit history size
         if (this.history.length > this.options.maxHistory) {
             this.history.shift();
-        } else {
-            this.currentIndex++;
+            this.currentIndex--;
         }
 
         this.notifyListeners();

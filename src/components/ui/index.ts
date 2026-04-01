@@ -1,4 +1,6 @@
 export { Button, buttonVariants } from './button';
+export { AccessibleButton } from './AccessibleButton';
+export { ModernAppShell } from './ModernAppShell';
 export { AppSkeleton } from './AppSkeleton';
 export { SkeletonWrapper } from './SkeletonWrapper';
 export { Skeleton } from './skeleton';

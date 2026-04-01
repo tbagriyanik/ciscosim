@@ -138,6 +138,28 @@ export interface SwitchState {
   staticRoutes?: Route[];          // Static routing table
   dynamicRoutes?: Route[];         // Dynamic routing table
   routingProtocol?: 'none' | 'rip' | 'ospf'; // Routing protocol
+  // Services (DHCP, DNS, HTTP)
+  services?: {
+    dhcp?: {
+      enabled: boolean;
+      pools?: {
+        poolName: string;
+        defaultGateway: string;
+        dnsServer: string;
+        startIp: string;
+        subnetMask: string;
+        maxUsers: number;
+      }[];
+    };
+    dns?: {
+      enabled: boolean;
+      records?: { domain: string; address: string }[];
+    };
+    http?: {
+      enabled: boolean;
+      content?: string;
+    };
+  };
 }
 
 export interface StartupConfig {

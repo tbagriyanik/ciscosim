@@ -5,8 +5,6 @@
  * supporting multiple themes and consistent design values.
  */
 
-import { BreakpointConfig } from './breakpoints';
-
 export interface ColorScale {
     50: string;
     100: string;
@@ -198,7 +196,6 @@ export interface DesignTokens {
     borderRadius: RadiusScale;
     shadows: ShadowScale;
     animations: AnimationTokens;
-    breakpoints: BreakpointConfig;
 }
 
 export type ThemeVariant = 'light' | 'dark' | 'high-contrast';

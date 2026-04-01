@@ -166,7 +166,7 @@ function cmdReload(state: any, input: string, ctx: any): any {
         success: true,
         output: 'Reloading...\n',
         reloadDevice: true,
-        requiresReloadConfirm: false
+        requiresReloadConfirm: true
     };
 }
 

@@ -62,7 +62,6 @@ export const baseDesignTokens: Omit<DesignTokens, 'colors'> = {
     borderRadius,
     shadows,
     animations,
-    breakpoints,
 };
 
 // Light Theme Definition

@@ -4,7 +4,6 @@ import React, { ReactNode, useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { X, GripHorizontal } from 'lucide-react';
 import { useLayout } from '@/contexts/LayoutContext';
-import { useTheme } from '@/contexts/ThemeContext';
 
 export interface ModernPanelProps {
     id: string;
@@ -50,8 +49,6 @@ export function ModernPanel({
     hideHeader = false,
 }: ModernPanelProps) {
     const { panelLayout } = useLayout();
-    const { theme } = useTheme();
-    const isDark = theme === 'dark';
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [width, setWidth] = useState(defaultWidth);
     const [height, setHeight] = useState(defaultHeight);
@@ -132,52 +129,52 @@ export function ModernPanel({
         >
             {/* Header */}
             {!hideHeader && (
-            <div
-                className={cn(
-                    "flex items-center justify-between gap-2 p-4 border-b bg-muted/50",
-                    isMobile && "p-3 min-h-[48px] touch-manipulation"
-                )}
-            >
-                <div className="flex items-center gap-2 min-w-0 flex-1">
-                    {canResize && (
-                        <GripHorizontal className="w-4 h-4 text-muted-foreground cursor-grab" />
+                <div
+                    className={cn(
+                        "flex items-center justify-between gap-2 p-4 border-b bg-muted/50",
+                        isMobile && "p-3 min-h-[48px] touch-manipulation"
                     )}
-                    {headerStart}
-                    {!hideTitle && (
-                        <h2 className={cn(
-                            "font-semibold flex-1 truncate",
-                            isMobile ? "text-sm" : "text-sm"
-                        )}>{title}</h2>
-                    )}
+                >
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                        {canResize && (
+                            <GripHorizontal className="w-4 h-4 text-muted-foreground cursor-grab" />
+                        )}
+                        {headerStart}
+                        {!hideTitle && (
+                            <h2 className={cn(
+                                "font-semibold flex-1 truncate",
+                                isMobile ? "text-sm" : "text-sm"
+                            )}>{title}</h2>
+                        )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                        {headerAction}
+                        {canCollapse && (
+                            <button
+                                onClick={() => setIsCollapsed(!isCollapsed)}
+                                className={cn(
+                                    "p-1 hover:bg-accent rounded",
+                                    isMobile && "p-2 min-w-[36px] min-h-[36px]"
+                                )}
+                                aria-label={isCollapsed ? 'Expand' : 'Collapse'}
+                            >
+                                {isCollapsed ? '▼' : '▲'}
+                            </button>
+                        )}
+                        {onClose && (
+                            <button
+                                onClick={onClose}
+                                className={cn(
+                                    "p-1 hover:bg-accent rounded",
+                                    isMobile && "p-2 min-w-[36px] min-h-[36px]"
+                                )}
+                                aria-label="Close"
+                            >
+                                <X className="w-4 h-4" />
+                            </button>
+                        )}
+                    </div>
                 </div>
-                <div className="flex items-center gap-2">
-                    {headerAction}
-                    {canCollapse && (
-                        <button
-                            onClick={() => setIsCollapsed(!isCollapsed)}
-                            className={cn(
-                                "p-1 hover:bg-accent rounded",
-                                isMobile && "p-2 min-w-[36px] min-h-[36px]"
-                            )}
-                            aria-label={isCollapsed ? 'Expand' : 'Collapse'}
-                        >
-                            {isCollapsed ? '▼' : '▲'}
-                        </button>
-                    )}
-                    {onClose && (
-                        <button
-                            onClick={onClose}
-                            className={cn(
-                                "p-1 hover:bg-accent rounded",
-                                isMobile && "p-2 min-w-[36px] min-h-[36px]"
-                            )}
-                            aria-label="Close"
-                        >
-                            <X className="w-4 h-4" />
-                        </button>
-                    )}
-                </div>
-            </div>
             )}
 
             {/* Content */}
