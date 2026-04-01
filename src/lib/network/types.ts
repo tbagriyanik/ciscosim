@@ -251,6 +251,9 @@ function isEthernetPort(portId: string | undefined): boolean {
 export function isCableCompatible(cable: CableInfo): boolean {
   if (!cable.connected) return false;
 
+  // Wireless bağlantılar her zaman geçerli (fiziksel kablo yok)
+  if (cable.cableType === 'wireless') return true;
+
   // Console portu bağlantıları için özel kontrol
   // Console kablosu: PC COM1 <-> Switch Console portu
   const sourceIsConsole = isConsolePort(cable.sourcePort);
