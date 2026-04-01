@@ -50,7 +50,11 @@ const config: Config = {
   				'3': 'hsl(var(--chart-3))',
   				'4': 'hsl(var(--chart-4))',
   				'5': 'hsl(var(--chart-5))'
-  			}
+  			},
+        'note-purple': 'hsl(var(--note-purple))',
+        'note-red': 'hsl(var(--note-red))',
+        'note-blue': 'hsl(var(--note-blue))',
+        'note-green': 'hsl(var(--note-green))'
   		},
   		borderRadius: {
   			lg: 'var(--radius)',

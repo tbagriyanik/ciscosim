@@ -77,7 +77,10 @@ export const NOTE_COLORS = [
   '#ec4899', // Pink
   '#f97316', // Orange
   '#84cc16', // Lime
-  '#64748b'  // Slate
+  '#64748b', // Slate
+  '#a78bfa', // Purple
+  '#60a5fa', // Light Blue
+  '#4ade80'  // Light Green
 ];
 export const NOTE_FONTS_DESKTOP = [
   'Roboto',

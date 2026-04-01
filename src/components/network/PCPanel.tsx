@@ -830,7 +830,7 @@ export function PCPanel({
   }, []);
 
   const getDhcpLease = useCallback(() => {
-    const clientHasUsableIp = validateIP(pcIP) && pcIP !== '0.0.0.0';
+    const clientHasUsableIp = validateIP(pcIP) && pcIP !== '0.0.0.0' && !pcIP.startsWith('169.254.');
     const usedIps = new Set(
       topologyDevices
         .filter((d) => d.id !== deviceId && validateIP(d.ip || ''))
@@ -894,14 +894,20 @@ export function PCPanel({
   }, [getDhcpLease, pcDNS, pcGateway, pcIP, pcSubnet]);
 
   // When DHCP mode is selected, request a lease immediately and notify the user.
+  // Also retry if topology connections change, in case we were waiting for a cable.
   useEffect(() => {
-    if (prevIpConfigModeRef.current === 'dhcp') {
+    // If we already have a non-zero IP and we didn't just switch to DHCP mode,
+    // don't try to get a new lease automatically on every connection change.
+    const hasValidIp = pcIP && pcIP !== '0.0.0.0' && pcIP !== '169.254.0.0'; // basic check
+    
+    if (ipConfigMode !== 'dhcp') {
       prevIpConfigModeRef.current = ipConfigMode;
       return;
     }
 
-    if (ipConfigMode !== 'dhcp') {
-      prevIpConfigModeRef.current = ipConfigMode;
+    // If mode hasn't changed AND we already have an IP, don't re-trigger on connection changes
+    // to avoid spamming the user with success toasts.
+    if (prevIpConfigModeRef.current === 'dhcp' && hasValidIp) {
       return;
     }
 
@@ -912,15 +918,19 @@ export function PCPanel({
         description: t.dhcpSuccessDescription.replace('{ip}', lease.ip),
       });
     } else {
-      toast({
-        title: t.dhcpFailureTitle,
-        description: t.dhcpFailureDescription,
-        variant: 'destructive',
-      });
+      // Only show failure toast if we actually switched TO dhcp mode
+      // or if we explicitly want to notify about continued failure.
+      if (prevIpConfigModeRef.current !== 'dhcp') {
+        toast({
+          title: t.dhcpFailureTitle,
+          description: t.dhcpFailureDescription,
+          variant: 'destructive',
+        });
+      }
     }
 
     prevIpConfigModeRef.current = ipConfigMode;
-  }, [applyDhcpLease, ipConfigMode, t]);
+  }, [applyDhcpLease, ipConfigMode, t, topologyConnections, pcIP]);
 
   const handleConnect = async () => {
     if (!consoleDevice) return;
