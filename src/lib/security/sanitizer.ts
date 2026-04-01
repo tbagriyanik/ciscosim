@@ -8,6 +8,32 @@ export function sanitizeHTML(input: string): string {
     return div.innerHTML;
 }
 
+/**
+ * Sanitize HTML content allowing only <b> and <i> tags for HTTP service content
+ * This removes all other HTML tags and dangerous attributes while preserving formatting
+ */
+export function sanitizeHTTPContent(input: string): string {
+    // First, escape all HTML to make it safe
+    const escaped = input
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+
+    // Then selectively allow <b> and <i> tags by converting them back
+    // We use a safe pattern that only matches properly formatted tags
+    let result = escaped
+        .replace(/&lt;u&gt;/g, '<u>')
+        .replace(/&lt;\/u&gt;/g, '</u>')
+        .replace(/&lt;b&gt;/g, '<b>')
+        .replace(/&lt;\/b&gt;/g, '</b>')
+        .replace(/&lt;i&gt;/g, '<i>')
+        .replace(/&lt;\/i&gt;/g, '</i>');
+
+    return result;
+}
+
 export function sanitizeInput(input: string): string {
     return input
         .replace(/[<>`]/g, '')

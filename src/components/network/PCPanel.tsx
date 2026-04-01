@@ -19,6 +19,7 @@ import { isValidMAC, normalizeMAC, cn } from "@/lib/utils";
 import { commandHelp } from '@/lib/network/executor';
 import { ModernPanel } from '@/components/ui/ModernPanel';
 import { useIsMobile, useIsDesktop } from '@/hooks/use-breakpoint';
+import { sanitizeHTTPContent } from '@/lib/security/sanitizer';
 
 // PC Icon component matching the main screen
 const PCIcon = ({ className = "w-5 h-5" }: { className?: string }) => (
@@ -899,7 +900,7 @@ export function PCPanel({
     // If we already have a non-zero IP and we didn't just switch to DHCP mode,
     // don't try to get a new lease automatically on every connection change.
     const hasValidIp = pcIP && pcIP !== '0.0.0.0' && pcIP !== '169.254.0.0'; // basic check
-    
+
     if (ipConfigMode !== 'dhcp') {
       prevIpConfigModeRef.current = ipConfigMode;
       return;
@@ -2005,7 +2006,7 @@ export function PCPanel({
                         />
                         {serviceHttpEnabled && (
                           <div className={`text-xs rounded-lg px-3 py-2 ${isDark ? 'bg-slate-950 border border-slate-800 text-slate-200' : 'bg-slate-50 border border-slate-200 text-slate-700'}`}>
-                            {serviceHttpContent || 'Merhaba Dünya!'}
+                            <span dangerouslySetInnerHTML={{ __html: sanitizeHTTPContent(serviceHttpContent || 'Merhaba Dünya!') }} />
                           </div>
                         )}
                       </div>
@@ -2424,6 +2425,12 @@ export function PCPanel({
                             {line.type === 'output' && <span className={`${textColor} whitespace-pre-wrap`}>{highlightText(line.content)}</span>}
                             {line.type === 'error' && <span className="text-rose-500 font-bold italic">{highlightText(line.content)}</span>}
                             {line.type === 'success' && <span className="text-cyan-500 font-bold  text-xs tracking-widest opacity-80">{highlightText(line.content)}</span>}
+                            {line.type === 'html' && (
+                              <div
+                                className="mt-2 p-4 rounded-lg border bg-white/5 backdrop-blur-sm"
+                                dangerouslySetInnerHTML={{ __html: sanitizeHTTPContent(line.content) }}
+                              />
+                            )}
                           </div>
                         ))
                       )}
