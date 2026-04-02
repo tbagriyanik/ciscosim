@@ -2,11 +2,11 @@
 
 Öğrenciler ve ağ meraklıları için tasarlanmış, modern ve etkileşimli bir web tabanlı Network simülatörü.
 
-![Version](https://img.shields.io/badge/version-1.1.0-blue)
+![Version](https://img.shields.io/badge/version-1.1.1-blue)
 ![Tech Stack](https://img.shields.io/badge/stack-Next.js%2016%20|%20React%2019%20|%20TypeScript%20|%20Tailwind%204-green)
 ![FOSS](https://img.shields.io/badge/FOSS-Free%20Open%20Source-brightgreen)
 ![Commits](https://img.shields.io/badge/commits-350-orange)
-![Lines of Code](https://img.shields.io/badge/lines--of--code-58.4k-blueviolet)
+![Lines of Code](https://img.shields.io/badge/lines--of--code-45.2k-blueviolet)
 
 ## ✨ Temel Özellikler
 
@@ -130,19 +130,6 @@ Detaylı kurulum talimatları için [INSTALL.md](INSTALL.md) dosyasını okuyun.
 
 Detaylı belgelendirme `kiro/` klasöründe bulunur:
 
-### Sistem Özellikleri
-- **POWER_TOGGLE_IMPLEMENTATION.md** - Bulk power ON/OFF toggle
-- **PING_DIAGNOSTICS_IMPLEMENTATION.md** - Detaylı ping hata nedenleri
-- **PING_ERROR_DISPLAY_IMPLEMENTATION.md** - Canvas üzerinde hata gösterimi
-- **SUBNET_VALIDATION_IMPLEMENTATION.md** - Subnet doğrulama ve routing
-- **NOTE_SYSTEM_SUMMARY.md** - Not sistemi özeti
-- **NOTE_DRAG_RESIZE_FEATURES.md** - Not drag ve resize özellikleri
-
-### Proje Belgeleri
-- **AI_RULES.md** - AI kuralları
-- **IMPLEMENTATION_CHECKLIST.md** - Uygulama kontrol listesi
-- **CLEANUP_RECOMMENDATIONS.md** - Temizlik önerileri
-
 ## 🎯 Kullanım Örnekleri
 
 ### Cihaz Ekleme
@@ -213,6 +200,6 @@ Sorular veya öneriler için lütfen issue açın.
 **Bu proje açık kaynaklıdır.** 🚀  
 GitHub üzerinden katkıda bulunabilirsiniz: [github.com/tbagriyanik/ciscosim](https://github.com/tbagriyanik/ciscosim)
 
-**Sürüm**: 1.1.0  
-**Son Güncelleme**: 2026-03-28  
+**Sürüm**: 1.1.1  
+**Son Güncelleme**: 2026-04-02  
 **Durum**: Production Ready ✅
