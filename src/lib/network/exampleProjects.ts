@@ -873,7 +873,7 @@ export const exampleProjects = (language: 'tr' | 'en'): ExampleProject[] => {
         : 'DNS + HTTP Test (Domain Name System / Hypertext Transfer Protocol - task: name resolution + web access)',
       description: isTr
         ? 'PC-1 üzerinden HTTP istekleri gönderip nslookup yaparak sunucu hizmetlerini doğrulayın.'
-        : 'From PC-1 send HTTP requests and use nslookup to verify the server services.',
+        : 'From PC-1 send HTTP requests and use nslookup to verify server services.',
       detail: 'http 192.168.1.10 / http a10.com / nslookup a10.com',
       level: 'intermediate',
       data: dnsHttpExampleData
@@ -884,7 +884,7 @@ export const exampleProjects = (language: 'tr' | 'en'): ExampleProject[] => {
       title: isTr ? 'ARP & MAC Tablo Çalışması' : 'ARP vs MAC Table',
       description: isTr
         ? 'PC terminalinden arp -a ve SWITCH-1 konsolundan show mac ile adresleri eşleştirin.'
-        : 'Match ARP and show mac address-table output between the PCs and SWITCH-1.',
+        : 'Match ARP and show mac address-table output between PCs and SWITCH-1.',
       detail: isTr
         ? 'PC terminali: arp, arp -a | SWITCH-1#: show mac address-table'
         : 'PC terminal: arp, arp -a | SWITCH-1#: show mac address-table',
