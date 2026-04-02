@@ -2991,15 +2991,47 @@ export function NetworkTopology({
     // Clear any previous error toast
     setErrorToast(null);
 
-    // Animate ping - each hop takes 800ms
-    const hopDuration = 800;
+    // Animate ping - dynamic duration based on cable distance
+    const hopDuration = 800; // Base duration
     let startTime = Date.now();
     let currentHop = 0;
     let frameCount = 0;
 
+    // Calculate distance-based duration for stable animation on long cables
+    const calculateHopDuration = (fromId: string, toId: string): number => {
+      const fromDevice = devices.find(d => d.id === fromId);
+      const toDevice = devices.find(d => d.id === toId);
+      
+      if (!fromDevice || !toDevice) return hopDuration;
+      
+      // Calculate pixel distance between devices
+      const dx = toDevice.x - fromDevice.x;
+      const dy = toDevice.y - fromDevice.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      
+      // Scale duration based on distance (longer cables = slower animation)
+      // Base 800ms for ~200px, scale up for longer distances
+      const baseDistance = 200;
+      const scaleFactor = Math.max(1, distance / baseDistance);
+      const maxDuration = 2000; // Cap at 2 seconds for very long cables
+      
+      return Math.min(hopDuration * scaleFactor, maxDuration);
+    };
+
+    // Smooth easing function for fluent animation
+    const easeInOutCubic = (t: number): number => {
+      return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    };
+
     const animate = () => {
+      // Get current hop duration dynamically
+      const fromId = path[currentHop];
+      const toId = path[currentHop + 1];
+      const currentHopDuration = calculateHopDuration(fromId, toId);
+      
       const elapsed = Date.now() - startTime;
-      const progress = Math.min(elapsed / hopDuration, 1);
+      const rawProgress = Math.min(elapsed / currentHopDuration, 1);
+      const progress = easeInOutCubic(rawProgress); // Apply smooth easing
       frameCount++;
 
       if (progress < 1) {

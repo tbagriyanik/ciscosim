@@ -1543,6 +1543,7 @@ export default function Home() {
 
   function handleNewProject() {
     if (isTopologyFullscreen) return; // Prevent new project in fullscreen
+    setProjectSearchQuery(''); // Reset search when opening new project dialog
     setShowProjectPicker(true);
   }
 

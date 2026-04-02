@@ -96,17 +96,22 @@ export function PingAnimationOverlay({
     const bezierX = mt3 * source.x + 3 * mt2 * t * controlPoint1.x + 3 * mt * t2 * controlPoint2.x + t3 * target.x;
     const bezierY = mt3 * source.y + 3 * mt2 * t * controlPoint1.y + 3 * mt * t2 * controlPoint2.y + t3 * target.y;
 
-    // Calculate angle for the envelope
+    // Calculate angle for the envelope with smooth rotation
     const angle = Math.atan2(target.y - source.y, target.x - source.x);
 
     // Offset envelope slightly to the side of the line
     const envelopeOffsetX = Math.sin(angle) * 20;
     const envelopeOffsetY = -Math.cos(angle) * 20;
 
+    // Add smooth scale animation for fluent effect
+    const scale = 1 + Math.sin(progress * Math.PI) * 0.1; // Subtle pulse effect
+    const opacity = 0.8 + Math.sin(progress * Math.PI) * 0.2; // Fade in/out effect
+
     return (
       <g key={`ping-${currentHopIndex}-${frame}`}>
         <g
-          transform={`translate(${bezierX + envelopeOffsetX}, ${bezierY + envelopeOffsetY})`}
+          transform={`translate(${bezierX + envelopeOffsetX}, ${bezierY + envelopeOffsetY}) scale(${scale})`}
+          opacity={opacity}
         >
           {/* Hop Count Badge */}
           {hopCount > 0 && (
