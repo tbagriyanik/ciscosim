@@ -391,9 +391,12 @@ export function NetworkTopology({
 
   // ─── Touch performance refs ───
   const isTouchDraggingRef = useRef(false);
-  const touchDraggedDeviceRef = useRef<string | null>(null);
+  const touchDraggedDeviceRef = useRef<CanvasDevice | null>(null);
   const touchDragStartPosRef = useRef<{ x: number; y: number } | null>(null);
   const touchDragOffsetRef = useRef({ x: 0, y: 0 });
+
+  // Mouse position animation frame ref for smooth tracking
+  const mousePosAnimationFrameRef = useRef<number | null>(null);
 
   // Connection drawing state
   const [isDrawingConnection, setIsDrawingConnection] = useState(false);
@@ -1085,15 +1088,26 @@ export function NetworkTopology({
           });
         }
       } else if (isDrawingConnectionRef.current && canvasRef.current) {
-        const rect = canvasRef.current.getBoundingClientRect();
-        const currentPan = panRef.current;
-        const currentZoom = zoomRef.current;
-        const newPos = {
-          x: (e.clientX - rect.left - currentPan.x) / currentZoom,
-          y: (e.clientY - rect.top - currentPan.y) / currentZoom,
-        };
-        mousePosRef.current = newPos;
-        setMousePos(newPos);
+        // Smooth mouse position tracking for connection drawing
+        if (mousePosAnimationFrameRef.current !== null) return;
+        
+        mousePosAnimationFrameRef.current = requestAnimationFrame(() => {
+          const rect = canvasRef.current?.getBoundingClientRect();
+          if (!rect) {
+            mousePosAnimationFrameRef.current = null;
+            return;
+          }
+          
+          const currentPan = panRef.current;
+          const currentZoom = zoomRef.current;
+          const newPos = {
+            x: (e.clientX - rect.left - currentPan.x) / currentZoom,
+            y: (e.clientY - rect.top - currentPan.y) / currentZoom,
+          };
+          mousePosRef.current = newPos;
+          setMousePos(newPos);
+          mousePosAnimationFrameRef.current = null;
+        });
       }
     };
 
@@ -1106,6 +1120,10 @@ export function NetworkTopology({
       if (panAnimationFrameRef.current) {
         cancelAnimationFrame(panAnimationFrameRef.current);
         panAnimationFrameRef.current = null;
+      }
+      if (mousePosAnimationFrameRef.current) {
+        cancelAnimationFrame(mousePosAnimationFrameRef.current);
+        mousePosAnimationFrameRef.current = null;
       }
 
       // Start momentum if panning and velocity is high enough
@@ -1172,6 +1190,7 @@ export function NetworkTopology({
       window.removeEventListener('mouseup', handleMouseUp);
       if (dragAnimationFrameRef.current) cancelAnimationFrame(dragAnimationFrameRef.current);
       if (panAnimationFrameRef.current) cancelAnimationFrame(panAnimationFrameRef.current);
+      if (mousePosAnimationFrameRef.current) cancelAnimationFrame(mousePosAnimationFrameRef.current);
     };
   }, []);
   // Global touch event handlers for device dragging on mobile
