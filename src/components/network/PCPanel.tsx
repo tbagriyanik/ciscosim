@@ -172,11 +172,13 @@ export function PCPanel({
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // History State
-  const [history, setHistory] = useState<string[]>(() => {
+  // Keep desktop CMD and console histories separate.
+  const [desktopHistory, setDesktopHistory] = useState<string[]>(() => {
     return pcHistories?.get(deviceId) || [];
   });
-  const [historyIndex, setHistoryIndex] = useState(-1);
+  const [desktopHistoryIndex, setDesktopHistoryIndex] = useState(-1);
+  const [consoleHistory, setConsoleHistory] = useState<string[]>([]);
+  const [consoleHistoryIndex, setConsoleHistoryIndex] = useState(-1);
 
   // Undo/Redo state
   const [undoStack, setUndoStack] = useState<string[]>([]);
@@ -185,11 +187,17 @@ export function PCPanel({
   // Sync with global history if it changes externally
   useEffect(() => {
     const globalHistory = pcHistories?.get(deviceId) || [];
-    if (JSON.stringify(globalHistory) !== JSON.stringify(history)) {
-      setHistory(globalHistory);
-      setHistoryIndex(-1);
+    if (JSON.stringify(globalHistory) !== JSON.stringify(desktopHistory)) {
+      setDesktopHistory(globalHistory);
+      setDesktopHistoryIndex(-1);
     }
-  }, [pcHistories, deviceId]);
+  }, [pcHistories, deviceId, desktopHistory]);
+
+  // Reset per-tab command cursor when tab changes.
+  useEffect(() => {
+    if (activeTab === 'desktop') setDesktopHistoryIndex(-1);
+    if (activeTab === 'terminal') setConsoleHistoryIndex(-1);
+  }, [activeTab]);
 
   // Get device from topology
   const deviceFromTopology = topologyDevices.find(d => d.id === deviceId);
@@ -990,12 +998,20 @@ export function PCPanel({
       return;
     }
 
-    if (history[0] !== command) {
-      const newHistory = [command, ...history].slice(0, 50);
-      setHistory(newHistory);
-      if (onUpdatePCHistory) onUpdatePCHistory(deviceId, newHistory);
+    if (activeTab === 'desktop') {
+      if (desktopHistory[0] !== command) {
+        const newHistory = [command, ...desktopHistory].slice(0, 50);
+        setDesktopHistory(newHistory);
+        if (onUpdatePCHistory) onUpdatePCHistory(deviceId, newHistory);
+      }
+      setDesktopHistoryIndex(-1);
+    } else if (activeTab === 'terminal') {
+      if (consoleHistory[0] !== command) {
+        const newHistory = [command, ...consoleHistory].slice(0, 50);
+        setConsoleHistory(newHistory);
+      }
+      setConsoleHistoryIndex(-1);
     }
-    setHistoryIndex(-1);
     setInput('');
     if (activeTab === 'desktop') {
       addLocalOutput('command', command);
@@ -1274,8 +1290,7 @@ export function PCPanel({
       const parts = command.split(' ');
       const cmd = parts[0].toLowerCase().replace(/ı/g, 'i').replace(/İ/g, 'i').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
-      // Console tab: forward all commands to remote device
-      addLocalOutput('command', command);
+      // Console tab: do not mirror remote commands into local PC CMD output.
       if (onExecuteDeviceCommand && connectedDeviceId) {
         try { await onExecuteDeviceCommand(connectedDeviceId, command); } catch (err) { }
       }
@@ -1452,25 +1467,44 @@ export function PCPanel({
     }
     else if (e.key === 'ArrowUp') {
       e.preventDefault();
-      if (history.length > 0 && historyIndex < history.length - 1) {
-        const ni = historyIndex + 1;
-        setHistoryIndex(ni);
-        setInput(history[ni]);
+      if (activeTab === 'desktop') {
+        if (desktopHistory.length > 0 && desktopHistoryIndex < desktopHistory.length - 1) {
+          const ni = desktopHistoryIndex + 1;
+          setDesktopHistoryIndex(ni);
+          setInput(desktopHistory[ni]);
+        }
+      } else if (activeTab === 'terminal') {
+        if (consoleHistory.length > 0 && consoleHistoryIndex < consoleHistory.length - 1) {
+          const ni = consoleHistoryIndex + 1;
+          setConsoleHistoryIndex(ni);
+          setInput(consoleHistory[ni]);
+        }
       }
     } else if (e.key === 'ArrowDown') {
       e.preventDefault();
-      if (historyIndex > 0) {
-        const ni = historyIndex - 1;
-        setHistoryIndex(ni);
-        setInput(history[ni]);
-      } else if (historyIndex === 0) {
-        setHistoryIndex(-1);
-        setInput('');
+      if (activeTab === 'desktop') {
+        if (desktopHistoryIndex > 0) {
+          const ni = desktopHistoryIndex - 1;
+          setDesktopHistoryIndex(ni);
+          setInput(desktopHistory[ni]);
+        } else if (desktopHistoryIndex === 0) {
+          setDesktopHistoryIndex(-1);
+          setInput('');
+        }
+      } else if (activeTab === 'terminal') {
+        if (consoleHistoryIndex > 0) {
+          const ni = consoleHistoryIndex - 1;
+          setConsoleHistoryIndex(ni);
+          setInput(consoleHistory[ni]);
+        } else if (consoleHistoryIndex === 0) {
+          setConsoleHistoryIndex(-1);
+          setInput('');
+        }
       }
     }
   };
 
-  const recentCommands = history.slice(0, 10);
+  const recentCommands = (activeTab === 'terminal' ? consoleHistory : desktopHistory).slice(0, 10);
 
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString(language === 'tr' ? 'tr-TR' : 'en-US', { hour: '2-digit', minute: '2-digit' });

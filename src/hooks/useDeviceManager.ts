@@ -274,7 +274,8 @@ export function useDeviceManager() {
           : 'switchL2';
 
       const bootInfo = getBootMessage(inferredDeviceType, state?.switchModel, language);
-      const fallbackState = state || (isRouter ? createInitialRouterState() : createInitialState(undefined, state?.switchModel as any));
+      const fallbackSwitchModel = state?.switchModel || deviceStates.get(deviceId)?.switchModel;
+      const fallbackState = state || (isRouter ? createInitialRouterState() : createInitialState(undefined, fallbackSwitchModel as any));
       const suffix = fallbackState?.macAddress || deviceId;
 
       const newBootMessages: TerminalOutput[] = [
