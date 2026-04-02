@@ -1156,10 +1156,10 @@ function handleConsoleConnect(state: SwitchState, language: 'tr' | 'en'): Comman
   if (isRouter) {
     // Cisco ISR Router boot sequence
     const syslog = language === 'tr' ? '*** Syslog istemcisi başlatıldı' : '*** Syslog client started';
-    bootMessages = language === 'tr' ? 
-`System Bootstrap, Version 15.1(4)M4, RELEASE SOFTWARE (fc1)
-Technical Support: http://www.cisco.com/techsupport
-Copyright (c) 1994-2011 by cisco Systems, Inc.
+    bootMessages = language === 'tr' ?
+      `System Bootstrap, Version 15.1(4)M4, RELEASE SOFTWARE (fc1)
+Technical Support: http://yunus.sf.net
+Copyright (c) 1994-2011 by Network Systems, Inc.
 ISR4451/K9 platform with 4096 K bytes of memory
 
 ${syslog}
@@ -1174,9 +1174,9 @@ Booting flash:c1900-universalk9-mz.SPA.154-3.M.bin...OK!
 Extracting files from flash:c1900-universalk9-mz.SPA.154-3.M.bin...
   ######################################################################################################################################### [OK]
   0 bytes remaining in flash device` :
-`System Bootstrap, Version 15.1(4)M4, RELEASE SOFTWARE (fc1)
-Technical Support: http://www.cisco.com/techsupport
-Copyright (c) 1994-2011 by cisco Systems, Inc.
+      `System Bootstrap, Version 15.1(4)M4, RELEASE SOFTWARE (fc1)
+Technical Support: http://yunus.sf.net
+Copyright (c) 1994-2011 by Network Systems, Inc.
 ISR4451/K9 platform with 4096 K bytes of memory
 
 ${syslog}
@@ -1194,10 +1194,10 @@ Extracting files from flash:c1900-universalk9-mz.SPA.154-3.M.bin...
   } else if (isL3Switch) {
     // Cisco 3560 L3 Switch boot sequence
     const syslog = language === 'tr' ? '*** Syslog istemcisi başlatıldı' : '*** Syslog client started';
-    bootMessages = language === 'tr' ? 
-`System Bootstrap, Version 12.2(55r)SE, RELEASE SOFTWARE (fc1)
-Technical Support: http://www.cisco.com/techsupport
-Copyright (c) 1994-2011 by cisco Systems, Inc.
+    bootMessages = language === 'tr' ?
+      `System Bootstrap, Version 12.2(55r)SE, RELEASE SOFTWARE (fc1)
+Technical Support: http://yunus.sf.net
+Copyright (c) 1994-2011 by Network Systems, Inc.
 C3560 platform with 131072 K bytes of memory
 
 ${syslog}
@@ -1212,9 +1212,9 @@ Booting flash:c3560-ipbase-mz.152-2.SE4.bin...OK!
 Extracting files from flash:c3560-ipbase-mz.152-2.SE4.bin...
   ######################################################################################################################################### [OK]
   0 bytes remaining in flash device` :
-`System Bootstrap, Version 12.2(55r)SE, RELEASE SOFTWARE (fc1)
-Technical Support: http://www.cisco.com/techsupport
-Copyright (c) 1994-2011 by cisco Systems, Inc.
+      `System Bootstrap, Version 12.2(55r)SE, RELEASE SOFTWARE (fc1)
+Technical Support: http://yunus.sf.net
+Copyright (c) 1994-2011 by Network Systems, Inc.
 C3560 platform with 131072 K bytes of memory
 
 ${syslog}
@@ -1232,10 +1232,10 @@ Extracting files from flash:c3560-ipbase-mz.152-2.SE4.bin...
   } else {
     // Cisco 2960 L2 Switch boot sequence
     const syslog = language === 'tr' ? '*** Syslog istemcisi başlatıldı' : '*** Syslog client started';
-    bootMessages = language === 'tr' ? 
-`System Bootstrap, Version 12.2(11r)EA1, RELEASE SOFTWARE (fc1)
-Technical Support: http://www.cisco.com/techsupport
-Copyright (c) 1994-2010 by cisco Systems, Inc.
+    bootMessages = language === 'tr' ?
+      `System Bootstrap, Version 12.2(11r)EA1, RELEASE SOFTWARE (fc1)
+Technical Support: http://yunus.sf.net
+Copyright (c) 1994-2010 by Network Systems, Inc.
 C2960 platform with 65536 K bytes of memory
 
 ${syslog}
@@ -1250,9 +1250,9 @@ Booting flash:c2960-lanbase-mz.152-2.E6.bin...OK!
 Extracting files from flash:c2960-lanbase-mz.152-2.E6.bin...
   ######################################################################################################################################### [OK]
   0 bytes remaining in flash device` :
-`System Bootstrap, Version 12.2(11r)EA1, RELEASE SOFTWARE (fc1)
-Technical Support: http://www.cisco.com/techsupport
-Copyright (c) 1994-2010 by cisco Systems, Inc.
+      `System Bootstrap, Version 12.2(11r)EA1, RELEASE SOFTWARE (fc1)
+Technical Support: http://yunus.sf.net
+Copyright (c) 1994-2010 by Network Systems, Inc.
 C2960 platform with 65536 K bytes of memory
 
 ${syslog}
@@ -1319,10 +1319,10 @@ function handleTelnetConnect(state: SwitchState, language: 'tr' | 'en'): Command
   if (isRouter) {
     // Cisco ISR Router boot sequence
     const syslog = language === 'tr' ? '*** Syslog istemcisi başlatıldı' : '*** Syslog client started';
-    bootMessages = language === 'tr' ? 
-`System Bootstrap, Version 15.1(4)M4, RELEASE SOFTWARE (fc1)
-Technical Support: http://www.cisco.com/techsupport
-Copyright (c) 1994-2011 by cisco Systems, Inc.
+    bootMessages = language === 'tr' ?
+      `System Bootstrap, Version 15.1(4)M4, RELEASE SOFTWARE (fc1)
+Technical Support: http://yunus.sf.net
+Copyright (c) 1994-2011 by Network Systems, Inc.
 ISR4451/K9 platform with 4096 K bytes of memory
 
 ${syslog}
@@ -1337,9 +1337,9 @@ Booting flash:c1900-universalk9-mz.SPA.154-3.M.bin...OK!
 Extracting files from flash:c1900-universalk9-mz.SPA.154-3.M.bin...
   ######################################################################################################################################### [OK]
   0 bytes remaining in flash device` :
-`System Bootstrap, Version 15.1(4)M4, RELEASE SOFTWARE (fc1)
-Technical Support: http://www.cisco.com/techsupport
-Copyright (c) 1994-2011 by cisco Systems, Inc.
+      `System Bootstrap, Version 15.1(4)M4, RELEASE SOFTWARE (fc1)
+Technical Support: http://yunus.sf.net
+Copyright (c) 1994-2011 by Network Systems, Inc.
 ISR4451/K9 platform with 4096 K bytes of memory
 
 ${syslog}
@@ -1357,10 +1357,10 @@ Extracting files from flash:c1900-universalk9-mz.SPA.154-3.M.bin...
   } else if (isL3Switch) {
     // Cisco 3560 L3 Switch boot sequence
     const syslog = language === 'tr' ? '*** Syslog istemcisi başlatıldı' : '*** Syslog client started';
-    bootMessages = language === 'tr' ? 
-`System Bootstrap, Version 12.2(55r)SE, RELEASE SOFTWARE (fc1)
-Technical Support: http://www.cisco.com/techsupport
-Copyright (c) 1994-2011 by cisco Systems, Inc.
+    bootMessages = language === 'tr' ?
+      `System Bootstrap, Version 12.2(55r)SE, RELEASE SOFTWARE (fc1)
+Technical Support: http://yunus.sf.net
+Copyright (c) 1994-2011 by Network Systems, Inc.
 C3560 platform with 131072 K bytes of memory
 
 ${syslog}
@@ -1375,9 +1375,9 @@ Booting flash:c3560-ipbase-mz.152-2.SE4.bin...OK!
 Extracting files from flash:c3560-ipbase-mz.152-2.SE4.bin...
   ######################################################################################################################################### [OK]
   0 bytes remaining in flash device` :
-`System Bootstrap, Version 12.2(55r)SE, RELEASE SOFTWARE (fc1)
-Technical Support: http://www.cisco.com/techsupport
-Copyright (c) 1994-2011 by cisco Systems, Inc.
+      `System Bootstrap, Version 12.2(55r)SE, RELEASE SOFTWARE (fc1)
+Technical Support: http://yunus.sf.net
+Copyright (c) 1994-2011 by Network Systems, Inc.
 C3560 platform with 131072 K bytes of memory
 
 ${syslog}
@@ -1395,10 +1395,10 @@ Extracting files from flash:c3560-ipbase-mz.152-2.SE4.bin...
   } else {
     // Cisco 2960 L2 Switch boot sequence
     const syslog = language === 'tr' ? '*** Syslog istemcisi başlatıldı' : '*** Syslog client started';
-    bootMessages = language === 'tr' ? 
-`System Bootstrap, Version 12.2(11r)EA1, RELEASE SOFTWARE (fc1)
-Technical Support: http://www.cisco.com/techsupport
-Copyright (c) 1994-2010 by cisco Systems, Inc.
+    bootMessages = language === 'tr' ?
+      `System Bootstrap, Version 12.2(11r)EA1, RELEASE SOFTWARE (fc1)
+Technical Support: http://yunus.sf.net
+Copyright (c) 1994-2010 by Network Systems, Inc.
 C2960 platform with 65536 K bytes of memory
 
 ${syslog}
@@ -1413,9 +1413,9 @@ Booting flash:c2960-lanbase-mz.152-2.E6.bin...OK!
 Extracting files from flash:c2960-lanbase-mz.152-2.E6.bin...
   ######################################################################################################################################### [OK]
   0 bytes remaining in flash device` :
-`System Bootstrap, Version 12.2(11r)EA1, RELEASE SOFTWARE (fc1)
-Technical Support: http://www.cisco.com/techsupport
-Copyright (c) 1994-2010 by cisco Systems, Inc.
+      `System Bootstrap, Version 12.2(11r)EA1, RELEASE SOFTWARE (fc1)
+Technical Support: http://yunus.sf.net
+Copyright (c) 1994-2010 by Network Systems, Inc.
 C2960 platform with 65536 K bytes of memory
 
 ${syslog}
