@@ -17,6 +17,7 @@ interface ConnectionLineProps {
   onMouseLeave?: () => void;
   showAnimation?: boolean;
   showLabel?: boolean;
+  zoom?: number;
 }
 
 export const ConnectionLine = memo(function ConnectionLine({
@@ -33,7 +34,8 @@ export const ConnectionLine = memo(function ConnectionLine({
   onMouseEnter,
   onMouseLeave,
   showAnimation = true,
-  showLabel = true
+  showLabel = true,
+  zoom = 1 // Default zoom level
 }: ConnectionLineProps) {
   // Get port positions for more accurate connection lines
   const source = getPortPosition(sourceDevice, connection.sourcePort);
@@ -127,14 +129,14 @@ export const ConnectionLine = memo(function ConnectionLine({
       {/* Animated data flow - only for compatible cables and NOT during dragging */}
       {showAnimation && isEffectivelyActive && !isDragging && (
         <>
-          <circle r="4" fill={color}>
+          <circle r={Math.max(2, 4 / zoom)} fill={color}>
             <animateMotion
               dur="2s"
               repeatCount="indefinite"
               path={pathD}
             />
           </circle>
-          <circle r="4" fill={color}>
+          <circle r={Math.max(2, 4 / zoom)} fill={color}>
             <animateMotion
               dur="2s"
               repeatCount="indefinite"
@@ -221,6 +223,7 @@ export const ConnectionLine = memo(function ConnectionLine({
     prevProps.isDragging === nextProps.isDragging &&
     prevProps.isHovered === nextProps.isHovered &&
     prevProps.showAnimation === nextProps.showAnimation &&
-    prevProps.showLabel === nextProps.showLabel
+    prevProps.showLabel === nextProps.showLabel &&
+    prevProps.zoom === nextProps.zoom
   );
 });

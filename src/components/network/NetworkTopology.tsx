@@ -4897,6 +4897,7 @@ export function NetworkTopology({
                         sameConnIndex={sameConnIndex}
                         getPortPosition={getPortPosition}
                         CABLE_COLORS={CABLE_COLORS as any}
+                        zoom={zoom}
                       />
                     );
                   })}
