@@ -632,7 +632,7 @@ export function Terminal({
             ) : (
               <div className="space-y-1.5">
                 {/* Show all output with natural scrolling */}
-                {displayedLines.map((line, i) => (
+                {displayedLines.filter(line => line != null).map((line, i) => (
                   <div key={line.id} className="animate-in fade-in slide-in-from-left-1 duration-200">
                     {line.type === 'command' ? (
                       <div className="flex gap-2 text-cyan-500 font-bold group">

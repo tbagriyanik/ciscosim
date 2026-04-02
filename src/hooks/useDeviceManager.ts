@@ -71,18 +71,39 @@ export function useDeviceManager() {
   const [isLoading, setIsLoading] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState<{ show: boolean; message: string; action: string; onConfirm: () => void; } | null>(null);
 
-  const getBootMemoryLine = useCallback((deviceType: Exclude<DeviceType, 'pc'>, switchModel?: string) => {
+  const getBootMessage = useCallback((deviceType: Exclude<DeviceType, 'pc'>, switchModel?: string) => {
     if (deviceType === 'router') {
-      return 'C1900 platform with 524288K bytes of main memory\nMain memory configured to 64 bit mode with ECC disabled\n';
+      return {
+        version: '15.1(4)M4',
+        model: switchModel || 'C1900',
+        memory: '524288K',
+        bitMode: '64 bit',
+        eccStatus: 'disabled',
+        initMessage: 'Initializing system'
+      };
     }
 
     const resolvedModel = switchModel || (deviceType === 'switchL3' ? 'WS-C3560-24PS' : 'WS-C2960-24TT-L');
 
-    if (resolvedModel === 'WS-C3560-24PS') {
-      return 'C3560 platform with 131072K bytes of main memory\nMain memory configured to 64 bit mode with ECC disabled\n';
+    if (deviceType === 'switchL3') {
+      return {
+        version: '12.2(55)SE',
+        model: resolvedModel,
+        memory: '131072K',
+        bitMode: '64 bit',
+        eccStatus: 'disabled',
+        initMessage: 'System is powering on'
+      };
     }
 
-    return 'C2960 platform with 65536K bytes of main memory\nMain memory configured to 32 bit mode with ECC enabled\n';
+    return {
+      version: '12.1(11r)EA1',
+      model: resolvedModel,
+      memory: '65536K',
+      bitMode: '32 bit',
+      eccStatus: 'enabled',
+      initMessage: 'System is powering on'
+    };
   }, []);
 
   const ensureSwitchModelConsistency = useCallback((state: SwitchState, model?: string, macAddress?: string): SwitchState => {
@@ -155,18 +176,19 @@ export function useDeviceManager() {
         // Show a short loading line before boot outputs (small loading animation)
         (async () => {
           setDeviceOutputs(prev => new Map(prev).set(deviceId, [
-            { id: `loading-${reloadedState.macAddress}`, type: 'output', content: 'Powering on' }
+            { id: `loading-${reloadedState.macAddress}`, type: 'output', content: 'Initializing system...' }
           ]));
           await sleep(600);
 
+          const bootInfo = getBootMessage(isRouter ? 'router' : resolveSwitchBootType(reloadedState.switchModel), reloadedState.switchModel);
           const bootOutputs: TerminalOutput[] = [
-            { id: `boot-1-${reloadedState.macAddress}`, type: 'output', content: isRouter ? '\n\nSystem Bootstrap, Version 15.1(4)M4, RELEASE SOFTWARE (fc1)\nTechnical Support: http://yunus.sf.net\nCopyright (c) 1986-2026 by Systems, Inc.\n' : '\n\nSystem Bootstrap, Version 12.1(11r)EA1, RELEASE SOFTWARE (fc1)\nTechnical Support: http://yunus.sf.net\nCopyright (c) 1986-2026 by Systems, Inc.\n' },
-            { id: `boot-2-${reloadedState.macAddress}`, type: 'output', content: getBootMemoryLine(isRouter ? 'router' : resolveSwitchBootType(reloadedState.switchModel), reloadedState.switchModel) },
+            { id: `boot-1-${reloadedState.macAddress}`, type: 'output', content: `\n\nSystem Bootstrap, Version ${bootInfo.version}, RELEASE SOFTWARE (fc1)\nTechnical Support: http://yunus.sf.net\nCopyright (c) 1986-2026 by Systems, Inc.\n` },
+            { id: `boot-2-${reloadedState.macAddress}`, type: 'output', content: `[${bootInfo.model}] platform with ${bootInfo.memory} bytes of main memory\nMain memory configured to ${bootInfo.bitMode} mode with ECC ${bootInfo.eccStatus}\n` },
             { id: `boot-3-${reloadedState.macAddress}`, type: 'output', content: '\nLoading the runtime image: ######################################## [OK]\n' },
             // Insert banner MOTD here if present so it's visible during boot
             ...(reloadedState.bannerMOTD ? [{ id: `banner-${reloadedState.macAddress}`, type: 'output' as const, content: `\n${reloadedState.bannerMOTD}\n` }] : []),
-            { id: `boot-beep-${reloadedState.macAddress}`, type: 'output', content: '\nSystem is powering on...\n' },
-            { id: `boot-ready-${reloadedState.macAddress}`, type: 'output', content: '\nReady!\n' }
+            { id: `boot-beep-${reloadedState.macAddress}`, type: 'output', content: `\n${bootInfo.initMessage}...\n` },
+            { id: `boot-ready-${reloadedState.macAddress}`, type: 'output', content: '\nReady!\n\n' }
           ];
 
           setDeviceOutputs(prev => new Map(prev).set(deviceId, bootOutputs));
@@ -184,7 +206,7 @@ export function useDeviceManager() {
 
     window.addEventListener('trigger-topology-toggle-power', handlePowerToggle as EventListener);
     return () => window.removeEventListener('trigger-topology-toggle-power', handlePowerToggle as EventListener);
-  }, [deviceStates, getBootMemoryLine]);
+  }, [deviceStates, getBootMessage]);
 
   const getOrCreateDeviceState = useCallback((deviceId: string, deviceType: DeviceType, initialHostname?: string, initialMac?: string, switchModel?: string): SwitchState => {
     let deviceState = deviceStates.get(deviceId);
@@ -249,9 +271,10 @@ export function useDeviceManager() {
           ? 'switchL3'
           : 'switchL2';
 
+      const bootInfo = getBootMessage(inferredDeviceType, state?.switchModel);
       outputs = [
-        { id: `boot-1`, type: 'output', content: isRouter ? '\n\nSystem Bootstrap, Version 15.1(4)M4, RELEASE SOFTWARE (fc1)\nTechnical Support: http://yunus.sf.net\nCopyright (c) 1986-2026 by Systems, Inc.\n' : '\n\nSystem Bootstrap, Version 12.1(11r)EA1, RELEASE SOFTWARE (fc1)\nTechnical Support: http://yunus.sf.net\nCopyright (c) 1986-2026 by Systems, Inc.\n' },
-        { id: `boot-2`, type: 'output', content: getBootMemoryLine(inferredDeviceType, state?.switchModel) },
+        { id: `boot-1`, type: 'output', content: `\n\nSystem Bootstrap, Version ${bootInfo.version}, RELEASE SOFTWARE (fc1)\nTechnical Support: http://yunus.sf.net\nCopyright (c) 1986-2026 by Systems, Inc.\n` },
+        { id: `boot-2`, type: 'output', content: `[${bootInfo.model}] platform with ${bootInfo.memory} bytes of main memory\nMain memory configured to ${bootInfo.bitMode} mode with ECC ${bootInfo.eccStatus}\n` },
         { id: `boot-3`, type: 'output', content: '\nLoading the runtime image: ######################################## [OK]\n' }
       ];
 
@@ -262,11 +285,11 @@ export function useDeviceManager() {
         outputs.push({ id: `banner-initial`, type: 'output', content: `\n${deviceState.bannerMOTD}\n` });
       }
 
-      outputs.push({ id: `boot-ready`, type: 'output', content: '\nPress RETURN to get started!\n' });
+      outputs.push({ id: `boot-ready`, type: 'output', content: '\nReady!\n\n' });
       setDeviceOutputs(prev => new Map(prev).set(deviceId, outputs!));
     }
     return outputs;
-  }, [deviceOutputs, deviceStates, getBootMemoryLine]);
+  }, [deviceOutputs, deviceStates, getBootMessage]);
 
   const getOrCreatePCOutputs = useCallback((deviceId: string): PCOutputLine[] => {
     let outputs = pcOutputs.get(deviceId);
@@ -583,13 +606,14 @@ export function useDeviceManager() {
           };
           setDeviceStates(prev => new Map(prev).set(deviceId, reloadedState));
           const isRouter = deviceId.includes('router');
+          const bootInfo = getBootMessage(isRouter ? 'router' : resolveSwitchBootType(reloadedState.switchModel), reloadedState.switchModel);
           const bootOutputs: TerminalOutput[] = [
-            { id: `boot-1-${reloadedState.macAddress}`, type: 'output', content: isRouter ? '\n\nSystem Bootstrap, Version 15.1(4)M4, RELEASE SOFTWARE (fc1)\nTechnical Support: http://yunus.sf.net\nCopyright (c) 1986-2026 by Systems, Inc.\n' : '\n\nSystem Bootstrap, Version 12.1(11r)EA1, RELEASE SOFTWARE (fc1)\nTechnical Support: http://yunus.sf.net\nCopyright (c) 1986-2026 by Systems, Inc.\n' },
-            { id: `boot-2-${reloadedState.macAddress}`, type: 'output', content: getBootMemoryLine(isRouter ? 'router' : resolveSwitchBootType(reloadedState.switchModel), reloadedState.switchModel) },
+            { id: `boot-1-${reloadedState.macAddress}`, type: 'output', content: `\n\nSystem Bootstrap, Version ${bootInfo.version}, RELEASE SOFTWARE (fc1)\nTechnical Support: http://yunus.sf.net\nCopyright (c) 1986-2026 by Systems, Inc.\n` },
+            { id: `boot-2-${reloadedState.macAddress}`, type: 'output', content: `[${bootInfo.model}] platform with ${bootInfo.memory} bytes of main memory\nMain memory configured to ${bootInfo.bitMode} mode with ECC ${bootInfo.eccStatus}\n` },
             { id: `boot-3-${reloadedState.macAddress}`, type: 'output', content: '\nLoading the runtime image: ######################################## [OK]\n' },
             ...(reloadedState.bannerMOTD ? [{ id: `banner-${reloadedState.macAddress}`, type: 'output' as const, content: `\n${reloadedState.bannerMOTD}\n` }] : []),
-            { id: `boot-beep-${reloadedState.macAddress}`, type: 'output', content: '\nSystem is powering on...\n' },
-            { id: `boot-ready-${reloadedState.macAddress}`, type: 'output', content: '\nReady!\n' }
+            { id: `boot-beep-${reloadedState.macAddress}`, type: 'output', content: `\n${bootInfo.initMessage}...\n` },
+            { id: `boot-ready-${reloadedState.macAddress}`, type: 'output', content: '\nReady!\n\n' }
           ];
           void appendOutputsWithDelay(deviceId, bootOutputs, { clearFirst: true, minDelay: 120, maxDelay: 420 });
 

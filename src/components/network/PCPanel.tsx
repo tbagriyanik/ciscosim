@@ -964,6 +964,10 @@ export function PCPanel({
 
   const handleConnect = async () => {
     if (!consoleDevice) return;
+    
+    // Clear previous console output before connecting
+    setPcOutput([]);
+    
     setConnectedDeviceId(consoleDevice.id);
     setConsoleConnectionTime(Date.now());
     if (onExecuteDeviceCommand) {

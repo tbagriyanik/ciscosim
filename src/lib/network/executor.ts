@@ -1145,10 +1145,32 @@ function handleConsoleConnect(state: SwitchState, language: 'tr' | 'en'): Comman
 
   let output = '';
 
-  // Display banner MOTD first
+  // Display system bootstrap information first - like real device boot
+  const isRouter = state.version.modelName.includes('1900') || state.version.modelName.includes('C1900');
+  const isL3Switch = state.version.modelName.includes('3560');
+  
+  // Bootstrap version based on device type
+  const bootstrapVersion = isRouter ? '15.1(4)M4' : isL3Switch ? '12.2(55)SE' : '12.1(11r)EA1';
+  
+  // Memory configuration based on device type
+  const memoryConfig = isRouter ? 
+    `[${state.version.modelName}] platform with 524288K bytes of main memory\nMain memory configured to 64 bit mode with ECC disabled` :
+    isL3Switch ?
+    `[${state.version.modelName}] platform with 131072K bytes of main memory\nMain memory configured to 64 bit mode with ECC disabled` :
+    `[${state.version.modelName}] platform with 65536K bytes of main memory\nMain memory configured to 32 bit mode with ECC enabled`;
+
+  const bootstrapText = language === 'tr' ? 
+    `System Bootstrap, Sürüm ${bootstrapVersion}, YAYIN YAZILIMI (fc1)\nTeknik Destek: http://yunus.sf.net\nTelif hakkı (c) 1986-2026 by Systems, Inc.\n${memoryConfig}\nLoading the runtime image: ######################################## [OK]` : 
+    `System Bootstrap, Version ${bootstrapVersion}, RELEASE SOFTWARE (fc1)\nTechnical Support: http://yunus.sf.net\nCopyright (c) 1986-2026 by Systems, Inc.\n${memoryConfig}\nLoading the runtime image: ######################################## [OK]`;
+  
+  output += `${bootstrapText}\n`;
+
+  // Display banner MOTD next
   if (state.bannerMOTD) {
-    output += `\n${state.bannerMOTD}\n\n`;
+    output += `\n${state.bannerMOTD}\n`;
   }
+
+  output += `\nReady!\n\n`;
 
   if (!needsLogin) {
     const prompt = getPrompt(state);
@@ -1178,12 +1200,34 @@ function handleConsoleConnect(state: SwitchState, language: 'tr' | 'en'): Comman
 function handleTelnetConnect(state: SwitchState, language: 'tr' | 'en'): CommandResult {
   const needsLogin = !!(state.security.vtyLines?.login && state.security.vtyLines?.password);
 
+  let output = '';
+
+  // Display system bootstrap information first - like real device boot
+  const isRouter = state.version.modelName.includes('1900') || state.version.modelName.includes('C1900');
+  const isL3Switch = state.version.modelName.includes('3560');
+  
+  // Bootstrap version based on device type
+  const bootstrapVersion = isRouter ? '15.1(4)M4' : isL3Switch ? '12.2(55)SE' : '12.1(11r)EA1';
+  
+  // Memory configuration based on device type
+  const memoryConfig = isRouter ? 
+    `[${state.version.modelName}] platform with 524288K bytes of main memory\nMain memory configured to 64 bit mode with ECC disabled` :
+    isL3Switch ?
+    `[${state.version.modelName}] platform with 131072K bytes of main memory\nMain memory configured to 64 bit mode with ECC disabled` :
+    `[${state.version.modelName}] platform with 65536K bytes of main memory\nMain memory configured to 32 bit mode with ECC enabled`;
+
+  const bootstrapText = language === 'tr' ? 
+    `System Bootstrap, Sürüm ${bootstrapVersion}, YAYIN YAZILIMI (fc1)\nTeknik Destek: http://yunus.sf.net\nTelif hakkı (c) 1986-2026 by Systems, Inc.\n${memoryConfig}\nLoading the runtime image: ######################################## [OK]` : 
+    `System Bootstrap, Version ${bootstrapVersion}, RELEASE SOFTWARE (fc1)\nTechnical Support: http://yunus.sf.net\nCopyright (c) 1986-2026 by Systems, Inc.\n${memoryConfig}\nLoading the runtime image: ######################################## [OK]`;
+  
+  output += `${bootstrapText}\n`;
+
   if (!needsLogin) {
-    let output = '';
     // Display banner MOTD for open access
     if (state.bannerMOTD) {
-      output += `\n${state.bannerMOTD}\n\n`;
+      output += `\n${state.bannerMOTD}\n`;
     }
+    output += `\nReady!\n\n`;
     const prompt = getPrompt(state);
     output += prompt;
     return {
@@ -1193,17 +1237,22 @@ function handleTelnetConnect(state: SwitchState, language: 'tr' | 'en'): Command
     };
   }
 
-  // If login required, show password prompt FIRST
+  // Display banner MOTD before login prompt
+  if (state.bannerMOTD) {
+    output += `\n${state.bannerMOTD}\n`;
+  }
+
+  output += `\nReady!\n\nUser Access Verification\n\nPassword: `;
   return {
     success: true,
-    output: 'User Access Verification\n\nPassword: ',
+    output,
     requiresPassword: true,
     passwordPrompt: 'Password: ',
-    passwordContext: 'vty',
+    passwordContext: 'vty' as const,
     newState: {
       telnetAuthenticated: false,
       awaitingPassword: true,
-      passwordContext: 'vty'
+      passwordContext: 'vty' as const
     }
   };
 }
