@@ -71,38 +71,37 @@ export function useDeviceManager() {
   const [isLoading, setIsLoading] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState<{ show: boolean; message: string; action: string; onConfirm: () => void; } | null>(null);
 
-  const getBootMessage = useCallback((deviceType: Exclude<DeviceType, 'pc'>, switchModel?: string) => {
-    if (deviceType === 'router') {
+  const getBootMessage = useCallback((deviceType: Exclude<DeviceType, 'pc'>, switchModel?: string, language: 'tr' | 'en' = 'en') => {
+    const isRouter = deviceType === 'router';
+    const isL3Switch = deviceType === 'switchL3' || switchModel?.includes('3560');
+    const isL2Switch = !isRouter && !isL3Switch;
+
+    if (isRouter) {
+      const syslog = language === 'tr' ? '*** Syslog istemcisi başlatıldı' : '*** Syslog client started';
       return {
-        version: '15.1(4)M4',
-        model: switchModel || 'C1900',
-        memory: '524288K',
-        bitMode: '64 bit',
-        eccStatus: 'disabled',
-        initMessage: 'Initializing system'
+        boot1: `\n\nSystem Bootstrap, Version 15.1(4)M4, RELEASE SOFTWARE (fc1)\nTechnical Support: http://www.cisco.com/techsupport\nCopyright (c) 1994-2011 by cisco Systems, Inc.\n`,
+        boot2: `ISR4451/K9 platform with 4096 K bytes of memory\n\n${syslog}\nLoad/bootstrap symbols loaded, GOXR initialization\nReading all bootflash vectors\nPOST: CPU PCIe port Check PASS\nCPU memory test . . . . . . . . . . . . . OK\nBoard initialization completed\nInitializing flash file system\n`,
+        boot3: `\nBooting flash:c1900-universalk9-mz.SPA.154-3.M.bin...OK!\nExtracting files from flash:c1900-universalk9-mz.SPA.154-3.M.bin...\n  ######################################################################################################################################### [OK]\n  0 bytes remaining in flash device`,
+        initMessage: language === 'tr' ? 'Sistem başlatılıyor' : 'Initializing system'
       };
     }
 
-    const resolvedModel = switchModel || (deviceType === 'switchL3' ? 'WS-C3560-24PS' : 'WS-C2960-24TT-L');
-
-    if (deviceType === 'switchL3') {
+    if (isL3Switch) {
+      const syslog = language === 'tr' ? '*** Syslog istemcisi başlatıldı' : '*** Syslog client started';
       return {
-        version: '12.2(55)SE',
-        model: resolvedModel,
-        memory: '131072K',
-        bitMode: '64 bit',
-        eccStatus: 'disabled',
-        initMessage: 'System is powering on'
+        boot1: `\n\nSystem Bootstrap, Version 12.2(55r)SE, RELEASE SOFTWARE (fc1)\nTechnical Support: http://www.cisco.com/techsupport\nCopyright (c) 1994-2011 by cisco Systems, Inc.\n`,
+        boot2: `C3560 platform with 131072 K bytes of memory\n\n${syslog}\nLoad/bootstrap symbols loaded\nReading all bootflash vectors\nPOST: CPU PCIe port Check PASS\nCPU memory test . . . . . . . . . . . . . OK\nBoard initialization completed\nInitializing flash file system\n`,
+        boot3: `\nBooting flash:c3560-ipbase-mz.152-2.SE4.bin...OK!\nExtracting files from flash:c3560-ipbase-mz.152-2.SE4.bin...\n  ######################################################################################################################################### [OK]\n  0 bytes remaining in flash device`,
+        initMessage: language === 'tr' ? 'Sistem açılıyor' : 'System is powering on'
       };
     }
 
+    const syslog = language === 'tr' ? '*** Syslog istemcisi başlatıldı' : '*** Syslog client started';
     return {
-      version: '12.1(11r)EA1',
-      model: resolvedModel,
-      memory: '65536K',
-      bitMode: '32 bit',
-      eccStatus: 'enabled',
-      initMessage: 'System is powering on'
+      boot1: `\n\nSystem Bootstrap, Version 12.2(11r)EA1, RELEASE SOFTWARE (fc1)\nTechnical Support: http://www.cisco.com/techsupport\nCopyright (c) 1994-2010 by cisco Systems, Inc.\n`,
+      boot2: `C2960 platform with 65536 K bytes of memory\n\n${syslog}\nLoad/bootstrap symbols loaded\nReading all bootflash vectors\nPOST: CPU Ethernet port Check PASS\nCPU memory test . . . . . . . . . . . . . OK\nBoard initialization completed\nInitializing flash file system\n`,
+      boot3: `\nBooting flash:c2960-lanbase-mz.152-2.E6.bin...OK!\nExtracting files from flash:c2960-lanbase-mz.152-2.E6.bin...\n  ######################################################################################################################################### [OK]\n  0 bytes remaining in flash device`,
+      initMessage: language === 'tr' ? 'Sistem açılıyor' : 'System is powering on'
     };
   }, []);
 
@@ -180,11 +179,11 @@ export function useDeviceManager() {
           ]));
           await sleep(600);
 
-          const bootInfo = getBootMessage(isRouter ? 'router' : resolveSwitchBootType(reloadedState.switchModel), reloadedState.switchModel);
+          const bootInfo = getBootMessage(isRouter ? 'router' : resolveSwitchBootType(reloadedState.switchModel), reloadedState.switchModel, language);
           const bootOutputs: TerminalOutput[] = [
-            { id: `boot-1-${reloadedState.macAddress}`, type: 'output', content: `\n\nSystem Bootstrap, Version ${bootInfo.version}, RELEASE SOFTWARE (fc1)\nTechnical Support: http://yunus.sf.net\nCopyright (c) 1986-2026 by Systems, Inc.\n` },
-            { id: `boot-2-${reloadedState.macAddress}`, type: 'output', content: `[${bootInfo.model}] platform with ${bootInfo.memory} bytes of main memory\nMain memory configured to ${bootInfo.bitMode} mode with ECC ${bootInfo.eccStatus}\n` },
-            { id: `boot-3-${reloadedState.macAddress}`, type: 'output', content: '\nLoading the runtime image: ######################################## [OK]\n' },
+            { id: `boot-1-${reloadedState.macAddress}`, type: 'output', content: bootInfo.boot1 },
+            { id: `boot-2-${reloadedState.macAddress}`, type: 'output', content: bootInfo.boot2 },
+            { id: `boot-3-${reloadedState.macAddress}`, type: 'output', content: bootInfo.boot3 },
             // Insert banner MOTD here if present so it's visible during boot
             ...(reloadedState.bannerMOTD ? [{ id: `banner-${reloadedState.macAddress}`, type: 'output' as const, content: `\n${reloadedState.bannerMOTD}\n` }] : []),
             { id: `boot-beep-${reloadedState.macAddress}`, type: 'output', content: `\n${bootInfo.initMessage}...\n` },
@@ -262,7 +261,10 @@ export function useDeviceManager() {
 
   const getOrCreateDeviceOutputs = useCallback((deviceId: string, deviceStateArg?: SwitchState): TerminalOutput[] => {
     let outputs = deviceOutputs.get(deviceId);
-    if (!outputs) {
+    const hasBootMessages = outputs?.some(o => o.id?.startsWith('boot-'));
+
+    // If no outputs exist OR boot messages are missing, generate them
+    if (!outputs || !hasBootMessages) {
       const state = deviceStateArg || deviceStates.get(deviceId);
       const isRouter = deviceId.includes('router');
       const inferredDeviceType: Exclude<DeviceType, 'pc'> = isRouter
@@ -271,21 +273,26 @@ export function useDeviceManager() {
           ? 'switchL3'
           : 'switchL2';
 
-      const bootInfo = getBootMessage(inferredDeviceType, state?.switchModel);
-      outputs = [
-        { id: `boot-1`, type: 'output', content: `\n\nSystem Bootstrap, Version ${bootInfo.version}, RELEASE SOFTWARE (fc1)\nTechnical Support: http://yunus.sf.net\nCopyright (c) 1986-2026 by Systems, Inc.\n` },
-        { id: `boot-2`, type: 'output', content: `[${bootInfo.model}] platform with ${bootInfo.memory} bytes of main memory\nMain memory configured to ${bootInfo.bitMode} mode with ECC ${bootInfo.eccStatus}\n` },
-        { id: `boot-3`, type: 'output', content: '\nLoading the runtime image: ######################################## [OK]\n' }
+      const bootInfo = getBootMessage(inferredDeviceType, state?.switchModel, language);
+      const fallbackState = state || (isRouter ? createInitialRouterState() : createInitialState(undefined, state?.switchModel as any));
+      const suffix = fallbackState?.macAddress || deviceId;
+
+      const newBootMessages: TerminalOutput[] = [
+        { id: `boot-1-${suffix}`, type: 'output', content: bootInfo.boot1 },
+        { id: `boot-2-${suffix}`, type: 'output', content: bootInfo.boot2 },
+        { id: `boot-3-${suffix}`, type: 'output', content: bootInfo.boot3 },
+        ...(fallbackState?.bannerMOTD ? [{ id: `banner-${suffix}`, type: 'output' as const, content: `\n${fallbackState.bannerMOTD}\n` }] : []),
+        { id: `boot-beep-${suffix}`, type: 'output', content: `\n${bootInfo.initMessage}...\n` },
+        { id: `boot-ready-${suffix}`, type: 'output', content: '\nReady!\n\n' }
       ];
 
-      // Add banner MOTD if available
-      const fallbackState = deviceStates.get(deviceId);
-      const deviceState = state || (isRouter ? createInitialRouterState() : createInitialState(undefined, fallbackState?.switchModel as any));
-      if (deviceState?.bannerMOTD) {
-        outputs.push({ id: `banner-initial`, type: 'output', content: `\n${deviceState.bannerMOTD}\n` });
+      // If we have existing outputs, append them; otherwise use just boot messages
+      if (outputs && hasBootMessages === false && outputs.length > 0) {
+        outputs = [...newBootMessages, ...outputs] as TerminalOutput[];
+      } else {
+        outputs = newBootMessages;
       }
 
-      outputs.push({ id: `boot-ready`, type: 'output', content: '\nReady!\n\n' });
       setDeviceOutputs(prev => new Map(prev).set(deviceId, outputs!));
     }
     return outputs;
@@ -606,11 +613,11 @@ export function useDeviceManager() {
           };
           setDeviceStates(prev => new Map(prev).set(deviceId, reloadedState));
           const isRouter = deviceId.includes('router');
-          const bootInfo = getBootMessage(isRouter ? 'router' : resolveSwitchBootType(reloadedState.switchModel), reloadedState.switchModel);
+          const bootInfo = getBootMessage(isRouter ? 'router' : resolveSwitchBootType(reloadedState.switchModel), reloadedState.switchModel, language);
           const bootOutputs: TerminalOutput[] = [
-            { id: `boot-1-${reloadedState.macAddress}`, type: 'output', content: `\n\nSystem Bootstrap, Version ${bootInfo.version}, RELEASE SOFTWARE (fc1)\nTechnical Support: http://yunus.sf.net\nCopyright (c) 1986-2026 by Systems, Inc.\n` },
-            { id: `boot-2-${reloadedState.macAddress}`, type: 'output', content: `[${bootInfo.model}] platform with ${bootInfo.memory} bytes of main memory\nMain memory configured to ${bootInfo.bitMode} mode with ECC ${bootInfo.eccStatus}\n` },
-            { id: `boot-3-${reloadedState.macAddress}`, type: 'output', content: '\nLoading the runtime image: ######################################## [OK]\n' },
+            { id: `boot-1-${reloadedState.macAddress}`, type: 'output', content: bootInfo.boot1 },
+            { id: `boot-2-${reloadedState.macAddress}`, type: 'output', content: bootInfo.boot2 },
+            { id: `boot-3-${reloadedState.macAddress}`, type: 'output', content: bootInfo.boot3 },
             ...(reloadedState.bannerMOTD ? [{ id: `banner-${reloadedState.macAddress}`, type: 'output' as const, content: `\n${reloadedState.bannerMOTD}\n` }] : []),
             { id: `boot-beep-${reloadedState.macAddress}`, type: 'output', content: `\n${bootInfo.initMessage}...\n` },
             { id: `boot-ready-${reloadedState.macAddress}`, type: 'output', content: '\nReady!\n\n' }

@@ -131,79 +131,98 @@ export function Terminal({
       return;
     }
 
-    const lastOutput = output[output.length - 1];
+    // Check if we have boot messages in the output
+    const hasBootMessages = output.some(o =>
+      o.id?.startsWith('boot-') ||
+      o.content?.includes('System Bootstrap') ||
+      o.content?.includes('Loading Flash') ||
+      o.content?.includes('Initializing')
+    );
 
-    // Detect if this is a fresh output (e.g., after device reload)
-    // by checking if we have a large gap in output IDs or if output was cleared and restarted
-    const isFirstOutput = output.length === 1;
-    const hasBootMessage = lastOutput.content?.includes('System Bootstrap') ||
-      lastOutput.content?.includes('Loading Flash') ||
-      lastOutput.content?.includes('Initializing') ||
-      lastOutput.content?.toLowerCase().includes('boot');
-
-    // Clear screen on first output or boot message
-    if (isFirstOutput || hasBootMessage) {
+    // If this is a fresh set of outputs (boot sequence), clear everything
+    if (hasBootMessages && processedOutputIdsRef.current.size === 0) {
       setDisplayedLines([]);
       processedOutputIdsRef.current.clear();
       setIsProcessingMultiline(false);
       pendingLinesRef.current = [];
     }
 
-    // Skip if already processed this output
-    if (processedOutputIdsRef.current.has(lastOutput.id)) return;
+    // Process all unprocessed outputs in order
+    for (const outputItem of output) {
+      // Guard against malformed output
+      if (!outputItem || !outputItem.id) {
+        continue;
+      }
 
-    const hasNewlines = lastOutput.content && lastOutput.content.includes('\n');
+      // Skip if already processed this output
+      if (processedOutputIdsRef.current.has(outputItem.id)) {
+        continue;
+      }
 
-    // If already processing multiline, skip until done
-    if (isProcessingMultiline) return;
+      // If already processing multiline, wait until done before processing next item
+      if (isProcessingMultiline) {
+        break;
+      }
 
-    if (hasNewlines) {
-      // Mark as processed
-      processedOutputIdsRef.current.add(lastOutput.id);
+      const hasNewlines = outputItem.content && outputItem.content.includes('\n');
 
-      // Split multiline content into individual lines
-      const lines = lastOutput.content.split('\n');
-      const newLines = lines.map((line, index) => ({
-        id: `${lastOutput.id}-line-${index}`,
-        type: lastOutput.type,
-        content: line,
-        prompt: index === 0 ? lastOutput.prompt : ''
-      }));
+      if (hasNewlines) {
+        // Mark as processed
+        processedOutputIdsRef.current.add(outputItem.id);
 
-      // Remove any existing lines with this output ID (in case of re-render)
-      const otherLines = displayedLines.filter(l => !l.id.startsWith(`${lastOutput.id}`));
+        // Split multiline content into individual lines
+        const lines = outputItem.content.split('\n');
+        const newLines = lines.map((line, index) => ({
+          id: `${outputItem.id}-line-${index}`,
+          type: outputItem.type,
+          content: line,
+          prompt: index === 0 ? outputItem.prompt : ''
+        }));
 
-      setDisplayedLines([...otherLines, newLines[0]]);
-      pendingLinesRef.current = newLines.slice(1);
+        // Remove any existing lines with this output ID (in case of re-render)
+        const otherLines = displayedLines.filter(l => !l.id.startsWith(`${outputItem.id}`));
 
-      setIsProcessingMultiline(true);
+        setDisplayedLines(prev => {
+          const base = prev.length > 0 ? prev : otherLines;
+          if (base.some(line => line.id === newLines[0].id)) return base;
+          return [...base, newLines[0]];
+        });
+        pendingLinesRef.current = newLines.slice(1);
 
-      // Display remaining lines with delay
-      const displayRemainingLines = async () => {
-        for (let i = 0; i < pendingLinesRef.current.length; i++) {
-          await new Promise(resolve => setTimeout(resolve, 50));
-          setDisplayedLines(prev => [...prev, pendingLinesRef.current[i]]);
+        setIsProcessingMultiline(true);
 
-          // Auto-scroll
-          if (terminalRef.current) {
-            terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
+        // Display remaining lines with delay
+        const displayRemainingLines = async () => {
+          for (let i = 0; i < pendingLinesRef.current.length; i++) {
+            await new Promise(resolve => setTimeout(resolve, 50));
+            setDisplayedLines(prev => {
+              const nextLine = pendingLinesRef.current[i];
+              if (!nextLine || prev.some(line => line.id === nextLine.id)) return prev;
+              return [...prev, nextLine];
+            });
+
+            // Auto-scroll
+            if (terminalRef.current) {
+              terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
+            }
           }
-        }
-        setIsProcessingMultiline(false);
-        pendingLinesRef.current = [];
-      };
+          setIsProcessingMultiline(false);
+          pendingLinesRef.current = [];
+        };
 
-      displayRemainingLines();
-    } else if (!hasNewlines) {
-      // Single line output - only add if not already displayed
-      if (!displayedLines.find(l => l.id === lastOutput.id)) {
-        processedOutputIdsRef.current.add(lastOutput.id);
-        setDisplayedLines(prev => [...prev, {
-          id: lastOutput.id,
-          type: lastOutput.type,
-          content: lastOutput.content,
-          prompt: lastOutput.prompt
-        }]);
+        displayRemainingLines();
+      } else if (!hasNewlines) {
+        // Single line output - only add if not already displayed
+        processedOutputIdsRef.current.add(outputItem.id);
+        setDisplayedLines(prev => {
+          if (prev.some(line => line.id === outputItem.id)) return prev;
+          return [...prev, {
+            id: outputItem.id,
+            type: outputItem.type,
+            content: outputItem.content,
+            prompt: outputItem.prompt
+          }];
+        });
       }
     }
   }, [output]);
