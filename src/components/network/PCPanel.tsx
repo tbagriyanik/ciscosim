@@ -1027,10 +1027,10 @@ export function PCPanel({
 
   const handleConnect = async () => {
     if (!consoleDevice) return;
-    
+
     // Clear previous console output before connecting
     setPcOutput([]);
-    
+
     setConnectedDeviceId(consoleDevice.id);
     setConsoleConnectionTime(Date.now());
     if (onExecuteDeviceCommand) {
@@ -1697,12 +1697,12 @@ export function PCPanel({
 
   return (
     <div className={`
-      w-full h-full lg:h-[calc(100vh-300px)] lg:max-h-[calc(100vh-300px)] flex items-center justify-center p-0 md:p-4
-      ${isDark ? 'bg-slate-900' : 'bg-slate-100'}
-    `}>
+        w-full h-full flex flex-col items-center justify-center p-0 md:p-4
+        ${isDark ? 'bg-slate-900' : 'bg-slate-100'}
+      `}>
       {/* Tablet Frame - Full screen on mobile */}
       <div className={`
-        w-full h-full max-w-full lg:max-w-4xl mx-auto overflow-hidden
+        w-full h-full max-w-full lg:max-w-4xl mx-auto overflow-hidden self-center
         relative
         ${isDark
           ? 'bg-gradient-to-br from-slate-900 via-indigo-900/50 via-violet-900/40 to-slate-900 md:border-4 md:border-slate-600 md:shadow-2xl md:shadow-purple-500/20 md:rounded-3xl'
@@ -1828,12 +1828,21 @@ export function PCPanel({
         `}>
           {/* Power Off Overlay */}
           {isPcPoweredOff && (
-            <div className="absolute inset-0 z-50 bg-black flex flex-col items-center justify-center">
-              <svg className="w-16 h-16 text-red-500 mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 2v10" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 5.636a9 9 0 1 1-12.728 0" />
-              </svg>
-              <span className="text-red-500 text-sm font-medium">{language === 'tr' ? 'KAPALI' : 'OFF'}</span>
+            <div className="absolute inset-0 z-50 bg-slate-950 flex flex-col items-center justify-center animate-fade-in relative">
+              <div className="scanline" />
+              <div className="relative mb-6">
+                <div className="absolute inset-0 bg-red-500/20 blur-2xl rounded-full animate-pulse" />
+                <svg className="w-16 h-16 text-red-500 drop-shadow-xl relative z-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 2v10" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 5.636a9 9 0 1 1-12.728 0" />
+                </svg>
+              </div>
+              <Button 
+                onClick={() => onTogglePower?.(deviceId)}
+                className="bg-emerald-600 hover:bg-emerald-500 text-white font-black tracking-widest px-8 py-6 rounded-2xl shadow-xl shadow-emerald-500/20 active:scale-95 transition-all"
+              >
+                {language === 'tr' ? 'CIHAZI AÇ' : 'POWER ON DEVICE'}
+              </Button>
             </div>
           )}
           <ModernPanel
@@ -1843,9 +1852,14 @@ export function PCPanel({
             collapsible={false}
             hideTitle
             hideHeader
-            className="w-full h-full min-w-0 min-h-0"
+            className={cn(
+              "w-full h-full min-w-0 min-h-0",
+              isDark
+                ? "bg-slate-900/40 border border-slate-700/40 backdrop-blur-xl"
+                : "bg-white/25 border border-white/40 backdrop-blur-xl shadow-lg shadow-white/10"
+            )}
           >
-            <div className={`flex flex-col h-full min-h-0 overflow-hidden ${isDark ? 'bg-transparent' : 'bg-white/30'}`}>
+            <div className="flex flex-col h-full min-h-0 overflow-hidden bg-transparent">
               <Dialog open={searchOpen} onOpenChange={setSearchOpen}>
                 <DialogContent className={`${isDark ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white'} sm:max-w-md`}>
                   <DialogHeader>
@@ -1927,7 +1941,7 @@ export function PCPanel({
               </div>
 
               {/* Content Area */}
-              <div className={`flex-1 min-h-0 flex flex-col overflow-y-auto ${terminalBg} relative pt-8 md:pt-10 pb-4`}>
+              <div className={`flex-1 min-h-0 flex flex-col overflow-y-auto ${terminalBg} relative pt-16 md:pt-18 pb-4`}>
                 {activeTab === 'home' ? (
                   <div className="flex-1 px-3 md:px-6">
                     <div className="min-h-full flex items-center justify-center">
@@ -2134,7 +2148,7 @@ export function PCPanel({
                           <div key={`${record.domain}-${record.address}`} className={`flex items-center justify-between gap-3 rounded-lg px-3 py-2 ${isDark ? 'bg-slate-950 border border-slate-800' : 'bg-slate-50 border border-slate-200'}`}>
                             <div className="text-xs font-mono">
                               <span>{record.domain}</span>
-                              <span className="mx-2 opacity-60">-&gt;</span>
+                              <span className="mx-2 opacity-30">-&gt;</span>
                               <span>{record.address}</span>
                             </div>
                             <Button

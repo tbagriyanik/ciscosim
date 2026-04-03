@@ -2467,16 +2467,16 @@ export function NetworkTopology({
   const showDeviceTooltip = useCallback((deviceId: string) => {
     const device = devices.find(d => d.id === deviceId);
     if (!device) return;
-    
+
     const canvasRect = canvasRef.current?.getBoundingClientRect?.();
     if (!canvasRect) return;
-    
+
     const currentZoom = zoomRef.current;
     const currentPan = panRef.current;
     const deviceWidth = device.type === 'pc' ? 90 : 130;
     const x = canvasRect.left + device.x * currentZoom + currentPan.x + deviceWidth * currentZoom / 2;
     const y = canvasRect.top + device.y * currentZoom + currentPan.y;
-    
+
     setDeviceTooltip({
       deviceId,
       x,
@@ -3764,7 +3764,7 @@ export function NetworkTopology({
                           ? 'bg-green-500'
                           : 'bg-orange-500'
                         }`} />
-                      <span className="text-[10px] font-black tracking-widest opacity-60">
+                      <span className="text-[10px] font-black tracking-widest opacity-30">
                         WIFI
                       </span>
                     </div>
@@ -4398,7 +4398,7 @@ export function NetworkTopology({
     >
       {/* Header with Tools */}
       <div
-        className={`px-4 py-0 border-b shrink-0 ${isDark ? 'border-slate-700/50 bg-slate-800/80' : 'border-slate-200/50 bg-white/80'} backdrop-blur-md sticky top-0 z-40`}
+        className={`px-4 py-0 border-b shrink-0 ${isDark ? 'border-slate-700/40 bg-slate-900/60' : 'border-slate-200/40 bg-white/60'} liquid-glass sticky top-0 z-40`}
       >
         <div className="flex items-center justify-between gap-2 overflow-x-auto no-scrollbar">
           <div className="flex items-center gap-2 sm:gap-4 shrink-0">
@@ -4500,9 +4500,9 @@ export function NetworkTopology({
                 setPortSelectorStep('source');
                 setSelectedSourcePort(null);
               }}
-              className={`cursor-pointer hidden md:flex items-center gap-1.5 px-3 sm:px-4 py-1.5 rounded-xl text-xs font-semibold shadow-sm transition-all ${isDark
-                ? 'bg-cyan-600 hover:bg-cyan-700 text-white'
-                : 'bg-cyan-500 hover:bg-cyan-600 text-white'
+              className={`cursor-pointer hidden md:flex items-center gap-1.5 px-3 sm:px-4 py-1.5 rounded-xl text-xs font-black tracking-widest shadow-sm transition-all hover:scale-[1.02] active:scale-95 ${isDark
+                ? 'bg-cyan-600 hover:bg-cyan-500 text-white shadow-cyan-500/20'
+                : 'bg-cyan-500 hover:bg-cyan-600 text-white shadow-cyan-500/10'
                 }`}
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -4521,9 +4521,9 @@ export function NetworkTopology({
                     setPingSource(null);
                     setPingResult(null);
                   }}
-                  className={`cursor-pointer hidden md:flex items-center gap-1.5 px-3 sm:px-4 py-1.5 rounded-xl text-xs font-semibold shadow-sm transition-all ${pingMode
+                  className={`cursor-pointer hidden md:flex items-center gap-1.5 px-3 sm:px-4 py-1.5 rounded-xl text-xs font-black tracking-widest shadow-sm transition-all hover:scale-[1.02] active:scale-95 ${pingMode
                     ? (isDark ? 'bg-yellow-500 hover:bg-yellow-600 text-white ring-2 ring-yellow-400' : 'bg-yellow-400 hover:bg-yellow-500 text-white ring-2 ring-yellow-300')
-                    : (isDark ? 'bg-indigo-600 hover:bg-indigo-700 text-white' : 'bg-indigo-500 hover:bg-indigo-600 text-white')
+                    : (isDark ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-500/20' : 'bg-indigo-500 hover:bg-indigo-600 text-white shadow-indigo-500/10')
                     }`}
                 >
                   {/* Envelope/letter icon for ping */}
@@ -4706,7 +4706,7 @@ export function NetworkTopology({
             <div className={`absolute top-2 left-1/2 -translate-x-1/2 z-30 px-4 py-2 rounded-xl shadow-2xl flex items-center gap-4 ${isDark ? 'bg-slate-800/95 text-white border border-slate-700' : 'bg-white text-slate-900 border border-slate-200'
               } backdrop-blur-md`}>
               <div className="flex items-center gap-2 border-r pr-4 border-slate-700/30">
-                <span className="text-xs font-bold tracking-wider opacity-60">
+                <span className="text-xs font-bold tracking-wider opacity-30">
                   {language === 'tr' ? 'Hizala' : 'Align'}
                 </span>
                 <div className="flex items-center gap-1">
@@ -5782,7 +5782,7 @@ export function NetworkTopology({
                   <h3 className={`${isMobile ? 'text-lg' : 'text-xl'} font-black tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
                     {language === 'tr' ? 'Yapılandır' : 'Configure'}
                   </h3>
-                  <div className={`text-[10px] font-bold tracking-widest opacity-60 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                  <div className={`text-[10px] font-bold tracking-widest opacity-30 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                     {devices.find(d => d.id === configuringDevice)?.name}
                   </div>
                 </div>
@@ -6062,9 +6062,9 @@ export function NetworkTopology({
             }}
           >
             <div
-              className={`px-3 py-2 rounded-xl shadow-2xl border backdrop-blur-md ${isDark
-                ? 'bg-slate-900/90 border-slate-700 text-white shadow-cyan-500/10'
-                : 'bg-white/90 border-slate-200 text-slate-900 shadow-slate-200/50'
+              className={`px-3 py-2 rounded-xl border liquid-glass-strong animate-scale-in shadow-2xl ${isDark
+                ? 'border-slate-700/50 text-white shadow-cyan-500/10'
+                : 'border-slate-200/50 text-slate-900 shadow-slate-200/50'
                 }`}
             >
               <div className="flex items-center gap-2 mb-1">
@@ -6074,7 +6074,7 @@ export function NetworkTopology({
                   return dev?.status === 'offline' || prt?.shutdown ? 'bg-red-500' : prt?.status === 'connected' ? 'bg-green-500' : 'bg-slate-400';
                 })()
                   }`} />
-                <span className="text-[10px] font-black tracking-widest opacity-60">
+                <span className="text-[10px] font-black tracking-widest opacity-30">
                   {portTooltip.portId}
                 </span>
               </div>
@@ -6156,9 +6156,9 @@ export function NetworkTopology({
             }}
           >
             <div
-              className={`px-4 py-3 rounded-2xl shadow-2xl border backdrop-blur-md min-w-[200px] ${isDark
-                ? 'bg-slate-900/95 border-slate-700/50 text-white shadow-cyan-500/20'
-                : 'bg-white/95 border-slate-200/50 text-slate-900 shadow-slate-200/80'
+              className={`px-4 py-3 rounded-2xl border liquid-glass-strong min-w-[200px] animate-scale-in shadow-2xl ${isDark
+                ? 'border-slate-700/50 text-white shadow-cyan-500/10'
+                : 'border-slate-200/50 text-slate-900 shadow-slate-200/40'
                 }`}
             >
               <div className="flex items-center gap-2 mb-2 pb-2 border-b border-white/10">
@@ -6171,7 +6171,7 @@ export function NetworkTopology({
                   })()}
                 </div>
                 <div>
-                  <div className="text-[10px] font-black tracking-widest opacity-60 leading-none">
+                  <div className="text-[10px] font-black tracking-widest opacity-30 leading-none">
                     {devices.find(d => d.id === deviceTooltip.deviceId)?.type.toUpperCase()}
                   </div>
                   <div className="text-sm font-black tracking-tight leading-none mt-1">
@@ -6205,7 +6205,7 @@ export function NetworkTopology({
                       </div>
                       <div className="flex justify-between items-center gap-4">
                         <span className="text-[10px] font-bold opacity-50 uppercase tracking-wider">{t.macAddress}</span>
-                        <span className="text-[10px] font-mono opacity-60">{dev.macAddress || 'N/A'}</span>
+                        <span className="text-[10px] font-mono opacity-30">{dev.macAddress || 'N/A'}</span>
                       </div>
 
                       {dev.type === 'pc' && (
@@ -6237,7 +6237,7 @@ export function NetworkTopology({
 
                           {dev.services.dhcp?.enabled && dev.services.dhcp.pools && dev.services.dhcp.pools.length > 0 && (
                             <div className="space-y-1 mt-2 pt-2 border-t border-white/5">
-                              <div className="text-[9px] font-bold opacity-60 uppercase tracking-wider">{t.language === 'tr' ? 'DHCP Pool' : 'DHCP Pool'}</div>
+                              <div className="text-[9px] font-bold opacity-30 uppercase tracking-wider">{t.language === 'tr' ? 'DHCP Pool' : 'DHCP Pool'}</div>
                               {dev.services.dhcp.pools.map((pool, idx) => (
                                 <div key={idx} className="text-[9px] space-y-0.5 bg-purple-500/10 rounded p-1.5">
                                   <div className="flex justify-between"><span className="opacity-50">Pool:</span><span className="font-mono">{pool.poolName}</span></div>
@@ -6252,7 +6252,7 @@ export function NetworkTopology({
 
                           {dev.services.dns?.enabled && dev.services.dns.records && dev.services.dns.records.length > 0 && (
                             <div className="space-y-1 mt-2 pt-2 border-t border-white/5">
-                              <div className="text-[9px] font-bold opacity-60 uppercase tracking-wider">{t.language === 'tr' ? 'DNS Kayıtları' : 'DNS Records'}</div>
+                              <div className="text-[9px] font-bold opacity-30 uppercase tracking-wider">{t.language === 'tr' ? 'DNS Kayıtları' : 'DNS Records'}</div>
                               {dev.services.dns.records.map((record, idx) => (
                                 <div key={idx} className="text-[9px] flex justify-between items-center gap-2 bg-blue-500/10 rounded px-1.5 py-0.5">
                                   <span className="font-mono text-blue-400 truncate max-w-[80px]">{record.domain}</span>

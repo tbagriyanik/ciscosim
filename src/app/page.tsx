@@ -3003,121 +3003,112 @@ export default function Home() {
                   />
 
                   {/* PC Info Popover - Bottom Right Mini Panel */}
-                  {activeDeviceId && activeDeviceId.startsWith('pc-') && topologyDevices && (
-                    <div className="fixed bottom-4 right-4 z-50">
-                      <div className={`rounded-xl border shadow-xl backdrop-blur-md min-w-[200px] max-w-[260px] ${isDark ? 'bg-slate-900/95 border-slate-700/50 text-white' : 'bg-white/95 border-slate-200/50 text-slate-900'}`}>
-                        <div className={`flex items-center justify-between px-2 py-1.5 border-b ${isDark ? 'border-slate-700/50' : 'border-slate-200/50'}`}>
-                          <div className="flex items-center gap-1.5">
-                            <Monitor className="w-3.5 h-3.5 text-blue-500" />
-                            <span className="text-[10px] font-black tracking-wider uppercase opacity-60">{language === 'tr' ? 'PC Bilgi' : 'PC Info'}</span>
+                  {activeDeviceId && activeDeviceId.startsWith('pc-') && topologyDevices && (() => {
+                    const pc = topologyDevices.find(d => d.id === activeDeviceId);
+                    if (!pc) return null;
+                    return (
+                      <div className="fixed bottom-4 right-4 z-50 animate-scale-in">
+                        <div className={`rounded-2xl border shadow-2xl backdrop-blur-xl min-w-[200px] max-w-[260px] liquid-glass-strong ${isDark ? 'border-slate-700/50 text-white shadow-cyan-500/10' : 'border-slate-200/50 text-slate-900 shadow-slate-200/50'}`}>
+                          <div className={`flex items-center justify-between px-2 py-1.5 border-b ${isDark ? 'border-slate-700/50' : 'border-slate-200/50'}`}>
+                            <div className="flex items-center gap-1.5">
+                              <Monitor className="w-3.5 h-3.5 text-blue-500" />
+                              <span className="text-[10px] font-black tracking-wider uppercase opacity-30">{pc.name || pc.id}</span>
+                            </div>
+                            <button
+                              onClick={() => {
+                                setSelectedDevice(null);
+                                setActiveDeviceId('');
+                              }}
+                              className={`p-0.5 rounded hover:bg-slate-500/20 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
                           </div>
-                          <button
-                            onClick={() => {
-                              setSelectedDevice(null);
-                              setActiveDeviceId('');
-                            }}
-                            className={`p-0.5 rounded hover:bg-slate-500/20 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
-                        </div>
-                        <div className="p-2 space-y-1 text-[10px]">
-                          {(() => {
-                            const pc = topologyDevices.find(d => d.id === activeDeviceId);
-                            if (!pc) return null;
-                            return (
-                              <>
-                                <div className="flex justify-between items-center">
-                                  <span className="opacity-50">{language === 'tr' ? 'Ad' : 'Name'}</span>
-                                  <span className="font-bold">{pc.name || pc.id}</span>
+                          <div className="p-2 space-y-1 text-[10px]">
+                            <div className="flex justify-between items-center">
+                              <span className="opacity-50">IP</span>
+                              <span className="font-mono text-blue-500">{pc.ip || '0.0.0.0'}</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className="opacity-50">Subnet</span>
+                              <span className="font-mono opacity-80">{pc.subnet || '255.255.255.0'}</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className="opacity-50">GW</span>
+                              <span className="font-mono opacity-80">{pc.gateway || '0.0.0.0'}</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className="opacity-50">MAC</span>
+                              <span className="font-mono opacity-30 text-[9px]">{pc.macAddress || 'N/A'}</span>
+                            </div>
+                            {pc.wifi && pc.wifi.enabled && (
+                              <div className="pt-1 border-t border-slate-500/20">
+                                <div className="flex justify-between items-center mb-1">
+                                  <span className="opacity-50">WiFi</span>
+                                  <span className="text-[8px] font-bold text-purple-500">{language === 'tr' ? 'Aktif' : 'Active'}</span>
                                 </div>
-                                <div className="flex justify-between items-center">
-                                  <span className="opacity-50">IP</span>
-                                  <span className="font-mono text-blue-500">{pc.ip || '0.0.0.0'}</span>
+                                <div className="flex gap-2 text-[9px]">
+                                  <span className="opacity-50">SSID:</span>
+                                  <span className="font-mono">{pc.wifi.ssid || '-'}</span>
                                 </div>
-                                <div className="flex justify-between items-center">
-                                  <span className="opacity-50">Subnet</span>
-                                  <span className="font-mono opacity-80">{pc.subnet || '255.255.255.0'}</span>
+                                <div className="flex gap-2 text-[9px]">
+                                  <span className="opacity-50">{language === 'tr' ? 'Kanal' : 'Ch'}</span>
+                                  <span className="font-mono">{pc.wifi.channel || '-'}</span>
+                                  <span className="opacity-50">|</span>
+                                  <span className="font-mono uppercase">{pc.wifi.security || '-'}</span>
                                 </div>
-                                <div className="flex justify-between items-center">
-                                  <span className="opacity-50">GW</span>
-                                  <span className="font-mono opacity-80">{pc.gateway || '0.0.0.0'}</span>
-                                </div>
-                                <div className="flex justify-between items-center">
-                                  <span className="opacity-50">MAC</span>
-                                  <span className="font-mono opacity-60 text-[9px]">{pc.macAddress || 'N/A'}</span>
-                                </div>
-                                {pc.wifi && pc.wifi.enabled && (
-                                  <div className="pt-1 border-t border-slate-500/20">
-                                    <div className="flex justify-between items-center mb-1">
-                                      <span className="opacity-50">WiFi</span>
-                                      <span className="text-[8px] font-bold text-purple-500">{language === 'tr' ? 'Aktif' : 'Active'}</span>
-                                    </div>
-                                    <div className="flex gap-2 text-[9px]">
-                                      <span className="opacity-50">SSID:</span>
-                                      <span className="font-mono">{pc.wifi.ssid || '-'}</span>
-                                    </div>
-                                    <div className="flex gap-2 text-[9px]">
-                                      <span className="opacity-50">{language === 'tr' ? 'Kanal' : 'Ch'}</span>
-                                      <span className="font-mono">{pc.wifi.channel || '-'}</span>
-                                      <span className="opacity-50">|</span>
-                                      <span className="font-mono uppercase">{pc.wifi.security || '-'}</span>
-                                    </div>
-                                  </div>
-                                )}
-                                {pc.services && (
-                                  <div className="pt-1 border-t border-slate-500/20">
-                                    <div className="flex justify-between items-center mb-0.5">
-                                      <span className="opacity-50">{language === 'tr' ? 'Servisler' : 'Services'}</span>
-                                      <div className="flex flex-wrap gap-0.5">
-                                        {pc.services.http?.enabled && (
-                                          <span className="px-1 py-0.5 rounded bg-amber-500/20 text-amber-500 text-[8px] font-bold border border-amber-500/20">HTTP</span>
-                                        )}
-                                        {pc.services.dns?.enabled && (
-                                          <span className="px-1 py-0.5 rounded bg-blue-500/20 text-blue-500 text-[8px] font-bold border border-blue-500/20">DNS</span>
-                                        )}
-                                        {pc.services.dhcp?.enabled && (
-                                          <span className="px-1 py-0.5 rounded bg-purple-500/20 text-purple-500 text-[8px] font-bold border border-purple-500/20">DHCP</span>
-                                        )}
-                                        {!pc.services.http?.enabled && !pc.services.dns?.enabled && !pc.services.dhcp?.enabled && (
-                                          <span className="text-[8px] opacity-40 italic">{language === 'tr' ? 'Yok' : 'None'}</span>
-                                        )}
-                                      </div>
-                                    </div>
-                                  </div>
-                                )}
-                                <div className="pt-1 border-t border-slate-500/20">
-                                  <div className="flex justify-between items-center">
-                                    <span className="opacity-50">{language === 'tr' ? 'IP Modu' : 'IP Mode'}</span>
-                                    <span className={`text-[8px] font-bold tracking-wider ${pc.ipConfigMode === 'dhcp' ? 'text-green-500' : 'opacity-60'}`}>
-                                      {pc.ipConfigMode === 'dhcp' ? 'DHCP' : (language === 'tr' ? 'STATIK' : 'STATIC')}
-                                    </span>
+                              </div>
+                            )}
+                            {pc.services && (
+                              <div className="pt-1 border-t border-slate-500/20">
+                                <div className="flex justify-between items-center mb-0.5">
+                                  <span className="opacity-50">{language === 'tr' ? 'Servisler' : 'Services'}</span>
+                                  <div className="flex flex-wrap gap-0.5">
+                                    {pc.services.http?.enabled && (
+                                      <span className="px-1 py-0.5 rounded bg-amber-500/20 text-amber-500 text-[8px] font-bold border border-amber-500/20">HTTP</span>
+                                    )}
+                                    {pc.services.dns?.enabled && (
+                                      <span className="px-1 py-0.5 rounded bg-blue-500/20 text-blue-500 text-[8px] font-bold border border-blue-500/20">DNS</span>
+                                    )}
+                                    {pc.services.dhcp?.enabled && (
+                                      <span className="px-1 py-0.5 rounded bg-purple-500/20 text-purple-500 text-[8px] font-bold border border-purple-500/20">DHCP</span>
+                                    )}
+                                    {!pc.services.http?.enabled && !pc.services.dns?.enabled && !pc.services.dhcp?.enabled && (
+                                      <span className="text-[8px] opacity-40 italic">{language === 'tr' ? 'Yok' : 'None'}</span>
+                                    )}
                                   </div>
                                 </div>
-                              </>
-                            );
-                          })()}
-                        </div>
-                        <div className={`px-2 py-1.5 border-t ${isDark ? 'border-slate-700/50' : 'border-slate-200/50'}`}>
-                          <button
-                            onClick={() => {
-                              const pc = topologyDevices.find(d => d.id === activeDeviceId);
-                              if (pc) handleDeviceDoubleClick(pc.type, pc.id);
-                            }}
-                            className={`w-full py-1 rounded-lg text-[10px] font-bold transition-colors ${isDark ? 'bg-cyan-600 hover:bg-cyan-700 text-white' : 'bg-blue-600 hover:bg-blue-700 text-white'}`}
-                          >
-                            {language === 'tr' ? 'CMD Aç' : 'Open CMD'}
-                          </button>
+                              </div>
+                            )}
+                            <div className="pt-1 border-t border-slate-500/20">
+                              <div className="flex justify-between items-center">
+                                <span className="opacity-50">{language === 'tr' ? 'IP Modu' : 'IP Mode'}</span>
+                                <span className={`text-[8px] font-bold tracking-wider ${pc.ipConfigMode === 'dhcp' ? 'text-green-500' : 'opacity-60'}`}>
+                                  {pc.ipConfigMode === 'dhcp' ? 'DHCP' : (language === 'tr' ? 'STATIK' : 'STATIC')}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className={`px-2 py-1.5 border-t ${isDark ? 'border-slate-700/50' : 'border-slate-200/50'}`}>
+                            <button
+                              onClick={() => {
+                                handleDeviceDoubleClick(pc.type, pc.id);
+                              }}
+                              className={`w-full py-1 rounded-lg text-[10px] font-bold transition-colors ${isDark ? 'bg-cyan-600 hover:bg-cyan-700 text-white' : 'bg-blue-600 hover:bg-blue-700 text-white'}`}
+                            >
+                              {language === 'tr' ? 'CMD Aç' : 'Open CMD'}
+                            </button>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  )}
+                    );
+                  })()}
                 </div>
               </div>
 
               {/* CMD Terminal Sekmesi */}
               {/* CMD Terminal Sekmesi - Always mounted, hidden via CSS */}
-              <div className={`w-full flex-1 min-h-0 overflow-y-auto custom-scrollbar flex flex-col lg:h-[calc(100vh-300px)] lg:max-h-[calc(100vh-300px)] ${activeTab === 'cmd' ? 'flex' : 'hidden'}`}>
+              <div className={`w-full flex-1 min-h-0 overflow-y-auto custom-scrollbar flex flex-col lg:h-[calc(100vh-300px)] lg:max-h-[calc(100vh-300px)] animate-fade-in ${activeTab === 'cmd' ? 'flex' : 'hidden'}`}>
                 <PCPanel
                   key={`pc-panel-${activeDeviceId}`}
                   deviceId={activeDeviceId}
@@ -3138,7 +3129,7 @@ export default function Home() {
               </div>
 
               {/* Terminal Sekmesi - Always mounted, hidden via CSS */}
-              <div className={`flex-1 min-h-0 flex flex-col gap-4 overflow-y-auto custom-scrollbar ${activeTab === 'terminal' ? 'flex' : 'hidden'}`}>
+              <div className={`flex-1 min-h-0 flex flex-col gap-4 overflow-y-auto custom-scrollbar animate-fade-in ${activeTab === 'terminal' ? 'flex' : 'hidden'}`}>
                 {/* Desktop Layout: Terminal sol, Running Config sağda sabit */}
                 <div className="flex flex-col md:flex-row gap-4 flex-1 min-h-0 overflow-y-auto custom-scrollbar">
                   {/* Terminal - Simplified: small (<640px no constraints), medium+ (640px+ 300px margin), 640-770px (50px less) */}
