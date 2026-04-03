@@ -700,6 +700,17 @@ function expandInterfaceRange(rangeSpec: string, state: any): string[] {
     if (Number.isNaN(startPort) || Number.isNaN(endPort) || endPort < startPort) continue;
 
     const available = Object.keys(state.ports || {});
+    const modulePorts = available
+      .filter(portId => portId.startsWith(`${prefix}${moduleNum}/`))
+      .map(portId => parseInt(portId.split('/')[1] || '', 10))
+      .filter(n => !Number.isNaN(n))
+      .sort((a, b) => a - b);
+
+    if (modulePorts.length === 0) return [];
+    const minPort = modulePorts[0];
+    const maxPort = modulePorts[modulePorts.length - 1];
+    if (startPort < minPort || endPort > maxPort) return [];
+
     for (let port = startPort; port <= endPort; port++) {
       const normalizedId = `${prefix}${moduleNum}/${port}`;
       if (available.includes(normalizedId) && !allPorts.includes(normalizedId)) {

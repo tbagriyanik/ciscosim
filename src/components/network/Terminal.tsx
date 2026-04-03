@@ -91,10 +91,16 @@ export function Terminal({
   const [isProcessingMultiline, setIsProcessingMultiline] = useState(false);
   const pendingLinesRef = useRef<Array<{ id: string, type: string, content: string, prompt?: string }>>([]);
   const processedOutputIdsRef = useRef<Set<string>>(new Set());
+  const cancelOutputRef = useRef(false);
 
   // Undo/Redo state
   const [undoStack, setUndoStack] = useState<string[]>([]);
   const [redoStack, setRedoStack] = useState<string[]>([]);
+
+  // Autocomplete state
+  const [showAutocomplete, setShowAutocomplete] = useState(false);
+  const [autocompleteIndex, setAutocompleteIndex] = useState(0);
+  const [autocompleteNavigated, setAutocompleteNavigated] = useState(false);
 
   const isDark = theme === 'dark';
   const isMobile = useIsMobile();
@@ -115,11 +121,30 @@ export function Terminal({
 
   const terminalRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const autocompleteRef = useRef<HTMLDivElement>(null);
 
   const isInputDisabled = isLoading || isConnectionError;
 
   const commandQueueRef = useRef<string[]>([]);
   const isProcessingQueueRef = useRef(false);
+
+  useEffect(() => {
+    if (!showAutocomplete) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node | null;
+      if (autocompleteRef.current && target && !autocompleteRef.current.contains(target)) {
+        setShowAutocomplete(false);
+        setAutocompleteIndex(0);
+        setAutocompleteNavigated(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showAutocomplete]);
 
   // Process output lines with delays for multiline content
   useEffect(() => {
@@ -194,6 +219,12 @@ export function Terminal({
         // Display remaining lines with delay
         const displayRemainingLines = async () => {
           for (let i = 0; i < pendingLinesRef.current.length; i++) {
+            if (cancelOutputRef.current) {
+              pendingLinesRef.current = [];
+              setIsProcessingMultiline(false);
+              cancelOutputRef.current = false;
+              return;
+            }
             await new Promise(resolve => setTimeout(resolve, 50));
             setDisplayedLines(prev => {
               const nextLine = pendingLinesRef.current[i];
@@ -343,6 +374,8 @@ export function Terminal({
     setHistoryIndex(-1);
     setTabCycleIndex(-1);
     setInput('');
+    setShowAutocomplete(false);
+    setAutocompleteIndex(0);
     await onCommand(command);
   };
 
@@ -356,7 +389,9 @@ export function Terminal({
     if (!value && tabCycleIndex === -1) return;
     const mode = state.currentMode;
     const { candidates, currentWord, contextTokens } = expandCommandContext(mode, value);
-    const matches = candidates.filter(opt => opt.toLowerCase().startsWith(currentWord));
+    const matches = candidates.filter(
+      opt => opt !== '?' && opt.toLowerCase().startsWith(currentWord)
+    );
 
     if (matches.length > 0) {
       if (tabCycleIndex === -1) {
@@ -400,20 +435,73 @@ export function Terminal({
     }
   }, [input, undoStack, redoStack]);
 
+  const getAutocompleteSuggestions = useCallback((value: string) => {
+    const mode = state.currentMode;
+    const { candidates, currentWord } = expandCommandContext(mode, value);
+    const suggestions = candidates.filter(
+      opt => opt !== '?' && opt.toLowerCase().startsWith(currentWord)
+    );
+    return suggestions.slice(0, 8);
+  }, [state.currentMode, expandCommandContext]);
+
   const handleInputChange = useCallback((newValue: string) => {
     setUndoStack([...undoStack, input]);
     setRedoStack([]);
     setInput(newValue);
-  }, [input, undoStack]);
+    setAutocompleteNavigated(false);
+    
+    // Autocomplete logic
+    if (newValue.trim().length > 0) {
+      const suggestions = getAutocompleteSuggestions(newValue);
+      if (suggestions.length > 0) {
+        setShowAutocomplete(true);
+        setAutocompleteIndex(0);
+      } else {
+        setShowAutocomplete(false);
+      }
+    } else {
+      setShowAutocomplete(false);
+    }
+  }, [input, undoStack, getAutocompleteSuggestions]);
+
+  const buildCompletedInput = useCallback((selected: string) => {
+    const mode = state.currentMode;
+    const { contextTokens } = expandCommandContext(mode, input);
+    const prefix = contextTokens.join(' ');
+    return prefix ? `${prefix} ${selected}` : selected;
+  }, [input, state.currentMode, expandCommandContext]);
+
+  const completeAutocompleteSelection = useCallback((selected: string) => {
+    const completed = buildCompletedInput(selected);
+    setInput(completed);
+    setShowAutocomplete(false);
+    setAutocompleteIndex(0);
+    setAutocompleteNavigated(false);
+    return completed;
+  }, [buildCompletedInput]);
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    const autocompleteSuggestions = getAutocompleteSuggestions(input);
+    const canUseAutocomplete = showAutocomplete && autocompleteSuggestions.length > 0;
+
     if (e.key === 'Enter') {
+      if (canUseAutocomplete && autocompleteNavigated) {
+        e.preventDefault();
+        const completed = completeAutocompleteSelection(autocompleteSuggestions[autocompleteIndex] || autocompleteSuggestions[0]);
+        void handleSubmit(completed);
+        return;
+      }
       e.preventDefault();
       void handleSubmit();
       return;
     }
     // Escape cancels password/confirm and returns to normal input
     if (e.key === 'Escape') {
+      if (isProcessingMultiline) {
+        e.preventDefault();
+        cancelOutputRef.current = true;
+        return;
+      }
       if (state.awaitingPassword || confirmDialog?.show || isReloadConfirmationPending) {
         e.preventDefault();
         if (onCommand) {
@@ -511,6 +599,12 @@ export function Terminal({
     }
 
     if (e.key === 'ArrowUp') {
+      if (canUseAutocomplete) {
+        e.preventDefault();
+        setAutocompleteIndex(prev => (prev <= 0 ? autocompleteSuggestions.length - 1 : prev - 1));
+        setAutocompleteNavigated(true);
+        return;
+      }
       e.preventDefault();
       if (history.length > 0 && historyIndex < history.length - 1) {
         const ni = historyIndex + 1;
@@ -518,6 +612,12 @@ export function Terminal({
         setInput(history[ni]);
       }
     } else if (e.key === 'ArrowDown') {
+      if (canUseAutocomplete) {
+        e.preventDefault();
+        setAutocompleteIndex(prev => (prev + 1) % autocompleteSuggestions.length);
+        setAutocompleteNavigated(true);
+        return;
+      }
       e.preventDefault();
       if (historyIndex > 0) {
         const ni = historyIndex - 1;
@@ -529,8 +629,19 @@ export function Terminal({
       }
     } else if (e.key === 'Tab') {
       e.preventDefault();
+      if (canUseAutocomplete) {
+        completeAutocompleteSelection(autocompleteSuggestions[autocompleteIndex] || autocompleteSuggestions[0]);
+        return;
+      }
       handleTabComplete();
-    } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'l') {
+    } else if (e.key === 'Escape') {
+      if (showAutocomplete) {
+        e.preventDefault();
+        setShowAutocomplete(false);
+        setAutocompleteIndex(0);
+        setAutocompleteNavigated(false);
+        return;
+      }
       e.preventDefault();
       onClear();
     } else {
@@ -776,17 +887,37 @@ export function Terminal({
                 </Button>
               </form>
 
-              {/* QuickCommands Component - Desktop Only */}
-              {!isPoweredOff && !isMobile && !isTablet && (
-                <div className="px-4 pb-3">
-                  <QuickCommands
-                    currentMode={state.currentMode}
-                    onExecuteCommand={onCommand}
-                    isDevicePoweredOff={isPoweredOff}
-                    t={t}
-                    theme={theme}
-                    language={language as 'tr' | 'en'}
-                  />
+              {/* Autocomplete Dropdown */}
+              {showAutocomplete && input.trim().length > 0 && (
+                <div
+                  ref={autocompleteRef}
+                  className="absolute bottom-20 left-4 z-20 w-[min(420px,calc(100%-2rem))]"
+                >
+                  <div className={cn(
+                    "rounded-lg border shadow-xl overflow-hidden",
+                    isDark ? "bg-slate-800 border-slate-700" : "bg-white border-slate-200"
+                  )}>
+                    <div className="max-h-40 overflow-y-auto">
+                      {getAutocompleteSuggestions(input).map((cmd, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => {
+                            completeAutocompleteSelection(cmd);
+                            inputRef.current?.focus();
+                          }}
+                          className={cn(
+                            "w-full text-left px-2.5 py-1 text-[11px] font-mono transition-colors",
+                            idx === autocompleteIndex
+                              ? (isDark ? "bg-cyan-500/20 text-cyan-200" : "bg-cyan-50 text-cyan-900")
+                              : (isDark ? "text-slate-300 hover:bg-primary/10" : "text-slate-700 hover:bg-primary/10")
+                          )}
+                        >
+                          {cmd}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               )}
             </div>

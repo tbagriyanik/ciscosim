@@ -197,6 +197,41 @@ export function useIsDesktop(): boolean {
   return isDesktop;
 }
 
+export function useIsSmall(): boolean {
+  const { isMobile, isTablet } = useBreakpoint();
+  return isMobile || isTablet;
+}
+
+export function useIsMedium(): boolean {
+  const { width } = useBreakpoint();
+  return width >= 768 && width < 1280;
+}
+
+export function useIsLarge(): boolean {
+  const { isDesktop } = useBreakpoint();
+  return isDesktop;
+}
+
+/**
+ * Hook for responsive style - returns different values based on screen size
+ * Use: useResponsiveStyle({ small: 'text-sm', medium: 'text-base', large: 'text-lg' })
+ */
+export function useResponsiveStyle<T>(styles: {
+  small?: T;
+  medium?: T;
+  large?: T;
+}): T | undefined {
+  const { width } = useBreakpoint();
+  
+  if (width < 768) {
+    return styles.small;
+  } else if (width < 1280) {
+    return styles.medium;
+  } else {
+    return styles.large;
+  }
+}
+
 /**
  * Hook for responsive values - returns different values based on breakpoint
  */
