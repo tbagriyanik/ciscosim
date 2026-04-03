@@ -1927,63 +1927,63 @@ export function PCPanel({
               </div>
 
               {/* Content Area */}
-              <div className={`flex-1 min-h-0 flex flex-col overflow-hidden ${terminalBg} relative`}>
+              <div className={`flex-1 min-h-0 flex flex-col overflow-y-auto ${terminalBg} relative pt-8 md:pt-10 pb-4`}>
                 {activeTab === 'home' ? (
-                  <div className="flex-1 p-4 md:p-8 overflow-auto custom-scrollbar">
+                  <div className="flex-1 px-3 md:px-6">
                     <div className="min-h-full flex items-center justify-center">
-                      <div className="grid grid-cols-3 md:grid-cols-4 gap-4 md:gap-8 rounded-3xl p-6 md:p-8 bg-white/10 backdrop-blur-xl border border-white/20 shadow-xl">
+                      <div className="w-full max-w-[720px] grid grid-cols-3 sm:grid-cols-5 gap-3 md:gap-4 rounded-3xl p-4 md:p-6 bg-white/10 backdrop-blur-xl border border-white/20 shadow-xl place-items-center">
                         <button
                           onClick={() => navigateToProgram('desktop')}
-                          className="flex flex-col items-center gap-2 md:gap-3 p-2 md:p-4 rounded-2xl cursor-pointer transition-all duration-200 hover:bg-white/5"
+                          className="flex flex-col items-center gap-2 p-2 md:p-3 rounded-2xl cursor-pointer transition-all duration-200 hover:bg-white/5"
                         >
-                          <div className={`w-12 h-12 md:w-20 md:h-20 rounded-2xl flex items-center justify-center ${isDark ? 'bg-gradient-to-br from-blue-500/40 to-blue-600/30 border border-blue-400/30 shadow-lg shadow-blue-500/20' : 'bg-gradient-to-br from-blue-400 to-blue-500 shadow-lg shadow-blue-400/30'}`}>
-                            <TerminalIcon className={`w-6 h-6 md:w-10 md:h-10 ${isDark ? 'text-blue-200' : 'text-white'}`} />
+                          <div className={`w-[clamp(44px,7vw,72px)] h-[clamp(44px,7vw,72px)] rounded-2xl flex items-center justify-center ${isDark ? 'bg-gradient-to-br from-blue-500/40 to-blue-600/30 border border-blue-400/30 shadow-lg shadow-blue-500/20' : 'bg-gradient-to-br from-blue-400 to-blue-500 shadow-lg shadow-blue-400/30'}`}>
+                            <TerminalIcon className={`w-[clamp(20px,3.2vw,36px)] h-[clamp(20px,3.2vw,36px)] ${isDark ? 'text-blue-200' : 'text-white'}`} />
                           </div>
-                          <span className={`text-[10px] md:text-sm font-medium ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
+                          <span className={`text-[clamp(9px,1.6vw,13px)] font-medium ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
                             {language === 'tr' ? 'Komut İstemi' : 'Command Prompt'}
                           </span>
                         </button>
                         <button
                           onClick={() => navigateToProgram('terminal')}
-                          className="flex flex-col items-center gap-2 md:gap-3 p-2 md:p-4 rounded-2xl cursor-pointer transition-all duration-200 hover:bg-white/5"
+                          className="flex flex-col items-center gap-2 p-2 md:p-3 rounded-2xl cursor-pointer transition-all duration-200 hover:bg-white/5"
                         >
-                          <div className={`w-12 h-12 md:w-20 md:h-20 rounded-2xl flex items-center justify-center ${isDark ? 'bg-gradient-to-br from-emerald-500/40 to-emerald-600/30 border border-emerald-400/30 shadow-lg shadow-emerald-500/20' : 'bg-gradient-to-br from-emerald-400 to-emerald-500 shadow-lg shadow-emerald-400/30'}`}>
-                            <Laptop className={`w-6 h-6 md:w-10 md:h-10 ${isDark ? 'text-emerald-200' : 'text-white'}`} />
+                          <div className={`w-[clamp(44px,7vw,72px)] h-[clamp(44px,7vw,72px)] rounded-2xl flex items-center justify-center ${isDark ? 'bg-gradient-to-br from-emerald-500/40 to-emerald-600/30 border border-emerald-400/30 shadow-lg shadow-emerald-500/20' : 'bg-gradient-to-br from-emerald-400 to-emerald-500 shadow-lg shadow-emerald-400/30'}`}>
+                            <Laptop className={`w-[clamp(20px,3.2vw,36px)] h-[clamp(20px,3.2vw,36px)] ${isDark ? 'text-emerald-200' : 'text-white'}`} />
                           </div>
-                          <span className={`text-[10px] md:text-sm font-medium ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
+                          <span className={`text-[clamp(9px,1.6vw,13px)] font-medium ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
                             {language === 'tr' ? 'Konsol' : 'Console'}
                           </span>
                         </button>
                         <button
                           onClick={() => navigateToProgram('settings')}
-                          className="flex flex-col items-center gap-2 md:gap-3 p-2 md:p-4 rounded-2xl cursor-pointer transition-all duration-200 hover:bg-white/5"
+                          className="flex flex-col items-center gap-2 p-2 md:p-3 rounded-2xl cursor-pointer transition-all duration-200 hover:bg-white/5"
                         >
-                          <div className={`w-12 h-12 md:w-20 md:h-20 rounded-2xl flex items-center justify-center ${isDark ? 'bg-gradient-to-br from-purple-500/40 to-purple-600/30 border border-purple-400/30 shadow-lg shadow-purple-500/20' : 'bg-gradient-to-br from-purple-400 to-purple-500 shadow-lg shadow-purple-400/30'}`}>
-                            <Settings className={`w-6 h-6 md:w-10 md:h-10 ${isDark ? 'text-purple-200' : 'text-white'}`} />
+                          <div className={`w-[clamp(44px,7vw,72px)] h-[clamp(44px,7vw,72px)] rounded-2xl flex items-center justify-center ${isDark ? 'bg-gradient-to-br from-purple-500/40 to-purple-600/30 border border-purple-400/30 shadow-lg shadow-purple-500/20' : 'bg-gradient-to-br from-purple-400 to-purple-500 shadow-lg shadow-purple-400/30'}`}>
+                            <Settings className={`w-[clamp(20px,3.2vw,36px)] h-[clamp(20px,3.2vw,36px)] ${isDark ? 'text-purple-200' : 'text-white'}`} />
                           </div>
-                          <span className={`text-[10px] md:text-sm font-medium ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
+                          <span className={`text-[clamp(9px,1.6vw,13px)] font-medium ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
                             {language === 'tr' ? 'Ayarlar' : 'Settings'}
                           </span>
                         </button>
                         <button
                           onClick={() => setActiveTab('services')}
-                          className="flex flex-col items-center gap-2 md:gap-3 p-2 md:p-4 rounded-2xl cursor-pointer transition-all duration-200 hover:bg-white/5"
+                          className="flex flex-col items-center gap-2 p-2 md:p-3 rounded-2xl cursor-pointer transition-all duration-200 hover:bg-white/5"
                         >
-                          <div className={`w-12 h-12 md:w-20 md:h-20 rounded-2xl flex items-center justify-center ${isDark ? 'bg-gradient-to-br from-amber-500/40 to-amber-600/30 border border-amber-400/30 shadow-lg shadow-amber-500/20' : 'bg-gradient-to-br from-amber-400 to-amber-500 shadow-lg shadow-amber-400/30'}`}>
-                            <Globe className={`w-6 h-6 md:w-10 md:h-10 ${isDark ? 'text-amber-200' : 'text-white'}`} />
+                          <div className={`w-[clamp(44px,7vw,72px)] h-[clamp(44px,7vw,72px)] rounded-2xl flex items-center justify-center ${isDark ? 'bg-gradient-to-br from-amber-500/40 to-amber-600/30 border border-amber-400/30 shadow-lg shadow-amber-500/20' : 'bg-gradient-to-br from-amber-400 to-amber-500 shadow-lg shadow-amber-400/30'}`}>
+                            <Globe className={`w-[clamp(20px,3.2vw,36px)] h-[clamp(20px,3.2vw,36px)] ${isDark ? 'text-amber-200' : 'text-white'}`} />
                           </div>
-                          <span className={`text-[10px] md:text-sm font-medium ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
+                          <span className={`text-[clamp(9px,1.6vw,13px)] font-medium ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
                             {language === 'tr' ? 'Servisler' : 'Services'}
                           </span>
                         </button>
                         <button
                           onClick={() => setActiveTab('wireless')}
-                          className="flex flex-col items-center gap-2 md:gap-3 p-2 md:p-4 rounded-2xl cursor-pointer transition-all duration-200 hover:bg-white/5"
+                          className="flex flex-col items-center gap-2 p-2 md:p-3 rounded-2xl cursor-pointer transition-all duration-200 hover:bg-white/5"
                         >
-                          <div className={`w-12 h-12 md:w-20 md:h-20 rounded-2xl flex items-center justify-center ${isDark ? 'bg-gradient-to-br from-cyan-500/40 to-cyan-600/30 border border-cyan-400/30 shadow-lg shadow-cyan-500/20' : 'bg-gradient-to-br from-cyan-400 to-cyan-500 shadow-lg shadow-cyan-400/30'}`}>
-                            <Wifi className={`w-6 h-6 md:w-10 md:h-10 ${isDark ? 'text-cyan-200' : 'text-white'}`} />
+                          <div className={`w-[clamp(44px,7vw,72px)] h-[clamp(44px,7vw,72px)] rounded-2xl flex items-center justify-center ${isDark ? 'bg-gradient-to-br from-cyan-500/40 to-cyan-600/30 border border-cyan-400/30 shadow-lg shadow-cyan-500/20' : 'bg-gradient-to-br from-cyan-400 to-cyan-500 shadow-lg shadow-cyan-400/30'}`}>
+                            <Wifi className={`w-[clamp(20px,3.2vw,36px)] h-[clamp(20px,3.2vw,36px)] ${isDark ? 'text-cyan-200' : 'text-white'}`} />
                           </div>
-                          <span className={`text-[10px] md:text-sm font-medium ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
+                          <span className={`text-[clamp(9px,1.6vw,13px)] font-medium ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
                             {language === 'tr' ? 'Kablosuz' : 'Wireless'}
                           </span>
                         </button>
