@@ -577,11 +577,33 @@ export const NetworkTopologyView = React.memo(
           </svg>
         </div>
 
-        {/* Zoom Controls - All screen sizes */}
+        {/* Zoom Controls + Device Info - All screen sizes */}
         <div
           className={`absolute top-2 right-2 flex items-center gap-1 px-2 py-1 rounded-lg ${isDark ? 'bg-slate-800/90' : 'bg-white/90'
             } shadow-lg`}
         >
+          {/* Device Info - PC Info */}
+          {activeDeviceId && devices.find((d: any) => d.id === activeDeviceId)?.type === 'pc' && (
+            <>
+              {(() => {
+                const pcDevice = devices.find((d: any) => d.id === activeDeviceId);
+                if (!pcDevice) return null;
+                return (
+                  <div className={`flex items-center gap-1.5 pr-2 mr-1 border-r ${isDark ? 'border-slate-600' : 'border-slate-300'}`}>
+                    <div className={`w-2 h-2 rounded-full ${pcDevice.status === 'offline' ? 'bg-red-500' : 'bg-green-500 animate-pulse'}`} />
+                    <span className={`text-xs font-medium max-w-[80px] truncate ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                      {pcDevice.name || activeDeviceId}
+                    </span>
+                    {pcDevice.ip && (
+                      <span className={`text-[10px] font-mono ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
+                        {pcDevice.ip}
+                      </span>
+                    )}
+                  </div>
+                );
+              })()}
+            </>
+          )}
           <button
             onClick={() => trackInteraction(() => props.setZoom((z: number) => {
               const newZoom = Math.max(MIN_ZOOM, z - 0.25);

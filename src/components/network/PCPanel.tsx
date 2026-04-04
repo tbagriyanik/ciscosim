@@ -1807,6 +1807,22 @@ export function PCPanel({
             </TooltipTrigger>
             <TooltipContent>{language === 'tr' ? 'Ayarlar' : 'Settings'}</TooltipContent>
           </Tooltip>
+          {/* WiFi */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setActiveTab('wireless')}
+                disabled={isPcPoweredOff}
+                className={`h-6 w-6 rounded-md ${isPcPoweredOff ? 'opacity-30' : activeTab === 'wireless' ? (isDark ? 'bg-cyan-500/30 text-cyan-300' : 'bg-cyan-500/30 text-cyan-700') : (isDark ? 'text-cyan-400 hover:text-cyan-300' : 'text-cyan-600 hover:text-cyan-500')}`}
+                aria-label={language === 'tr' ? 'Kablosuz' : 'Wireless'}
+              >
+                <Wifi className="w-4 h-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>{language === 'tr' ? 'Kablosuz' : 'Wireless'}</TooltipContent>
+          </Tooltip>
           {/* Power Button - Always visible */}
           <Tooltip>
             <TooltipTrigger asChild>
@@ -1828,22 +1844,6 @@ export function PCPanel({
               </Button>
             </TooltipTrigger>
             <TooltipContent>{t.power}</TooltipContent>
-          </Tooltip>
-          {/* WiFi */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setActiveTab('wireless')}
-                disabled={isPcPoweredOff}
-                className={`h-6 w-6 rounded-md ${isPcPoweredOff ? 'opacity-30' : activeTab === 'wireless' ? (isDark ? 'bg-cyan-500/30 text-cyan-300' : 'bg-cyan-500/30 text-cyan-700') : (isDark ? 'text-cyan-400 hover:text-cyan-300' : 'text-cyan-600 hover:text-cyan-500')}`}
-                aria-label={language === 'tr' ? 'Kablosuz' : 'Wireless'}
-              >
-                <Wifi className="w-4 h-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>{language === 'tr' ? 'Kablosuz' : 'Wireless'}</TooltipContent>
           </Tooltip>
           {/* Clock */}
           <div className={`ml-2 text-xs font-mono ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
