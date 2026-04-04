@@ -30,6 +30,9 @@ export const globalConfigHandlers: Record<string, CommandHandler> = {
   'router ospf': cmdRouterOspf,
   'no router rip': cmdNoRouterRip,
   'no router ospf': cmdNoRouterOspf,
+  // HTTP Server
+  'ip http server': cmdIpHttpServer,
+  'no ip http server': cmdNoIpHttpServer,
 };
 
 /**
@@ -537,6 +540,58 @@ function cmdNoRouterOspf(state: any, input: string, ctx: any): any {
     newState: {
       routingProtocol: 'none',
       dynamicRoutes: []
+    }
+  };
+}
+
+/**
+ * IP HTTP Server - Enable HTTP server
+ */
+function cmdIpHttpServer(state: any, input: string, ctx: any): any {
+  if (state.currentMode !== 'config') {
+    return { success: false, error: '% Invalid command at this mode' };
+  }
+
+  const lang = ctx.language || 'en';
+  return {
+    success: true,
+    output: lang === 'tr' ?
+      'HTTP sunucusu etkinleştirildi' :
+      'HTTP server enabled',
+    newState: {
+      services: {
+        ...state.services,
+        http: {
+          enabled: true,
+          content: ''
+        }
+      }
+    }
+  };
+}
+
+/**
+ * No IP HTTP Server - Disable HTTP server
+ */
+function cmdNoIpHttpServer(state: any, input: string, ctx: any): any {
+  if (state.currentMode !== 'config') {
+    return { success: false, error: '% Invalid command at this mode' };
+  }
+
+  const lang = ctx.language || 'en';
+  return {
+    success: true,
+    output: lang === 'tr' ?
+      'HTTP sunucusu devre dışı bırakıldı' :
+      'HTTP server disabled',
+    newState: {
+      services: {
+        ...state.services,
+        http: {
+          enabled: false,
+          content: ''
+        }
+      }
     }
   };
 }

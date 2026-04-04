@@ -329,6 +329,15 @@ export function Terminal({
     inputRef.current?.focus();
   }, [output, isLoading, deviceId]);
 
+  // Auto-scroll when displayedLines updates (handles async content rendering)
+  useEffect(() => {
+    requestAnimationFrame(() => {
+      if (terminalRef.current) {
+        terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
+      }
+    });
+  }, [displayedLines]);
+
   useEffect(() => {
     if (state.awaitingPassword || confirmDialog?.show || isReloadConfirmationPending) {
       setInput('');

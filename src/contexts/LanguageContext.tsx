@@ -157,6 +157,10 @@ export interface Translations {
   dhcpSuccessDescription: string;
   dhcpFailureTitle: string;
   dhcpFailureDescription: string;
+  resetToDefaults: string;
+  confirmResetTitle: string;
+  confirmResetDescription: string;
+  confirmReset: string;
   load: string;
   saveLabel: string;
   languageLabel: string;
@@ -580,6 +584,10 @@ const translations: Record<Language, Translations> = {
     dhcpSuccessDescription: 'DHCP ile {ip} atandı.',
     dhcpFailureTitle: 'DHCP ataması başarısız',
     dhcpFailureDescription: 'DHCP sunucusu bulunamadı.',
+    resetToDefaults: 'Varsayılana Sıfırla',
+    confirmResetTitle: 'Fabrika Ayarlarına Sıfırla?',
+    confirmResetDescription: 'Tüm yapılandırma silinecek ve fabrika ayarları geri yüklenecek. Cihaz yeniden başlatılacak. Bu işlem geri alınamaz.',
+    confirmReset: 'Cihazı Sıfırla',
   },
   en: {
     title: 'Network Simulator 2026',
@@ -851,6 +859,10 @@ const translations: Record<Language, Translations> = {
     dhcpSuccessDescription: 'Assigned via DHCP: {ip}',
     dhcpFailureTitle: 'DHCP assignment failed',
     dhcpFailureDescription: 'No DHCP server found.',
+    resetToDefaults: 'Reset to Defaults',
+    confirmResetTitle: 'Reset to Factory Defaults?',
+    confirmResetDescription: 'This will erase all configuration and restore factory defaults. The device will reload. This action cannot be undone.',
+    confirmReset: 'Reset Device',
   }
 };
 

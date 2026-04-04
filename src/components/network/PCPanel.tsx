@@ -20,6 +20,7 @@ import { commandHelp } from '@/lib/network/executor';
 import { ModernPanel } from '@/components/ui/ModernPanel';
 import { useIsMobile, useIsDesktop } from '@/hooks/use-breakpoint';
 import { sanitizeHTTPContent } from '@/lib/security/sanitizer';
+import { generateRouterAdminPage, isRouterDevice } from '@/components/network/WifiControlPanel';
 
 // PC Icon component matching the main screen
 const PCIcon = ({ className = "w-5 h-5" }: { className?: string }) => (
@@ -828,20 +829,35 @@ export function PCPanel({
     const normalizedTarget = target.trim().toLowerCase();
     if (!normalizedTarget) return null;
 
-    const byIp = topologyDevices.find(
+    // Check for PC HTTP servers
+    const pcByIp = topologyDevices.find(
       (d) => d.type === 'pc' && d.ip === target && d.services?.http?.enabled
     );
-    if (byIp && byIp.ip && canReachTargetIp(byIp.ip)) return byIp;
+    if (pcByIp && pcByIp.ip && canReachTargetIp(pcByIp.ip)) return pcByIp;
 
+    // Check for router/switch devices with HTTP service enabled
+    const routerByIp = topologyDevices.find(
+      (d) => (d.type === 'router' || d.type === 'switchL2' || d.type === 'switchL3') && d.ip === target && d.services?.http?.enabled
+    );
+    if (routerByIp && routerByIp.ip && canReachTargetIp(routerByIp.ip)) return routerByIp;
+
+    // Try DNS resolution
     const dnsResult = resolveDomainWithDnsServices(normalizedTarget);
     if (!dnsResult) return null;
 
-    const resolvedServer = topologyDevices.find(
+    // Check resolved address for PC HTTP server
+    const resolvedPc = topologyDevices.find(
       (d) => d.type === 'pc' && d.ip === dnsResult.address && d.services?.http?.enabled
     ) || null;
+    if (resolvedPc?.ip && canReachTargetIp(resolvedPc.ip)) return resolvedPc;
 
-    if (!resolvedServer?.ip || !canReachTargetIp(resolvedServer.ip)) return null;
-    return resolvedServer;
+    // Check resolved address for router/switch with HTTP service enabled
+    const resolvedRouter = topologyDevices.find(
+      (d) => (d.type === 'router' || d.type === 'switchL2' || d.type === 'switchL3') && d.ip === dnsResult.address && d.services?.http?.enabled
+    ) || null;
+    if (resolvedRouter?.ip && canReachTargetIp(resolvedRouter.ip)) return resolvedRouter;
+
+    return null;
   }, [canReachTargetIp, resolveDomainWithDnsServices, topologyDevices]);
 
   const formatMacForArp = useCallback((mac?: string) => {
@@ -1180,7 +1196,12 @@ export function PCPanel({
           const httpServer = findHttpServerByTarget(target);
           if (!httpServer) {
             addLocalOutput('error', `HTTP service is unavailable for ${target}`);
+          } else if (isRouterDevice(httpServer)) {
+            // For routers/switches, show the WiFi admin control panel
+            const adminPage = generateRouterAdminPage(httpServer);
+            addLocalOutput('html', adminPage);
           } else {
+            // For PCs, show their HTTP content
             addLocalOutput('html', httpServer.services?.http?.content || 'Merhaba Dünya!');
           }
         }

@@ -195,6 +195,24 @@ const commandPatterns: Record<string, CommandPattern> = {
     minArgs: 1,
     maxArgs: 1
   },
+  'no ip ssh time-out': {
+    pattern: /^no\s+ip\s+ssh\s+time-out$/i,
+    modes: ['config'],
+    minArgs: 0,
+    maxArgs: 0
+  },
+  'ip http server': {
+    pattern: /^ip\s+http\s+server$/i,
+    modes: ['config'],
+    minArgs: 0,
+    maxArgs: 0
+  },
+  'no ip http server': {
+    pattern: /^no\s+ip\s+http\s+server$/i,
+    modes: ['config'],
+    minArgs: 0,
+    maxArgs: 0
+  },
   'crypto key generate rsa': {
     pattern: /^crypto\s+key\s+generate\s+rsa(\s+modulus\s+(\d+))?$/i,
     modes: ['config'],

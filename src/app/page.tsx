@@ -353,7 +353,7 @@ export default function Home() {
       const { deviceId, config } = event.detail;
 
       // Update topology devices using functional update to avoid stale closure
-      setDevices(prev =>
+      setTopologyDevices(prev =>
         prev.map((d) =>
           d.id === deviceId
             ? { ...d, ...config }
@@ -1605,6 +1605,48 @@ export default function Home() {
       setHasUnsavedChanges(true);
     }
   }, [deviceStates, topologyDevices, setDeviceStates, setTopologyDevices, setHasUnsavedChanges]);
+
+  // Sync services (HTTP, etc.) from deviceStates to topologyDevices
+  useEffect(() => {
+    if (!topologyDevices) return;
+
+    let topologyChanged = false;
+
+    const updatedTopologyDevices = topologyDevices.map(device => {
+      const deviceState = deviceStates.get(device.id);
+      if (!deviceState) return device;
+
+      // Check if services state differs
+      const currentServices = device.services || {};
+      const stateServices = deviceState.services || {};
+
+      // Check HTTP service
+      const httpEnabled = stateServices.http?.enabled || false;
+      const currentHttpEnabled = currentServices.http?.enabled || false;
+
+      if (httpEnabled !== currentHttpEnabled) {
+        topologyChanged = true;
+        return {
+          ...device,
+          services: {
+            ...currentServices,
+            http: {
+              ...currentServices.http,
+              enabled: httpEnabled,
+              content: currentServices.http?.content || ''
+            }
+          }
+        };
+      }
+
+      return device;
+    });
+
+    if (topologyChanged) {
+      setTopologyDevices(updatedTopologyDevices);
+      setHasUnsavedChanges(true);
+    }
+  }, [deviceStates, topologyDevices, setTopologyDevices, setHasUnsavedChanges]);
 
   // Beforeunload event for unsaved changes warning
   useEffect(() => {
