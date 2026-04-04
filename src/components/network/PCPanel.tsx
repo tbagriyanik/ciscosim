@@ -2274,13 +2274,13 @@ export function PCPanel({
               hideTitle
               hideHeader
               className={cn(
-                "w-full min-w-0",
+                "w-full min-w-0 h-full flex flex-col",
                 isDark
                   ? "bg-slate-900/40 border border-slate-700/40 backdrop-blur-xl"
                   : "bg-white/25 border border-white/40 backdrop-blur-xl shadow-lg shadow-white/10"
               )}
             >
-              <div className="flex flex-col h-[400px] overflow-hidden bg-transparent">
+              <div className="flex flex-col flex-1 min-h-0 overflow-hidden bg-transparent">
                 <Dialog open={searchOpen} onOpenChange={setSearchOpen}>
                   <DialogContent className={`${isDark ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white'} sm:max-w-md`}>
                     <DialogHeader>
@@ -2362,7 +2362,7 @@ export function PCPanel({
                 </div>
 
                 {/* Content Area */}
-                <div className={`flex-1 flex flex-col ${terminalBg} relative overflow-hidden h-[400px] pt-2.5`}>
+                <div className={`flex-1 min-h-0 flex flex-col ${terminalBg} relative overflow-hidden pt-2.5`}>
                   {activeTab === 'home' && (
                     <div className="flex-1 flex items-center justify-center p-2.5 pt-0">
                       <div className="w-full h-full max-w-[700px] grid grid-cols-5 gap-2 rounded-xl p-2.5 bg-slate-800/30 border border-slate-700/30 shadow-sm place-items-center">
@@ -2426,7 +2426,7 @@ export function PCPanel({
                   )}
 
                   {activeTab === 'settings' && (
-                    <div className="flex-1 p-3 md:p-4 space-y-3 md:space-y-4 overflow-y-auto custom-scrollbar overflow-x-hidden h-[400px] pt-2.5">
+                    <div className="flex-1 min-h-0 p-3 md:p-4 space-y-3 md:space-y-4 overflow-y-auto custom-scrollbar overflow-x-hidden pt-2.5">
                       <div className="space-y-2">
                         <label className="text-xs font-bold text-slate-500 ">
                           {t.ipConfigurationLabel}
@@ -2516,26 +2516,26 @@ export function PCPanel({
                               {t.dnsRecordManagerTip}
                             </p>
                           </div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 shrink-0">
                             <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-full ${serviceDnsEnabled ? 'bg-cyan-500/15 text-cyan-600 border border-cyan-500/30' : 'bg-slate-200 text-slate-500 border border-slate-300'}`}>
                               {serviceDnsEnabled ? 'ON' : 'OFF'}
                             </span>
-                          </div>
-                          <button
-                            type="button"
-                            role="switch"
-                            aria-checked={serviceDnsEnabled}
-                            onClick={() => setServiceDnsEnabled((prev) => !prev)}
-                            className={`relative inline-flex h-7 w-14 shrink-0 items-center rounded-full border transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/60 ${serviceDnsEnabled
-                              ? 'bg-cyan-500/90 border-cyan-400'
-                              : (isDark ? 'bg-slate-800 border-slate-700' : 'bg-slate-200 border-slate-300')
-                              }`}
-                          >
-                            <span
-                              className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform duration-200 ${serviceDnsEnabled ? 'translate-x-8' : 'translate-x-1'
+                            <button
+                              type="button"
+                              role="switch"
+                              aria-checked={serviceDnsEnabled}
+                              onClick={() => setServiceDnsEnabled((prev) => !prev)}
+                              className={`relative inline-flex h-7 w-14 shrink-0 items-center rounded-full border transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/60 ${serviceDnsEnabled
+                                ? 'bg-cyan-500/90 border-cyan-400'
+                                : (isDark ? 'bg-slate-800 border-slate-700' : 'bg-slate-200 border-slate-300')
                                 }`}
-                            />
-                          </button>
+                            >
+                              <span
+                                className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform duration-200 ${serviceDnsEnabled ? 'translate-x-8' : 'translate-x-1'
+                                  }`}
+                              />
+                            </button>
+                          </div>
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -2544,13 +2544,11 @@ export function PCPanel({
                             onChange={(e) => setDnsFormDomain(e.target.value)}
                             placeholder={t.dnsDomainPlaceholder}
                           />
-                          {dnsFormDomain.trim() === '' && <div className="text-[11px] text-rose-500">{language === 'tr' ? 'Domain gerekli' : 'Domain required'}</div>}
                           <Input
                             value={dnsFormAddress}
                             onChange={(e) => setDnsFormAddress(e.target.value)}
                             placeholder={t.dnsAddressPlaceholder}
                           />
-                          {dnsFormAddress.trim() === '' && <div className="text-[11px] text-rose-500">{language === 'tr' ? 'IP adresi gerekli' : 'IP address required'}</div>}
                           <Button
                             onClick={() => {
                               const domain = dnsFormDomain.trim().toLowerCase();
@@ -2605,24 +2603,26 @@ export function PCPanel({
                               {t.httpServiceDescription}
                             </p>
                           </div>
-                          <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-full ${serviceHttpEnabled ? 'bg-emerald-500/15 text-emerald-600 border border-emerald-500/30' : 'bg-slate-200 text-slate-500 border border-slate-300'}`}>
-                            {serviceHttpEnabled ? 'ON' : 'OFF'}
-                          </span>
-                          <button
-                            type="button"
-                            role="switch"
-                            aria-checked={serviceHttpEnabled}
-                            onClick={() => setServiceHttpEnabled((prev) => !prev)}
-                            className={`relative inline-flex h-7 w-14 shrink-0 items-center rounded-full border transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 ${serviceHttpEnabled
-                              ? 'bg-emerald-500/90 border-emerald-400'
-                              : (isDark ? 'bg-slate-800 border-slate-700' : 'bg-slate-200 border-slate-300')
-                              }`}
-                          >
-                            <span
-                              className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform duration-200 ${serviceHttpEnabled ? 'translate-x-8' : 'translate-x-1'
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-full ${serviceHttpEnabled ? 'bg-emerald-500/15 text-emerald-600 border border-emerald-500/30' : 'bg-slate-200 text-slate-500 border border-slate-300'}`}>
+                              {serviceHttpEnabled ? 'ON' : 'OFF'}
+                            </span>
+                            <button
+                              type="button"
+                              role="switch"
+                              aria-checked={serviceHttpEnabled}
+                              onClick={() => setServiceHttpEnabled((prev) => !prev)}
+                              className={`relative inline-flex h-7 w-14 shrink-0 items-center rounded-full border transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 ${serviceHttpEnabled
+                                ? 'bg-emerald-500/90 border-emerald-400'
+                                : (isDark ? 'bg-slate-800 border-slate-700' : 'bg-slate-200 border-slate-300')
                                 }`}
-                            />
-                          </button>
+                            >
+                              <span
+                                className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform duration-200 ${serviceHttpEnabled ? 'translate-x-8' : 'translate-x-1'
+                                  }`}
+                              />
+                            </button>
+                          </div>
                         </div>
 
                         <div className="space-y-2">
@@ -2663,24 +2663,26 @@ export function PCPanel({
                               {t.dhcpPoolsDescription}
                             </p>
                           </div>
-                          <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-full ${serviceDhcpEnabled ? 'bg-sky-500/15 text-sky-600 border border-sky-500/30' : 'bg-slate-200 text-slate-500 border border-slate-300'}`}>
-                            {serviceDhcpEnabled ? 'ON' : 'OFF'}
-                          </span>
-                          <button
-                            type="button"
-                            role="switch"
-                            aria-checked={serviceDhcpEnabled}
-                            onClick={() => setServiceDhcpEnabled((prev) => !prev)}
-                            className={`relative inline-flex h-7 w-14 shrink-0 items-center rounded-full border transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/60 ${serviceDhcpEnabled
-                              ? 'bg-sky-500/90 border-sky-400'
-                              : (isDark ? 'bg-slate-800 border-slate-700' : 'bg-slate-200 border-slate-300')
-                              }`}
-                          >
-                            <span
-                              className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform duration-200 ${serviceDhcpEnabled ? 'translate-x-8' : 'translate-x-1'
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-full ${serviceDhcpEnabled ? 'bg-sky-500/15 text-sky-600 border border-sky-500/30' : 'bg-slate-200 text-slate-500 border border-slate-300'}`}>
+                              {serviceDhcpEnabled ? 'ON' : 'OFF'}
+                            </span>
+                            <button
+                              type="button"
+                              role="switch"
+                              aria-checked={serviceDhcpEnabled}
+                              onClick={() => setServiceDhcpEnabled((prev) => !prev)}
+                              className={`relative inline-flex h-7 w-14 shrink-0 items-center rounded-full border transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/60 ${serviceDhcpEnabled
+                                ? 'bg-sky-500/90 border-sky-400'
+                                : (isDark ? 'bg-slate-800 border-slate-700' : 'bg-slate-200 border-slate-300')
                                 }`}
-                            />
-                          </button>
+                            >
+                              <span
+                                className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform duration-200 ${serviceDhcpEnabled ? 'translate-x-8' : 'translate-x-1'
+                                  }`}
+                              />
+                            </button>
+                          </div>
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -2977,7 +2979,7 @@ export function PCPanel({
                       )}
                       <div
                         ref={outputRef}
-                        className={`flex-1 overflow-y-auto scroll-smooth custom-scrollbar p-2 md:p-3 space-y-2 font-mono text-sm leading-relaxed flex flex-col overflow-x-hidden ${isPcPoweredOff ? 'bg-red-500' : ''}`}
+                        className={`flex-1 min-h-0 overflow-y-auto scroll-smooth custom-scrollbar p-2 md:p-3 space-y-2 font-mono text-sm leading-relaxed flex flex-col overflow-x-hidden ${isPcPoweredOff ? 'bg-red-500' : ''}`}
                       >
                         {isPcPoweredOff ? (
                           <div className="flex-1 flex items-center justify-center text-slate-700">OFFLINE</div>
@@ -3085,7 +3087,7 @@ export function PCPanel({
                   )}
 
                   {(activeTab === 'desktop' || activeTab === 'terminal') && !isPcPoweredOff && (
-                    <div className={`sticky bottom-0 inset-x-0 z-10 p-3 sm:p-4 border-t ${isDark ? 'border-slate-800 bg-slate-900/95' : 'border-slate-200 bg-slate-50/95'}`}>
+                    <div className={`shrink-0 z-10 p-3 sm:p-4 border-t ${isDark ? 'border-slate-800 bg-slate-900/95' : 'border-slate-200 bg-slate-50/95'}`}>
                       <div className={`flex items-center gap-2 sm:gap-3 relative ${isMobile ? 'flex-col' : ''}`}>
                         {/* Context hint for password/confirm in console mode */}
                         {activeTab === 'terminal' && isConsoleConnected && (consoleNeedsPassword || consoleConfirmDialog?.show || consoleReloadPending) && (
