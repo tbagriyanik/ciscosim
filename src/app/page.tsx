@@ -1621,10 +1621,12 @@ export default function Home() {
       const stateServices = deviceState.services || {};
 
       // Check HTTP service
-      const httpEnabled = stateServices.http?.enabled || false;
+      const httpEnabledFromState = stateServices.http?.enabled;
+      const httpEnabled = typeof httpEnabledFromState === 'boolean' ? httpEnabledFromState : currentServices.http?.enabled;
       const currentHttpEnabled = currentServices.http?.enabled || false;
 
-      if (httpEnabled !== currentHttpEnabled) {
+      // Only sync when the simulator actually has an opinion; avoid forcing false when state is undefined
+      if (typeof httpEnabled === 'boolean' && httpEnabled !== currentHttpEnabled) {
         topologyChanged = true;
         return {
           ...device,
