@@ -135,7 +135,7 @@ describe('Observation 4 — terminal boot sequence content is stable', () => {
         const bootLines = [
             '\n\nSystem Bootstrap, Version 12.1(11r)EA1, RELEASE SOFTWARE (fc1)\nTechnical Support: http://yunus.sf.net\nCopyright (c) 1986-2026 by Systems, Inc.\n',
             'C2960 platform with 262144K bytes of main memory\nMain memory configured to 32 bit mode with ECC enabled\n',
-            '\nLoading the runtime image: ######################################## [OK]\n',
+            '\nLoading the runtime image: ########## [OK]\n',
         ];
         expect(bootLines[0]).toContain('System Bootstrap');
         expect(bootLines[0]).toContain('12.1(11r)EA1');

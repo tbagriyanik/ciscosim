@@ -1619,7 +1619,7 @@
         {
           "id": "boot-3",
           "type": "output",
-          "content": "\nLoading the runtime image: ######################################## [OK]\n"
+          "content": "\nLoading the runtime image: ######## [OK]\n"
         },
         {
           "id": "banner-initial",
@@ -1806,7 +1806,7 @@
         {
           "id": "boot-3",
           "type": "output",
-          "content": "\nLoading the runtime image: ######################################## [OK]\n"
+          "content": "\nLoading the runtime image: ######## [OK]\n"
         },
         {
           "id": "banner-initial",
@@ -1841,7 +1841,7 @@
         {
           "id": "boot-3-63b7.c5e4.7a1d",
           "type": "output",
-          "content": "\nLoading the runtime image: ######################################## [OK]\n"
+          "content": "\nLoading the runtime image: ######## [OK]\n"
         },
         {
           "id": "boot-beep-63b7.c5e4.7a1d",

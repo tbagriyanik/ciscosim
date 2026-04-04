@@ -81,7 +81,7 @@ export function useDeviceManager() {
       return {
         boot1: `\n\nSystem Bootstrap, Version 15.1(4)M4, RELEASE SOFTWARE (fc1)\nTechnical Support: http://yunus.sf.net\nCopyright (c) 1994-2011 by Network Systems, Inc.\n`,
         boot2: `ISR4451/K9 platform with 4096 K bytes of memory\n\n${syslog}\nLoad/bootstrap symbols loaded, GOXR initialization\nReading all bootflash vectors\nPOST: CPU PCIe port Check PASS\nCPU memory test . . . . . . . . . . . . . OK\nBoard initialization completed\nInitializing flash file system\n`,
-        boot3: `\nBooting flash:c1900-universalk9-mz.SPA.154-3.M.bin...OK!\nExtracting files from flash:c1900-universalk9-mz.SPA.154-3.M.bin...\n  ######################################################################################################################################### [OK]\n  0 bytes remaining in flash device`,
+        boot3: `\nBooting flash:c1900-universalk9-mz.SPA.154-3.M.bin...OK!\nExtracting files from flash:c1900-universalk9-mz.SPA.154-3.M.bin...\n  ########## [OK]\n  0 bytes remaining in flash device`,
         initMessage: language === 'tr' ? 'Sistem başlatılıyor' : 'Initializing system'
       };
     }
@@ -91,7 +91,7 @@ export function useDeviceManager() {
       return {
         boot1: `\n\nSystem Bootstrap, Version 12.2(55r)SE, RELEASE SOFTWARE (fc1)\nTechnical Support: http://yunus.sf.net\nCopyright (c) 1994-2011 by Network Systems, Inc.\n`,
         boot2: `C3560 platform with 131072 K bytes of memory\n\n${syslog}\nLoad/bootstrap symbols loaded\nReading all bootflash vectors\nPOST: CPU PCIe port Check PASS\nCPU memory test . . . . . . . . . . . . . OK\nBoard initialization completed\nInitializing flash file system\n`,
-        boot3: `\nBooting flash:c3560-ipbase-mz.152-2.SE4.bin...OK!\nExtracting files from flash:c3560-ipbase-mz.152-2.SE4.bin...\n  ######################################################################################################################################### [OK]\n  0 bytes remaining in flash device`,
+        boot3: `\nBooting flash:c3560-ipbase-mz.152-2.SE4.bin...OK!\nExtracting files from flash:c3560-ipbase-mz.152-2.SE4.bin...\n  ########## [OK]\n  0 bytes remaining in flash device`,
         initMessage: language === 'tr' ? 'Sistem açılıyor' : 'System is powering on'
       };
     }
@@ -100,7 +100,7 @@ export function useDeviceManager() {
     return {
       boot1: `\n\nSystem Bootstrap, Version 12.2(11r)EA1, RELEASE SOFTWARE (fc1)\nTechnical Support: http://yunus.sf.net\nCopyright (c) 1994-2010 by Network Systems, Inc.\n`,
       boot2: `C2960 platform with 65536 K bytes of memory\n\n${syslog}\nLoad/bootstrap symbols loaded\nReading all bootflash vectors\nPOST: CPU Ethernet port Check PASS\nCPU memory test . . . . . . . . . . . . . OK\nBoard initialization completed\nInitializing flash file system\n`,
-      boot3: `\nBooting flash:c2960-lanbase-mz.152-2.E6.bin...OK!\nExtracting files from flash:c2960-lanbase-mz.152-2.E6.bin...\n  ######################################################################################################################################### [OK]\n  0 bytes remaining in flash device`,
+      boot3: `\nBooting flash:c2960-lanbase-mz.152-2.E6.bin...OK!\nExtracting files from flash:c2960-lanbase-mz.152-2.E6.bin...\n  ########## [OK]\n  0 bytes remaining in flash device`,
       initMessage: language === 'tr' ? 'Sistem açılıyor' : 'System is powering on'
     };
   }, []);

@@ -458,16 +458,6 @@ export function PCPanel({
   const isProcessingQueueRef = useRef(false);
   const prevIpConfigModeRef = useRef(ipConfigMode);
 
-  // Auto-focus input when visible, tab changes, or command completes
-  useEffect(() => {
-    if (isVisible && activeTab === 'desktop') {
-      const timer = setTimeout(() => {
-        inputRef.current?.focus();
-      }, 100);
-      return () => clearTimeout(timer);
-    }
-  }, [isVisible, activeTab, pcOutput]);
-
   const highlightText = useCallback((text: string) => {
     const q = searchQuery.trim();
     if (!q) return text;
@@ -595,6 +585,16 @@ export function PCPanel({
     const allOutput = deviceOutputs?.get(connectedDeviceId) || [];
     return allOutput.filter((line: any) => (line.timestamp || 0) >= consoleConnectionTime);
   }, [isConsoleConnected, connectedDeviceId, deviceOutputs, consoleConnectionTime]);
+
+  // Auto-focus input when visible, tab changes, or command completes
+  useEffect(() => {
+    if (isVisible && (activeTab === 'desktop' || activeTab === 'terminal')) {
+      const timer = setTimeout(() => {
+        inputRef.current?.focus();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [isVisible, activeTab, pcOutput, activeConsoleOutput]);
 
   // Always keep CMD/Console views pinned to the latest output
   useEffect(() => {
@@ -1820,7 +1820,12 @@ export function PCPanel({
 
     if (e.ctrlKey && e.key.toLowerCase() === 'l') {
       e.preventDefault();
-      setPcOutput([]);
+      if (activeTab === 'desktop') {
+        setPcOutput([]);
+      } else if (activeTab === 'terminal') {
+        // Reset console view by moving the window start time forward
+        setConsoleConnectionTime(Date.now());
+      }
       return;
     }
 
@@ -3087,7 +3092,7 @@ export function PCPanel({
                   )}
 
                   {(activeTab === 'desktop' || activeTab === 'terminal') && !isPcPoweredOff && (
-                    <div className={`shrink-0 z-10 p-3 sm:p-4 border-t ${isDark ? 'border-slate-800 bg-slate-900/95' : 'border-slate-200 bg-slate-50/95'}`}>
+                    <div className={`shrink-0 z-10 p-3 sm:p-4 border-t sticky bottom-0 bg-inherit ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
                       <div className={`flex items-center gap-2 sm:gap-3 relative ${isMobile ? 'flex-col' : ''}`}>
                         {/* Context hint for password/confirm in console mode */}
                         {activeTab === 'terminal' && isConsoleConnected && (consoleNeedsPassword || consoleConfirmDialog?.show || consoleReloadPending) && (

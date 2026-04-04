@@ -2604,7 +2604,7 @@
         {
           "id": "boot-3",
           "type": "output",
-          "content": "\nLoading the runtime image: ######################################## [OK]\n"
+          "content": "\nLoading the runtime image: ######## [OK]\n"
         },
         {
           "id": "banner-initial",
@@ -2667,7 +2667,7 @@
         {
           "id": "boot-3",
           "type": "output",
-          "content": "\nLoading the runtime image: ######################################## [OK]\n"
+          "content": "\nLoading the runtime image: ######## [OK]\n"
         },
         {
           "id": "banner-initial",
@@ -2697,7 +2697,7 @@
         {
           "id": "boot-3",
           "type": "output",
-          "content": "\nLoading the runtime image: ######################################## [OK]\n"
+          "content": "\nLoading the runtime image: ######## [OK]\n"
         },
         {
           "id": "banner-initial",
@@ -2727,7 +2727,7 @@
         {
           "id": "boot-3",
           "type": "output",
-          "content": "\nLoading the runtime image: ######################################## [OK]\n"
+          "content": "\nLoading the runtime image: ######## [OK]\n"
         },
         {
           "id": "banner-initial",
@@ -2757,7 +2757,7 @@
         {
           "id": "boot-3",
           "type": "output",
-          "content": "\nLoading the runtime image: ######################################## [OK]\n"
+          "content": "\nLoading the runtime image: ######## [OK]\n"
         },
         {
           "id": "banner-initial",

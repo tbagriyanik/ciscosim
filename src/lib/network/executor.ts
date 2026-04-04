@@ -1191,7 +1191,7 @@ Initializing flash file system
 
 Booting flash:c1900-universalk9-mz.SPA.154-3.M.bin...OK!
 Extracting files from flash:c1900-universalk9-mz.SPA.154-3.M.bin...
-  ######################################################################################################################################### [OK]
+  ########## [OK]
   0 bytes remaining in flash device` :
       `System Bootstrap, Version 15.1(4)M4, RELEASE SOFTWARE (fc1)
 Technical Support: http://yunus.sf.net
@@ -1208,7 +1208,7 @@ Initializing flash file system
 
 Booting flash:c1900-universalk9-mz.SPA.154-3.M.bin...OK!
 Extracting files from flash:c1900-universalk9-mz.SPA.154-3.M.bin...
-  ######################################################################################################################################### [OK]
+  ########## [OK]
   0 bytes remaining in flash device`;
   } else if (isL3Switch) {
     //  3560 L3 Switch boot sequence
@@ -1229,7 +1229,7 @@ Initializing flash file system
 
 Booting flash:c3560-ipbase-mz.152-2.SE4.bin...OK!
 Extracting files from flash:c3560-ipbase-mz.152-2.SE4.bin...
-  ######################################################################################################################################### [OK]
+  ########## [OK]
   0 bytes remaining in flash device` :
       `System Bootstrap, Version 12.2(55r)SE, RELEASE SOFTWARE (fc1)
 Technical Support: http://yunus.sf.net
@@ -1246,7 +1246,7 @@ Initializing flash file system
 
 Booting flash:c3560-ipbase-mz.152-2.SE4.bin...OK!
 Extracting files from flash:c3560-ipbase-mz.152-2.SE4.bin...
-  ######################################################################################################################################### [OK]
+  ########## [OK]
   0 bytes remaining in flash device`;
   } else {
     //  2960 L2 Switch boot sequence
@@ -1267,7 +1267,7 @@ Initializing flash file system
 
 Booting flash:c2960-lanbase-mz.152-2.E6.bin...OK!
 Extracting files from flash:c2960-lanbase-mz.152-2.E6.bin...
-  ######################################################################################################################################### [OK]
+  ########## [OK]
   0 bytes remaining in flash device` :
       `System Bootstrap, Version 12.2(11r)EA1, RELEASE SOFTWARE (fc1)
 Technical Support: http://yunus.sf.net
@@ -1284,7 +1284,7 @@ Initializing flash file system
 
 Booting flash:c2960-lanbase-mz.152-2.E6.bin...OK!
 Extracting files from flash:c2960-lanbase-mz.152-2.E6.bin...
-  ######################################################################################################################################### [OK]
+  ########## [OK]
   0 bytes remaining in flash device`;
   }
 
@@ -1354,7 +1354,7 @@ Initializing flash file system
 
 Booting flash:c1900-universalk9-mz.SPA.154-3.M.bin...OK!
 Extracting files from flash:c1900-universalk9-mz.SPA.154-3.M.bin...
-  ######################################################################################################################################### [OK]
+  ########## [OK]
   0 bytes remaining in flash device` :
       `System Bootstrap, Version 15.1(4)M4, RELEASE SOFTWARE (fc1)
 Technical Support: http://yunus.sf.net
@@ -1371,7 +1371,7 @@ Initializing flash file system
 
 Booting flash:c1900-universalk9-mz.SPA.154-3.M.bin...OK!
 Extracting files from flash:c1900-universalk9-mz.SPA.154-3.M.bin...
-  ######################################################################################################################################### [OK]
+  ########## [OK]
   0 bytes remaining in flash device`;
   } else if (isL3Switch) {
     //  3560 L3 Switch boot sequence
@@ -1392,7 +1392,7 @@ Initializing flash file system
 
 Booting flash:c3560-ipbase-mz.152-2.SE4.bin...OK!
 Extracting files from flash:c3560-ipbase-mz.152-2.SE4.bin...
-  ######################################################################################################################################### [OK]
+  ########## [OK]
   0 bytes remaining in flash device` :
       `System Bootstrap, Version 12.2(55r)SE, RELEASE SOFTWARE (fc1)
 Technical Support: http://yunus.sf.net
@@ -1409,7 +1409,7 @@ Initializing flash file system
 
 Booting flash:c3560-ipbase-mz.152-2.SE4.bin...OK!
 Extracting files from flash:c3560-ipbase-mz.152-2.SE4.bin...
-  ######################################################################################################################################### [OK]
+  ########## [OK]
   0 bytes remaining in flash device`;
   } else {
     //  2960 L2 Switch boot sequence
@@ -1430,7 +1430,7 @@ Initializing flash file system
 
 Booting flash:c2960-lanbase-mz.152-2.E6.bin...OK!
 Extracting files from flash:c2960-lanbase-mz.152-2.E6.bin...
-  ######################################################################################################################################### [OK]
+  ########## [OK]
   0 bytes remaining in flash device` :
       `System Bootstrap, Version 12.2(11r)EA1, RELEASE SOFTWARE (fc1)
 Technical Support: http://yunus.sf.net
@@ -1447,7 +1447,7 @@ Initializing flash file system
 
 Booting flash:c2960-lanbase-mz.152-2.E6.bin...OK!
 Extracting files from flash:c2960-lanbase-mz.152-2.E6.bin...
-  ######################################################################################################################################### [OK]
+  ########## [OK]
   0 bytes remaining in flash device`;
   }
 
