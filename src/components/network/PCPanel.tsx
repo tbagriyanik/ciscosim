@@ -838,6 +838,16 @@ export function PCPanel({
   }, [addLocalOutput, httpAppDeviceId, language, topologyDevices]);
 
   useEffect(() => {
+    if (!httpAppContent || !isMobile || typeof window === 'undefined') return;
+    setBrowserWindow((prev) => ({
+      ...prev,
+      x: 8,
+      y: Math.max(80, prev.y),
+      width: Math.max(280, window.innerWidth - 16),
+    }));
+  }, [httpAppContent, isMobile]);
+
+  useEffect(() => {
     const handlePointerMove = (event: PointerEvent) => {
       if (dragStateRef.current) {
         const dx = event.clientX - dragStateRef.current.startX;
@@ -1129,7 +1139,8 @@ export function PCPanel({
       `);
       addLocalOutput('error', `404 Not Found: ${target}`);
     } else if (isRouterDevice(httpServer)) {
-      const adminPage = generateRouterAdminPage(httpServer);
+      const runtimeState = deviceStates?.get(httpServer.id);
+      const adminPage = generateRouterAdminPage(httpServer, runtimeState);
       setHttpAppDeviceId(httpServer.id);
       setHttpAppContent(adminPage);
       setHttpAppTitle(language === 'tr' ? 'Yönlendirici Yönetimi' : 'Router Management');
@@ -1140,7 +1151,7 @@ export function PCPanel({
       setHttpAppDeviceId(null);
       addLocalOutput('html', httpServer.services?.http?.content || 'Merhaba Dünya!');
     }
-  }, [addLocalOutput, findHttpServerByTarget, hasGatewayForTarget, isValidIpv4, language, pcDNS, t]);
+  }, [addLocalOutput, deviceStates, findHttpServerByTarget, hasGatewayForTarget, isValidIpv4, language, pcDNS, t]);
 
   const formatMacForArp = useCallback((mac?: string) => {
     if (!mac) return '';
@@ -3129,12 +3140,20 @@ export function PCPanel({
         <div className="fixed inset-0 z-[999] pointer-events-auto">
           <div
             className="absolute"
-            style={{
-              left: browserWindow.x,
-              top: browserWindow.y,
-              width: browserWindow.width,
-              height: browserWindow.height,
-            }}
+            style={isMobile
+              ? {
+                left: 8,
+                right: 8,
+                top: browserWindow.y,
+                width: 'auto',
+                height: browserWindow.height,
+              }
+              : {
+                left: browserWindow.x,
+                top: browserWindow.y,
+                width: browserWindow.width,
+                height: browserWindow.height,
+              }}
           >
             <div
               className={`h-full w-full rounded-2xl shadow-2xl border ${isDark ? 'border-slate-800 bg-slate-900' : 'border-slate-200 bg-white'} flex flex-col overflow-hidden`}

@@ -373,6 +373,33 @@ export default function Home() {
           return prev;
         });
       }
+
+      // Keep router/switch wlan0 runtime state in sync with web-admin WiFi saves
+      if (config.wifi) {
+        setDeviceStates((prev) => {
+          const state = prev.get(deviceId);
+          if (!state || !state.ports?.['wlan0']) return prev;
+          const next = new Map(prev);
+          next.set(deviceId, {
+            ...state,
+            ports: {
+              ...state.ports,
+              wlan0: {
+                ...state.ports['wlan0'],
+                shutdown: !config.wifi.enabled,
+                wifi: {
+                  ssid: config.wifi.ssid || '',
+                  security: config.wifi.security || 'open',
+                  password: config.wifi.password || '',
+                  channel: config.wifi.channel || '2.4GHz',
+                  mode: config.wifi.enabled ? (config.wifi.mode || 'ap') : 'disabled',
+                },
+              },
+            },
+          });
+          return next;
+        });
+      }
     };
 
     window.addEventListener('update-topology-device-config', handleDeviceUpdate);

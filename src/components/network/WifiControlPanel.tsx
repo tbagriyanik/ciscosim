@@ -1,6 +1,7 @@
 'use client';
 
 import { CanvasDevice } from './networkTopology.types';
+import type { SwitchState } from '@/lib/network/types';
 
 export interface WifiAdminConfig {
   enabled: boolean;
@@ -647,12 +648,31 @@ export function getDefaultWifiConfig(device: CanvasDevice): WifiAdminConfig {
   };
 }
 
+export function getRouterWifiConfig(device: CanvasDevice, state?: SwitchState): WifiAdminConfig {
+  const wlan = state?.ports?.['wlan0'];
+  const wlanWifi = wlan?.wifi;
+  const base = getDefaultWifiConfig(device);
+
+  if (!wlanWifi) return base;
+
+  return {
+    enabled: !wlan?.shutdown && wlanWifi.mode !== 'disabled',
+    ssid: wlanWifi.ssid || base.ssid,
+    security: wlanWifi.security || base.security,
+    password: wlanWifi.password || base.password,
+    channel: (wlanWifi.channel as '2.4GHz' | '5GHz') || base.channel,
+    mode: (wlanWifi.mode === 'client' ? 'client' : 'ap'),
+    hidden: base.hidden,
+    maxClients: base.maxClients,
+  };
+}
+
 /**
  * Generate router admin page content for HTTP access
  */
-export function generateRouterAdminPage(device: CanvasDevice): string {
+export function generateRouterAdminPage(device: CanvasDevice, state?: SwitchState): string {
   const config: RouterWebConfig = {
-    wifi: getDefaultWifiConfig(device),
+    wifi: getRouterWifiConfig(device, state),
     deviceName: device.name,
     deviceIp: device.ip || '192.168.1.1',
     deviceId: device.id,
