@@ -656,6 +656,16 @@ export function PCPanel({
     return suggestions.slice(0, 8);
   }, [getCommandMode]);
 
+  const renderAutocompleteSuggestions = useMemo(
+    () => getAutocompleteSuggestions(input),
+    [getAutocompleteSuggestions, input]
+  );
+
+  const shouldShowAutocomplete = useMemo(
+    () => showAutocomplete && input.trim().length > 0 && renderAutocompleteSuggestions.length > 0,
+    [showAutocomplete, input, renderAutocompleteSuggestions]
+  );
+
   const buildCompletedInput = useCallback((selected: string) => {
     const mode = getCommandMode();
     const { contextTokens } = expandCommandContext(mode as any, input);
@@ -1504,7 +1514,7 @@ export function PCPanel({
   }, [input, undoStack, getAutocompleteSuggestions]);
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    const autocompleteSuggestions = getAutocompleteSuggestions(input);
+    const autocompleteSuggestions = renderAutocompleteSuggestions;
     const canUseAutocomplete = showAutocomplete && autocompleteSuggestions.length > 0;
 
     if (e.ctrlKey && e.key.toLowerCase() === 'l') {
@@ -2205,6 +2215,11 @@ export function PCPanel({
                             {t.dnsRecordManagerTip}
                           </p>
                         </div>
+                        <div className="flex items-center gap-2">
+                          <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-full ${serviceDnsEnabled ? 'bg-cyan-500/15 text-cyan-600 border border-cyan-500/30' : 'bg-slate-200 text-slate-500 border border-slate-300'}`}>
+                            {serviceDnsEnabled ? 'ON' : 'OFF'}
+                          </span>
+                        </div>
                         <button
                           type="button"
                           role="switch"
@@ -2228,11 +2243,13 @@ export function PCPanel({
                           onChange={(e) => setDnsFormDomain(e.target.value)}
                           placeholder={t.dnsDomainPlaceholder}
                         />
+                        {dnsFormDomain.trim() === '' && <div className="text-[11px] text-rose-500">{language === 'tr' ? 'Domain gerekli' : 'Domain required'}</div>}
                         <Input
                           value={dnsFormAddress}
                           onChange={(e) => setDnsFormAddress(e.target.value)}
                           placeholder={t.dnsAddressPlaceholder}
                         />
+                        {dnsFormAddress.trim() === '' && <div className="text-[11px] text-rose-500">{language === 'tr' ? 'IP adresi gerekli' : 'IP address required'}</div>}
                         <Button
                           onClick={() => {
                             const domain = dnsFormDomain.trim().toLowerCase();
@@ -2287,6 +2304,9 @@ export function PCPanel({
                             {t.httpServiceDescription}
                           </p>
                         </div>
+                        <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-full ${serviceHttpEnabled ? 'bg-emerald-500/15 text-emerald-600 border border-emerald-500/30' : 'bg-slate-200 text-slate-500 border border-slate-300'}`}>
+                          {serviceHttpEnabled ? 'ON' : 'OFF'}
+                        </span>
                         <button
                           type="button"
                           role="switch"
@@ -2331,6 +2351,9 @@ export function PCPanel({
                             {t.dhcpPoolsDescription}
                           </p>
                         </div>
+                        <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-full ${serviceDhcpEnabled ? 'bg-sky-500/15 text-sky-600 border border-sky-500/30' : 'bg-slate-200 text-slate-500 border border-slate-300'}`}>
+                          {serviceDhcpEnabled ? 'ON' : 'OFF'}
+                        </span>
                         <button
                           type="button"
                           role="switch"
@@ -2814,7 +2837,7 @@ export function PCPanel({
                           disabled={activeTab === 'desktop' ? isCmdInputDisabled : isConsoleInputDisabled}
                         />
                       </div>
-                      {showAutocomplete && input.trim().length > 0 && (
+                      {shouldShowAutocomplete && (
                         <div
                           ref={autocompleteRef}
                           className="absolute bottom-16 left-3 right-3 z-20 sm:left-4 sm:right-4"
@@ -2823,8 +2846,14 @@ export function PCPanel({
                             "rounded-lg border shadow-xl overflow-hidden",
                             isDark ? "bg-slate-800 border-slate-700" : "bg-white border-slate-200"
                           )}>
+                            <div className={`flex items-center justify-between px-3 py-2 text-[11px] font-semibold ${isDark ? 'text-slate-200 bg-slate-900/60' : 'text-slate-700 bg-slate-50'}`}>
+                              <span>{language === 'tr' ? 'Komut önerileri' : 'Command suggestions'}</span>
+                              <span className={`text-[10px] font-bold ${isDark ? 'text-cyan-300' : 'text-cyan-700'}`}>
+                                Tab ↹ {language === 'tr' ? 'ile tamamla' : 'to complete'}
+                              </span>
+                            </div>
                             <div className="max-h-40 overflow-y-auto">
-                              {getAutocompleteSuggestions(input).map((cmd, idx) => (
+                              {renderAutocompleteSuggestions.map((cmd, idx) => (
                                 <button
                                   key={`${cmd}-${idx}`}
                                   type="button"

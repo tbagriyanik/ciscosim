@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, KeyboardEvent, useCallback } from 'react';
+import { useState, useRef, useEffect, KeyboardEvent, useCallback, useMemo } from 'react';
 import { useSwitchState } from '@/lib/store/appStore';
 import { SwitchState } from '@/lib/network/types';
 import { useLanguage, Translations } from '@/contexts/LanguageContext';
@@ -468,6 +468,16 @@ export function Terminal({
     return suggestions.slice(0, 8);
   }, [getAutocompleteContext]);
 
+  const renderAutocompleteSuggestions = useMemo(
+    () => getAutocompleteSuggestions(input),
+    [getAutocompleteSuggestions, input]
+  );
+
+  const shouldShowAutocomplete = useMemo(
+    () => showAutocomplete && input.trim().length > 0 && renderAutocompleteSuggestions.length > 0,
+    [showAutocomplete, input, renderAutocompleteSuggestions]
+  );
+
   const handleInputChange = useCallback((newValue: string) => {
     setUndoStack([...undoStack, input]);
     setRedoStack([]);
@@ -504,7 +514,7 @@ export function Terminal({
   }, [buildCompletedInput]);
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    const autocompleteSuggestions = getAutocompleteSuggestions(input);
+    const autocompleteSuggestions = renderAutocompleteSuggestions;
     const canUseAutocomplete = showAutocomplete && autocompleteSuggestions.length > 0;
 
     if (e.key === 'Enter') {
@@ -917,7 +927,7 @@ export function Terminal({
               </form>
 
               {/* Autocomplete Dropdown */}
-              {showAutocomplete && input.trim().length > 0 && (
+              {shouldShowAutocomplete && (
                 <div
                   ref={autocompleteRef}
                   className="absolute bottom-20 left-4 z-20 w-[min(420px,calc(100%-2rem))]"
@@ -927,7 +937,7 @@ export function Terminal({
                     isDark ? "bg-slate-800 border-slate-700" : "bg-white border-slate-200"
                   )}>
                     <div className="max-h-40 overflow-y-auto">
-                      {getAutocompleteSuggestions(input).map((cmd, idx) => (
+                      {renderAutocompleteSuggestions.map((cmd, idx) => (
                         <button
                           key={idx}
                           type="button"
