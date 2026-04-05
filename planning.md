@@ -12,11 +12,30 @@ Bu belge, projenin mevcut durumunu dürüst biçimde özetler. Amaç, "tamamland
 Proje tamamlanmış durumda:
 - `next build` başarılı ✅
 - TypeScript derlemesi temiz ✅
-- 64,651 satır kod (.ts/.tsx)
+- 66,000+ satır kod (.ts/.tsx)
 - Tüm CLI komutları çalışır durumda
-- Tablet UI, WiFi, Ping animasyonları, Notes sistemi aktif
+- Tablet UI, WiFi (sinyal gücü göstergesi), Ping animasyonları (gerçekçi gecikmeler), Notes sistemi aktif
 
 ## Tamamlananlar
+
+### 2026-04-05 – WiFi Sinyal Gücü ve Ping Gecikmeleri
+- PC ve CLI terminallerinde WiFi sinyal gücü göstergesi eklendi
+- 5 çubuklu sinyal göstergesi (100%, 75%, 50%, 25%, 1%)
+- Sinyal gücüne göre renk kodlaması (yeşil/sarı/turuncu/kırmızı)
+- Ping komutlarına sinyal gücüne göre gerçekçi gecikmeler eklendi:
+  - 100% sinyal: 1-6ms (Mükemmel)
+  - 75% sinyal: 5-24ms (İyi)
+  - 50% sinyal: 15-55ms (Orta)
+  - 25% sinyal: 40-110ms (Zayıf)
+  - 1% sinyal: 100-220ms (Çok Zayıf)
+  - Kablolu bağlantı: <1ms
+- Her ping paketi için ayrı random gecikme hesaplanıyor
+- Hem PC terminal (Windows ping) hem de CLI terminal (Cisco ping) destekleniyor
+- Router/Switch WiFi kontrol paneli eklendi:
+  - Web tabanlı WiFi yönetim arayüzü (http://router-ip)
+  - SSID, güvenlik, kanal ve mod ayarları
+  - Gerçek zamanlı bağlı cihaz listesi
+  - AP/Client mod değiştirme desteği
 
 ### 2026-04-05 – CLI Komut Seti Tamamlandı
 - Tüm "no" komutları için handler eklendi (33+ komut)
@@ -69,13 +88,16 @@ Aşağıdaki maddeler artık tamamen uygulanmış ve çalışır durumda:
 1. ✅ Modern Shell Entegrasyonu - Temel UI primitive'leri kullanımda
 2. ✅ CLI Komut Desteği - Tüm önemli komutlar çalışıyor (enable, configure, show, vlan, vs.)
 3. ✅ WiFi Simülasyonu - SSID, WPA2, AP/Client modları
-4. ✅ Ping Animasyonu - Multi-hop desteği ile görsel animasyon
-5. ✅ Notes Sistemi - Drag, resize, customize
-6. ✅ Tablet UI - PC tablet ile entegre çalışma
-7. ✅ HTTP/DNS/DHCP - Servisler aktif
-8. ✅ Dark/Light Mode - Tema desteği
-9. ✅ TR/EN Dil - Çift dil desteği
-10. ✅ Build Sağlığı - `npm run build` başarılı
+4. ✅ WiFi Sinyal Gücü - 5 çubuklu gösterge ve renk kodlaması
+5. ✅ WiFi Kontrol Paneli - Web tabanlı yönetim arayüzü
+6. ✅ Ping Animasyonu - Multi-hop desteği ile görsel animasyon
+7. ✅ Ping Gecikmeleri - Sinyal gücüne göre gerçekçi latency
+8. ✅ Notes Sistemi - Drag, resize, customize
+9. ✅ Tablet UI - PC tablet ile entegre çalışma
+10. ✅ HTTP/DNS/DHCP - Servisler aktif
+11. ✅ Dark/Light Mode - Tema desteği
+12. ✅ TR/EN Dil - Çift dil desteği
+13. ✅ Build Sağlığı - `npm run build` başarılı
 
 ## Sonraki Adımlar (Opsiyonel İyileştirmeler)
 
@@ -91,9 +113,10 @@ Proje tamamlanmış durumda:
 - Teknik temel: güçlü ✅
 - Build ve test sağlığı: mükemmel ✅
 - CLI komut desteği: %100 ✅
+- WiFi simülasyonu: Tam özellikli (sinyal gücü + gecikme) ✅
 - UI/UX: Modern ve işlevsel ✅
 - Dokümantasyon: Güncellendi ✅
 
-**Sürüm**: 1.2.0  
+**Sürüm**: 1.2.1  
 **Son Güncelleme**: 2026-04-05  
 **Durum**: Tamamlandı ✅

@@ -2,11 +2,11 @@
 
 A modern and interactive web-based Network simulator designed for students and networking enthusiasts.
 
-![Version](https://img.shields.io/badge/version-1.2.0-blue)
+![Version](https://img.shields.io/badge/version-1.2.1-blue)
 ![Tech Stack](https://img.shields.io/badge/stack-Next.js%2016%20|%20React%2019%20|%20TypeScript%20|%20Tailwind%204-green)
 ![FOSS](https://img.shields.io/badge/FOSS-Free%20Open%20Source-brightgreen)
-![Commits](https://img.shields.io/badge/commits-360-orange)
-![Lines of Code](https://img.shields.io/badge/lines--of--code-65k-blueviolet)
+![Commits](https://img.shields.io/badge/commits-365+-orange)
+![Lines of Code](https://img.shields.io/badge/lines--of--code-65k+-blueviolet)
 
 ## ✨ Key Features
 
@@ -17,6 +17,16 @@ A modern and interactive web-based Network simulator designed for students and n
 - **Connection Management**: Create and manage connections between devices
 - **Visual Feedback**: Device status indicators and port labels
 - **Wireless (WiFi) Simulation**: Wireless network simulation with SSID, WPA2 security, and AP/Client modes
+- **WiFi Signal Strength Indicator**: Real-time signal strength display (5-bar meter) in PC and CLI terminals
+  - Visual signal bars with color coding (green/yellow/orange/red)
+  - Signal percentage display (100%, 75%, 50%, 25%, 1%)
+  - Distance-based signal calculation between AP and client devices
+- **WiFi Control Panel**: Web-based WiFi management interface for routers/switches
+  - Access via HTTP (e.g., `http 192.168.1.1` from PC terminal)
+  - Configure SSID, security (Open/WPA/WPA2/WPA3), channel (2.4GHz/5GHz)
+  - Switch between AP and Client modes
+  - View connected devices in real-time
+  - Modern, responsive UI with dark/light theme support
 
 ### 💻 Network CLI Simulation
 - **Command Support**: enable, configure, interface, show commands
@@ -49,6 +59,13 @@ A modern and interactive web-based Network simulator designed for students and n
 - **Routing Check**: Router routing verification
 - **Visual Ping Animation**: Mail icon with arched path between devices (wired/wireless)
 - **Global Animation Trigger**: Automatic animation when ping is sent from terminal or CLI
+- **WiFi Signal-Based Latency**: Realistic ping latencies based on wireless signal strength
+  - 100% signal (5 bars): 1-6ms (Excellent)
+  - 75% signal (4 bars): 5-24ms (Good)
+  - 50% signal (3 bars): 15-55ms (Fair)
+  - 25% signal (2 bars): 40-110ms (Weak)
+  - 1% signal (1 bar): 100-220ms (Very Weak)
+  - Wired connection: <1ms (No WiFi)
 
 ### ⚡ Advanced Features
 - **Bulk Power Control**: Bulk power on/off for selected devices
@@ -144,12 +161,18 @@ Detailed documentation can be found in the `kiro/` folder:
 2. Click on another device port
 3. Connection is automatically created
 
+### Configuring WiFi
+1. Access router via HTTP: `http 192.168.1.1` from PC terminal
+2. Configure SSID, security, and channel in WiFi Control Panel
+3. Enable AP mode on router
+4. Connect PC as WiFi client with matching SSID
+
 ### Ping Testing
 1. Right-click on device
 2. Select "Ping"
-3.
 3. Target the device
 4. Ping animation starts
+5. View latency based on WiFi signal strength
 
 ### Adding Notes
 1. Click "Add Note" button
@@ -180,7 +203,7 @@ Theme selection is done from the theme selector in the top right corner.
 
 - Scope: `src/`
 - Source files: `244`
-- Total lines: `64,651`
+- Total lines: `66,000+`
 - Last updated: `2026-04-05`
 
 ## 🐛 Troubleshooting
@@ -251,7 +274,7 @@ Sorular veya öneriler için lütfen issue açın. / For questions or suggestion
 
 ---
 
-**Sürüm**: 1.2.0  
+**Sürüm**: 1.2.1  
 **Son Güncelleme**: 2026-04-05  
 **Durum**: Production Ready ✅
 
@@ -260,6 +283,6 @@ Sorular veya öneriler için lütfen issue açın. / For questions or suggestion
 **Bu proje açık kaynaklıdır.** 🚀  
 GitHub üzerinden katkıda bulunabilirsiniz: [github.com/tbagriyanik/ciscosim](https://github.com/tbagriyanik/ciscosim)
 
-**Sürüm**: 1.2.0  
+**Sürüm**: 1.2.1  
 **Son Güncelleme**: 2026-04-05  
 **Durum**: Production Ready ✅
