@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback, useMemo, MouseEvent as ReactMouseEvent, TouchEvent as ReactTouchEvent } from 'react';
 import useAppStore, { useTopologyDevices, useTopologyConnections, useTopologyNotes } from '@/lib/store/appStore';
 import { SwitchState, CableType, CableInfo, isCableCompatible } from '@/lib/network/types';
-import { checkDeviceConnectivity, getPingDiagnostics } from '@/lib/network/connectivity';
+import { checkDeviceConnectivity, getPingDiagnostics, getWirelessSignalStrength } from '@/lib/network/connectivity';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -3754,29 +3754,29 @@ export function NetworkTopology({
                   <g transform="translate(2, 0) scale(0.9)" filter="url(#deviceShadow)" style={{ cursor: 'pointer' }}>
                     {/* Invisible rect for easier hover */}
                     <rect x="0" y="5" width="24" height="20" fill="transparent" />
-                    <path
-                      d="M5 10.55a11 11 0 0 1 14.08 0"
-                      stroke={wifiColor}
-                      fill="none"
-                      strokeWidth="1"
-                      strokeLinecap="round"
-                      className="transition-colors duration-300"
-                    />
-                    <path
-                      d="M8.53 13.11a6 6 0 0 1 6.95 0"
-                      stroke={wifiColor}
-                      fill="none"
-                      strokeWidth="1"
-                      strokeLinecap="round"
-                      className="transition-colors duration-300"
-                    />
-                    <circle
-                      cx="12"
-                      cy="16"
-                      r="1"
-                      fill={wifiColor}
-                      className="transition-colors duration-300"
-                    />
+                    {(() => {
+                      const signalStrength = isPC
+                        ? getWirelessSignalStrength(device, devices, deviceStates)
+                        : 0;
+
+                      const dimColor = isDark ? '#334155' : '#cbd5e1';
+                      const arc1Color = signalStrength >= 1 ? wifiColor : dimColor;
+                      const arc2Color = signalStrength >= 2 ? wifiColor : dimColor;
+                      const arc3Color = signalStrength >= 3 ? wifiColor : dimColor;
+
+                      return (
+                        <>
+                          <path d="M5 10.55a11 11 0 0 1 14.08 0"
+                            stroke={arc3Color} fill="none" strokeWidth="1" strokeLinecap="round"
+                            className="transition-colors duration-300" />
+                          <path d="M8.53 13.11a6 6 0 0 1 6.95 0"
+                            stroke={arc2Color} fill="none" strokeWidth="1" strokeLinecap="round"
+                            className="transition-colors duration-300" />
+                          <circle cx="12" cy="16" r="1"
+                            fill={arc1Color} className="transition-colors duration-300" />
+                        </>
+                      );
+                    })()}
                   </g>
                 </TooltipTrigger>
                 <TooltipContent

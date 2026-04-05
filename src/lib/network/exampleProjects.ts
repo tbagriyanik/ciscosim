@@ -264,8 +264,8 @@ export const exampleProjects = (language: 'tr' | 'en'): ExampleProject[] => {
     {
       id: 'wifi-note',
       text: isTr
-        ? 'WiFi Laboratuvarı (Orta Seviye):\n1) R1 (Router) wlan0 üzerinde AP modunda SSID: HomeWiFi yayınlar.\n2) PC-1 ve PC-2 kablosuz ağa (SSID match) bağlıdır.\n3) Tüm cihazlar aynı subnet (192.168.1.x) içindedir.\n4) PC-1 > ping 192.168.1.11 ile kablosuz iletişimi test edin.'
-        : 'WiFi Lab (Intermediate):\n1) R1 (Router) broadcasts SSID: HomeWiFi on wlan0 in AP mode.\n2) PC-1 and PC-2 are connected wirelessly (SSID match).\n3) All devices are on the same subnet (192.168.1.x).\n4) Test wireless connectivity with PC-1 > ping 192.168.1.11.',
+        ? 'WiFi Laboratuvarı (Orta Seviye):\n1) R1 (Router) wlan0 üzerinde AP modunda SSID: HomeWiFi yayınlar.\n2) PC-1 ve PC-2 kablosuz ağa (SSID match) bağlıdır.\n3) Tüm cihazlar aynı subnet (192.168.1.x) içindedir.\n4) PC-1 > ping 192.168.1.11 ile kablosuz iletişimi test edin.\n5) PC-1 > http 192.168.1.1 ile Wifi kontrol panelini görün.'
+        : 'WiFi Lab (Intermediate):\n1) R1 (Router) broadcasts SSID: HomeWiFi on wlan0 in AP mode.\n2) PC-1 and PC-2 are connected wirelessly (SSID match).\n3) All devices are on the same subnet (192.168.1.x).\n4) Test wireless connectivity with PC-1 > ping 192.168.1.11.\n5) PC-1 > http 192.168.1.1 for Wifi control panel.',
       x: 300,
       y: 400,
       width: 450,

@@ -7,7 +7,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import type { TerminalOutput } from './Terminal';
 import type { CanvasDevice } from './networkTopology.types';
-import { checkConnectivity } from '@/lib/network/connectivity';
+import { checkConnectivity, getWirelessSignalStrength } from '@/lib/network/connectivity';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -28,6 +28,33 @@ const PCIcon = ({ className = "w-5 h-5" }: { className?: string }) => (
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 0 0 2-2V5a2 2 0 0 0 -2-2H5a2 2 0 0 0 -2 2v10a2 2 0 0 0 2 2z" />
   </svg>
 );
+
+const WifiSignalMeter = ({ strength }: { strength: number }) => {
+  const activeColor = '#22c55e';
+  const dimColor = '#94a3b8';
+  const bar1Color = strength >= 1 ? activeColor : dimColor;
+  const bar2Color = strength >= 2 ? activeColor : dimColor;
+  const bar3Color = strength >= 3 ? activeColor : dimColor;
+  const bar4Color = strength >= 4 ? activeColor : dimColor;
+  const bar5Color = strength >= 5 ? activeColor : dimColor;
+
+  return (
+    <div className="relative w-full h-full flex items-center justify-center">
+      <svg viewBox="0 0 22 14" className="pointer-events-none w-full h-full">
+        {/* Bar 1 - 1% */}
+        <rect x="1" y="10.5" width="2.5" height="3" fill={bar1Color} rx="0.3" />
+        {/* Bar 2 - 25% */}
+        <rect x="5" y="8.5" width="2.5" height="5" fill={bar2Color} rx="0.3" />
+        {/* Bar 3 - 50% */}
+        <rect x="9" y="6.5" width="2.5" height="7" fill={bar3Color} rx="0.3" />
+        {/* Bar 4 - 75% */}
+        <rect x="13" y="4.5" width="2.5" height="9" fill={bar4Color} rx="0.3" />
+        {/* Bar 5 - 100% */}
+        <rect x="17" y="2.5" width="2.5" height="11" fill={bar5Color} rx="0.3" />
+      </svg>
+    </div>
+  );
+};
 
 interface OutputLine {
   id: string;
@@ -207,6 +234,10 @@ export function PCPanel({
   const deviceFromTopology = topologyDevices.find(d => d.id === deviceId);
   const defaultConfig = getPCConfigDefaults(deviceId);
   const isPcPoweredOff = deviceFromTopology?.status === 'offline';
+  const wifiSignalStrength = useMemo(
+    () => getWirelessSignalStrength(deviceFromTopology, topologyDevices, deviceStates),
+    [deviceFromTopology, topologyDevices, deviceStates]
+  );
 
   // Local settings state
   const [pcIP, setPcIP] = useState(deviceFromTopology?.ip || defaultConfig.ip);
@@ -254,6 +285,7 @@ export function PCPanel({
   const [editingDhcpIndex, setEditingDhcpIndex] = useState<number | null>(null);
   const [wifiEnabled, setWifiEnabled] = useState(deviceFromTopology?.wifi?.enabled ?? false);
   const [wifiSSID, setWifiSSID] = useState(deviceFromTopology?.wifi?.ssid ?? '');
+  const [ssidDropdownOpen, setSsidDropdownOpen] = useState(false);
   const [wifiSecurity, setWifiSecurity] = useState(deviceFromTopology?.wifi?.security ?? 'open');
   const [wifiPassword, setWifiPassword] = useState(deviceFromTopology?.wifi?.password ?? '');
   const [wifiChannel, setWifiChannel] = useState(deviceFromTopology?.wifi?.channel ?? '2.4GHz');
@@ -2234,13 +2266,22 @@ export function PCPanel({
                   size="icon"
                   onClick={() => setActiveTab('wireless')}
                   disabled={isPcPoweredOff}
-                  className={`h-6 w-6 rounded-md ${isPcPoweredOff ? 'opacity-30' : activeTab === 'wireless' ? (isDark ? 'bg-cyan-500/30 text-cyan-300' : 'bg-cyan-500/30 text-cyan-700') : (isDark ? 'text-cyan-400 hover:text-cyan-300' : 'text-cyan-600 hover:text-cyan-500')}`}
+                  className={`relative h-6 w-6 rounded-md ${isPcPoweredOff ? 'opacity-30' : activeTab === 'wireless' ? (isDark ? 'bg-cyan-500/30 text-cyan-300' : 'bg-cyan-500/30 text-cyan-700') : (isDark ? 'text-cyan-400 hover:text-cyan-300' : 'text-cyan-600 hover:text-cyan-500')}`}
                   aria-label={language === 'tr' ? 'Kablosuz' : 'Wireless'}
                 >
-                  <Wifi className="w-4 h-4" />
+                  <span className="pointer-events-none w-4 h-4">
+                    <WifiSignalMeter strength={wifiSignalStrength} />
+                  </span>
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>{language === 'tr' ? 'Kablosuz' : 'Wireless'}</TooltipContent>
+              <TooltipContent>
+                {(() => {
+                  const percentMap: Record<number, number> = { 0: 0, 1: 1, 2: 25, 3: 50, 4: 75, 5: 100 };
+                  const percentage = percentMap[wifiSignalStrength] || 0;
+                  const label = language === 'tr' ? 'Kablosuz' : 'Wireless';
+                  return wifiEnabled && wifiSignalStrength > 0 ? `${label} - ${percentage}%` : label;
+                })()}
+              </TooltipContent>
             </Tooltip>
             {/* Power Button - Always visible */}
             <Tooltip>
@@ -2857,35 +2898,53 @@ export function PCPanel({
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                           <div className="space-y-2">
                             <label className="text-[10px] font-black tracking-widest text-slate-500 ml-1">SSID (Service Set Identifier)</label>
-                            <Select value={wifiBSSID ? `${wifiBSSID}|${wifiSSID}` : wifiSSID} onValueChange={(val) => {
-                              if (val.includes('|')) {
-                                const [bssid, ssid] = val.split('|');
-                                setWifiBSSID(bssid);
-                                setWifiSSID(ssid);
-                              } else {
-                                setWifiBSSID('');
-                                setWifiSSID(val);
-                              }
-                            }} disabled={!wifiEnabled}>
-                              <SelectTrigger className={`w-full ${isDark ? 'bg-background border-slate-800 text-white' : 'bg-white border-slate-200 text-slate-900'}`}>
-                                <SelectValue placeholder={language === 'tr' ? 'Ağ Seçiniz...' : 'Select Network...'} />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {availableSSIDs.length === 0 && <SelectItem value="no-networks" disabled>{language === 'tr' ? 'Çevrede Ağ Bulunamadı' : 'No Networks Found'}</SelectItem>}
-                                {availableSSIDs.map((entry) => {
-                                  const hasDupe = availableSSIDs.filter(e => e.ssid === entry.ssid).length > 1;
-                                  const label = hasDupe ? `${entry.ssid} (${entry.deviceName})` : entry.ssid;
-                                  return (
-                                    <SelectItem key={`${entry.deviceId}-${entry.ssid}`} value={`${entry.deviceId}|${entry.ssid}`}>
-                                      {label}
-                                    </SelectItem>
-                                  );
-                                })}
-                                {wifiSSID && !availableSSIDs.some(e => e.ssid === wifiSSID && (!wifiBSSID || e.deviceId === wifiBSSID)) && (
-                                  <SelectItem value={wifiBSSID ? `${wifiBSSID}|${wifiSSID}` : wifiSSID}>{wifiSSID} ({language === 'tr' ? 'Kaydedildi' : 'Saved'})</SelectItem>
-                                )}
-                              </SelectContent>
-                            </Select>
+                            {(() => {
+                              const filtered = availableSSIDs.filter(e =>
+                                e.ssid.toLowerCase().includes(wifiSSID.toLowerCase())
+                              );
+                              return (
+                                <div className="relative">
+                                  <div className={`flex items-center border rounded-md px-3 h-9 gap-2 ${!wifiEnabled ? 'opacity-50 pointer-events-none' : ''} ${isDark ? 'bg-background border-slate-800' : 'bg-white border-slate-200'}`}>
+                                    <input
+                                      type="text"
+                                      value={wifiSSID}
+                                      onChange={e => { setWifiSSID(e.target.value); setWifiBSSID(''); setSsidDropdownOpen(true); }}
+                                      onFocus={() => setSsidDropdownOpen(true)}
+                                      onBlur={() => setTimeout(() => setSsidDropdownOpen(false), 150)}
+                                      placeholder={language === 'tr' ? 'Ağ seçin veya yazın...' : 'Select or type SSID...'}
+                                      className={`flex-1 bg-transparent outline-none text-sm ${isDark ? 'text-white placeholder:text-slate-600' : 'text-slate-900 placeholder:text-slate-400'}`}
+                                    />
+                                    {wifiSSID && (
+                                      <button type="button" onClick={() => { setWifiSSID(''); setWifiBSSID(''); }} className="text-slate-400 hover:text-slate-600 text-xs">✕</button>
+                                    )}
+                                    <button type="button" onClick={() => setSsidDropdownOpen(o => !o)} className="text-slate-400 hover:text-slate-600 text-xs">▾</button>
+                                  </div>
+                                  {ssidDropdownOpen && (
+                                    <div className={`absolute z-50 w-full mt-1 rounded-md border shadow-lg max-h-48 overflow-y-auto ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
+                                      {filtered.length === 0 && (
+                                        <div className={`px-3 py-2 text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                                          {language === 'tr' ? 'Ağ bulunamadı' : 'No networks found'}
+                                        </div>
+                                      )}
+                                      {filtered.map(entry => {
+                                        const hasDupe = availableSSIDs.filter(e => e.ssid === entry.ssid).length > 1;
+                                        const label = hasDupe ? `${entry.ssid} (${entry.deviceName})` : entry.ssid;
+                                        return (
+                                          <button
+                                            key={`${entry.deviceId}-${entry.ssid}`}
+                                            type="button"
+                                            onMouseDown={() => { setWifiSSID(entry.ssid); setWifiBSSID(entry.deviceId); setSsidDropdownOpen(false); }}
+                                            className={`w-full text-left px-3 py-2 text-sm hover:bg-purple-500/20 ${isDark ? 'text-white' : 'text-slate-900'}`}
+                                          >
+                                            📶 {label}
+                                          </button>
+                                        );
+                                      })}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })()}
                           </div>
 
                           <div className="space-y-2">
@@ -3018,6 +3077,33 @@ export function PCPanel({
                             </div>
                           </div>
                         </div>
+
+                        {/* Signal Strength Display */}
+                        {wifiEnabled && wifiSSID && (
+                          <div className={`p-4 rounded-xl text-xs flex items-center gap-3 ${isDark ? 'bg-blue-500/10 text-blue-300 border border-blue-500/30' : 'bg-blue-50 text-blue-700 border border-blue-200'}`}>
+                            <div className={`p-2 rounded-lg ${isDark ? 'bg-blue-500/20' : 'bg-blue-100'}`}>
+                              <Wifi className="w-4 h-4" />
+                            </div>
+                            <div>
+                              <div className="font-bold tracking-wider mb-0.5">
+                                {language === 'tr' ? 'Sinyal Gücü' : 'Signal Strength'}
+                              </div>
+                              <div className="opacity-90">
+                                {(() => {
+                                  const strength = wifiSignalStrength;
+                                  const percentMap: Record<number, number> = { 0: 0, 1: 1, 2: 25, 3: 50, 4: 75, 5: 100 };
+                                  const percentage = percentMap[strength] || 0;
+                                  const levelMap = {
+                                    tr: { 0: 'Sinyal yok', 1: 'Çok Zayıf', 2: 'Zayıf', 3: 'Orta', 4: 'İyi', 5: 'Mükemmel' },
+                                    en: { 0: 'No signal', 1: 'Very Weak', 2: 'Weak', 3: 'Fair', 4: 'Good', 5: 'Excellent' }
+                                  };
+                                  const level = levelMap[language === 'tr' ? 'tr' : 'en'][strength as keyof typeof levelMap['en']] || 'Unknown';
+                                  return `${level} (${percentage}%)`;
+                                })()}
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}

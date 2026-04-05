@@ -2,6 +2,125 @@ import { CanvasDevice, CanvasConnection, DeviceType } from '@/components/network
 import { CableInfo, SwitchState, isCableCompatible } from './types';
 import { findRoute, ipToNumber, getRoutingTable } from './routing';
 
+export type WifiMode = 'ap' | 'client' | 'disabled' | 'sta';
+
+export interface DeviceWifiConfig {
+  enabled: boolean;
+  ssid: string;
+  bssid?: string;
+  password?: string;
+  security: 'open' | 'wpa' | 'wpa2' | 'wpa3';
+  channel: '2.4GHz' | '5GHz';
+  mode: WifiMode;
+}
+
+const normalizeWifiMode = (mode: string | undefined, fallback: WifiMode): WifiMode => {
+  if (!mode) return fallback;
+  const words = mode.toLowerCase();
+  if (words === 'ap') return 'ap';
+  if (words === 'client') return 'client';
+  if (words === 'sta') return 'sta';
+  if (words === 'disabled') return 'disabled';
+  return fallback;
+};
+
+const normalizeSecurity = (security: string | undefined): DeviceWifiConfig['security'] => {
+  const value = security ? security.toLowerCase() : 'open';
+  if (value === 'wpa3') return 'wpa3';
+  if (value === 'wpa2') return 'wpa2';
+  if (value === 'wpa') return 'wpa';
+  return 'open';
+};
+
+const normalizeChannel = (channel: string | undefined): DeviceWifiConfig['channel'] => {
+  const value = channel ? channel.toLowerCase() : '2.4ghz';
+  if (value === '5ghz') return '5GHz';
+  return '2.4GHz';
+};
+
+export function getDeviceWifiConfig(device: CanvasDevice | undefined, deviceStates?: Map<string, SwitchState>): DeviceWifiConfig | undefined {
+  if (!device) return undefined;
+  const state = deviceStates?.get(device.id);
+  const wlanState = state?.ports['wlan0'];
+  const defaultMode: WifiMode = device.type === 'pc' ? 'client' : 'ap';
+
+  if (wlanState?.wifi?.ssid) {
+    const mode = normalizeWifiMode(wlanState.wifi.mode, defaultMode);
+    const enabled = mode !== 'disabled' && !(wlanState.shutdown ?? false);
+    return {
+      enabled,
+      ssid: wlanState.wifi.ssid,
+      bssid: wlanState.wifi.bssid,
+      password: wlanState.wifi.password,
+      security: normalizeSecurity(wlanState.wifi.security),
+      channel: normalizeChannel(wlanState.wifi.channel),
+      mode,
+    };
+  }
+
+  if (device.wifi?.ssid) {
+    const mode = normalizeWifiMode(device.wifi.mode, defaultMode);
+    return {
+      enabled: device.wifi.enabled ?? true,
+      ssid: device.wifi.ssid,
+      bssid: device.wifi.bssid,
+      password: device.wifi.password,
+      security: normalizeSecurity(device.wifi.security),
+      channel: normalizeChannel(device.wifi.channel),
+      mode,
+    };
+  }
+
+  const wlanPort = device.ports.find(p => p.id === 'wlan0' && p.wifi?.ssid);
+  if (wlanPort && wlanPort.wifi) {
+    const mode = normalizeWifiMode(wlanPort.wifi.mode, defaultMode);
+    return {
+      enabled: mode !== 'disabled' && !(wlanPort.shutdown ?? false),
+      ssid: wlanPort.wifi.ssid,
+      bssid: wlanPort.wifi.bssid,
+      password: wlanPort.wifi.password,
+      security: normalizeSecurity(wlanPort.wifi.security),
+      channel: normalizeChannel(wlanPort.wifi.channel),
+      mode,
+    };
+  }
+
+  return undefined;
+}
+
+export function getWirelessSignalStrength(
+  device: CanvasDevice | undefined,
+  devices: CanvasDevice[] = [],
+  deviceStates?: Map<string, SwitchState>
+): number {
+  if (!device) return 0;
+  const pcWifi = getDeviceWifiConfig(device, deviceStates);
+  if (!pcWifi || !pcWifi.enabled || !pcWifi.ssid) return 0;
+  if (pcWifi.mode !== 'client' && pcWifi.mode !== 'sta') return 0;
+
+  const targetSsid = pcWifi.ssid.toLowerCase();
+  let minDist = Infinity;
+
+  devices.forEach(dev => {
+    if (dev.id === device.id) return;
+    const apWifi = getDeviceWifiConfig(dev, deviceStates);
+    if (!apWifi || apWifi.mode !== 'ap' || !apWifi.enabled) return;
+    if (!apWifi.ssid || apWifi.ssid.toLowerCase() !== targetSsid) return;
+    const dx = (device.x || 0) - (dev.x || 0);
+    const dy = (device.y || 0) - (dev.y || 0);
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist < minDist) minDist = dist;
+  });
+
+  if (minDist === Infinity) return 0;
+  if (minDist < 150) return 5;
+  if (minDist < 250) return 4;
+  if (minDist < 350) return 3;
+  if (minDist < 450) return 2;
+  if (minDist < 550) return 1;
+  return 0;
+}
+
 /**
  * Check if a hostname is an external domain (not in local network)
  */
@@ -206,45 +325,18 @@ export function checkConnectivity(
 
   // 1.5. Implicit Wireless Connections
   const connections = [..._connections];
-  const getDeviceWifiConfig = (device: CanvasDevice) => {
-    if (!device) return undefined;
-    const baseWifi = device.wifi;
-    if (baseWifi && baseWifi.ssid) {
-      return {
-        enabled: baseWifi.enabled ?? true,
-        ssid: baseWifi.ssid,
-        password: baseWifi.password || '',
-        security: baseWifi.security || 'open',
-        channel: baseWifi.channel || '2.4GHz',
-        mode: baseWifi.mode || 'ap',
-        bssid: baseWifi.bssid
-      };
-    }
-    const wlanPort = device.ports.find(p => p.id === 'wlan0' && p.wifi);
-    if (wlanPort?.wifi && wlanPort.wifi.ssid) {
-      return {
-        enabled: true,
-        ssid: wlanPort.wifi.ssid,
-        password: wlanPort.wifi.password || '',
-        security: wlanPort.wifi.security || 'open',
-        channel: wlanPort.wifi.channel || '2.4GHz',
-        mode: wlanPort.wifi.mode || 'ap'
-      };
-    }
-    return undefined;
-  };
   if (deviceStates) {
     // Get AP devices - routers/switches from topology
     const apDevices = devices.filter(d => isSwitchDeviceType(d.type) || d.type === 'router');
     // Get PC devices that have WiFi configured - check both device.wifi and deviceStates
     const pcDevices = devices.filter(d => {
-      const wifi = getDeviceWifiConfig(d);
+      const wifi = getDeviceWifiConfig(d, deviceStates);
       // PC must have wifi with a non-empty ssid and must be in client mode (not ap)
       return d.type === 'pc' && !!wifi && wifi.enabled && !!wifi.ssid && (wifi.mode === 'client' || wifi.mode === 'sta');
     });
 
     for (const pc of pcDevices) {
-      const pcWifi = getDeviceWifiConfig(pc);
+      const pcWifi = getDeviceWifiConfig(pc, deviceStates);
       if (!pcWifi || !pcWifi.enabled || !pcWifi.ssid || (pcWifi.mode !== 'client' && pcWifi.mode !== 'sta')) continue;
       for (const ap of apDevices) {
         // Check AP in deviceStates first

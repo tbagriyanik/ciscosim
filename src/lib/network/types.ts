@@ -55,6 +55,7 @@ export interface Port {
     password?: string;
     channel: '2.4GHz' | '5GHz';
     mode: 'ap' | 'client' | 'disabled' | 'sta';
+    hidden?: boolean;
   };
 }
 

@@ -1,5 +1,6 @@
 import type { CommandHandler } from './commandTypes';
-import { checkConnectivity } from '../connectivity';
+import { checkConnectivity, getWirelessSignalStrength } from '../connectivity';
+import type { CanvasDevice } from '@/components/network/networkTopology.types';
 
 // Privileged EXEC komutları (ping, telnet, write, copy, erase, reload, debug, vs.)
 
@@ -21,6 +22,58 @@ export const privilegedHandlers: Record<string, CommandHandler> = {
     'do write': cmdDoWrite,
     'do ping': cmdDoPing,
 };
+
+/**
+ * Estimate ping latencies based on signal strength (0-5) and add randomness.
+ */
+function generatePingLatencies(signalStrength: number): { min: number; avg: number; max: number } {
+    const between = (min: number, max: number) => {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+    };
+
+    if (signalStrength >= 5) {
+        // 100% - Excellent
+        const min = between(1, 3);
+        const avg = between(min + 1, min + 3);
+        const max = between(avg + 1, avg + 3);
+        return { min, avg, max };
+    }
+
+    if (signalStrength === 4) {
+        // 75% - Good
+        const min = between(5, 10);
+        const avg = between(min + 2, min + 8);
+        const max = between(avg + 2, avg + 6);
+        return { min, avg, max };
+    }
+
+    if (signalStrength === 3) {
+        // 50% - Fair
+        const min = between(15, 25);
+        const avg = between(min + 5, min + 15);
+        const max = between(avg + 5, avg + 15);
+        return { min, avg, max };
+    }
+
+    if (signalStrength === 2) {
+        // 25% - Weak
+        const min = between(40, 60);
+        const avg = between(min + 10, min + 40);
+        const max = between(avg + 10, avg + 40);
+        return { min, avg, max };
+    }
+
+    if (signalStrength === 1) {
+        // 1% - Very Weak
+        const min = between(100, 150);
+        const avg = between(min + 20, min + 50);
+        const max = between(avg + 20, avg + 50);
+        return { min, avg, max };
+    }
+
+    // strength 0 - No signal (should not reach here)
+    return { min: 1, avg: 2, max: 5 };
+}
 
 /**
  * Ping - Test connectivity
@@ -51,9 +104,13 @@ function cmdPing(state: any, input: string, ctx: any): any {
         if (connectivity.success) {
             let output = `\nType escape sequence to abort.\n`;
             output += `Sending ${count}, ${size}-byte ICMP Echos to ${host}, timeout is 2 seconds:\n`;
-            const successCount = parseInt(count);
+            const successCount = parseInt(count, 10) || 5;
+            const devices = (ctx.devices || []) as CanvasDevice[];
+            const sourceDevice = ctx.sourceDeviceId ? devices.find(d => d.id === ctx.sourceDeviceId) : undefined;
+            const signalStrength = getWirelessSignalStrength(sourceDevice, devices, ctx.deviceStates);
+            const { min, avg, max } = generatePingLatencies(signalStrength);
             for (let i = 0; i < successCount; i++) output += '!';
-            output += '\n\nSuccess rate is 100 percent (5/5), round-trip min/avg/max = 1/2/8 ms\n';
+            output += `\n\nSuccess rate is 100 percent (${successCount}/${successCount}), round-trip min/avg/max = ${min}/${avg}/${max} ms\n`;
             return { success: true, output, triggerPingAnimation: connectivity.targetId };
         } else {
             return {
