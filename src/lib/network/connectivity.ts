@@ -234,7 +234,9 @@ export function checkConnectivity(
     return undefined;
   };
   if (deviceStates) {
+    // Get AP devices - routers/switches from topology
     const apDevices = devices.filter(d => isSwitchDeviceType(d.type) || d.type === 'router');
+    // Get PC devices that have WiFi configured - check both device.wifi and deviceStates
     const pcDevices = devices.filter(d => {
       const wifi = getDeviceWifiConfig(d);
       return d.type === 'pc' && !!wifi && wifi.enabled && !!wifi.ssid;
@@ -244,14 +246,22 @@ export function checkConnectivity(
       const pcWifi = getDeviceWifiConfig(pc);
       if (!pcWifi || !pcWifi.enabled || !pcWifi.ssid) continue;
       for (const ap of apDevices) {
+        // Check AP in deviceStates first
         const apState = deviceStates.get(ap.id);
         const wlan = apState?.ports['wlan0'];
-        if (wlan && !wlan.shutdown && wlan.wifi?.mode === 'ap' && wlan.wifi?.ssid === pcWifi.ssid) {
+        let apWifi = wlan?.wifi;
+        
+        // If no wlan in deviceStates, check if AP has WiFi config in topology
+        if (!apWifi && ap.wifi && ap.wifi.ssid) {
+          apWifi = ap.wifi;
+        }
+        
+        if (apWifi && (wlan?.shutdown === false || !wlan?.shutdown) && (apWifi.mode || 'ap').toLowerCase() === 'ap' && (apWifi.ssid || '').toLowerCase() === (pcWifi.ssid || '').toLowerCase()) {
           if (!pcWifi.bssid || pcWifi.bssid === ap.id) {
-            const apSecurity = wlan.wifi.security || 'open';
-            const pcSecurity = pcWifi.security || 'open';
+            const apSecurity = (apWifi.security || 'open').toLowerCase();
+            const pcSecurity = (pcWifi.security || 'open').toLowerCase();
             if (apSecurity === pcSecurity) {
-              if (apSecurity === 'open' || wlan.wifi.password === pcWifi.password) {
+              if (apSecurity === 'open' || apWifi.password === pcWifi.password) {
                 connections.push({
                   id: `wireless-${pc.id}-${ap.id}`,
                   sourceDeviceId: pc.id,

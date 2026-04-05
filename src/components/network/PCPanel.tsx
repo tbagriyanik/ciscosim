@@ -262,32 +262,49 @@ export function PCPanel({
   // Scan for available APs in the network topology dynamically - returns one entry per AP (allows duplicates)
   const availableSSIDs = useMemo(() => {
     const results: { ssid: string; deviceId: string; deviceName: string }[] = [];
+    const addedSSIDs = new Set<string>();
+    
+    // First check deviceStates (router/switch runtime state) - only AP mode
     if (deviceStates) {
       deviceStates.forEach((state, stateId) => {
         if (stateId === deviceId) return; // skip self
+        const stateDevice = topologyDevices.find(d => d.id === stateId);
+        // Only router/switch can be AP, not PC
+        if (!stateDevice || (stateDevice.type !== 'router' && stateDevice.type !== 'switchL2' && stateDevice.type !== 'switchL3')) return;
         const wlanPort = state.ports['wlan0'];
         const wifiMode = (wlanPort?.wifi?.mode || '').toLowerCase();
-        if (wlanPort && !wlanPort.shutdown && (wifiMode === 'ap' || wifiMode === 'client') && wlanPort.wifi?.ssid) {
-          const apDevice = topologyDevices.find(d => d.id === stateId);
-          results.push({
-            ssid: wlanPort.wifi.ssid,
-            deviceId: stateId,
-            deviceName: apDevice?.name || stateId,
-          });
+        // Only show devices in AP mode
+        if (wlanPort && !wlanPort.shutdown && wifiMode === 'ap' && wlanPort.wifi?.ssid) {
+          const ssidKey = wlanPort.wifi.ssid;
+          if (!addedSSIDs.has(ssidKey)) {
+            addedSSIDs.add(ssidKey);
+            results.push({
+              ssid: wlanPort.wifi.ssid,
+              deviceId: stateId,
+              deviceName: stateDevice?.name || stateId,
+            });
+          }
         }
       });
     }
+    // Also check topologyDevices for web-admin saved WiFi settings (router/switch only)
     if (results.length === 0) {
       topologyDevices.forEach((device) => {
         if (device.id === deviceId) return;
-        const wifi = device.wifi;
+        // Only router/switch can be AP, not PC
         if (device.type !== 'router' && device.type !== 'switchL2' && device.type !== 'switchL3') return;
-        if (wifi?.enabled && wifi.ssid) {
-          results.push({
-            ssid: wifi.ssid,
-            deviceId: device.id,
-            deviceName: device.name,
-          });
+        const wifi = device.wifi;
+        // Check if WiFi is enabled and in AP mode
+        if (wifi?.enabled && wifi.mode === 'ap' && wifi.ssid) {
+          const ssidKey = wifi.ssid;
+          if (!addedSSIDs.has(ssidKey)) {
+            addedSSIDs.add(ssidKey);
+            results.push({
+              ssid: wifi.ssid,
+              deviceId: device.id,
+              deviceName: device.name,
+            });
+          }
         }
       });
     }
@@ -2955,7 +2972,8 @@ export function PCPanel({
                               {!wifiEnabled
                                 ? (language === 'tr' ? 'Kablosuz alıcı kapalı' : 'Wireless receiver disabled')
                                 : (() => {
-                                  const apEntry = !!deviceStates && Array.from(deviceStates.entries()).find(([id, state]) => {
+                                  // First check deviceStates (router/switch runtime state)
+                                  const foundInStates = !!deviceStates && Array.from(deviceStates.entries()).find(([id, state]) => {
                                     const wlan = state.ports['wlan0'];
                                     if (!wlan || wlan.shutdown || wlan.wifi?.mode !== 'ap') return false;
                                     if (wifiBSSID && wifiBSSID !== id) return false;
@@ -2965,7 +2983,22 @@ export function PCPanel({
                                     if (apSecurity !== 'open' && wlan.wifi?.password !== wifiPassword) return false;
                                     return true;
                                   });
-                                  if (apEntry) return language === 'tr' ? `Bağlı • SSID: ${wifiSSID}` : `Connected • SSID: ${wifiSSID}`;
+                                  
+                                  // If not found in deviceStates, also check topologyDevices
+                                  const foundInTopology = !foundInStates && topologyDevices.find((apDevice) => {
+                                    if (apDevice.id === deviceId) return false;
+                                    if (apDevice.type !== 'router' && apDevice.type !== 'switchL2' && apDevice.type !== 'switchL3') return false;
+                                    const apWifi = apDevice.wifi;
+                                    if (!apWifi || apWifi.mode !== 'ap' || !apWifi.ssid) return false;
+                                    if (apWifi.ssid !== wifiSSID) return false;
+                                    const apSecurity = apWifi.security || 'open';
+                                    if (apSecurity !== wifiSecurity) return false;
+                                    if (apSecurity !== 'open' && apWifi.password !== wifiPassword) return false;
+                                    return true;
+                                  });
+                                  
+                                  const isConnected = !!foundInStates || !!foundInTopology;
+                                  if (isConnected) return language === 'tr' ? `Bağlı • SSID: ${wifiSSID}` : `Connected • SSID: ${wifiSSID}`;
                                   return wifiSSID
                                     ? (language === 'tr' ? `Ağ bulunamadı: ${wifiSSID}` : `Network not found: ${wifiSSID}`)
                                     : (language === 'tr' ? 'WLAN0 aktif, ağ seçilmedi' : 'WLAN0 active, no network selected');

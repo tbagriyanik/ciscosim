@@ -1882,24 +1882,104 @@ export default function Home() {
 
   // Refresh network connections and WiFi status
   const handleRefreshNetwork = useCallback(() => {
-    if (topologyDevices && deviceStates) {
-      const updatedDeviceStates = new Map(deviceStates);
+    const isSwitchDeviceType = (type: string) => type === 'switchL2' || type === 'switchL3';
+    const normalizeWifiMode = (mode: string | undefined) => {
+      if (!mode) return 'disabled';
+      return mode.toLowerCase().replace(/^wifi-/, '');
+    };
 
-      // Update WiFi status for all PCs - just trigger re-render
-      topologyDevices.forEach(device => {
-        if (device.type === 'pc' && device.wifi?.enabled) {
-          const deviceState = updatedDeviceStates.get(device.id);
-          if (deviceState) {
-            // Update device state to trigger re-render
-            updatedDeviceStates.set(device.id, { ...deviceState });
-          }
+    let refreshCount = 0;
+    let disconnectedPCs: string[] = [];
+    let disconnectedAPs: string[] = [];
+
+    if (topologyDevices && deviceStates) {
+      // 1. Check and update PC connections to APs
+      topologyDevices.filter(d => d.type === 'pc').forEach(pc => {
+        const pcWifi = pc.wifi;
+        if (!pcWifi?.enabled || !pcWifi.ssid) return;
+
+        let isConnected = false;
+        
+        // Check router/switch APs
+        topologyDevices.forEach(ap => {
+          if (ap.id === pc.id) return;
+          if (ap.type !== 'router' && !isSwitchDeviceType(ap.type)) return;
+          
+          const apWifi = ap.wifi;
+          if (!apWifi || apWifi.mode !== 'ap' || !apWifi.ssid) return;
+          if (apWifi.ssid !== pcWifi.ssid) return;
+          
+          const apSecurity = apWifi.security || 'open';
+          const pcSecurity = pcWifi.security || 'open';
+          if (apSecurity !== pcSecurity) return;
+          if (apSecurity !== 'open' && apWifi.password !== pcWifi.password) return;
+          
+          isConnected = true;
+        });
+
+        if (!isConnected) {
+          disconnectedPCs.push(pc.name || pc.id);
+          refreshCount++;
         }
       });
 
-      // Update device states to trigger re-render
+      // 2. Check and update AP connections (router/switch)
+      topologyDevices.filter(d => d.type === 'router' || isSwitchDeviceType(d.type)).forEach(ap => {
+        const apWifi = ap.wifi;
+        if (!apWifi || apWifi.mode !== 'ap' || !apWifi.ssid) return;
+
+        let hasClient = false;
+        
+        // Check if any PC is connected to this AP
+        topologyDevices.forEach(pc => {
+          if (pc.type !== 'pc') return;
+          const pcWifi = pc.wifi;
+          if (!pcWifi?.enabled || !pcWifi.ssid) return;
+          if (pcWifi.ssid !== apWifi.ssid) return;
+          
+          const apSecurity = apWifi.security || 'open';
+          const pcSecurity = pcWifi.security || 'open';
+          if (apSecurity !== pcSecurity) return;
+          if (apSecurity !== 'open' && apWifi.password !== pcWifi.password) return;
+          
+          hasClient = true;
+        });
+
+        if (!hasClient) {
+          disconnectedAPs.push(ap.name || ap.id);
+          refreshCount++;
+        }
+      });
+
+      // 3. Update deviceStates to trigger re-render
+      const updatedDeviceStates = new Map(deviceStates);
+      topologyDevices.forEach(device => {
+        const deviceState = updatedDeviceStates.get(device.id);
+        if (deviceState) {
+          updatedDeviceStates.set(device.id, { ...deviceState });
+        }
+      });
       setDeviceStates(updatedDeviceStates);
+
+      // 4. Show notification if there were issues
+      const totalIssues = disconnectedPCs.length + disconnectedAPs.length;
+      if (totalIssues > 0) {
+        toast({
+          title: language === 'tr' ? 'WiFi Bağlantıları' : 'WiFi Connections',
+          description: language === 'tr' 
+            ? `${disconnectedPCs.length} PC, ${disconnectedAPs.length} AP bağlantısı kontrol edildi` 
+            : `${disconnectedPCs.length} PC, ${disconnectedAPs.length} AP connections checked`,
+          variant: 'default'
+        });
+      } else {
+        toast({
+          title: language === 'tr' ? 'WiFi Bağlantıları' : 'WiFi Connections',
+          description: language === 'tr' ? 'Tüm WiFi bağlantıları aktif' : 'All WiFi connections active',
+          variant: 'default'
+        });
+      }
     }
-  }, [topologyDevices, deviceStates, setDeviceStates]);
+  }, [topologyDevices, deviceStates, setDeviceStates, toast, language]);
 
   // Handle key events: ESC to close, ENTER to confirm
   useEffect(() => {
