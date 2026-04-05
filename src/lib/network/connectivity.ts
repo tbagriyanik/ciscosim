@@ -206,12 +206,43 @@ export function checkConnectivity(
 
   // 1.5. Implicit Wireless Connections
   const connections = [..._connections];
+  const getDeviceWifiConfig = (device: CanvasDevice) => {
+    if (!device) return undefined;
+    const baseWifi = device.wifi;
+    if (baseWifi && baseWifi.ssid) {
+      return {
+        enabled: baseWifi.enabled ?? true,
+        ssid: baseWifi.ssid,
+        password: baseWifi.password || '',
+        security: baseWifi.security || 'open',
+        channel: baseWifi.channel || '2.4GHz',
+        mode: baseWifi.mode || 'client',
+        bssid: baseWifi.bssid
+      };
+    }
+    const wlanPort = device.ports.find(p => p.id === 'wlan0' && p.wifi);
+    if (wlanPort?.wifi && wlanPort.wifi.ssid) {
+      return {
+        enabled: true,
+        ssid: wlanPort.wifi.ssid,
+        password: wlanPort.wifi.password || '',
+        security: wlanPort.wifi.security || 'open',
+        channel: wlanPort.wifi.channel || '2.4GHz',
+        mode: wlanPort.wifi.mode || 'client'
+      };
+    }
+    return undefined;
+  };
   if (deviceStates) {
     const apDevices = devices.filter(d => isSwitchDeviceType(d.type) || d.type === 'router');
-    const pcDevices = devices.filter(d => d.type === 'pc' && d.wifi && d.wifi.enabled && d.wifi.ssid);
+    const pcDevices = devices.filter(d => {
+      const wifi = getDeviceWifiConfig(d);
+      return d.type === 'pc' && !!wifi && wifi.enabled && !!wifi.ssid;
+    });
 
     for (const pc of pcDevices) {
-      const pcWifi = pc.wifi!;
+      const pcWifi = getDeviceWifiConfig(pc);
+      if (!pcWifi || !pcWifi.enabled || !pcWifi.ssid) continue;
       for (const ap of apDevices) {
         const apState = deviceStates.get(ap.id);
         const wlan = apState?.ports['wlan0'];

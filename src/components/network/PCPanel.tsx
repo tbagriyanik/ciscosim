@@ -1167,13 +1167,22 @@ export function PCPanel({
     return null;
   }, [canReachTargetIp, resolveDomainWithDnsServices, topologyDevices, deviceStates, deviceId]);
 
-  const openHttpTarget = useCallback((rawTarget?: string) => {
+  const openHttpTarget = useCallback((rawTarget?: string, rawUrl?: string) => {
     const rawInput = (rawTarget || '').trim();
     const normalizedInput = rawInput || '192.168.1.10';
     let lookupTarget = normalizeLookupTarget(normalizedInput);
     let displayUrl = normalizedInput.startsWith('http://') || normalizedInput.startsWith('https://')
       ? normalizedInput
       : `http://${normalizedInput}`;
+    if (rawUrl && rawUrl.trim().length > 0) {
+      const candidate = rawUrl.trim();
+      displayUrl = candidate.startsWith('http://') || candidate.startsWith('https://') ? candidate : `http://${candidate}`;
+      lookupTarget = normalizeLookupTarget(candidate);
+    }
+    setHttpAppUrl(displayUrl);
+    setHttpAppTitle(language === 'tr' ? 'HTTP Yönetim Sayfası' : 'HTTP Page');
+    setHttpAppContent(null);
+    setHttpAppDeviceId(null);
 
     // Browser-style inputs can include protocol/path/query. We only resolve host/IP.
     try {
@@ -1574,7 +1583,7 @@ export function PCPanel({
           }
         }
       } else if (cmd === 'http') {
-        openHttpTarget(args[0]);
+        openHttpTarget(args[0], args[1]);
       } else if (cmd === 'telnet') {
         const target = args[0];
         const port = args[1] || '23';
@@ -1629,7 +1638,7 @@ export function PCPanel({
               addLocalOutput('error', `Connection refused by ${targetIp}`);
             }
           } else {
-            addLocalOutput('error', `Connecting to ${targetIp}... failed: ${result.error || 'Destination unreachable'}`);
+    addLocalOutput('error', `Connecting to ${targetIp}... failed: ${result.error || 'Destination unreachable'}`);
           }
         }
       } else if (cmd === 'arp') {
