@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, KeyboardEvent, useCallback, useMemo } from 'react';
+import { useState, useRef, useEffect, KeyboardEvent, useCallback, useMemo, ClipboardEvent } from 'react';
 import { useSwitchState } from '@/lib/store/appStore';
 import { SwitchState } from '@/lib/network/types';
 import { useLanguage, Translations } from '@/contexts/LanguageContext';
@@ -127,6 +127,87 @@ export function Terminal({
 
   const commandQueueRef = useRef<string[]>([]);
   const isProcessingQueueRef = useRef(false);
+  const historyRef = useRef<string[]>(state.commandHistory || []);
+  const isLoadingRef = useRef<boolean>(isLoading);
+  const awaitingPasswordRef = useRef<boolean>(!!state.awaitingPassword);
+  const confirmDialogOpenRef = useRef<boolean>(!!confirmDialog?.show);
+  const reloadConfirmPendingRef = useRef<boolean>(false);
+
+  useEffect(() => {
+    historyRef.current = history;
+  }, [history]);
+
+  useEffect(() => {
+    isLoadingRef.current = isLoading;
+  }, [isLoading]);
+
+  useEffect(() => {
+    awaitingPasswordRef.current = !!state.awaitingPassword;
+  }, [state.awaitingPassword]);
+
+  useEffect(() => {
+    confirmDialogOpenRef.current = !!confirmDialog?.show;
+  }, [confirmDialog?.show]);
+
+  const clearTerminalView = useCallback(() => {
+    cancelOutputRef.current = true;
+    pendingLinesRef.current = [];
+    processedOutputIdsRef.current.clear();
+    setIsProcessingMultiline(false);
+    setDisplayedLines([]);
+    onClear();
+  }, [onClear]);
+
+  const queueCommands = useCallback((commands: string[]) => {
+    const sanitized = commands
+      .map((line) => line.replace(/\r/g, '').trim())
+      .filter((line) => line.length > 0);
+
+    if (sanitized.length === 0) return;
+    commandQueueRef.current.push(...sanitized);
+  }, []);
+
+  const processCommandQueue = useCallback(async () => {
+    if (isProcessingQueueRef.current) return;
+    isProcessingQueueRef.current = true;
+
+    try {
+      while (commandQueueRef.current.length > 0) {
+        const nextCommand = commandQueueRef.current.shift();
+        if (!nextCommand) continue;
+
+        const currentHistory = historyRef.current;
+        if (currentHistory[0] !== nextCommand) {
+          const newHistory = [nextCommand, ...currentHistory].slice(0, 50);
+          historyRef.current = newHistory;
+          setHistory(newHistory);
+          if (onUpdateHistory) onUpdateHistory(deviceId, newHistory);
+        }
+        setHistoryIndex(-1);
+        setTabCycleIndex(-1);
+        setShowAutocomplete(false);
+        setAutocompleteIndex(-1);
+
+        await onCommand(nextCommand);
+
+        // Wait until the command lifecycle is fully settled before next command.
+        // This prevents pasted commands from overlapping.
+        await new Promise((resolve) => setTimeout(resolve, 20));
+        let guard = 0;
+        while (isLoadingRef.current && guard < 600) {
+          await new Promise((resolve) => setTimeout(resolve, 25));
+          guard += 1;
+        }
+
+        // If command triggered an interactive mode, pause the queue.
+        if (awaitingPasswordRef.current || confirmDialogOpenRef.current || reloadConfirmPendingRef.current) {
+          break;
+        }
+      }
+    } finally {
+      isProcessingQueueRef.current = false;
+    }
+  }, [deviceId, onCommand, onUpdateHistory]);
 
   useEffect(() => {
     if (!showAutocomplete) return;
@@ -264,11 +345,17 @@ export function Terminal({
     processedOutputIdsRef.current.clear();
     setIsProcessingMultiline(false);
     pendingLinesRef.current = [];
+    commandQueueRef.current = [];
+    isProcessingQueueRef.current = false;
   }, [deviceId]);
 
   const isReloadConfirmationPending = output.some(
     (line) => line.type === 'output' && /Proceed with reload\? \[confirm\]/i.test(line.content)
   ) || state.awaitingReloadConfirm || false;
+
+  useEffect(() => {
+    reloadConfirmPendingRef.current = !!isReloadConfirmationPending;
+  }, [isReloadConfirmationPending]);
 
   // Command Context for Autocomplete
   const expandCommandContext = useCallback((mode: keyof typeof commandHelp, rawValue: string) => {
@@ -392,6 +479,16 @@ export function Terminal({
     e.preventDefault();
     void handleSubmit();
   };
+
+  const handlePaste = useCallback((e: ClipboardEvent<HTMLInputElement>) => {
+    const pastedText = e.clipboardData.getData('text');
+    if (!pastedText || !pastedText.includes('\n')) return;
+
+    e.preventDefault();
+    queueCommands(pastedText.split('\n'));
+    setInput('');
+    void processCommandQueue();
+  }, [processCommandQueue, queueCommands]);
 
   const getAutocompleteContext = useCallback((value: string) => {
     const mode = state.currentMode;
@@ -517,6 +614,17 @@ export function Terminal({
     const autocompleteSuggestions = renderAutocompleteSuggestions;
     const canUseAutocomplete = showAutocomplete && autocompleteSuggestions.length > 0;
 
+    // Terminal clear shortcut
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'l') {
+      e.preventDefault();
+      setInput('');
+      setShowAutocomplete(false);
+      setAutocompleteIndex(-1);
+      setAutocompleteNavigated(false);
+      clearTerminalView();
+      return;
+    }
+
     if (e.key === 'Enter') {
       if (canUseAutocomplete && autocompleteNavigated) {
         e.preventDefault();
@@ -613,6 +721,13 @@ export function Terminal({
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'v') {
       e.preventDefault();
       navigator.clipboard.readText().then(text => {
+        if (text && text.includes('\n')) {
+          queueCommands(text.split('\n'));
+          setInput('');
+          void processCommandQueue();
+          return;
+        }
+
         if (inputRef.current) {
           const start = inputRef.current.selectionStart || 0;
           const end = inputRef.current.selectionEnd || 0;
@@ -682,7 +797,7 @@ export function Terminal({
         return;
       }
       e.preventDefault();
-      onClear();
+      clearTerminalView();
     } else {
       setTabCycleIndex(-1);
     }
@@ -780,7 +895,7 @@ export function Terminal({
               onChange={(e) => setFontSize(parseInt(e.target.value))}
               className="flex-1 h-1 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
             />
-            <Button variant="ghost" size="sm" onClick={onClear} className="h-7 text-[10px] font-black  tracking-widest text-rose-500">
+            <Button variant="ghost" size="sm" onClick={clearTerminalView} className="h-7 text-[10px] font-black  tracking-widest text-rose-500">
               <Trash2 className="w-3 h-3 mr-1" /> {t.clearTerminalBtn}
             </Button>
           </div>
@@ -867,6 +982,7 @@ export function Terminal({
                     type={state.awaitingPassword ? 'password' : 'text'}
                     value={input}
                     onChange={(e) => handleInputChange(e.target.value)}
+                    onPaste={handlePaste}
                     onKeyDown={handleKeyDown}
                     onFocus={() => {
                       // Scroll input into view on mobile when keyboard opens

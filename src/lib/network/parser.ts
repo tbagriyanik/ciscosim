@@ -1857,7 +1857,7 @@ export function validateCommand(
       if (!pattern.modes.includes(currentMode)) {
         return {
           valid: false,
-          error: getModeError(name, currentMode)
+          error: getModeError(parsed.rawInput, currentMode)
         };
       }
 
@@ -1873,7 +1873,7 @@ export function validateCommand(
 }
 
 // Mode hatası mesajı
-function getModeError(command: string, currentMode: CommandMode): string {
+function getModeError(input: string, currentMode: CommandMode): string {
   const modeNames: Record<CommandMode, string> = {
     user: 'User EXEC',
     privileged: 'Privileged EXEC',
@@ -1885,7 +1885,12 @@ function getModeError(command: string, currentMode: CommandMode): string {
     'router-config': 'Router Configuration',
   };
 
-  return `          ^
+  const firstNonSpace = input.search(/\S|$/);
+  const cleanedInput = input.replace(/\s+$/g, '');
+  const indicator = ' '.repeat(Math.max(0, firstNonSpace)) + '^';
+
+  return `${cleanedInput}
+${indicator}
 % Invalid input detected at '^' marker.
 
 Bu komut bu modda kullanılamaz. Mevcut mod: ${modeNames[currentMode]}`;
