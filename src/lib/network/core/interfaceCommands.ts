@@ -38,6 +38,26 @@ export const interfaceHandlers: Record<string, CommandHandler> = {
   'wifi-password': cmdWifiPassword,
   'wifi-channel': cmdWifiChannel,
   'wifi-mode': cmdWifiMode,
+  // No commands for interface
+  'no description': cmdNoDescription,
+  'no switchport mode': cmdNoSwitchportMode,
+  'no switchport access vlan': cmdNoSwitchportAccessVlan,
+  'no switchport port-security': cmdNoSwitchportPortSecurity,
+  'no cdp enable': cmdNoCdpEnable,
+  'no channel-group': cmdNoChannelGroup,
+  'no udld': cmdNoUdld,
+  'no ip proxy-arp': cmdNoIpProxyArp,
+  'no keepalive': cmdNoKeepalive,
+  'no name': cmdNoName,
+  'no spanning-tree': cmdNoSpanningTree,
+  // Debug and monitor
+  'debug': cmdDebug,
+  'no debug': cmdNoDebug,
+  'monitor session': cmdMonitorSession,
+  'no monitor session': cmdNoMonitorSession,
+  // Access-list
+  'access-list': cmdAccessList,
+  'no access-list': cmdNoAccessList,
 };
 
 /**
@@ -852,6 +872,285 @@ function cmdWifiMode(state: any, input: string, ctx: any): any {
   }));
 
   return { success: true, newState: { ports: newPorts } };
+}
+
+/**
+ * No Description - Clear interface description
+ */
+function cmdNoDescription(state: any, input: string, ctx: any): any {
+  if (!isInInterfaceMode(state) || !state.currentInterface) {
+    return { success: false, error: '% No interface selected' };
+  }
+
+  const newPorts = applyToSelectedPorts(state, (port: any) => ({
+    ...port,
+    description: ''
+  }));
+
+  return { success: true, newState: { ports: newPorts } };
+}
+
+/**
+ * No Switchport Mode - Reset switchport mode
+ */
+function cmdNoSwitchportMode(state: any, input: string, ctx: any): any {
+  if (!isInInterfaceMode(state) || !state.currentInterface) {
+    return { success: false, error: '% No interface selected' };
+  }
+
+  const newPorts = applyToSelectedPorts(state, (port: any) => ({
+    ...port,
+    switchportMode: 'auto'
+  }));
+
+  return { success: true, newState: { ports: newPorts } };
+}
+
+/**
+ * No Switchport Access VLAN - Reset access VLAN
+ */
+function cmdNoSwitchportAccessVlan(state: any, input: string, ctx: any): any {
+  if (!isInInterfaceMode(state) || !state.currentInterface) {
+    return { success: false, error: '% No interface selected' };
+  }
+
+  const newPorts = applyToSelectedPorts(state, (port: any) => ({
+    ...port,
+    accessVlan: 1
+  }));
+
+  return { success: true, newState: { ports: newPorts } };
+}
+
+/**
+ * No Switchport Port-Security - Disable port security
+ */
+function cmdNoSwitchportPortSecurity(state: any, input: string, ctx: any): any {
+  if (!isInInterfaceMode(state) || !state.currentInterface) {
+    return { success: false, error: '% No interface selected' };
+  }
+
+  const newPorts = applyToSelectedPorts(state, (port: any) => ({
+    ...port,
+    portSecurity: undefined
+  }));
+
+  return { success: true, newState: { ports: newPorts } };
+}
+
+/**
+ * No CDP Enable - Disable CDP on interface
+ */
+function cmdNoCdpEnable(state: any, input: string, ctx: any): any {
+  if (!isInInterfaceMode(state) || !state.currentInterface) {
+    return { success: false, error: '% No interface selected' };
+  }
+
+  const newPorts = applyToSelectedPorts(state, (port: any) => ({
+    ...port,
+    cdpEnabled: false
+  }));
+
+  return { success: true, newState: { ports: newPorts } };
+}
+
+/**
+ * No Channel-Group - Remove EtherChannel
+ */
+function cmdNoChannelGroup(state: any, input: string, ctx: any): any {
+  if (!isInInterfaceMode(state) || !state.currentInterface) {
+    return { success: false, error: '% No interface selected' };
+  }
+
+  const newPorts = applyToSelectedPorts(state, (port: any) => ({
+    ...port,
+    channelGroup: undefined,
+    channelProtocol: undefined
+  }));
+
+  return { success: true, newState: { ports: newPorts } };
+}
+
+/**
+ * No UDLD - Disable UDLD on interface
+ */
+function cmdNoUdld(state: any, input: string, ctx: any): any {
+  if (!isInInterfaceMode(state) || !state.currentInterface) {
+    return { success: false, error: '% No interface selected' };
+  }
+
+  const newPorts = applyToSelectedPorts(state, (port: any) => ({
+    ...port,
+    udldEnabled: false
+  }));
+
+  return { success: true, newState: { ports: newPorts } };
+}
+
+/**
+ * No IP Proxy-ARP - Disable proxy ARP
+ */
+function cmdNoIpProxyArp(state: any, input: string, ctx: any): any {
+  if (!isInInterfaceMode(state) || !state.currentInterface) {
+    return { success: false, error: '% No interface selected' };
+  }
+
+  const newPorts = applyToSelectedPorts(state, (port: any) => ({
+    ...port,
+    ipProxyArp: false
+  }));
+
+  return { success: true, newState: { ports: newPorts } };
+}
+
+/**
+ * No Keepalive - Disable keepalive
+ */
+function cmdNoKeepalive(state: any, input: string, ctx: any): any {
+  if (!isInInterfaceMode(state) || !state.currentInterface) {
+    return { success: false, error: '% No interface selected' };
+  }
+
+  const newPorts = applyToSelectedPorts(state, (port: any) => ({
+    ...port,
+    keepalive: false
+  }));
+
+  return { success: true, newState: { ports: newPorts } };
+}
+
+/**
+ * No Name - Clear interface name
+ */
+function cmdNoName(state: any, input: string, ctx: any): any {
+  if (!isInInterfaceMode(state) || !state.currentInterface) {
+    return { success: false, error: '% No interface selected' };
+  }
+
+  const iface = state.currentInterface.toLowerCase();
+  if (iface.startsWith('vlan')) {
+    const vlanId = iface.replace('vlan', '');
+    const newVlans = { ...state.vlans };
+    if (newVlans[vlanId]) {
+      newVlans[vlanId] = { ...newVlans[vlanId], name: `VLAN${vlanId}` };
+    }
+    return { success: true, newState: { vlans: newVlans } };
+  }
+
+  const newPorts = applyToSelectedPorts(state, (port: any) => ({ ...port, name: '' }));
+  return { success: true, newState: { ports: newPorts } };
+}
+
+/**
+ * No Spanning-Tree - Disable spanning-tree on interface
+ */
+function cmdNoSpanningTree(state: any, input: string, ctx: any): any {
+  if (!isInInterfaceMode(state) || !state.currentInterface) {
+    return { success: false, error: '% No interface selected' };
+  }
+
+  const newPorts = applyToSelectedPorts(state, (port: any) => ({
+    ...port,
+    spanningTreeEnabled: false
+  }));
+
+  return { success: true, newState: { ports: newPorts } };
+}
+
+/**
+ * Debug - Enable debug
+ */
+function cmdDebug(state: any, input: string, ctx: any): any {
+  if (state.currentMode !== 'privileged') {
+    return { success: false, error: '% Invalid command at this mode' };
+  }
+
+  const match = input.match(/^debug\s+(.+)$/i);
+  if (!match) {
+    return { success: false, error: '% Invalid debug command' };
+  }
+
+  return { success: true, output: `Debug ${match[1]} enabled` };
+}
+
+/**
+ * No Debug - Disable debug
+ */
+function cmdNoDebug(state: any, input: string, ctx: any): any {
+  if (state.currentMode !== 'privileged' && state.currentMode !== 'config') {
+    return { success: false, error: '% Invalid command at this mode' };
+  }
+
+  const match = input.match(/^no\s+debug\s+(.+)$/i);
+  if (!match) {
+    return { success: false, error: '% Invalid debug command' };
+  }
+
+  return { success: true, output: `Debug ${match[1]} disabled` };
+}
+
+/**
+ * Monitor Session - Configure port monitoring
+ */
+function cmdMonitorSession(state: any, input: string, ctx: any): any {
+  if (state.currentMode !== 'config') {
+    return { success: false, error: '% Invalid command at this mode' };
+  }
+
+  const match = input.match(/^monitor\s+session\s+(\d+)\s+(source|destination)\s+(.+)$/i);
+  if (!match) {
+    return { success: false, error: '% Invalid monitor session command' };
+  }
+
+  return { success: true, output: `Monitor session ${match[1]} configured` };
+}
+
+/**
+ * No Monitor Session - Remove port monitoring
+ */
+function cmdNoMonitorSession(state: any, input: string, ctx: any): any {
+  if (state.currentMode !== 'config') {
+    return { success: false, error: '% Invalid command at this mode' };
+  }
+
+  const match = input.match(/^no\s+monitor\s+session\s+(\d+)$/i);
+  if (!match) {
+    return { success: false, error: '% Invalid monitor session command' };
+  }
+
+  return { success: true, output: `Monitor session ${match[1]} removed` };
+}
+
+/**
+ * Access-List - Configure ACL
+ */
+function cmdAccessList(state: any, input: string, ctx: any): any {
+  if (state.currentMode !== 'config') {
+    return { success: false, error: '% Invalid command at this mode' };
+  }
+
+  const match = input.match(/^access-list\s+(\d+)\s+(permit|deny)\s+(.+)$/i);
+  if (!match) {
+    return { success: false, error: '% Invalid access-list command' };
+  }
+
+  return { success: true, output: `Access-list ${match[1]} configured` };
+}
+
+/**
+ * No Access-List - Remove ACL
+ */
+function cmdNoAccessList(state: any, input: string, ctx: any): any {
+  if (state.currentMode !== 'config') {
+    return { success: false, error: '% Invalid command at this mode' };
+  }
+
+  const match = input.match(/^no\s+access-list\s+(\d+)$/i);
+  if (!match) {
+    return { success: false, error: '% Invalid access-list command' };
+  }
+
+  return { success: true, output: `Access-list ${match[1]} removed` };
 }
 
 

@@ -8,11 +8,13 @@ import { canAssignIPToPhysicalPort } from '../switchModels';
 export const globalConfigHandlers: Record<string, CommandHandler> = {
   'hostname': cmdHostname,
   'vlan': cmdVlan,
+  'no vlan': cmdNoVlan,
   'name': cmdVlanName,
   'state': cmdVlanState,
   'vtp mode': cmdVtpMode,
   'vtp domain': cmdVtpDomain,
   'spanning-tree mode': cmdSpanningTreeMode,
+  'no spanning-tree': cmdNoSpanningTree,
   'service password-encryption': cmdServicePasswordEncryption,
   'no service password-encryption': cmdNoServicePasswordEncryption,
   'enable secret': cmdEnableSecret,
@@ -20,11 +22,25 @@ export const globalConfigHandlers: Record<string, CommandHandler> = {
   'enable password': cmdEnablePassword,
   'no enable password': cmdNoEnablePassword,
   'banner motd': cmdBannerMotd,
+  'no banner motd': cmdNoBannerMotd,
   'ip default-gateway': cmdIpDefaultGateway,
   'no ip default-gateway': cmdNoIpDefaultGateway,
   'ip domain-name': cmdIpDomainName,
+  'no ip domain lookup': cmdNoIpDomainLookup,
+  'ip routing': cmdIpRouting,
+  'no ip routing': cmdNoIpRouting,
+  'ip ssh time-out': cmdIpSshTimeOut,
+  'no ip ssh time-out': cmdNoIpSshTimeOut,
+  'ip dhcp snooping': cmdIpDhcpSnooping,
+  'no ip dhcp snooping': cmdNoIpDhcpSnooping,
+  'mls qos': cmdMlsQos,
+  'no mls qos': cmdNoMlsQos,
   'cdp run': cmdCdpRun,
   'no cdp run': cmdNoCdpRun,
+  'username': cmdUsername,
+  'no username': cmdNoUsername,
+  'interface': cmdInterface,
+  'no interface': cmdNoInterface,
   // Routing protocols
   'router rip': cmdRouterRip,
   'router ospf': cmdRouterOspf,
@@ -51,6 +67,148 @@ function cmdHostname(state: any, input: string, ctx: any): any {
   return {
     success: true,
     newState: { hostname: match[1] }
+  };
+}
+
+/**
+ * IP Routing - Enable IP routing
+ */
+function cmdIpRouting(state: any, input: string, ctx: any): any {
+  if (state.currentMode !== 'config') {
+    return { success: false, error: '% Invalid command at this mode' };
+  }
+
+  return {
+    success: true,
+    newState: { ipRouting: true }
+  };
+}
+
+/**
+ * IP SSH Time-Out
+ */
+function cmdIpSshTimeOut(state: any, input: string, ctx: any): any {
+  if (state.currentMode !== 'config') {
+    return { success: false, error: '% Invalid command at this mode' };
+  }
+
+  const match = input.match(/^ip\s+ssh\s+time-out\s+(\d+)$/i);
+  if (!match) {
+    return { success: false, error: '% Invalid SSH time-out command' };
+  }
+
+  return {
+    success: true,
+    newState: { sshTimeOut: parseInt(match[1]) }
+  };
+}
+
+/**
+ * IP DHCP Snooping - Enable DHCP snooping
+ */
+function cmdIpDhcpSnooping(state: any, input: string, ctx: any): any {
+  if (state.currentMode !== 'config') {
+    return { success: false, error: '% Invalid command at this mode' };
+  }
+
+  return {
+    success: true,
+    newState: { dhcpSnoopingEnabled: true }
+  };
+}
+
+/**
+ * MLS QoS - Enable MLS QoS
+ */
+function cmdMlsQos(state: any, input: string, ctx: any): any {
+  if (state.currentMode !== 'config') {
+    return { success: false, error: '% Invalid command at this mode' };
+  }
+
+  return {
+    success: true,
+    newState: { mlsQosEnabled: true }
+  };
+}
+
+/**
+ * Username - Create username
+ */
+function cmdUsername(state: any, input: string, ctx: any): any {
+  if (state.currentMode !== 'config') {
+    return { success: false, error: '% Invalid command at this mode' };
+  }
+
+  const match = input.match(/^username\s+(\S+)(\s+(privilege\s+(\d+)|password|secret)\s+(.+))?$/i);
+  if (!match) {
+    return { success: false, error: '% Invalid username command' };
+  }
+
+  const username = match[1];
+  const privilege = match[4] ? parseInt(match[4]) : 0;
+  const password = match[5] || '';
+  const passwordType = input.toLowerCase().includes('secret') ? 'secret' : 'password';
+
+  const newUsers = { ...state.users };
+  newUsers[username] = {
+    username,
+    privilege,
+    password,
+    passwordType
+  };
+
+  return {
+    success: true,
+    newState: { users: newUsers }
+  };
+}
+
+/**
+ * Interface - Enter interface configuration
+ */
+function cmdInterface(state: any, input: string, ctx: any): any {
+  if (state.currentMode !== 'config') {
+    return { success: false, error: '% Invalid command at this mode' };
+  }
+
+  const match = input.match(/^interface\s+(.+)$/i);
+  if (!match) {
+    return { success: false, error: '% Invalid interface command' };
+  }
+
+  const iface = match[1].toLowerCase();
+
+  if (iface.startsWith('vlan')) {
+    const vlanMatch = iface.match(/vlan\s+(\d+)/i);
+    if (!vlanMatch) {
+      return { success: false, error: '% Invalid VLAN interface' };
+    }
+    const vlanId = vlanMatch[1];
+    const newVlans = { ...state.vlans };
+    if (!newVlans[vlanId]) {
+      newVlans[vlanId] = {
+        id: parseInt(vlanId),
+        name: `VLAN${vlanId}`,
+        status: 'active',
+        ports: []
+      };
+    }
+    return {
+      success: true,
+      newState: {
+        vlans: newVlans,
+        currentMode: 'interface',
+        currentInterface: `Vlan${vlanId}`
+      }
+    };
+  }
+
+  return {
+    success: true,
+    newState: {
+      currentMode: 'interface',
+      currentInterface: match[1]
+    }
   };
 }
 
@@ -85,6 +243,36 @@ function cmdVlan(state: any, input: string, ctx: any): any {
       vlans: newVlans,
       currentMode: 'vlan',
       currentVlan: vlanId
+    }
+  };
+}
+
+/**
+ * No VLAN - Delete VLAN
+ */
+function cmdNoVlan(state: any, input: string, ctx: any): any {
+  if (state.currentMode !== 'config') {
+    return { success: false, error: '% Invalid command at this mode' };
+  }
+
+  const match = input.match(/^no\s+vlan\s+(\d+)$/i);
+  if (!match) {
+    return { success: false, error: '% Invalid VLAN ID' };
+  }
+
+  const vlanId = match[1];
+  const newVlans = { ...state.vlans };
+
+  if (!newVlans[vlanId]) {
+    return { success: false, error: `% VLAN ${vlanId} does not exist` };
+  }
+
+  delete newVlans[vlanId];
+
+  return {
+    success: true,
+    newState: {
+      vlans: newVlans
     }
   };
 }
@@ -595,5 +783,159 @@ function cmdNoIpHttpServer(state: any, input: string, ctx: any): any {
         }
       }
     }
+  };
+}
+
+/**
+ * No Banner MOTD - Clear banner
+ */
+function cmdNoBannerMotd(state: any, input: string, ctx: any): any {
+  if (state.currentMode !== 'config') {
+    return { success: false, error: '% Invalid command at this mode' };
+  }
+
+  return {
+    success: true,
+    newState: { bannerMOTD: '' }
+  };
+}
+
+/**
+ * No IP Domain Lookup - Disable domain lookup
+ */
+function cmdNoIpDomainLookup(state: any, input: string, ctx: any): any {
+  if (state.currentMode !== 'config') {
+    return { success: false, error: '% Invalid command at this mode' };
+  }
+
+  return {
+    success: true,
+    newState: { domainLookup: false }
+  };
+}
+
+/**
+ * No IP Routing - Disable IP routing
+ */
+function cmdNoIpRouting(state: any, input: string, ctx: any): any {
+  if (state.currentMode !== 'config') {
+    return { success: false, error: '% Invalid command at this mode' };
+  }
+
+  return {
+    success: true,
+    newState: { ipRouting: false }
+  };
+}
+
+/**
+ * No IP SSH Time-Out
+ */
+function cmdNoIpSshTimeOut(state: any, input: string, ctx: any): any {
+  if (state.currentMode !== 'config') {
+    return { success: false, error: '% Invalid command at this mode' };
+  }
+
+  return {
+    success: true,
+    newState: { sshTimeOut: undefined }
+  };
+}
+
+/**
+ * No Spanning-Tree - Disable spanning-tree globally
+ */
+function cmdNoSpanningTree(state: any, input: string, ctx: any): any {
+  if (state.currentMode !== 'config') {
+    return { success: false, error: '% Invalid command at this mode' };
+  }
+
+  return {
+    success: true,
+    newState: { spanningTreeEnabled: false }
+  };
+}
+
+/**
+ * No MLS QoS - Disable MLS QoS
+ */
+function cmdNoMlsQos(state: any, input: string, ctx: any): any {
+  if (state.currentMode !== 'config') {
+    return { success: false, error: '% Invalid command at this mode' };
+  }
+
+  return {
+    success: true,
+    newState: { mlsQosEnabled: false }
+  };
+}
+
+/**
+ * No IP DHCP Snooping - Disable DHCP snooping
+ */
+function cmdNoIpDhcpSnooping(state: any, input: string, ctx: any): any {
+  if (state.currentMode !== 'config') {
+    return { success: false, error: '% Invalid command at this mode' };
+  }
+
+  return {
+    success: true,
+    newState: { dhcpSnoopingEnabled: false }
+  };
+}
+
+/**
+ * No Username - Remove username
+ */
+function cmdNoUsername(state: any, input: string, ctx: any): any {
+  if (state.currentMode !== 'config') {
+    return { success: false, error: '% Invalid command at this mode' };
+  }
+
+  const match = input.match(/^no\s+username\s+(\S+)$/i);
+  if (!match) {
+    return { success: false, error: '% Invalid username command' };
+  }
+
+  const username = match[1];
+  const newUsers = { ...state.users };
+  delete newUsers[username];
+
+  return {
+    success: true,
+    newState: { users: newUsers }
+  };
+}
+
+/**
+ * No Interface - Delete interface config (for VLAN interfaces)
+ */
+function cmdNoInterface(state: any, input: string, ctx: any): any {
+  if (state.currentMode !== 'config') {
+    return { success: false, error: '% Invalid command at this mode' };
+  }
+
+  const match = input.match(/^no\s+interface\s+vlan\s+(\d+)$/i);
+  if (!match) {
+    return { success: false, error: '% Invalid interface command' };
+  }
+
+  const vlanId = match[1];
+  const newVlans = { ...state.vlans };
+  
+  if (!newVlans[vlanId]) {
+    return { success: false, error: `% VLAN ${vlanId} does not exist` };
+  }
+
+  // Remove the VLAN interface (keep VLAN but remove IP)
+  newVlans[vlanId] = {
+    ...newVlans[vlanId],
+    ipAddress: undefined,
+    subnetMask: undefined
+  };
+
+  return {
+    success: true,
+    newState: { vlans: newVlans }
   };
 }
