@@ -3360,6 +3360,9 @@ export default function Home() {
                         onUpdateHistory={handleUpdateHistory}
                         confirmDialog={confirmDialog}
                         setConfirmDialog={setConfirmDialog}
+                        device={topologyDevices.find(d => d.id === activeDeviceId)}
+                        devices={topologyDevices}
+                        deviceStates={deviceStates}
                         onRequestFocus={() => {
                           requestAnimationFrame(() => {
                             const el = document.querySelector('input[placeholder="' + t.typeCommand + '"]') as HTMLInputElement | null;

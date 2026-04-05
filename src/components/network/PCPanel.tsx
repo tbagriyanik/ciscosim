@@ -1603,7 +1603,39 @@ export function PCPanel({
               }));
             }
             const pingTargetDisplay = dnsResolved ? `${target} [${targetIp}]` : targetIp;
-            await addMultilineOutput('output', `Pinging ${pingTargetDisplay} with 32 bytes of data:\nReply from ${targetIp}: bytes=32 time<1ms TTL=128\nReply from ${targetIp}: bytes=32 time<1ms TTL=128\nReply from ${targetIp}: bytes=32 time<1ms TTL=128\nReply from ${targetIp}: bytes=32 time<1ms TTL=128\n\nPing statistics for ${pingTargetDisplay}:\n    Packets: Sent = 4, Received = 4, Lost = 0 (0% loss)`, 100);
+
+            // Calculate ping latencies based on WiFi signal strength
+            const signalStrength = wifiSignalStrength;
+            const generatePingTime = () => {
+              if (signalStrength >= 5) {
+                // 100% - Excellent: 1-6ms
+                return Math.floor(Math.random() * 6) + 1;
+              } else if (signalStrength === 4) {
+                // 75% - Good: 5-24ms
+                return Math.floor(Math.random() * 20) + 5;
+              } else if (signalStrength === 3) {
+                // 50% - Fair: 15-55ms
+                return Math.floor(Math.random() * 41) + 15;
+              } else if (signalStrength === 2) {
+                // 25% - Weak: 40-110ms
+                return Math.floor(Math.random() * 71) + 40;
+              } else if (signalStrength === 1) {
+                // 1% - Very Weak: 100-220ms
+                return Math.floor(Math.random() * 121) + 100;
+              } else {
+                // No WiFi or wired connection: <1ms
+                return 0;
+              }
+            };
+
+            const time1 = generatePingTime();
+            const time2 = generatePingTime();
+            const time3 = generatePingTime();
+            const time4 = generatePingTime();
+
+            const formatTime = (ms: number) => ms === 0 ? '<1ms' : `${ms}ms`;
+
+            await addMultilineOutput('output', `Pinging ${pingTargetDisplay} with 32 bytes of data:\nReply from ${targetIp}: bytes=32 time=${formatTime(time1)} TTL=128\nReply from ${targetIp}: bytes=32 time=${formatTime(time2)} TTL=128\nReply from ${targetIp}: bytes=32 time=${formatTime(time3)} TTL=128\nReply from ${targetIp}: bytes=32 time=${formatTime(time4)} TTL=128\n\nPing statistics for ${pingTargetDisplay}:\n    Packets: Sent = 4, Received = 4, Lost = 0 (0% loss)`, 100);
           } else {
             const pingTargetDisplay = dnsResolved ? `${target} [${targetIp}]` : targetIp;
             await addMultilineOutput('output', `Pinging ${pingTargetDisplay} with 32 bytes of data:\nRequest timed out.\nRequest timed out.\nRequest timed out.\nRequest timed out.\n\nPing statistics for ${pingTargetDisplay}:\n    Packets: Sent = 4, Received = 0, Lost = 4 (100% loss)`, 100);

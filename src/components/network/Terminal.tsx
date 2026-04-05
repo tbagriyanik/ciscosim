@@ -6,11 +6,11 @@ import { SwitchState } from '@/lib/network/types';
 import { useLanguage, Translations } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import type { TerminalOutput as TerminalOutputType } from './Terminal';
-import { checkConnectivity } from '@/lib/network/connectivity';
+import { checkConnectivity, getWirelessSignalStrength, getDeviceWifiConfig } from '@/lib/network/connectivity';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Laptop, Monitor, Terminal as TerminalIcon, X, CornerDownLeft, Command, Globe, Network, ShieldCheck, History, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Search, Copy, Save, Trash2, Download, Settings } from 'lucide-react';
+import { Laptop, Monitor, Terminal as TerminalIcon, X, CornerDownLeft, Command, Globe, Network, ShieldCheck, History, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Search, Copy, Save, Trash2, Download, Settings, Wifi } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { toast } from "@/hooks/use-toast";
 import { commandHelp } from '@/lib/network/executor';
@@ -18,6 +18,7 @@ import { ModernPanel } from '@/components/ui/ModernPanel';
 import { cn } from '@/lib/utils';
 import { useIsMobile, useIsTablet, useIsDesktop } from '@/hooks/use-breakpoint';
 import { QuickCommands } from './QuickCommands';
+import type { CanvasDevice } from './networkTopology.types';
 
 export interface TerminalOutput {
   id: string;
@@ -50,6 +51,9 @@ interface TerminalProps {
   onRequestFocus?: () => void;
   className?: string;
   title?: string;
+  device?: CanvasDevice;
+  devices?: CanvasDevice[];
+  deviceStates?: Map<string, SwitchState>;
 }
 
 export type { TerminalProps };
@@ -76,7 +80,10 @@ export function Terminal({
   setConfirmDialog,
   onRequestFocus,
   className,
-  title
+  title,
+  device,
+  devices = [],
+  deviceStates
 }: TerminalProps) {
   const [input, setInput] = useState('');
   const [history, setHistory] = useState<string[]>(() => state.commandHistory || []);
@@ -580,7 +587,7 @@ export function Terminal({
     setRedoStack([]);
     setInput(newValue);
     setAutocompleteNavigated(false);
-    
+
     // Autocomplete logic
     if (newValue.trim().length > 0) {
       const suggestions = getAutocompleteSuggestions(newValue);
@@ -824,8 +831,60 @@ export function Terminal({
     URL.revokeObjectURL(url);
   };
 
+  // Calculate WiFi signal strength for PC devices
+  const wifiSignalStrength = useMemo(() => {
+    if (!device || device.type !== 'pc') return null;
+    const wifi = getDeviceWifiConfig(device, deviceStates);
+    if (!wifi || !wifi.enabled || (wifi.mode !== 'client' && wifi.mode !== 'sta')) return null;
+    return getWirelessSignalStrength(device, devices, deviceStates);
+  }, [device, devices, deviceStates]);
+
+  const getSignalIcon = (strength: number) => {
+    if (strength === 0) return null;
+    const bars = Math.ceil(strength);
+    return (
+      <div className="flex items-center gap-1">
+        <Wifi className={cn(
+          "w-4 h-4",
+          strength >= 4 ? "text-emerald-500" :
+            strength >= 3 ? "text-yellow-500" :
+              strength >= 2 ? "text-orange-500" :
+                "text-rose-500"
+        )} />
+        <span className={cn(
+          "text-[10px] font-black tracking-wider",
+          strength >= 4 ? "text-emerald-500" :
+            strength >= 3 ? "text-yellow-500" :
+              strength >= 2 ? "text-orange-500" :
+                "text-rose-500"
+        )}>
+          {strength === 5 ? "100%" :
+            strength === 4 ? "75%" :
+              strength === 3 ? "50%" :
+                strength === 2 ? "25%" :
+                  "1%"}
+        </span>
+      </div>
+    );
+  };
+
   const headerAction = (
     <div className="flex items-center gap-1">
+      {wifiSignalStrength !== null && wifiSignalStrength > 0 && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="h-8 px-2 flex items-center rounded-lg">
+              {getSignalIcon(wifiSignalStrength)}
+            </div>
+          </TooltipTrigger>
+          <TooltipContent>
+            {language === 'tr' ? 'WiFi Sinyal Gücü' : 'WiFi Signal Strength'}
+          </TooltipContent>
+        </Tooltip>
+      )}
+      {wifiSignalStrength !== null && wifiSignalStrength > 0 && (
+        <div className="w-px h-4 bg-border mx-1" />
+      )}
       <Tooltip>
         <TooltipTrigger asChild>
           <Button variant="ghost" size="icon" onClick={() => setSearchOpen(true)} className="h-8 w-8 rounded-lg">
