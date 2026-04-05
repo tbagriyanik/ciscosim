@@ -83,50 +83,71 @@ export function buildRunningConfig(state: SwitchState): string[] {
             return;
         }
 
-        const portUpper = port.id.toUpperCase().replace('FA', 'FastEthernet').replace('GI', 'GigabitEthernet');
+        const isWlan = port.id.toLowerCase().startsWith('wlan');
+        const portUpper = isWlan
+            ? port.id.toUpperCase()
+            : port.id.toUpperCase().replace('FA', 'FastEthernet').replace('GI', 'GigabitEthernet');
+
         lines.push(`interface ${portUpper}`);
+
         if (port.name) {
             lines.push(` description ${port.name}`);
         }
-        if (port.shutdown) {
-            lines.push(' shutdown');
-        }
-        if (port.speed !== 'auto') {
-            lines.push(` speed ${port.speed}`);
-        }
-        if (port.duplex !== 'auto') {
-            lines.push(` duplex ${port.duplex}`);
-        }
-        if (port.mode === 'trunk') {
-            lines.push(' switchport mode trunk');
-        } else {
-            lines.push(' switchport mode access');
-            const vlanId = Number((port as any).accessVlan || port.vlan || 1);
-            if (vlanId !== 1) {
-                lines.push(` switchport access vlan ${vlanId}`);
-            }
-        }
 
-        // WiFi configuration for WLAN interfaces
-        if (port.wifi && port.wifi.ssid) {
-            const wifiMode =
-                port.wifi.mode === 'disabled'
+        if (isWlan) {
+            // WLAN interface: only wifi-specific commands, no switchport
+            if (port.wifi) {
+                const wifiMode = port.wifi.mode === 'disabled'
                     ? 'disabled'
                     : port.wifi.mode === 'client'
-                        ? 'ap'
-                        : (port.wifi.mode || 'ap');
-            lines.push(` wifi-mode ${wifiMode}`);
-            lines.push(` ssid ${port.wifi.ssid}`);
-            lines.push(` encryption ${port.wifi.security}`);
-            if (port.wifi.password) {
-                lines.push(` wifi-password ${port.wifi.password}`);
+                        ? 'client'
+                        : 'ap';
+                lines.push(` wifi-mode ${wifiMode}`);
+                if (port.wifi.ssid) {
+                    lines.push(` ssid ${port.wifi.ssid}`);
+                }
+                if (port.wifi.security && port.wifi.security !== 'open') {
+                    lines.push(` encryption ${port.wifi.security}`);
+                }
+                if (port.wifi.password) {
+                    lines.push(` wifi-password ${port.wifi.password}`);
+                }
+                if (port.wifi.channel) {
+                    lines.push(` wifi-channel ${port.wifi.channel}`);
+                }
             }
-            lines.push(` wifi-channel ${port.wifi.channel}`);
+            if (!port.shutdown) {
+                lines.push(' no shutdown');
+            } else {
+                lines.push(' shutdown');
+            }
+        } else {
+            // Regular (Ethernet) interface
+            if (port.speed !== 'auto') {
+                lines.push(` speed ${port.speed}`);
+            }
+            if (port.duplex !== 'auto') {
+                lines.push(` duplex ${port.duplex}`);
+            }
+            if (port.mode === 'trunk') {
+                lines.push(' switchport mode trunk');
+            } else if (port.mode === 'access') {
+                lines.push(' switchport mode access');
+                const vlanId = Number((port as any).accessVlan || port.vlan || 1);
+                if (vlanId !== 1) {
+                    lines.push(` switchport access vlan ${vlanId}`);
+                }
+            }
+            if (port.ipAddress && port.subnetMask) {
+                lines.push(` ip address ${port.ipAddress} ${port.subnetMask}`);
+            }
+            if (!port.shutdown) {
+                lines.push(' no shutdown');
+            } else {
+                lines.push(' shutdown');
+            }
         }
 
-        if (port.ipAddress && port.subnetMask) {
-            lines.push(` ip address ${port.ipAddress} ${port.subnetMask}`);
-        }
         lines.push('!');
     });
 

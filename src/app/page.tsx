@@ -863,6 +863,54 @@ export default function Home() {
           newDeviceOutputs.set(item.id, outputs);
         });
         setDeviceOutputs(newDeviceOutputs);
+      } else if (projectData.devices && Array.isArray(projectData.devices)) {
+        // If no device outputs provided, generate boot messages for all devices
+        const newDeviceOutputs = new Map<string, TerminalOutput[]>();
+        projectData.devices.forEach((item: { id: string; state: SwitchState }) => {
+          const deviceId = item.id;
+          const state = item.state;
+          const isRouter = deviceId.includes('router');
+          const isL3Switch = state?.switchLayer === 'L3' || state?.switchModel?.includes('3560');
+
+          // Generate boot messages based on device type
+          let bootMessages: TerminalOutput[] = [];
+          const suffix = state?.macAddress || deviceId;
+
+          if (isRouter) {
+            const syslog = language === 'tr' ? '*** Syslog istemcisi başlatıldı' : '*** Syslog client started';
+            bootMessages = [
+              { id: `boot-1-${suffix}`, type: 'output', content: `\n\nSystem Bootstrap, Version 15.1(4)M4, RELEASE SOFTWARE (fc1)\nTechnical Support: http://yunus.sf.net\nCopyright (c) 1994-2011 by Network Systems, Inc.\n` },
+              { id: `boot-2-${suffix}`, type: 'output', content: `ISR4451/K9 platform with 4096 K bytes of memory\n\n${syslog}\nLoad/bootstrap symbols loaded, GOXR initialization\nReading all bootflash vectors\nPOST: CPU PCIe port Check PASS\nCPU memory test . . . . . . . . . . . . . OK\nBoard initialization completed\nInitializing flash file system\n` },
+              { id: `boot-3-${suffix}`, type: 'output', content: `\nBooting flash:c1900-universalk9-mz.SPA.154-3.M.bin...OK!\nExtracting files from flash:c1900-universalk9-mz.SPA.154-3.M.bin...\n  ########## [OK]\n  0 bytes remaining in flash device` },
+              ...(state?.bannerMOTD ? [{ id: `banner-${suffix}`, type: 'output' as const, content: `\n${state.bannerMOTD}\n` }] : []),
+              { id: `boot-beep-${suffix}`, type: 'output', content: `\n${language === 'tr' ? 'Sistem başlatılıyor' : 'Initializing system'}...\n` },
+              { id: `boot-ready-${suffix}`, type: 'output', content: '\nReady!\n\n' }
+            ];
+          } else if (isL3Switch) {
+            const syslog = language === 'tr' ? '*** Syslog istemcisi başlatıldı' : '*** Syslog client started';
+            bootMessages = [
+              { id: `boot-1-${suffix}`, type: 'output', content: `\n\nSystem Bootstrap, Version 12.2(55r)SE, RELEASE SOFTWARE (fc1)\nTechnical Support: http://yunus.sf.net\nCopyright (c) 1994-2011 by Network Systems, Inc.\n` },
+              { id: `boot-2-${suffix}`, type: 'output', content: `C3560 platform with 131072 K bytes of memory\n\n${syslog}\nLoad/bootstrap symbols loaded\nReading all bootflash vectors\nPOST: CPU PCIe port Check PASS\nCPU memory test . . . . . . . . . . . . . OK\nBoard initialization completed\nInitializing flash file system\n` },
+              { id: `boot-3-${suffix}`, type: 'output', content: `\nBooting flash:c3560-ipbase-mz.152-2.SE4.bin...OK!\nExtracting files from flash:c3560-ipbase-mz.152-2.SE4.bin...\n  ########## [OK]\n  0 bytes remaining in flash device` },
+              ...(state?.bannerMOTD ? [{ id: `banner-${suffix}`, type: 'output' as const, content: `\n${state.bannerMOTD}\n` }] : []),
+              { id: `boot-beep-${suffix}`, type: 'output', content: `\n${language === 'tr' ? 'Sistem açılıyor' : 'System is powering on'}...\n` },
+              { id: `boot-ready-${suffix}`, type: 'output', content: '\nReady!\n\n' }
+            ];
+          } else {
+            const syslog = language === 'tr' ? '*** Syslog istemcisi başlatıldı' : '*** Syslog client started';
+            bootMessages = [
+              { id: `boot-1-${suffix}`, type: 'output', content: `\n\nSystem Bootstrap, Version 12.2(11r)EA1, RELEASE SOFTWARE (fc1)\nTechnical Support: http://yunus.sf.net\nCopyright (c) 1994-2010 by Network Systems, Inc.\n` },
+              { id: `boot-2-${suffix}`, type: 'output', content: `C2960 platform with 65536 K bytes of memory\n\n${syslog}\nLoad/bootstrap symbols loaded\nReading all bootflash vectors\nPOST: CPU Ethernet port Check PASS\nCPU memory test . . . . . . . . . . . . . OK\nBoard initialization completed\nInitializing flash file system\n` },
+              { id: `boot-3-${suffix}`, type: 'output', content: `\nBooting flash:c2960-lanbase-mz.152-2.E6.bin...OK!\nExtracting files from flash:c2960-lanbase-mz.152-2.E6.bin...\n  ########## [OK]\n  0 bytes remaining in flash device` },
+              ...(state?.bannerMOTD ? [{ id: `banner-${suffix}`, type: 'output' as const, content: `\n${state.bannerMOTD}\n` }] : []),
+              { id: `boot-beep-${suffix}`, type: 'output', content: `\n${language === 'tr' ? 'Sistem açılıyor' : 'System is powering on'}...\n` },
+              { id: `boot-ready-${suffix}`, type: 'output', content: '\nReady!\n\n' }
+            ];
+          }
+
+          newDeviceOutputs.set(deviceId, bootMessages);
+        });
+        setDeviceOutputs(newDeviceOutputs);
       }
 
       // Load PC outputs
@@ -1075,21 +1123,34 @@ export default function Home() {
     setActiveTab(isCompatible ? tabId : 'topology');
   }, [activeDeviceId, activeDeviceType, topologyDevices, setActiveTab]);
 
-  const applyDeviceSelection = useCallback((device: DeviceType, deviceId?: string, switchModel?: string) => {
-    setSelectedDevice(device);
-    if (!deviceId) return;
+  const pendingDeviceSelectionRef = useRef<{ device: DeviceType; deviceId: string; switchModel?: string } | null>(null);
+  const [deviceSelectionTrigger, setDeviceSelectionTrigger] = useState(0);
 
+  const applyDeviceSelection = useCallback((device: DeviceType, deviceId?: string, switchModel?: string) => {
+    if (!deviceId) return;
+    // Store in ref, then trigger effect via state
+    pendingDeviceSelectionRef.current = { device, deviceId, switchModel };
+    setDeviceSelectionTrigger(prev => prev + 1);
+  }, []);
+
+  // Apply pending device selection in useLayoutEffect to avoid render-time state updates
+  useLayoutEffect(() => {
+    if (!pendingDeviceSelectionRef.current) return;
+
+    const { device, deviceId, switchModel } = pendingDeviceSelectionRef.current;
+    setSelectedDevice(device);
     setActiveDeviceId(deviceId);
     setActiveDeviceType(device);
 
     if (device !== 'pc') {
       const deviceObj = topologyDevices?.find(d => d.id === deviceId);
-      // Use the passed switchModel or fall back to deviceObj's switchModel
       const modelToUse = switchModel || deviceObj?.switchModel;
       const deviceState = getOrCreateDeviceState(deviceId, device, deviceObj?.name, deviceObj?.macAddress, modelToUse);
       getOrCreateDeviceOutputs(deviceId, deviceState);
     }
-  }, [getOrCreateDeviceState, getOrCreateDeviceOutputs, topologyDevices, setSelectedDevice, setActiveDeviceId, setActiveDeviceType]);
+
+    pendingDeviceSelectionRef.current = null;
+  }, [deviceSelectionTrigger, topologyDevices, getOrCreateDeviceState, getOrCreateDeviceOutputs, setSelectedDevice, setActiveDeviceId, setActiveDeviceType]);
 
   // Topology canvas click: selects device only (no zoom/pan).
   const handleDeviceSelectFromCanvas = useCallback((device: DeviceType, deviceId?: string, switchModel?: string) => {
@@ -1899,21 +1960,21 @@ export default function Home() {
         if (!pcWifi?.enabled || !pcWifi.ssid) return;
 
         let isConnected = false;
-        
+
         // Check router/switch APs
         topologyDevices.forEach(ap => {
           if (ap.id === pc.id) return;
           if (ap.type !== 'router' && !isSwitchDeviceType(ap.type)) return;
-          
+
           const apWifi = ap.wifi;
           if (!apWifi || apWifi.mode !== 'ap' || !apWifi.ssid) return;
           if (apWifi.ssid !== pcWifi.ssid) return;
-          
+
           const apSecurity = apWifi.security || 'open';
           const pcSecurity = pcWifi.security || 'open';
           if (apSecurity !== pcSecurity) return;
           if (apSecurity !== 'open' && apWifi.password !== pcWifi.password) return;
-          
+
           isConnected = true;
         });
 
@@ -1929,19 +1990,19 @@ export default function Home() {
         if (!apWifi || apWifi.mode !== 'ap' || !apWifi.ssid) return;
 
         let hasClient = false;
-        
+
         // Check if any PC is connected to this AP
         topologyDevices.forEach(pc => {
           if (pc.type !== 'pc') return;
           const pcWifi = pc.wifi;
           if (!pcWifi?.enabled || !pcWifi.ssid) return;
           if (pcWifi.ssid !== apWifi.ssid) return;
-          
+
           const apSecurity = apWifi.security || 'open';
           const pcSecurity = pcWifi.security || 'open';
           if (apSecurity !== pcSecurity) return;
           if (apSecurity !== 'open' && apWifi.password !== pcWifi.password) return;
-          
+
           hasClient = true;
         });
 
@@ -1966,8 +2027,8 @@ export default function Home() {
       if (totalIssues > 0) {
         toast({
           title: language === 'tr' ? 'WiFi Bağlantıları' : 'WiFi Connections',
-          description: language === 'tr' 
-            ? `${disconnectedPCs.length} PC, ${disconnectedAPs.length} AP bağlantısı kontrol edildi` 
+          description: language === 'tr'
+            ? `${disconnectedPCs.length} PC, ${disconnectedAPs.length} AP bağlantısı kontrol edildi`
             : `${disconnectedPCs.length} PC, ${disconnectedAPs.length} AP connections checked`,
           variant: 'default'
         });

@@ -306,6 +306,30 @@ export const exampleProjects = (language: 'tr' | 'en'): ExampleProject[] => {
     }
   };
 
+  // Update running config to include wifi mode
+  wifiR1State.runningConfig = [
+    '!',
+    'hostname R1',
+    '!',
+    'interface wlan0',
+    ' no shutdown',
+    ' wifi-mode ap',
+    ' wifi-ssid HomeWiFi',
+    ' wifi-security open',
+    '!',
+    'ip dhcp pool wifi-pool',
+    ' network 192.168.1.0 255.255.255.0',
+    ' default-router 192.168.1.1',
+    ' dns-server 8.8.8.8',
+    '!',
+    'line con 0',
+    'line aux 0',
+    'line vty 0 4',
+    ' login',
+    '!',
+    'end'
+  ];
+
   // Example 1: Basic switch + passwords
   const basicDevices = [
     createPcDevice('pc-1', 'PC-1', 40, 180, '192.168.10.10', 10),

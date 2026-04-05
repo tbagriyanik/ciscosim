@@ -1385,11 +1385,16 @@ export function NetworkTopology({
           initialPositions[d.id] = { x: d.x, y: d.y };
         }
       });
+      // Update ref immediately so drag logic has correct positions without waiting for state
+      dragStartDevicePositionsRef.current = initialPositions;
       setDragStartDevicePositions(initialPositions);
 
       // Store the starting position for distance calculation
+      dragStartPosRef.current = { x: e.clientX, y: e.clientY };
       setDragStartPos({ x: e.clientX, y: e.clientY });
       setIsActuallyDragging(false);
+      isActuallyDraggingRef.current = false;
+      draggedDeviceRef.current = deviceId;
       setDraggedDevice(deviceId);
       setDragOffset({
         x: (e.clientX - rect.left - pan.x) - device.x * zoom,

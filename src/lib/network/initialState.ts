@@ -85,7 +85,7 @@ function createInitialPorts(gigabitPortCount: number = 2): Record<string, Port> 
   ports['wlan0'] = {
     id: 'wlan0',
     name: '',
-    status: 'notconnect',
+    status: 'connected',
     vlan: 1,
     mode: 'access',
     duplex: 'auto',
@@ -97,7 +97,7 @@ function createInitialPorts(gigabitPortCount: number = 2): Record<string, Port> 
       security: 'open',
       password: '',
       channel: '2.4GHz',
-      mode: 'disabled'
+      mode: 'ap'
     }
   };
 
@@ -242,7 +242,7 @@ function createInitialRouterPorts(): Record<string, Port> {
   ports['wlan0'] = {
     id: 'wlan0',
     name: '',
-    status: 'notconnect',
+    status: 'connected',
     vlan: 1,
     mode: 'access',
     duplex: 'auto',
@@ -254,7 +254,7 @@ function createInitialRouterPorts(): Record<string, Port> {
       security: 'open',
       password: '',
       channel: '2.4GHz',
-      mode: 'disabled'
+      mode: 'ap'
     }
   };
 
@@ -361,7 +361,10 @@ export function applyStartupConfig(baseState: SwitchState, startup: StartupConfi
       ipAddress: savedPort.ipAddress,
       subnetMask: savedPort.subnetMask,
       ipv6Address: savedPort.ipv6Address,
-      ipv6Prefix: savedPort.ipv6Prefix
+      ipv6Prefix: savedPort.ipv6Prefix,
+      // Preserve wifi config so AP settings survive power cycles and reloads
+      wifi: (savedPort as any).wifi ?? (basePort as any).wifi,
+      status: (savedPort as any).status ?? basePort.status,
     };
   });
 
