@@ -2,6 +2,39 @@
 import { SwitchState, Port, Vlan, SecurityConfig, CommandMode, StartupConfig } from './types';
 import { getSwitchLayer } from './switchModels';
 
+const allocatedMacAddresses = new Set<string>();
+
+function formatMacFromNumber(value: number): string {
+  const base = value.toString(16).padStart(12, '0').toUpperCase();
+  return `${base.slice(0, 4)}.${base.slice(4, 8)}.${base.slice(8, 12)}`;
+}
+
+function normalizeMacCandidate(mac: string): string {
+  return mac.replace(/[^0-9A-Fa-f]/g, '').toUpperCase().padStart(12, '0').slice(0, 12);
+}
+
+function generateUniqueMacAddress(preferredSeed: number): string {
+  let candidate = preferredSeed;
+  while (allocatedMacAddresses.has(formatMacFromNumber(candidate))) {
+    candidate += 1;
+  }
+  const mac = formatMacFromNumber(candidate);
+  allocatedMacAddresses.add(mac);
+  return mac;
+}
+
+function reserveMacAddress(mac?: string): string {
+  if (!mac) return generateUniqueMacAddress(0x001100000000);
+  const normalized = normalizeMacCandidate(mac);
+  if (!normalized) return generateUniqueMacAddress(0x001100000000);
+  const formatted = formatMacFromNumber(parseInt(normalized, 16));
+  if (allocatedMacAddresses.has(formatted)) {
+    return generateUniqueMacAddress(parseInt(normalized, 16) + 1);
+  }
+  allocatedMacAddresses.add(formatted);
+  return formatted;
+}
+
 // 24 FastEthernet + configurable GigabitEthernet ports oluştur
 function createInitialPorts(gigabitPortCount: number = 2): Record<string, Port> {
   const ports: Record<string, Port> = {};
@@ -114,24 +147,13 @@ function createInitialMacTable(): { mac: string; vlan: number; port: string; typ
   ];
 }
 
-// Helper to generate a random unique Network-formatted MAC address (xxxx.xxxx.xxxx)
-function generateMacAddress(): string {
-  const chars = '0123456789ABCDEF';
-  let mac = '';
-  for (let i = 0; i < 12; i++) {
-    mac += chars[Math.floor(Math.random() * 16)];
-    if (i === 3 || i === 7) mac += '.';
-  }
-  return mac;
-}
-
 // Ana başlangıç durumu
 export function createInitialState(mac?: string, switchModel: 'WS-C2960-24TT-L' | 'WS-C3560-24PS' = 'WS-C2960-24TT-L'): SwitchState {
   // Switch modeline göre Layer belirle
   const switchLayer = getSwitchLayer(switchModel as any);
   const ports = createInitialPorts(switchLayer === 'L3' ? 4 : 2);
   const vlans = createInitialVlans();
-  const macAddress = mac || '0011.2233.4401';
+  const macAddress = reserveMacAddress(mac);
 
   // VLAN'lara portları ata
   Object.values(ports).forEach(port => {
@@ -151,6 +173,12 @@ export function createInitialState(mac?: string, switchModel: 'WS-C2960-24TT-L' 
     ports,
     vlans,
     security: createInitialSecurity(),
+    services: {
+      http: {
+        enabled: true,
+        content: ''
+      }
+    },
     runningConfig: [
       '!',
       `hostname Switch`,
@@ -237,7 +265,7 @@ function createInitialRouterPorts(): Record<string, Port> {
 export function createInitialRouterState(mac?: string): SwitchState {
   const ports = createInitialRouterPorts();
   const vlans = createInitialVlans();
-  const macAddress = mac || '00D0.D3A2.810B';
+  const macAddress = reserveMacAddress(mac);
 
   return {
     hostname: 'Router',
@@ -249,6 +277,12 @@ export function createInitialRouterState(mac?: string): SwitchState {
     ports,
     vlans,
     security: createInitialSecurity(),
+    services: {
+      http: {
+        enabled: true,
+        content: ''
+      }
+    },
     runningConfig: [
       '!',
       `hostname Router`,

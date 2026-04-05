@@ -6,7 +6,7 @@
       "id": "switch-1",
       "state": {
         "hostname": "SWITCH-1",
-        "macAddress": "0011.2233.4401",
+        "macAddress": "0000.0000.000F",
         "currentMode": "router-config",
         "consoleAuthenticated": true,
         "ports": {
@@ -447,7 +447,7 @@
           "service timestamps log datetime msec",
           "!",
           "hostname SWITCH-1",
-          "! base mac-address 0011.2233.4401",
+          "! base mac-address 0000.0000.000F",
           "!",
           "banner motd #Welcome to the Network Simulator 2026\nUnauthorized access is strictly prohibited.#",
           "!",
@@ -566,31 +566,31 @@
         },
         "macAddressTable": [
           {
-            "mac": "0001.C234.5678",
+            "mac": "0000.0000.0010",
             "vlan": 1,
             "port": "Fa0/1",
             "type": "DYNAMIC"
           },
           {
-            "mac": "0002.A345.6789",
+            "mac": "0000.0000.0011",
             "vlan": 1,
             "port": "Fa0/2",
             "type": "DYNAMIC"
           },
           {
-            "mac": "0003.B456.7890",
+            "mac": "0000.0000.0012",
             "vlan": 1,
             "port": "Fa0/3",
             "type": "DYNAMIC"
           },
           {
-            "mac": "0011.2233.4455",
+            "mac": "0000.0000.0013",
             "vlan": 10,
             "port": "Gi0/1",
             "type": "DYNAMIC"
           },
           {
-            "mac": "0022.3344.5566",
+            "mac": "0000.0000.0014",
             "vlan": 20,
             "port": "Gi0/1",
             "type": "DYNAMIC"
@@ -606,7 +606,7 @@
       "id": "pc-1",
       "state": {
         "hostname": "Server",
-        "macAddress": "00E0.F701.A1B1",
+        "macAddress": "0000.0000.0015",
         "currentMode": "user",
         "consoleAuthenticated": true,
         "ports": {
@@ -1067,31 +1067,31 @@
         },
         "macAddressTable": [
           {
-            "mac": "0001.C234.5678",
+            "mac": "0000.0000.0010",
             "vlan": 1,
             "port": "Fa0/1",
             "type": "DYNAMIC"
           },
           {
-            "mac": "0002.A345.6789",
+            "mac": "0000.0000.0011",
             "vlan": 1,
             "port": "Fa0/2",
             "type": "DYNAMIC"
           },
           {
-            "mac": "0003.B456.7890",
+            "mac": "0000.0000.0012",
             "vlan": 1,
             "port": "Fa0/3",
             "type": "DYNAMIC"
           },
           {
-            "mac": "0011.2233.4455",
+            "mac": "0000.0000.0013",
             "vlan": 10,
             "port": "Gi0/1",
             "type": "DYNAMIC"
           },
           {
-            "mac": "0022.3344.5566",
+            "mac": "0000.0000.0014",
             "vlan": 20,
             "port": "Gi0/1",
             "type": "DYNAMIC"
@@ -1105,7 +1105,7 @@
       "id": "pc-2",
       "state": {
         "hostname": "PC-1",
-        "macAddress": "63b7.c5e4.7a1d",
+        "macAddress": "0000.0000.0016",
         "currentMode": "user",
         "consoleAuthenticated": true,
         "ports": {
@@ -1566,31 +1566,31 @@
         },
         "macAddressTable": [
           {
-            "mac": "0001.C234.5678",
+            "mac": "0000.0000.0010",
             "vlan": 1,
             "port": "Fa0/1",
             "type": "DYNAMIC"
           },
           {
-            "mac": "0002.A345.6789",
+            "mac": "0000.0000.0011",
             "vlan": 1,
             "port": "Fa0/2",
             "type": "DYNAMIC"
           },
           {
-            "mac": "0003.B456.7890",
+            "mac": "0000.0000.0012",
             "vlan": 1,
             "port": "Fa0/3",
             "type": "DYNAMIC"
           },
           {
-            "mac": "0011.2233.4455",
+            "mac": "0000.0000.0013",
             "vlan": 10,
             "port": "Gi0/1",
             "type": "DYNAMIC"
           },
           {
-            "mac": "0022.3344.5566",
+            "mac": "0000.0000.0014",
             "vlan": 20,
             "port": "Gi0/1",
             "type": "DYNAMIC"
@@ -1829,27 +1829,27 @@
           "content": "Welcome to the Network Simulator 2026\nUnauthorized access is strictly prohibited.\n"
         },
         {
-          "id": "boot-1-63b7.c5e4.7a1d",
+          "id": "boot-1-0000.0000.0016",
           "type": "output",
           "content": "\n\nSystem Bootstrap, Version 12.1(11r)EA1, RELEASE SOFTWARE (fc1)\nTechnical Support: http://yunus.sf.net\nCopyright (c) 1986-2026 by Systems, Inc.\n"
         },
         {
-          "id": "boot-2-63b7.c5e4.7a1d",
+          "id": "boot-2-0000.0000.0016",
           "type": "output",
           "content": "C2960 platform with 262144K bytes of main memory\nMain memory configured to 32 bit mode with ECC enabled\n"
         },
         {
-          "id": "boot-3-63b7.c5e4.7a1d",
+          "id": "boot-3-0000.0000.0016",
           "type": "output",
           "content": "\nLoading the runtime image: ######## [OK]\n"
         },
         {
-          "id": "boot-beep-63b7.c5e4.7a1d",
+          "id": "boot-beep-0000.0000.0016",
           "type": "output",
           "content": "\nSystem is powering on...\n"
         },
         {
-          "id": "boot-ready-63b7.c5e4.7a1d",
+          "id": "boot-ready-0000.0000.0016",
           "type": "output",
           "content": "\nReady!\n"
         }
@@ -1910,7 +1910,7 @@
         "x": 61,
         "y": 48,
         "ip": "192.168.1.10",
-        "macAddress": "00-e0-f7-01-a1-b1",
+        "macAddress": "00-00-00-00-00-17",
         "status": "online",
         "ports": [
           {
@@ -1951,7 +1951,7 @@
         "name": "SWITCH-1",
         "x": 287,
         "y": 44,
-        "macAddress": "00-11-22-33-44-01",
+        "macAddress": "00-00-00-00-00-18",
         "ip": "192.168.1.11",
         "status": "online",
         "ports": [
@@ -2267,7 +2267,7 @@
         "id": "pc-2",
         "type": "pc",
         "name": "PC-1",
-        "macAddress": "63-b7-c5-e4-7a-1d",
+        "macAddress": "00-00-00-00-00-19",
         "ip": "192.168.1.100",
         "x": 554.8188170160017,
         "y": 36.20165509923618,

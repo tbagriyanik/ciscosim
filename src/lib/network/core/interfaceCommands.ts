@@ -7,6 +7,21 @@ function isInInterfaceMode(state: any): boolean {
   return state.currentMode === 'interface' || state.currentMode === 'config-if-range';
 }
 
+function isVlanInterfaceName(interfaceName: string | undefined): boolean {
+  return !!interfaceName && /^vlan\d+$/i.test(interfaceName);
+}
+
+function normalizeWifiMode(mode: string | undefined): 'ap' | 'client' | 'disabled' {
+  const normalized = (mode || 'disabled').toLowerCase();
+  if (normalized === 'sta') return 'client';
+  if (normalized === 'ap' || normalized === 'client' || normalized === 'disabled') return normalized;
+  return 'disabled';
+}
+
+function getVlanPortKey(interfaceName: string): string {
+  return interfaceName.toLowerCase();
+}
+
 // Interface-level komutlar (interface, shutdown, speed, duplex, switchport, ip address, vs.)
 
 export const interfaceHandlers: Record<string, CommandHandler> = {
@@ -176,10 +191,11 @@ function cmdShutdown(state: any, input: string, ctx: any): any {
   }
 
   // VLAN interface'i için shutdown
-  if (state.currentInterface.startsWith('vlan')) {
+  if (isVlanInterfaceName(state.currentInterface)) {
+    const vlanPortKey = getVlanPortKey(state.currentInterface);
     const newPorts = { ...state.ports };
-    if (newPorts[state.currentInterface]) {
-      newPorts[state.currentInterface] = { ...newPorts[state.currentInterface], shutdown: true };
+    if (newPorts[vlanPortKey]) {
+      newPorts[vlanPortKey] = { ...newPorts[vlanPortKey], shutdown: true };
     }
     return {
       success: true,
@@ -204,10 +220,11 @@ function cmdNoShutdown(state: any, input: string, ctx: any): any {
   }
 
   // VLAN interface'i için no shutdown
-  if (state.currentInterface.startsWith('vlan')) {
+  if (isVlanInterfaceName(state.currentInterface)) {
+    const vlanPortKey = getVlanPortKey(state.currentInterface);
     const newPorts = { ...state.ports };
-    if (newPorts[state.currentInterface]) {
-      newPorts[state.currentInterface] = { ...newPorts[state.currentInterface], shutdown: false };
+    if (newPorts[vlanPortKey]) {
+      newPorts[vlanPortKey] = { ...newPorts[vlanPortKey], shutdown: false };
     }
     return {
       success: true,
@@ -303,7 +320,7 @@ function cmdNoSwitchport(state: any, input: string, ctx: any): any {
   }
 
   // Don't allow on VLAN interfaces
-  if (state.currentInterface.startsWith('vlan')) {
+  if (isVlanInterfaceName(state.currentInterface)) {
     return { success: false, error: '% Invalid command on VLAN interface' };
   }
 
@@ -621,13 +638,14 @@ function cmdIpAddress(state: any, input: string, ctx: any): any {
   }
 
   // VLAN interface'i için IP atama
-  if (state.currentInterface.startsWith('vlan')) {
-    const vlanId = parseInt(state.currentInterface.replace('vlan', ''), 10);
+  if (isVlanInterfaceName(state.currentInterface)) {
+    const vlanPortKey = getVlanPortKey(state.currentInterface);
+    const vlanId = parseInt(vlanPortKey.replace(/^vlan/, ''), 10);
     const newPorts = { ...state.ports };
 
-    if (newPorts[state.currentInterface]) {
-      newPorts[state.currentInterface] = {
-        ...newPorts[state.currentInterface],
+    if (newPorts[vlanPortKey]) {
+      newPorts[vlanPortKey] = {
+        ...newPorts[vlanPortKey],
         ipAddress: ip,
         subnetMask: mask,
         mode: 'routed'
@@ -670,12 +688,13 @@ function cmdNoIpAddress(state: any, input: string, ctx: any): any {
   }
 
   // VLAN interface'i için IP kaldırma
-  if (state.currentInterface.startsWith('vlan')) {
+  if (isVlanInterfaceName(state.currentInterface)) {
+    const vlanPortKey = getVlanPortKey(state.currentInterface);
     const newPorts = { ...state.ports };
 
-    if (newPorts[state.currentInterface]) {
-      newPorts[state.currentInterface] = {
-        ...newPorts[state.currentInterface],
+    if (newPorts[vlanPortKey]) {
+      newPorts[vlanPortKey] = {
+        ...newPorts[vlanPortKey],
         ipAddress: undefined,
         subnetMask: undefined
       };
@@ -909,7 +928,7 @@ function cmdWifiMode(state: any, input: string, ctx: any): any {
   const mode = match[1].toLowerCase();
   const newPorts = applyToSelectedPorts(state, (port: any) => ({
     ...port,
-    wifi: { ...port.wifi, mode }
+    wifi: { ...port.wifi, mode: normalizeWifiMode(mode) }
   }));
 
   return { success: true, newState: { ports: newPorts } };

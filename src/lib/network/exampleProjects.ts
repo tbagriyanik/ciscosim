@@ -90,6 +90,13 @@ const macExampleBData: ProjectData = ensureProjectData(macExampleB);
 const ipConfigExampleData: ProjectData = ensureProjectData(ipConfigExample);
 const dhcpExampleData: ProjectData = ensureProjectData(dhcpExample);
 
+let exampleMacCounter = 0;
+const nextExampleMac = () => {
+  exampleMacCounter += 1;
+  const base = (0x00e0f701a100 + exampleMacCounter).toString(16).padStart(12, '0').toUpperCase();
+  return `${base.slice(0, 4)}.${base.slice(4, 8)}.${base.slice(8, 12)}`;
+};
+
 const createSwitchDevice = (id: string, name: string, x: number, y: number): CanvasDevice => ({
   id,
   type: 'switchL2',
@@ -97,7 +104,7 @@ const createSwitchDevice = (id: string, name: string, x: number, y: number): Can
   x,
   y,
   ip: '',
-  macAddress: id === 'switch-1' ? '0011.2233.4401' : '0011.2233.4402',
+  macAddress: nextExampleMac(),
   status: 'online',
   switchModel: 'WS-C2960-24TT-L',
   ports: [
@@ -116,7 +123,7 @@ const createPcDevice = (id: string, name: string, x: number, y: number, ip: stri
   y,
   ip,
   vlan,
-  macAddress: '00E0.F701.A1B1',
+  macAddress: nextExampleMac(),
   status: 'online',
   ports: [
     { id: 'eth0', label: 'Eth0', status: 'disconnected' as const },
@@ -131,7 +138,7 @@ const createRouterDevice = (id: string, name: string, x: number, y: number): Can
   x,
   y,
   ip: '',
-  macAddress: '00AA.BBCC.DD01',
+  macAddress: nextExampleMac(),
   status: 'online',
   ports: [
     { id: 'console', label: 'Console', status: 'disconnected' as const },
@@ -218,6 +225,20 @@ export const exampleProjects = (language: 'tr' | 'en'): ExampleProject[] => {
     channel: '2.4GHz',
     mode: 'ap'
   };
+  wifiDevices[1].ports = [
+    {
+      id: 'wlan0',
+      label: 'WLAN0',
+      status: 'connected' as const,
+      wifi: {
+        ssid: 'HomeWiFi',
+        security: 'open',
+        channel: '2.4GHz',
+        mode: 'ap'
+      }
+    },
+    ...wifiDevices[1].ports
+  ];
   // Configure PCs for WiFi (Clients) - Keep static IPs for now
   wifiDevices[0].wifi = {
     enabled: true,
@@ -267,6 +288,7 @@ export const exampleProjects = (language: 'tr' | 'en'): ExampleProject[] => {
       mode: 'ap'
     }
   };
+  wifiR1State.ports['wlan0'].wifi!.mode = 'ap';
 
   // Add DHCP service to R1 for WiFi clients
   wifiR1State.services = {

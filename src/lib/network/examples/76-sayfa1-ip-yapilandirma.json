@@ -6,7 +6,7 @@
       "id": "switch-1",
       "state": {
         "hostname": "SWITCH-1",
-        "macAddress": "0011.2233.4401",
+        "macAddress": "0000.0000.0027",
         "currentMode": "user",
         "consoleAuthenticated": true,
         "ports": {
@@ -467,31 +467,31 @@
         },
         "macAddressTable": [
           {
-            "mac": "0001.C234.5678",
+            "mac": "0000.0000.0028",
             "vlan": 1,
             "port": "Fa0/1",
             "type": "DYNAMIC"
           },
           {
-            "mac": "0002.A345.6789",
+            "mac": "0000.0000.0029",
             "vlan": 1,
             "port": "Fa0/2",
             "type": "DYNAMIC"
           },
           {
-            "mac": "0003.B456.7890",
+            "mac": "0000.0000.002A",
             "vlan": 1,
             "port": "Fa0/3",
             "type": "DYNAMIC"
           },
           {
-            "mac": "0011.2233.4455",
+            "mac": "0000.0000.002B",
             "vlan": 10,
             "port": "Gi0/1",
             "type": "DYNAMIC"
           },
           {
-            "mac": "0022.3344.5566",
+            "mac": "0000.0000.002C",
             "vlan": 20,
             "port": "Gi0/1",
             "type": "DYNAMIC"
@@ -505,7 +505,7 @@
       "id": "pc-1",
       "state": {
         "hostname": "PC-1",
-        "macAddress": "00E0.F701.A1B1",
+        "macAddress": "0000.0000.002D",
         "currentMode": "user",
         "consoleAuthenticated": true,
         "ports": {
@@ -966,31 +966,31 @@
         },
         "macAddressTable": [
           {
-            "mac": "0001.C234.5678",
+            "mac": "0000.0000.0028",
             "vlan": 1,
             "port": "Fa0/1",
             "type": "DYNAMIC"
           },
           {
-            "mac": "0002.A345.6789",
+            "mac": "0000.0000.0029",
             "vlan": 1,
             "port": "Fa0/2",
             "type": "DYNAMIC"
           },
           {
-            "mac": "0003.B456.7890",
+            "mac": "0000.0000.002A",
             "vlan": 1,
             "port": "Fa0/3",
             "type": "DYNAMIC"
           },
           {
-            "mac": "0011.2233.4455",
+            "mac": "0000.0000.002B",
             "vlan": 10,
             "port": "Gi0/1",
             "type": "DYNAMIC"
           },
           {
-            "mac": "0022.3344.5566",
+            "mac": "0000.0000.002C",
             "vlan": 20,
             "port": "Gi0/1",
             "type": "DYNAMIC"
@@ -1004,7 +1004,7 @@
       "id": "pc-2",
       "state": {
         "hostname": "PC-2",
-        "macAddress": "00-e0-f7-01-a1-b1",
+        "macAddress": "00-00-00-00-00-2e",
         "currentMode": "user",
         "consoleAuthenticated": true,
         "ports": {
@@ -1465,31 +1465,31 @@
         },
         "macAddressTable": [
           {
-            "mac": "0001.C234.5678",
+            "mac": "0000.0000.0028",
             "vlan": 1,
             "port": "Fa0/1",
             "type": "DYNAMIC"
           },
           {
-            "mac": "0002.A345.6789",
+            "mac": "0000.0000.0029",
             "vlan": 1,
             "port": "Fa0/2",
             "type": "DYNAMIC"
           },
           {
-            "mac": "0003.B456.7890",
+            "mac": "0000.0000.002A",
             "vlan": 1,
             "port": "Fa0/3",
             "type": "DYNAMIC"
           },
           {
-            "mac": "0011.2233.4455",
+            "mac": "0000.0000.002B",
             "vlan": 10,
             "port": "Gi0/1",
             "type": "DYNAMIC"
           },
           {
-            "mac": "0022.3344.5566",
+            "mac": "0000.0000.002C",
             "vlan": 20,
             "port": "Gi0/1",
             "type": "DYNAMIC"
@@ -1503,7 +1503,7 @@
       "id": "pc-3",
       "state": {
         "hostname": "PC-3",
-        "macAddress": "00-e0-f7-01-a1-b1",
+        "macAddress": "00-00-00-00-00-2e",
         "currentMode": "user",
         "consoleAuthenticated": true,
         "ports": {
@@ -1964,31 +1964,31 @@
         },
         "macAddressTable": [
           {
-            "mac": "0001.C234.5678",
+            "mac": "0000.0000.0028",
             "vlan": 1,
             "port": "Fa0/1",
             "type": "DYNAMIC"
           },
           {
-            "mac": "0002.A345.6789",
+            "mac": "0000.0000.0029",
             "vlan": 1,
             "port": "Fa0/2",
             "type": "DYNAMIC"
           },
           {
-            "mac": "0003.B456.7890",
+            "mac": "0000.0000.002A",
             "vlan": 1,
             "port": "Fa0/3",
             "type": "DYNAMIC"
           },
           {
-            "mac": "0011.2233.4455",
+            "mac": "0000.0000.002B",
             "vlan": 10,
             "port": "Gi0/1",
             "type": "DYNAMIC"
           },
           {
-            "mac": "0022.3344.5566",
+            "mac": "0000.0000.002C",
             "vlan": 20,
             "port": "Gi0/1",
             "type": "DYNAMIC"
@@ -2195,7 +2195,7 @@
         "x": 50,
         "y": 50,
         "ip": "10.0.10.4",
-        "macAddress": "00-e0-f7-01-a1-b1",
+        "macAddress": "00-00-00-00-00-2e",
         "status": "online",
         "ports": [
           {
@@ -2231,7 +2231,7 @@
         "name": "SWITCH-1",
         "x": 308,
         "y": 50,
-        "macAddress": "00-11-22-33-44-01",
+        "macAddress": "00-00-00-00-00-2f",
         "ip": "192.168.1.11",
         "status": "online",
         "ports": [
@@ -2550,7 +2550,7 @@
         "x": 50,
         "y": 194,
         "ip": "10.0.10.5",
-        "macAddress": "00-e0-f7-01-a1-b1",
+        "macAddress": "00-00-00-00-00-2e",
         "status": "online",
         "ports": [
           {
@@ -2587,7 +2587,7 @@
         "x": 229,
         "y": 316,
         "ip": "192.168.1.100",
-        "macAddress": "00-e0-f7-01-a1-b1",
+        "macAddress": "00-00-00-00-00-2e",
         "status": "online",
         "ports": [
           {

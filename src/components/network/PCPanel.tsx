@@ -266,12 +266,27 @@ export function PCPanel({
       deviceStates.forEach((state, stateId) => {
         if (stateId === deviceId) return; // skip self
         const wlanPort = state.ports['wlan0'];
-        if (wlanPort && !wlanPort.shutdown && wlanPort.wifi?.mode === 'ap' && wlanPort.wifi?.ssid) {
+        const wifiMode = (wlanPort?.wifi?.mode || '').toLowerCase();
+        if (wlanPort && !wlanPort.shutdown && (wifiMode === 'ap' || wifiMode === 'client') && wlanPort.wifi?.ssid) {
           const apDevice = topologyDevices.find(d => d.id === stateId);
           results.push({
             ssid: wlanPort.wifi.ssid,
             deviceId: stateId,
             deviceName: apDevice?.name || stateId,
+          });
+        }
+      });
+    }
+    if (results.length === 0) {
+      topologyDevices.forEach((device) => {
+        if (device.id === deviceId) return;
+        const wifi = device.wifi;
+        if (device.type !== 'router' && device.type !== 'switchL2' && device.type !== 'switchL3') return;
+        if (wifi?.enabled && wifi.ssid) {
+          results.push({
+            ssid: wifi.ssid,
+            deviceId: device.id,
+            deviceName: device.name,
           });
         }
       });

@@ -46,6 +46,11 @@ export function buildRunningConfig(state: SwitchState): string[] {
     }
     lines.push('!');
 
+    if (state.services?.http?.enabled) {
+        lines.push('ip http server');
+        lines.push('!');
+    }
+
     state.security.users.forEach(user => {
         if (state.security.servicePasswordEncryption) {
             lines.push(`username ${user.username} privilege ${user.privilege} secret 7 ********`);
@@ -104,7 +109,13 @@ export function buildRunningConfig(state: SwitchState): string[] {
 
         // WiFi configuration for WLAN interfaces
         if (port.wifi && port.wifi.ssid) {
-            lines.push(` wifi-mode ${port.wifi.mode}`);
+            const wifiMode =
+                port.wifi.mode === 'disabled'
+                    ? 'disabled'
+                    : port.wifi.mode === 'client'
+                        ? 'ap'
+                        : (port.wifi.mode || 'ap');
+            lines.push(` wifi-mode ${wifiMode}`);
             lines.push(` ssid ${port.wifi.ssid}`);
             lines.push(` encryption ${port.wifi.security}`);
             if (port.wifi.password) {

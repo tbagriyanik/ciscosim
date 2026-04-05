@@ -151,11 +151,17 @@ export function ConfigPanel({ state, onExecuteCommand, isDevicePoweredOff = fals
       
       // WiFi configurations
       if (port.id.toLowerCase().startsWith('wlan') && port.wifi) {
+        const wifiMode =
+          port.wifi.mode === 'disabled'
+            ? 'disabled'
+            : port.wifi.mode === 'client'
+              ? 'ap'
+              : (port.wifi.mode || 'ap');
         if (port.wifi.ssid) config += ` ssid ${port.wifi.ssid}\\n`;
         if (port.wifi.security) config += ` encryption ${port.wifi.security}\\n`;
         if (port.wifi.password) config += ` wifi-password ${port.wifi.password}\\n`;
         if (port.wifi.channel) config += ` wifi-channel ${port.wifi.channel}\\n`;
-        if (port.wifi.mode) config += ` wifi-mode ${port.wifi.mode}\\n`;
+        if (wifiMode) config += ` wifi-mode ${wifiMode}\\n`;
       }
       
       config += `!\\n`;

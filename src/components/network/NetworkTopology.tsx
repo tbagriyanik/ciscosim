@@ -175,14 +175,20 @@ export function NetworkTopology({
   };
 
   // Helper to generate a random unique Dot-formatted MAC address (xxxx.xxxx.xxxx)
+  const allocatedMacAddressesRef = useRef<Set<string>>(new Set());
   const generateMacAddress = (): string => {
-    const chars = '0123456789abcdef';
-    let mac = '';
-    for (let i = 0; i < 12; i++) {
-      mac += chars[Math.floor(Math.random() * 16)];
-      if (i === 3 || i === 7) mac += '.';
+    const chars = '0123456789ABCDEF';
+    while (true) {
+      let hex = '';
+      for (let i = 0; i < 12; i++) {
+        hex += chars[Math.floor(Math.random() * 16)];
+      }
+      const mac = `${hex.slice(0, 4)}.${hex.slice(4, 8)}.${hex.slice(8, 12)}`;
+      if (!allocatedMacAddressesRef.current.has(mac)) {
+        allocatedMacAddressesRef.current.add(mac);
+        return mac;
+      }
     }
-    return mac;
   };
 
   // Default devices for initial state
@@ -3602,14 +3608,18 @@ export function NetworkTopology({
           // Check if WiFi is enabled
           let isEnabled = false;
           if (isPC) {
-            isEnabled = pcWifi?.enabled || (wlanState ? (wlanState.wifi?.mode !== 'disabled') : false);
+              isEnabled = pcWifi?.enabled || (wlanState ? (normalizeWifiMode(wlanState.wifi?.mode) !== 'disabled') : false);
           } else if (isSwitch || isRouter) {
             // Enhanced check for switch/router even if port is not in visual ports list
-            isEnabled = wlanState ? (wlanState.wifi?.mode !== 'ap' && wlanState.wifi?.mode !== 'client' ? false : !wlanState.shutdown) : (wlanPort ? !wlanPort.shutdown : false);
+            const resolvedWifiMode = normalizeWifiMode(wlanState?.wifi?.mode);
+            isEnabled = wlanState
+              ? (resolvedWifiMode === 'disabled' ? false : !wlanState.shutdown)
+              : (wlanPort ? !wlanPort.shutdown : false);
           }
 
           if (showWifi) {
             let isConnected = false;
+            let connectedDevices = 0;
 
             if (!isEnabled || device.status === 'offline') {
               wifiColor = isDark ? '#475569' : '#94a3b8'; // Grey
@@ -3638,7 +3648,7 @@ export function NetworkTopology({
                 const apSsid = wlanState?.wifi?.ssid || '';
                 const apPass = wlanState?.wifi?.password || '';
                 const apSecurity = wlanState?.wifi?.security || 'open';
-                if (apSsid && wlanState?.wifi?.mode === 'ap') {
+                if (apSsid && normalizeWifiMode(wlanState?.wifi?.mode) === 'ap') {
                   devices.forEach(otherDev => {
                     if (otherDev.id === device.id || otherDev.type !== 'pc') return;
                     const pcwifi = otherDev.wifi;
@@ -3654,7 +3664,7 @@ export function NetworkTopology({
                   });
                 }
               }
-              wifiColor = isConnected ? '#22c55e' : '#f59e0b'; // Green or Orange
+              wifiColor = isConnected || connectedDevices > 0 ? '#22c55e' : '#f59e0b'; // Green or Orange
             }
 
             // Prepare WiFi info for tooltip
@@ -3662,17 +3672,18 @@ export function NetworkTopology({
             let wifiSecurity = 'open';
             let wifiMode = 'disabled';
             let wifiChannel = '';
-            let connectedDevices = 0;
 
             if (isPC) {
               wifiSsid = pcWifi?.ssid || wlanState?.wifi?.ssid || '';
               wifiSecurity = pcWifi?.security || wlanState?.wifi?.security || 'open';
-              wifiMode = wlanState?.wifi?.mode || (pcWifi?.enabled ? 'client' : 'disabled');
+              wifiMode = normalizeWifiMode(wlanState?.wifi?.mode || (pcWifi?.enabled ? 'client' : 'disabled'));
               wifiChannel = wlanState?.wifi?.channel?.toString() || '';
             } else if (isSwitch || isRouter) {
               wifiSsid = wlanState?.wifi?.ssid || '';
               wifiSecurity = wlanState?.wifi?.security || 'open';
-              wifiMode = wlanState?.wifi?.mode || 'disabled';
+              wifiMode = wlanState?.wifi?.mode === 'client'
+                ? 'ap'
+                : normalizeWifiMode(wlanState?.wifi?.mode);
               wifiChannel = wlanState?.wifi?.channel?.toString() || '';
 
               // Count connected devices
@@ -3694,12 +3705,12 @@ export function NetworkTopology({
               if (device.status === 'offline') return language === 'tr' ? 'Cihaz Kapalı' : 'Device Off';
               if (!isEnabled) return language === 'tr' ? 'WiFi Kapalı' : 'WiFi Off';
               if (isConnected) return language === 'tr' ? 'Bağlı' : 'Connected';
-              return language === 'tr' ? 'Açık (Bağlı Değil)' : 'On (Not Connected)';
+              return language === 'tr' ? 'Açık' : 'On';
             };
 
             const getModeText = () => {
               if (wifiMode === 'ap') return language === 'tr' ? 'Erişim Noktası (AP)' : 'Access Point (AP)';
-              if (wifiMode === 'client') return language === 'tr' ? 'İstemci (STA)' : 'Client (STA)';
+              if (wifiMode === 'client') return language === 'tr' ? 'İstemci' : 'Client';
               return language === 'tr' ? 'Kapalı' : 'Disabled';
             };
 
@@ -6293,3 +6304,9 @@ export function NetworkTopology({
 
 
 
+  const normalizeWifiMode = (mode: string | undefined) => {
+    const normalized = (mode || 'disabled').toLowerCase();
+    if (normalized === 'sta') return 'client';
+    if (normalized === 'ap' || normalized === 'client' || normalized === 'disabled') return normalized;
+    return 'disabled';
+  };
