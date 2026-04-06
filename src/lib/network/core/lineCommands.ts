@@ -21,6 +21,7 @@ export const lineHandlers: Record<string, CommandHandler> = {
   'no exec': cmdNoExec,
   'autocommand': cmdAutocommand,
   'no autocommand': cmdNoAutocommand,
+  'privilege level': cmdPrivilegeLevel,
 };
 
 /**
@@ -510,6 +511,39 @@ function cmdNoAutocommand(state: any, input: string, ctx: any): any {
 
   return {
     success: true,
+    newState: { security: newSecurity }
+  };
+}
+
+/**
+ * Privilege Level - Set privilege level for line
+ */
+function cmdPrivilegeLevel(state: any, input: string, ctx: any): any {
+  if (state.currentMode !== 'line' || !state.currentLine) {
+    return { success: false, error: '% Invalid command at this mode' };
+  }
+
+  const match = input.match(/^privilege\s+level\s+(\d+)$/i);
+  if (!match) {
+    return { success: false, error: '% Invalid privilege level command. Use: privilege level {0|1|15}' };
+  }
+
+  const level = parseInt(match[1]);
+  if (level < 0 || level > 15) {
+    return { success: false, error: '% Privilege level must be between 0 and 15' };
+  }
+
+  const newSecurity = { ...state.security };
+
+  if (state.currentLine.startsWith('console')) {
+    newSecurity.consoleLine = { ...newSecurity.consoleLine, privilegeLevel: level };
+  } else if (state.currentLine.startsWith('vty')) {
+    newSecurity.vtyLines = { ...newSecurity.vtyLines, privilegeLevel: level };
+  }
+
+  return {
+    success: true,
+    output: `Privilege level ${level} set`,
     newState: { security: newSecurity }
   };
 }

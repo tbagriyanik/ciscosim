@@ -23,6 +23,7 @@ export const showHandlers: Record<string, CommandHandler> = {
   'show port-security': cmdShowPortSecurity,
   'show wireless': cmdShowWireless,
   'do show': cmdDoShow,
+  'show ip dhcp snooping': cmdShowIpDhcpSnooping,
 };
 
 function getSwitchDisplayProfile(state: any) {
@@ -174,7 +175,7 @@ function cmdShowRunningConfig(
       }
     }
     output += '!\n';
-    }
+  }
 
   output += '\nend\n';
   return { success: true, output };
@@ -346,7 +347,7 @@ function cmdShowVersion(
   ctx: any
 ): any {
   const { switchModel, softwareImage, rom, bootldr, systemImage, processor, gigabitPortCount } = getSwitchDisplayProfile(state);
-  
+
   let output = `\nNetwork NOS Software, ${softwareImage}\n`;
   output += 'Technical Support: http://yunus.sf.net\n';
   output += 'Copyright (c) 1986-2024 by Network Systems, Inc.\n\n';
@@ -381,7 +382,7 @@ function cmdShowInterfaces(
   Object.keys(state.ports || {}).forEach(portName => {
     const port = state.ports[portName];
     const description = port.description || '';
-    
+
     output += `${portName} is ${port.shutdown ? 'administratively down' : 'up'}, line protocol is ${port.shutdown ? 'down' : 'up'}\n`;
     output += `  Hardware is Fast Ethernet, address is ${port.macAddress || '0000.0000.0000'}\n`;
     if (port.ipAddress && port.subnetMask) {
@@ -475,7 +476,7 @@ function cmdShowIpInterfaceBrief(
   ctx: any
 ): any {
   let output = '\nInterface              IP-Address      OK? Method Status                Protocol                 Description\n';
-  
+
   Object.keys(state.ports || {}).forEach(portName => {
     const port = state.ports[portName];
     const status = port.shutdown ? 'administratively down' : 'up';
@@ -981,6 +982,31 @@ function cmdShowWireless(
   if (!found) {
     output += 'No wireless interfaces found on this device.\n';
   }
+
+  output += '!\n';
+  return { success: true, output };
+}
+
+/**
+ * Show IP DHCP Snooping
+ */
+function cmdShowIpDhcpSnooping(state: any, input: string, ctx: any): any {
+  const enabled = state.dhcpSnoopingEnabled ?? false;
+  const vlans: string[] = state.dhcpSnoopingVlans ?? [];
+
+  let output = '\nDHCP snooping is ' + (enabled ? 'enabled' : 'disabled') + '\n';
+  output += 'DHCP snooping is configured on following VLANs:\n';
+  output += vlans.length > 0 ? vlans.join(',') + '\n' : 'none\n';
+  output += '\nInsertion of option 82 is ' + (state.dhcpOption82 ? 'enabled' : 'disabled') + '\n';
+  output += '\nInterface           Trusted   Rate limit (pps)\n';
+  output += '-----------         -------   ----------------\n';
+
+  Object.keys(state.ports || {}).forEach(portName => {
+    const port = state.ports[portName];
+    if (port?.dhcpSnoopingTrust) {
+      output += `${portName.padEnd(20)}yes       unlimited\n`;
+    }
+  });
 
   output += '!\n';
   return { success: true, output };

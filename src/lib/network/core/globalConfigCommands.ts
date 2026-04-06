@@ -49,6 +49,8 @@ export const globalConfigHandlers: Record<string, CommandHandler> = {
   // HTTP Server
   'ip http server': cmdIpHttpServer,
   'no ip http server': cmdNoIpHttpServer,
+  // SSH version
+  'ip ssh version': cmdIpSshVersion,
 };
 
 /**
@@ -937,7 +939,7 @@ function cmdNoInterface(state: any, input: string, ctx: any): any {
 
   const vlanId = match[1];
   const newVlans = { ...state.vlans };
-  
+
   if (!newVlans[vlanId]) {
     return { success: false, error: `% VLAN ${vlanId} does not exist` };
   }
@@ -952,5 +954,26 @@ function cmdNoInterface(state: any, input: string, ctx: any): any {
   return {
     success: true,
     newState: { vlans: newVlans }
+  };
+}
+
+/**
+ * IP SSH Version - Set SSH version
+ */
+function cmdIpSshVersion(state: any, input: string, ctx: any): any {
+  if (state.currentMode !== 'config') {
+    return { success: false, error: '% Invalid command at this mode' };
+  }
+
+  const match = input.match(/^ip\s+ssh\s+version\s+(1|2)$/i);
+  if (!match) {
+    return { success: false, error: '% Invalid ip ssh version command. Use: ip ssh version {1|2}' };
+  }
+
+  const version = parseInt(match[1]);
+  return {
+    success: true,
+    output: `SSH version ${version} configured`,
+    newState: { sshVersion: version }
   };
 }

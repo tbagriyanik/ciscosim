@@ -1787,6 +1787,38 @@ const commandPatterns: Record<string, CommandPattern> = {
     modes: ['config'],
     minArgs: 1,
     maxArgs: 1
+  },
+
+  // Spanning-tree bpduguard disable
+  'spanning-tree bpduguard disable': {
+    pattern: /^spanning-tree\s+bpduguard\s+disable$/i,
+    modes: ['interface', 'config-if-range'],
+    minArgs: 0,
+    maxArgs: 0
+  },
+
+  // Spanning-tree cost
+  'spanning-tree cost': {
+    pattern: /^spanning-tree\s+cost\s+\d+$/i,
+    modes: ['interface', 'config-if-range'],
+    minArgs: 1,
+    maxArgs: 1
+  },
+
+  // Spanning-tree priority (port priority)
+  'spanning-tree priority': {
+    pattern: /^spanning-tree\s+priority\s+\d+$/i,
+    modes: ['interface', 'config-if-range'],
+    minArgs: 1,
+    maxArgs: 1
+  },
+
+  // No IP helper-address
+  'no ip helper-address': {
+    pattern: /^no\s+ip\s+helper-address(?:\s+\d+\.\d+\.\d+\.\d+)?$/i,
+    modes: ['interface', 'config-if-range'],
+    minArgs: 0,
+    maxArgs: 1
   }
 };
 

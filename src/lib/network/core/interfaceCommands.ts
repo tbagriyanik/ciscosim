@@ -59,7 +59,6 @@ export const interfaceHandlers: Record<string, CommandHandler> = {
   'no switchport access vlan': cmdNoSwitchportAccessVlan,
   'no switchport port-security': cmdNoSwitchportPortSecurity,
   'no cdp enable': cmdNoCdpEnable,
-  'no channel-group': cmdNoChannelGroup,
   'no udld': cmdNoUdld,
   'no ip proxy-arp': cmdNoIpProxyArp,
   'no keepalive': cmdNoKeepalive,
@@ -73,6 +72,21 @@ export const interfaceHandlers: Record<string, CommandHandler> = {
   // Access-list
   'access-list': cmdAccessList,
   'no access-list': cmdNoAccessList,
+  // EtherChannel
+  'channel-group': cmdChannelGroup,
+  'no channel-group': cmdNoChannelGroup,
+  // DHCP relay
+  'ip helper-address': cmdIpHelperAddress,
+  'no ip helper-address': cmdNoIpHelperAddress,
+  // Switchport extras
+  'switchport nonegotiate': cmdSwitchportNonegotiate,
+  'switchport voice vlan': cmdSwitchportVoiceVlan,
+  // CDP
+  'cdp enable': cmdCdpEnable,
+  // Spanning-tree extras
+  'spanning-tree bpduguard disable': cmdSpanningTreeBpduguardDisable,
+  'spanning-tree cost': cmdSpanningTreeCost,
+  'spanning-tree priority': cmdSpanningTreePriority,
 };
 
 /**
@@ -1257,6 +1271,230 @@ function cmdNoAccessList(state: any, input: string, ctx: any): any {
   }
 
   return { success: true, output: `Access-list ${match[1]} removed` };
+}
+
+/**
+ * Channel-Group - Assign interface to EtherChannel
+ */
+function cmdChannelGroup(state: any, input: string, ctx: any): any {
+  if (!isInInterfaceMode(state)) {
+    return { success: false, error: '% Invalid command at this mode' };
+  }
+
+  const match = input.match(/^channel-group\s+(\d+)\s+mode\s+(active|passive|on|desirable|auto)$/i);
+  if (!match) {
+    return { success: false, error: '% Invalid channel-group command. Use: channel-group <1-48> mode {active|passive|on|desirable|auto}' };
+  }
+
+  const group = parseInt(match[1]);
+  const mode = match[2].toLowerCase();
+
+  const updatePort = (port: any) => ({ ...port, channelGroup: group, channelGroupMode: mode });
+
+  if (state.selectedInterfaces?.length) {
+    return { success: true, newState: applyToSelectedPorts(state, updatePort) };
+  }
+
+  if (!state.currentInterface) return { success: false, error: '% No interface selected' };
+
+  const newPorts = { ...state.ports };
+  newPorts[state.currentInterface] = updatePort(newPorts[state.currentInterface] || {});
+  return { success: true, output: `Channel-group ${group} mode ${mode} configured`, newState: { ports: newPorts } };
+}
+
+/**
+ * IP Helper-Address - Set DHCP relay address
+ */
+function cmdIpHelperAddress(state: any, input: string, ctx: any): any {
+  if (!isInInterfaceMode(state)) {
+    return { success: false, error: '% Invalid command at this mode' };
+  }
+
+  const match = input.match(/^ip\s+helper-address\s+(\d+\.\d+\.\d+\.\d+)$/i);
+  if (!match) {
+    return { success: false, error: '% Invalid ip helper-address command. Use: ip helper-address <ip>' };
+  }
+
+  const helperIp = match[1];
+  if (!state.currentInterface) return { success: false, error: '% No interface selected' };
+
+  const newPorts = { ...state.ports };
+  const port = newPorts[state.currentInterface] || {};
+  const helpers: string[] = [...(port.helperAddresses || [])];
+  if (!helpers.includes(helperIp)) helpers.push(helperIp);
+  newPorts[state.currentInterface] = { ...port, helperAddresses: helpers };
+
+  return { success: true, output: `Helper address ${helperIp} added`, newState: { ports: newPorts } };
+}
+
+/**
+ * No IP Helper-Address - Remove DHCP relay address
+ */
+function cmdNoIpHelperAddress(state: any, input: string, ctx: any): any {
+  if (!isInInterfaceMode(state)) {
+    return { success: false, error: '% Invalid command at this mode' };
+  }
+
+  const match = input.match(/^no\s+ip\s+helper-address(?:\s+(\d+\.\d+\.\d+\.\d+))?$/i);
+  if (!match) {
+    return { success: false, error: '% Invalid command' };
+  }
+
+  if (!state.currentInterface) return { success: false, error: '% No interface selected' };
+
+  const newPorts = { ...state.ports };
+  const port = newPorts[state.currentInterface] || {};
+  newPorts[state.currentInterface] = { ...port, helperAddresses: [] };
+
+  return { success: true, output: 'Helper address(es) removed', newState: { ports: newPorts } };
+}
+
+/**
+ * Switchport Nonegotiate - Disable DTP negotiation
+ */
+function cmdSwitchportNonegotiate(state: any, input: string, ctx: any): any {
+  if (!isInInterfaceMode(state)) {
+    return { success: false, error: '% Invalid command at this mode' };
+  }
+
+  const updatePort = (port: any) => ({ ...port, nonegotiate: true });
+
+  if (state.selectedInterfaces?.length) {
+    return { success: true, newState: applyToSelectedPorts(state, updatePort) };
+  }
+
+  if (!state.currentInterface) return { success: false, error: '% No interface selected' };
+
+  const newPorts = { ...state.ports };
+  newPorts[state.currentInterface] = updatePort(newPorts[state.currentInterface] || {});
+  return { success: true, output: 'DTP negotiation disabled', newState: { ports: newPorts } };
+}
+
+/**
+ * Switchport Voice VLAN - Set voice VLAN
+ */
+function cmdSwitchportVoiceVlan(state: any, input: string, ctx: any): any {
+  if (!isInInterfaceMode(state)) {
+    return { success: false, error: '% Invalid command at this mode' };
+  }
+
+  const match = input.match(/^switchport\s+voice\s+vlan\s+(\d+)$/i);
+  if (!match) {
+    return { success: false, error: '% Invalid switchport voice vlan command' };
+  }
+
+  const vlanId = parseInt(match[1]);
+  const updatePort = (port: any) => ({ ...port, voiceVlan: vlanId });
+
+  if (state.selectedInterfaces?.length) {
+    return { success: true, newState: applyToSelectedPorts(state, updatePort) };
+  }
+
+  if (!state.currentInterface) return { success: false, error: '% No interface selected' };
+
+  const newPorts = { ...state.ports };
+  newPorts[state.currentInterface] = updatePort(newPorts[state.currentInterface] || {});
+  return { success: true, output: `Voice VLAN ${vlanId} configured`, newState: { ports: newPorts } };
+}
+
+/**
+ * CDP Enable - Enable CDP on interface
+ */
+function cmdCdpEnable(state: any, input: string, ctx: any): any {
+  if (!isInInterfaceMode(state)) {
+    return { success: false, error: '% Invalid command at this mode' };
+  }
+
+  const updatePort = (port: any) => ({ ...port, cdpEnabled: true });
+
+  if (state.selectedInterfaces?.length) {
+    return { success: true, newState: applyToSelectedPorts(state, updatePort) };
+  }
+
+  if (!state.currentInterface) return { success: false, error: '% No interface selected' };
+
+  const newPorts = { ...state.ports };
+  newPorts[state.currentInterface] = updatePort(newPorts[state.currentInterface] || {});
+  return { success: true, output: 'CDP enabled on interface', newState: { ports: newPorts } };
+}
+
+/**
+ * Spanning-Tree BPDUGuard Disable
+ */
+function cmdSpanningTreeBpduguardDisable(state: any, input: string, ctx: any): any {
+  if (!isInInterfaceMode(state)) {
+    return { success: false, error: '% Invalid command at this mode' };
+  }
+
+  const updatePort = (port: any) => ({ ...port, bpduguard: false });
+
+  if (state.selectedInterfaces?.length) {
+    return { success: true, newState: applyToSelectedPorts(state, updatePort) };
+  }
+
+  if (!state.currentInterface) return { success: false, error: '% No interface selected' };
+
+  const newPorts = { ...state.ports };
+  newPorts[state.currentInterface] = updatePort(newPorts[state.currentInterface] || {});
+  return { success: true, output: 'BPDU guard disabled', newState: { ports: newPorts } };
+}
+
+/**
+ * Spanning-Tree Cost - Set STP path cost
+ */
+function cmdSpanningTreeCost(state: any, input: string, ctx: any): any {
+  if (!isInInterfaceMode(state)) {
+    return { success: false, error: '% Invalid command at this mode' };
+  }
+
+  const match = input.match(/^spanning-tree\s+cost\s+(\d+)$/i);
+  if (!match) {
+    return { success: false, error: '% Invalid spanning-tree cost command. Use: spanning-tree cost <1-200000000>' };
+  }
+
+  const cost = parseInt(match[1]);
+  const updatePort = (port: any) => ({ ...port, stpCost: cost });
+
+  if (state.selectedInterfaces?.length) {
+    return { success: true, newState: applyToSelectedPorts(state, updatePort) };
+  }
+
+  if (!state.currentInterface) return { success: false, error: '% No interface selected' };
+
+  const newPorts = { ...state.ports };
+  newPorts[state.currentInterface] = updatePort(newPorts[state.currentInterface] || {});
+  return { success: true, output: `STP cost set to ${cost}`, newState: { ports: newPorts } };
+}
+
+/**
+ * Spanning-Tree Priority - Set STP port priority
+ */
+function cmdSpanningTreePriority(state: any, input: string, ctx: any): any {
+  if (!isInInterfaceMode(state)) {
+    return { success: false, error: '% Invalid command at this mode' };
+  }
+
+  const match = input.match(/^spanning-tree\s+priority\s+(\d+)$/i);
+  if (!match) {
+    return { success: false, error: '% Invalid spanning-tree priority command. Use: spanning-tree priority <0-240>' };
+  }
+
+  const priority = parseInt(match[1]);
+  if (priority < 0 || priority > 240 || priority % 16 !== 0) {
+    return { success: false, error: '% Priority must be a multiple of 16 between 0 and 240' };
+  }
+
+  const updatePort = (port: any) => ({ ...port, stpPriority: priority });
+
+  if (state.selectedInterfaces?.length) {
+    return { success: true, newState: applyToSelectedPorts(state, updatePort) };
+  }
+
+  if (!state.currentInterface) return { success: false, error: '% No interface selected' };
+
+  const newPorts = { ...state.ports };
+  newPorts[state.currentInterface] = updatePort(newPorts[state.currentInterface] || {});
+  return { success: true, output: `STP port priority set to ${priority}`, newState: { ports: newPorts } };
 }
 
 
