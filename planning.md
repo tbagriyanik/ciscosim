@@ -12,9 +12,159 @@ Bu belge, projenin mevcut durumunu dürüst biçimde özetler. Amaç, "tamamland
 Proje tamamlanmış durumda:
 - `next build` başarılı ✅
 - TypeScript derlemesi temiz ✅
-- 66,000+ satır kod (.ts/.tsx)
+- **67,068 satır kod** (.ts/.tsx) - toplam proje kodu
+- **100+ CLI komutu** destekleniyor
 - Tüm CLI komutları çalışır durumda
 - Tablet UI, WiFi (sinyal gücü göstergesi), Ping animasyonları (gerçekçi gecikmeler), Notes sistemi aktif
+
+## Desteklenen CLI Komutları (100+)
+
+### Komut Kategorileri
+1. **Sistem ve Oturum Komutları** - enable, disable, configure, exit, end
+2. **Privileged EXEC Komutları** - ping, traceroute, telnet, ssh, write, copy, erase, reload, debug
+3. **Global Konfigürasyon** - hostname, vlan, ip routing, spanning-tree, vtp, banner
+4. **Arayüz Konfigürasyonu** - interface, shutdown, speed, duplex, switchport, ip address
+5. **Kablosuz (WiFi) Komutları** - ssid, encryption, wifi-password, wifi-channel, wifi-mode
+6. **Hat (Line) Konfigürasyonu** - line console/vty, password, login, transport input
+7. **Yönlendirme Protokolleri** - router rip, router ospf, network, router-id
+8. **Gösterim (Show) Komutları** - show running-config, show vlan, show ip route, show interfaces
+
+### Tam Komut Listesi
+
+#### Sistem & Oturum
+| Komut | Açıklama | Mod |
+|-------|----------|-----|
+| `enable` | Ayrıcalıklı EXEC moduna geç | User |
+| `disable` | Kullanıcı moduna dön | Privileged |
+| `configure terminal` | Global konfigürasyon moduna geç | Privileged |
+| `exit` | Mevcut moddan çık | All |
+| `end` | Ayrıcalıklı moda dön | All |
+| `help` | Yardım sistemini göster | All |
+
+#### Privileged EXEC
+| Komut | Açıklama |
+|-------|----------|
+| `ping <host> [boyut] [adet]` | ICMP ile bağlantı testi |
+| `traceroute <host>` | Rota izleme (Unix tarzı) |
+| `tracert <host>` | Rota izleme (Windows tarzı) |
+| `telnet <host> [port]` | Telnet bağlantısı |
+| `ssh [-l kullanıcı] <host>` | SSH bağlantısı |
+| `write memory` | Yapılandırmayı kaydet |
+| `copy running-config startup-config` | Konfigürasyonu kopyala |
+| `erase startup-config` | Başlangıç konfigürasyonunu sil |
+| `reload` | Cihazı yeniden yükle |
+| `ip route <ağ> <maske> <sonraki-hop>` | Statik rota ekle |
+| `debug <tür>` | Hata ayıklama |
+| `undebug all` | Tüm hata ayıklamayı kapat |
+| `clear mac address-table` | MAC adres tablosunu temizle |
+
+#### Global Konfigürasyon
+| Komut | Açıklama |
+|-------|----------|
+| `hostname <ad>` | Cihaz adını ayarla |
+| `vlan <id>` | VLAN oluştur/gir |
+| `no vlan <id>` | VLAN sil |
+| `interface <ad>` | Arayüz konfigürasyonuna gir |
+| `interface range <aralık>` | Arayüz aralığı yapılandır |
+| `ip routing` | IP yönlendirmeyi etkinleştir (L3) |
+| `ip default-gateway <ip>` | Varsayılan ağ geçidi |
+| `ip domain-name <ad>` | Alan adı ayarla |
+| `ip http server` | HTTP sunucusunu etkinleştir |
+| `ip ssh version {1\|2}` | SSH versiyonu |
+| `service password-encryption` | Şifre şifreleme |
+| `enable secret <şifre>` | Enable secret ayarla |
+| `banner motd #<mesaj>#` | Giriş mesajı |
+| `vtp mode {server\|client\|transparent}` | VTP modu |
+| `spanning-tree mode {pvst\|rapid-pvst\|mst}` | STP modu |
+| `username <ad> privilege <seviye> password <şifre>` | Kullanıcı oluştur |
+| `router rip` | RIP yönlendirmesi |
+| `router ospf [<id>]` | OSPF yönlendirmesi |
+| `ntp server <ip>` | NTP sunucusu |
+
+#### Arayüz Konfigürasyonu
+| Komut | Açıklama |
+|-------|----------|
+| `shutdown` | Arayüzü kapat |
+| `no shutdown` | Arayüzü aç |
+| `speed {10\|100\|1000\|auto}` | Hız ayarla |
+| `duplex {half\|full\|auto}` | Çalışma modu |
+| `description <metin>` | Açıklama ekle |
+| `switchport mode access` | Erişim modu |
+| `switchport mode trunk` | Trunk modu |
+| `switchport access vlan <id>` | VLAN ata |
+| `switchport trunk native vlan <id>` | Yerel VLAN |
+| `switchport trunk allowed vlan <liste>` | İzin verilen VLANlar |
+| `switchport port-security` | Port güvenliği |
+| `switchport port-security maximum <n>` | Maksimum MAC |
+| `no switchport` | Yönlendirmeli porta çevir (L3) |
+| `spanning-tree portfast` | PortFast etkinleştir |
+| `spanning-tree bpduguard enable` | BPDU Guard etkinleştir |
+| `ip address <ip> <maske>` | IP adresi ata |
+| `ip helper-address <ip>` | DHCP relay |
+| `cdp enable` | CDP etkinleştir |
+| `channel-group <n> mode {on\|active\|passive}` | EtherChannel |
+
+#### Kablosuz (WiFi) Komutları
+| Komut | Açıklama |
+|-------|----------|
+| `ssid <ad>` | Kablosuz ağ adı |
+| `encryption {open\|wpa\|wpa2\|wpa3}` | Güvenlik tipi |
+| `wifi-password <şifre>` | Kablosuz şifre |
+| `wifi-channel {2.4ghz\|5ghz}` | Frekans bandı |
+| `wifi-mode {ap\|client\|disabled}` | Çalışma modu |
+
+#### Hat (Line) Konfigürasyonu
+| Komut | Açıklama |
+|-------|----------|
+| `line console <n>` | Konsol hattı |
+| `line vty <başlangıç> <bitiş>` | VTY hatları |
+| `password <şifre>` | Hat şifresi |
+| `login` | Şifre kontrolü etkinleştir |
+| `no login` | Şifre kontrolünü kapat |
+| `transport input {ssh\|telnet\|all\|none}` | İzin verilen protokoller |
+| `logging synchronous` | Senkron kayıt |
+| `exec-timeout <dk> [sn]` | Oturum zaman aşımı |
+| `privilege level <0-15>` | Yetki seviyesi |
+
+#### Router Konfigürasyonu (RIP/OSPF)
+| Komut | Açıklama |
+|-------|----------|
+| `network <ip> [wildcard] area <id>` | Ağ ekle (OSPF) |
+| `network <ip>` | Ağ ekle (RIP) |
+| `router-id <ip>` | Router ID ayarla |
+| `passive-interface <arayüz>` | Pasif arayüz |
+| `default-information {originate\|always}` | Varsayılan rota |
+
+#### Show Komutları
+| Komut | Açıklama |
+|-------|----------|
+| `show running-config` | Çalışan konfigürasyon |
+| `show startup-config` | Başlangıç konfigürasyonu |
+| `show version` | Versiyon bilgisi |
+| `show interfaces` | Arayüz bilgisi |
+| `show ip interface brief` | IP arayüz özeti |
+| `show vlan [brief]` | VLAN bilgisi |
+| `show mac address-table` | MAC adres tablosu |
+| `show cdp neighbors` | CDP komşuları |
+| `show ip route` | Yönlendirme tablosu |
+| `show spanning-tree` | STP bilgisi |
+| `show port-security` | Port güvenliği |
+| `show wireless` | Kablosuz durum |
+| `show arp` | ARP tablosu |
+| `show users` | Aktif kullanıcılar |
+| `show processes` | CPU işlemleri |
+| `show memory` | Bellek kullanımı |
+
+### Komut Modları
+- **User Mode** (`>`) - Temel izleme komutları
+- **Privileged Mode** (`#`) - Tüm show/debug komutları
+- **Config Mode** `(config)#` - Global konfigürasyon
+- **Interface Mode** `(config-if)#` - Arayüz konfigürasyonu
+- **Line Mode** `(config-line)#` - Hat konfigürasyonu
+- **VLAN Mode** `(config-vlan)#` - VLAN konfigürasyonu
+- **Router Config Mode** `(config-router)#` - Yönlendirme protokolü
+
+---
 
 ## Tamamlananlar
 
@@ -30,7 +180,7 @@ Proje tamamlanmış durumda:
   - 1% sinyal: 100-220ms (Çok Zayıf)
   - Kablolu bağlantı: <1ms
 - Her ping paketi için ayrı random gecikme hesaplanıyor
-- Hem PC terminal (Windows ping) hem de CLI terminal (Cisco ping) destekleniyor
+- Hem PC terminal hem de CLI terminal destekleniyor
 - Router/Switch WiFi kontrol paneli eklendi:
   - Web tabanlı WiFi yönetim arayüzü (http://router-ip)
   - SSID, güvenlik, kanal ve mod ayarları
