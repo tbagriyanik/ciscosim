@@ -61,7 +61,10 @@ export function generateWifiControlPanelHTML(config: RouterWebConfig): string {
   const passwordField = `
     <div class="form-group">
       <label for="wifi-password">WiFi Password / Security Key</label>
-      <input type="password" id="wifi-password" name="password" value="${wifi.password || ''}" placeholder="Enter password (min 8 characters)" minlength="8">
+      <div style="position:relative;display:flex;align-items:center;">
+        <input type="password" id="wifi-password" name="password" value="${wifi.password || ''}" placeholder="Enter password (min 8 characters)" minlength="8" style="padding-right:2.2rem;width:100%;">
+        <button type="button" onclick="(function(btn){var inp=document.getElementById('wifi-password');if(inp.type==='password'){inp.type='text';btn.innerHTML='&#128065;&#65039;';}else{inp.type='password';btn.innerHTML='&#128065;';}})(this)" tabindex="-1" style="position:absolute;right:0.5rem;background:none;border:none;cursor:pointer;font-size:1rem;color:#888;padding:0;line-height:1;" title="Show/Hide password">&#128065;</button>
+      </div>
       <span class="hint">Minimum 8 characters required</span>
     </div>
   `;

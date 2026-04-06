@@ -1498,3 +1498,275 @@ function cmdSpanningTreePriority(state: any, input: string, ctx: any): any {
 }
 
 
+
+/**
+ * Switchport Trunk Encapsulation
+ */
+function cmdSwitchportTrunkEncapsulation(state: any, input: string, ctx: any): any {
+  if (!isInInterfaceMode(state)) return { success: false, error: '% Invalid command at this mode' };
+  const match = input.match(/^switchport\s+trunk\s+encapsulation\s+(dot1q|isl|negotiate)$/i);
+  if (!match) return { success: false, error: '% Invalid encapsulation command' };
+  const updatePort = (port: any) => ({ ...port, trunkEncapsulation: match[1].toLowerCase() });
+  if (state.selectedInterfaces?.length) return { success: true, newState: applyToSelectedPorts(state, updatePort) };
+  if (!state.currentInterface) return { success: false, error: '% No interface selected' };
+  const newPorts = { ...state.ports };
+  newPorts[state.currentInterface] = updatePort(newPorts[state.currentInterface] || {});
+  return { success: true, output: `Trunk encapsulation set to ${match[1]}`, newState: { ports: newPorts } };
+}
+
+/**
+ * Encapsulation dot1Q (subinterface)
+ */
+function cmdEncapsulationDot1q(state: any, input: string, ctx: any): any {
+  if (!isInInterfaceMode(state)) return { success: false, error: '% Invalid command at this mode' };
+  const match = input.match(/^encapsulation\s+dot1[qQ]\s+(\d+)$/i);
+  if (!match) return { success: false, error: '% Invalid encapsulation command' };
+  if (!state.currentInterface) return { success: false, error: '% No interface selected' };
+  const newPorts = { ...state.ports };
+  newPorts[state.currentInterface] = { ...(newPorts[state.currentInterface] || {}), dot1qVlan: parseInt(match[1]) };
+  return { success: true, output: `Encapsulation dot1Q VLAN ${match[1]} configured`, newState: { ports: newPorts } };
+}
+
+/**
+ * Switchport Protected
+ */
+function cmdSwitchportProtected(state: any, input: string, ctx: any): any {
+  if (!isInInterfaceMode(state)) return { success: false, error: '% Invalid command at this mode' };
+  const updatePort = (port: any) => ({ ...port, protected: true });
+  if (state.selectedInterfaces?.length) return { success: true, newState: applyToSelectedPorts(state, updatePort) };
+  if (!state.currentInterface) return { success: false, error: '% No interface selected' };
+  const newPorts = { ...state.ports };
+  newPorts[state.currentInterface] = updatePort(newPorts[state.currentInterface] || {});
+  return { success: true, output: 'Port protected mode enabled', newState: { ports: newPorts } };
+}
+
+/**
+ * Switchport Block (unicast/multicast)
+ */
+function cmdSwitchportBlock(state: any, input: string, ctx: any): any {
+  if (!isInInterfaceMode(state)) return { success: false, error: '% Invalid command at this mode' };
+  const match = input.match(/^switchport\s+block\s+(unicast|multicast)$/i);
+  if (!match) return { success: false, error: '% Invalid switchport block command' };
+  const updatePort = (port: any) => ({ ...port, [`block${match[1]}`]: true });
+  if (state.selectedInterfaces?.length) return { success: true, newState: applyToSelectedPorts(state, updatePort) };
+  if (!state.currentInterface) return { success: false, error: '% No interface selected' };
+  const newPorts = { ...state.ports };
+  newPorts[state.currentInterface] = updatePort(newPorts[state.currentInterface] || {});
+  return { success: true, output: `${match[1]} blocking enabled`, newState: { ports: newPorts } };
+}
+
+/**
+ * Switchport Port-Security MAC-Address (static)
+ */
+function cmdSwitchportPortSecurityMacAddress(state: any, input: string, ctx: any): any {
+  if (!isInInterfaceMode(state)) return { success: false, error: '% Invalid command at this mode' };
+  const match = input.match(/^switchport\s+port-security\s+mac-address\s+([0-9a-fA-F.:-]+)$/i);
+  if (!match) return { success: false, error: '% Invalid mac-address command' };
+  if (!state.currentInterface) return { success: false, error: '% No interface selected' };
+  const newPorts = { ...state.ports };
+  const port = newPorts[state.currentInterface] || {};
+  const staticMacs = [...(port.staticMacs || [])];
+  if (!staticMacs.includes(match[1])) staticMacs.push(match[1]);
+  newPorts[state.currentInterface] = { ...port, staticMacs };
+  return { success: true, output: `Static MAC ${match[1]} configured`, newState: { ports: newPorts } };
+}
+
+/**
+ * Storm-Control
+ */
+function cmdStormControl(state: any, input: string, ctx: any): any {
+  if (!isInInterfaceMode(state)) return { success: false, error: '% Invalid command at this mode' };
+  const match = input.match(/^storm-control\s+(broadcast|multicast|unicast)\s+level\s+([\d.]+)(?:\s+([\d.]+))?$/i);
+  if (!match) return { success: false, error: '% Invalid storm-control command. Use: storm-control {broadcast|multicast|unicast} level <rising> [falling]' };
+  if (!state.currentInterface) return { success: false, error: '% No interface selected' };
+  const newPorts = { ...state.ports };
+  newPorts[state.currentInterface] = { ...(newPorts[state.currentInterface] || {}), stormControl: { type: match[1], rising: match[2], falling: match[3] } };
+  return { success: true, output: `Storm-control ${match[1]} level ${match[2]} configured`, newState: { ports: newPorts } };
+}
+
+/**
+ * Storm-Control Action
+ */
+function cmdStormControlAction(state: any, input: string, ctx: any): any {
+  if (!isInInterfaceMode(state)) return { success: false, error: '% Invalid command at this mode' };
+  const match = input.match(/^storm-control\s+action\s+(shutdown|trap)$/i);
+  if (!match) return { success: false, error: '% Invalid storm-control action command' };
+  if (!state.currentInterface) return { success: false, error: '% No interface selected' };
+  const newPorts = { ...state.ports };
+  newPorts[state.currentInterface] = { ...(newPorts[state.currentInterface] || {}), stormControlAction: match[1] };
+  return { success: true, output: `Storm-control action ${match[1]} configured`, newState: { ports: newPorts } };
+}
+
+/**
+ * MLS QoS Trust
+ */
+function cmdMlsQosTrust(state: any, input: string, ctx: any): any {
+  if (!isInInterfaceMode(state)) return { success: false, error: '% Invalid command at this mode' };
+  const match = input.match(/^mls\s+qos\s+trust\s+(cos|dscp|ip-precedence)$/i);
+  if (!match) return { success: false, error: '% Invalid mls qos trust command' };
+  const updatePort = (port: any) => ({ ...port, qosTrust: match[1] });
+  if (state.selectedInterfaces?.length) return { success: true, newState: applyToSelectedPorts(state, updatePort) };
+  if (!state.currentInterface) return { success: false, error: '% No interface selected' };
+  const newPorts = { ...state.ports };
+  newPorts[state.currentInterface] = updatePort(newPorts[state.currentInterface] || {});
+  return { success: true, output: `QoS trust ${match[1]} configured`, newState: { ports: newPorts } };
+}
+
+/**
+ * MLS QoS CoS
+ */
+function cmdMlsQosCos(state: any, input: string, ctx: any): any {
+  if (!isInInterfaceMode(state)) return { success: false, error: '% Invalid command at this mode' };
+  const match = input.match(/^mls\s+qos\s+cos\s+(\d)$/i);
+  if (!match) return { success: false, error: '% Invalid mls qos cos command' };
+  const updatePort = (port: any) => ({ ...port, qosCos: parseInt(match[1]) });
+  if (state.selectedInterfaces?.length) return { success: true, newState: applyToSelectedPorts(state, updatePort) };
+  if (!state.currentInterface) return { success: false, error: '% No interface selected' };
+  const newPorts = { ...state.ports };
+  newPorts[state.currentInterface] = updatePort(newPorts[state.currentInterface] || {});
+  return { success: true, output: `QoS CoS ${match[1]} configured`, newState: { ports: newPorts } };
+}
+
+/**
+ * IP DHCP Snooping Trust
+ */
+function cmdIpDhcpSnoopingTrust(state: any, input: string, ctx: any): any {
+  if (!isInInterfaceMode(state)) return { success: false, error: '% Invalid command at this mode' };
+  const updatePort = (port: any) => ({ ...port, dhcpSnoopingTrust: true });
+  if (state.selectedInterfaces?.length) return { success: true, newState: applyToSelectedPorts(state, updatePort) };
+  if (!state.currentInterface) return { success: false, error: '% No interface selected' };
+  const newPorts = { ...state.ports };
+  newPorts[state.currentInterface] = updatePort(newPorts[state.currentInterface] || {});
+  return { success: true, output: 'DHCP snooping trust configured', newState: { ports: newPorts } };
+}
+
+/**
+ * No IP DHCP Snooping Trust
+ */
+function cmdNoIpDhcpSnoopingTrust(state: any, input: string, ctx: any): any {
+  if (!isInInterfaceMode(state)) return { success: false, error: '% Invalid command at this mode' };
+  const updatePort = (port: any) => ({ ...port, dhcpSnoopingTrust: false });
+  if (state.selectedInterfaces?.length) return { success: true, newState: applyToSelectedPorts(state, updatePort) };
+  if (!state.currentInterface) return { success: false, error: '% No interface selected' };
+  const newPorts = { ...state.ports };
+  newPorts[state.currentInterface] = updatePort(newPorts[state.currentInterface] || {});
+  return { success: true, output: 'DHCP snooping trust removed', newState: { ports: newPorts } };
+}
+
+/**
+ * IP ARP Inspection Trust
+ */
+function cmdIpArpInspectionTrust(state: any, input: string, ctx: any): any {
+  if (!isInInterfaceMode(state)) return { success: false, error: '% Invalid command at this mode' };
+  const updatePort = (port: any) => ({ ...port, arpInspectionTrust: true });
+  if (state.selectedInterfaces?.length) return { success: true, newState: applyToSelectedPorts(state, updatePort) };
+  if (!state.currentInterface) return { success: false, error: '% No interface selected' };
+  const newPorts = { ...state.ports };
+  newPorts[state.currentInterface] = updatePort(newPorts[state.currentInterface] || {});
+  return { success: true, output: 'ARP inspection trust configured', newState: { ports: newPorts } };
+}
+
+/**
+ * No IP ARP Inspection Trust
+ */
+function cmdNoIpArpInspectionTrust(state: any, input: string, ctx: any): any {
+  if (!isInInterfaceMode(state)) return { success: false, error: '% Invalid command at this mode' };
+  const updatePort = (port: any) => ({ ...port, arpInspectionTrust: false });
+  if (state.selectedInterfaces?.length) return { success: true, newState: applyToSelectedPorts(state, updatePort) };
+  if (!state.currentInterface) return { success: false, error: '% No interface selected' };
+  const newPorts = { ...state.ports };
+  newPorts[state.currentInterface] = updatePort(newPorts[state.currentInterface] || {});
+  return { success: true, output: 'ARP inspection trust removed', newState: { ports: newPorts } };
+}
+
+/**
+ * Bandwidth
+ */
+function cmdBandwidth(state: any, input: string, ctx: any): any {
+  if (!isInInterfaceMode(state)) return { success: false, error: '% Invalid command at this mode' };
+  const match = input.match(/^bandwidth\s+(\d+)$/i);
+  if (!match) return { success: false, error: '% Invalid bandwidth command' };
+  const updatePort = (port: any) => ({ ...port, bandwidth: parseInt(match[1]) });
+  if (state.selectedInterfaces?.length) return { success: true, newState: applyToSelectedPorts(state, updatePort) };
+  if (!state.currentInterface) return { success: false, error: '% No interface selected' };
+  const newPorts = { ...state.ports };
+  newPorts[state.currentInterface] = updatePort(newPorts[state.currentInterface] || {});
+  return { success: true, output: `Bandwidth set to ${match[1]} kbps`, newState: { ports: newPorts } };
+}
+
+/**
+ * Keepalive
+ */
+function cmdKeepalive(state: any, input: string, ctx: any): any {
+  if (!isInInterfaceMode(state)) return { success: false, error: '% Invalid command at this mode' };
+  const match = input.match(/^keepalive(?:\s+(\d+))?$/i);
+  const interval = match?.[1] ? parseInt(match[1]) : 10;
+  const updatePort = (port: any) => ({ ...port, keepalive: interval });
+  if (state.selectedInterfaces?.length) return { success: true, newState: applyToSelectedPorts(state, updatePort) };
+  if (!state.currentInterface) return { success: false, error: '% No interface selected' };
+  const newPorts = { ...state.ports };
+  newPorts[state.currentInterface] = updatePort(newPorts[state.currentInterface] || {});
+  return { success: true, output: `Keepalive set to ${interval} seconds`, newState: { ports: newPorts } };
+}
+
+/**
+ * IP Proxy-ARP (enable)
+ */
+function cmdIpProxyArp(state: any, input: string, ctx: any): any {
+  if (!isInInterfaceMode(state)) return { success: false, error: '% Invalid command at this mode' };
+  const updatePort = (port: any) => ({ ...port, proxyArp: true });
+  if (state.selectedInterfaces?.length) return { success: true, newState: applyToSelectedPorts(state, updatePort) };
+  if (!state.currentInterface) return { success: false, error: '% No interface selected' };
+  const newPorts = { ...state.ports };
+  newPorts[state.currentInterface] = updatePort(newPorts[state.currentInterface] || {});
+  return { success: true, output: 'Proxy ARP enabled', newState: { ports: newPorts } };
+}
+
+/**
+ * IP Verify Source
+ */
+function cmdIpVerifySource(state: any, input: string, ctx: any): any {
+  if (!isInInterfaceMode(state)) return { success: false, error: '% Invalid command at this mode' };
+  const updatePort = (port: any) => ({ ...port, ipVerifySource: true });
+  if (state.selectedInterfaces?.length) return { success: true, newState: applyToSelectedPorts(state, updatePort) };
+  if (!state.currentInterface) return { success: false, error: '% No interface selected' };
+  const newPorts = { ...state.ports };
+  newPorts[state.currentInterface] = updatePort(newPorts[state.currentInterface] || {});
+  return { success: true, output: 'IP verify source configured', newState: { ports: newPorts } };
+}
+
+/**
+ * UDLD Enable / Port
+ */
+function cmdUdldEnable(state: any, input: string, ctx: any): any {
+  if (!isInInterfaceMode(state)) return { success: false, error: '% Invalid command at this mode' };
+  const updatePort = (port: any) => ({ ...port, udld: true });
+  if (state.selectedInterfaces?.length) return { success: true, newState: applyToSelectedPorts(state, updatePort) };
+  if (!state.currentInterface) return { success: false, error: '% No interface selected' };
+  const newPorts = { ...state.ports };
+  newPorts[state.currentInterface] = updatePort(newPorts[state.currentInterface] || {});
+  return { success: true, output: 'UDLD enabled', newState: { ports: newPorts } };
+}
+
+// Register new interface handlers
+Object.assign(interfaceHandlers, {
+  'switchport trunk encapsulation': cmdSwitchportTrunkEncapsulation,
+  'encapsulation dot1q': cmdEncapsulationDot1q,
+  'switchport protected': cmdSwitchportProtected,
+  'switchport block': cmdSwitchportBlock,
+  'switchport port-security mac-address': cmdSwitchportPortSecurityMacAddress,
+  'storm-control': cmdStormControl,
+  'storm-control action': cmdStormControlAction,
+  'mls qos trust': cmdMlsQosTrust,
+  'mls qos cos': cmdMlsQosCos,
+  'ip dhcp snooping trust': cmdIpDhcpSnoopingTrust,
+  'no ip dhcp snooping trust': cmdNoIpDhcpSnoopingTrust,
+  'ip arp inspection trust': cmdIpArpInspectionTrust,
+  'no ip arp inspection trust': cmdNoIpArpInspectionTrust,
+  'bandwidth': cmdBandwidth,
+  'keepalive': cmdKeepalive,
+  'ip proxy-arp': cmdIpProxyArp,
+  'ip verify source': cmdIpVerifySource,
+  'udld enable': cmdUdldEnable,
+  'udld port': cmdUdldEnable,
+});

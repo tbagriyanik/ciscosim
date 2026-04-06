@@ -575,3 +575,77 @@ function cmdTracert(state: any, input: string, ctx: any): any {
 
     return { success: false, error: '% Tracert requires network context' };
 }
+
+/**
+ * Terminal - Set terminal parameters
+ */
+function cmdTerminal(state: any, input: string, ctx: any): any {
+    const match = input.match(/^terminal\s+(length|width|monitor|no\s+monitor)\s*(\d*)$/i);
+    if (!match) return { success: false, error: '% Invalid terminal command' };
+    const param = match[1].toLowerCase();
+    if (param === 'length') return { success: true, output: '' };
+    if (param === 'width') return { success: true, output: '' };
+    if (param === 'monitor') return { success: true, output: '%LINK-5-CHANGED: Interface, changed state to monitoring' };
+    return { success: true, output: '' };
+}
+
+/**
+ * Clear ARP Cache
+ */
+function cmdClearArpCache(state: any, input: string, ctx: any): any {
+    return { success: true, output: '' };
+}
+
+/**
+ * Clear MAC Address-Table
+ */
+function cmdClearMacAddressTable(state: any, input: string, ctx: any): any {
+    return {
+        success: true,
+        output: '',
+        newState: { macAddressTable: [] }
+    };
+}
+
+/**
+ * Clear Counters
+ */
+function cmdClearCounters(state: any, input: string, ctx: any): any {
+    return { success: true, output: 'Clear "show interface" counters on all interfaces [confirm]\n' };
+}
+
+/**
+ * Undebug (alias for undebug all)
+ */
+function cmdUndebug(state: any, input: string, ctx: any): any {
+    return {
+        success: true,
+        output: 'All possible debugging has been turned off',
+        newState: { debugEnabled: false }
+    };
+}
+
+/**
+ * Help command
+ */
+function cmdHelp(state: any, input: string, ctx: any): any {
+    const lang = ctx?.language || 'en';
+    const output = lang === 'tr'
+        ? '\nYardım sistemi:\n  Komut tamamlama için TAB tuşunu kullanın\n  Komut yardımı için ? kullanın\n  Örnek: show ?\n'
+        : '\nHelp system:\n  Use TAB for command completion\n  Use ? for command help\n  Example: show ?\n';
+    return { success: true, output };
+}
+
+// Register new privileged handlers
+Object.assign(privilegedHandlers, {
+    'terminal': cmdTerminal,
+    'terminal length': cmdTerminal,
+    'terminal width': cmdTerminal,
+    'terminal monitor': cmdTerminal,
+    'terminal no monitor': cmdTerminal,
+    'clear arp-cache': cmdClearArpCache,
+    'clear mac address-table': cmdClearMacAddressTable,
+    'clear counters': cmdClearCounters,
+    'undebug': cmdUndebug,
+    'help': cmdHelp,
+});

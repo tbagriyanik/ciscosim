@@ -24,6 +24,30 @@ export const showHandlers: Record<string, CommandHandler> = {
   'show wireless': cmdShowWireless,
   'do show': cmdDoShow,
   'show ip dhcp snooping': cmdShowIpDhcpSnooping,
+  'show interfaces status': cmdShowInterfacesStatus,
+  'show cdp': cmdShowCdp,
+  'show vtp status': cmdShowVtpStatus,
+  'show vtp': cmdShowVtpStatus,
+  'show etherchannel': cmdShowEtherchannel,
+  'show arp': cmdShowArp,
+  'show ip arp': cmdShowArp,
+  'show mls qos': cmdShowMlsQos,
+  'show ip arp inspection': cmdShowIpArpInspection,
+  'show access-lists': cmdShowAccessLists,
+  'show history': cmdShowHistory,
+  'show users': cmdShowUsers,
+  'show environment': cmdShowEnvironment,
+  'show inventory': cmdShowInventory,
+  'show errdisable recovery': cmdShowErrdisableRecovery,
+  'show errdisable detect': cmdShowErrdisableRecovery,
+  'show storm-control': cmdShowStormControl,
+  'show udld': cmdShowUdld,
+  'show monitor': cmdShowMonitor,
+  'show debug': cmdShowDebug,
+  'show processes': cmdShowProcesses,
+  'show memory': cmdShowMemory,
+  'show sdm prefer': cmdShowSdmPrefer,
+  'show system mtu': cmdShowSystemMtu,
 };
 
 function getSwitchDisplayProfile(state: any) {
@@ -1010,4 +1034,218 @@ function cmdShowIpDhcpSnooping(state: any, input: string, ctx: any): any {
 
   output += '!\n';
   return { success: true, output };
+}
+
+/**
+ * Show Interfaces Status
+ */
+function cmdShowInterfacesStatus(state: any, input: string, ctx: any): any {
+  let output = '\nPort      Name               Status       Vlan       Duplex  Speed Type\n';
+  Object.keys(state.ports || {}).forEach(portName => {
+    const port = state.ports[portName];
+    const status = port.shutdown ? 'notconnect' : 'connected';
+    const vlan = port.accessVlan || port.vlan || 1;
+    const duplex = port.duplex || 'a-full';
+    const speed = port.speed || 'a-100';
+    output += `${portName.padEnd(10)}${(port.description || '').padEnd(19)}${status.padEnd(13)}${String(vlan).padEnd(11)}${duplex.padEnd(8)}${speed.padEnd(6)}10/100BaseTX\n`;
+  });
+  return { success: true, output };
+}
+
+/**
+ * Show CDP (brief)
+ */
+function cmdShowCdp(state: any, input: string, ctx: any): any {
+  const enabled = state.cdpEnabled !== false;
+  let output = '\nGlobal CDP information:\n';
+  output += `  CDP is ${enabled ? 'enabled' : 'disabled'}\n`;
+  output += `  Sending CDP packets every 60 seconds\n`;
+  output += `  Sending a holdtime value of 180 seconds\n`;
+  return { success: true, output };
+}
+
+/**
+ * Show VTP Status
+ */
+function cmdShowVtpStatus(state: any, input: string, ctx: any): any {
+  let output = '\nVTP Version capable             : 1 to 3\n';
+  output += `VTP version running             : 2\n`;
+  output += `VTP Domain Name                 : ${state.vtpDomain || ''}\n`;
+  output += `VTP Pruning Mode                : Disabled\n`;
+  output += `VTP Traps Generation            : Disabled\n`;
+  output += `Device ID                       : ${state.macAddress || ''}\n`;
+  output += `Configuration last modified by  : 0.0.0.0 at 0-0-00 00:00:00\n`;
+  output += `Local updater ID is 0.0.0.0 (no valid interface found)\n\n`;
+  output += `Feature VLAN:\n`;
+  output += `--------------\n`;
+  output += `VTP Operating Mode                : ${(state.vtpMode || 'server').charAt(0).toUpperCase() + (state.vtpMode || 'server').slice(1)}\n`;
+  output += `Maximum VLANs supported locally   : 1005\n`;
+  output += `Number of existing VLANs          : ${Object.keys(state.vlans || {}).length}\n`;
+  output += `Configuration Revision            : ${state.vtpRevision || 0}\n`;
+  return { success: true, output };
+}
+
+/**
+ * Show EtherChannel Summary
+ */
+function cmdShowEtherchannel(state: any, input: string, ctx: any): any {
+  let output = '\nFlags:  D - down        P - bundled in port-channel\n';
+  output += '        I - stand-alone s - suspended\n';
+  output += '        H - Hot-standby (LACP only)\n';
+  output += '        R - Layer3      S - Layer2\n';
+  output += '        U - in use      f - failed to allocate aggregator\n\n';
+  output += 'Number of channel-groups in use: 0\n';
+  output += 'Number of aggregators:           0\n\n';
+  output += 'Group  Port-channel  Protocol    Ports\n';
+  output += '------+-------------+-----------+-----------------------------------------------\n';
+
+  const groups: Record<number, string[]> = {};
+  Object.keys(state.ports || {}).forEach(portName => {
+    const port = state.ports[portName];
+    if (port.channelGroup) {
+      if (!groups[port.channelGroup]) groups[port.channelGroup] = [];
+      groups[port.channelGroup].push(portName);
+    }
+  });
+
+  Object.entries(groups).forEach(([group, ports]) => {
+    output += `${group.padEnd(7)}Po${group.padEnd(13)}${(state.ports[ports[0]]?.channelGroupMode || 'on').toUpperCase().padEnd(12)}${ports.join(' ')}\n`;
+  });
+
+  return { success: true, output };
+}
+
+/**
+ * Show ARP / Show IP ARP
+ */
+function cmdShowArp(state: any, input: string, ctx: any): any {
+  let output = '\nProtocol  Address          Age (min)  Hardware Addr   Type   Interface\n';
+  // Show static ARP entries from MAC table
+  (state.macAddressTable || []).forEach((entry: any) => {
+    if (entry.type === 'STATIC') {
+      output += `Internet  ${(entry.ip || '').padEnd(17)}  -          ${entry.mac.padEnd(16)}ARPA   Vlan${entry.vlan}\n`;
+    }
+  });
+  return { success: true, output };
+}
+
+/**
+ * Show MLS QoS
+ */
+function cmdShowMlsQos(state: any, input: string, ctx: any): any {
+  const enabled = state.mlsQosEnabled ?? false;
+  return { success: true, output: `\nQoS is ${enabled ? 'enabled' : 'disabled'}\n` };
+}
+
+/**
+ * Show IP ARP Inspection
+ */
+function cmdShowIpArpInspection(state: any, input: string, ctx: any): any {
+  return { success: true, output: '\nSource Mac Validation      : Disabled\nDestination Mac Validation : Disabled\nIP Address Validation      : Disabled\n\n Vlan     Configuration    Operation   ACL Match          Static ACL\n------   -------------    ---------   ---------          ----------\n' };
+}
+
+/**
+ * Show Access-Lists
+ */
+function cmdShowAccessLists(state: any, input: string, ctx: any): any {
+  return { success: true, output: '\n% No access lists configured\n' };
+}
+
+/**
+ * Show History
+ */
+function cmdShowHistory(state: any, input: string, ctx: any): any {
+  const history = state.commandHistory || [];
+  let output = '\n';
+  history.slice(-20).forEach((cmd: string) => { output += `  ${cmd}\n`; });
+  return { success: true, output };
+}
+
+/**
+ * Show Users
+ */
+function cmdShowUsers(state: any, input: string, ctx: any): any {
+  let output = '\n    Line       User       Host(s)              Idle       Location\n';
+  output += '*   0 con 0                idle                 00:00:00\n';
+  return { success: true, output };
+}
+
+/**
+ * Show Environment
+ */
+function cmdShowEnvironment(state: any, input: string, ctx: any): any {
+  return { success: true, output: '\nSystem Temperature Value: 36 Degree Celsius\nSystem Temperature State: GREEN\nYellow Threshold : 46 Degree Celsius\nRed Threshold    : 56 Degree Celsius\n' };
+}
+
+/**
+ * Show Inventory
+ */
+function cmdShowInventory(state: any, input: string, ctx: any): any {
+  const profile = getSwitchDisplayProfile(state);
+  return { success: true, output: `\nNAME: "1", DESCR: "${profile.switchModel}"\nPID: ${profile.switchModel}  , VID: V01, SN: ${state.version?.serialNumber || 'FOC0000X000'}\n` };
+}
+
+/**
+ * Show Errdisable Recovery
+ */
+function cmdShowErrdisableRecovery(state: any, input: string, ctx: any): any {
+  return { success: true, output: '\nErrDisable Reason            Timer Status\n-----------------            --------------\nbpduguard                    Disabled\npsecure-violation            Disabled\nport-security                Disabled\n\nTimer interval: 300 seconds\n' };
+}
+
+/**
+ * Show Storm-Control
+ */
+function cmdShowStormControl(state: any, input: string, ctx: any): any {
+  let output = '\nInterface Filter State   Upper        Lower        Current\n';
+  output += '---------  ------------ ------------ ------------ ---------\n';
+  return { success: true, output };
+}
+
+/**
+ * Show UDLD
+ */
+function cmdShowUdld(state: any, input: string, ctx: any): any {
+  return { success: true, output: '\nGlobal UDLD information\n  Message interval: 15\n  Time out interval: 5\n' };
+}
+
+/**
+ * Show Monitor (SPAN)
+ */
+function cmdShowMonitor(state: any, input: string, ctx: any): any {
+  return { success: true, output: '\n% No SPAN sessions configured\n' };
+}
+
+/**
+ * Show Debug
+ */
+function cmdShowDebug(state: any, input: string, ctx: any): any {
+  return { success: true, output: '\nAll possible debugging has been turned off\n' };
+}
+
+/**
+ * Show Processes
+ */
+function cmdShowProcesses(state: any, input: string, ctx: any): any {
+  return { success: true, output: '\nCPU utilization for five seconds: 1%/0%; one minute: 1%; five minutes: 1%\n' };
+}
+
+/**
+ * Show Memory
+ */
+function cmdShowMemory(state: any, input: string, ctx: any): any {
+  return { success: true, output: '\n                Head    Total(b)     Used(b)     Free(b)   Lowest(b)  Largest(b)\nProcessor  65536000    65536000     8192000    57344000    57344000    57344000\n' };
+}
+
+/**
+ * Show SDM Prefer
+ */
+function cmdShowSdmPrefer(state: any, input: string, ctx: any): any {
+  return { success: true, output: '\nThe current template is "default" template.\n The selected template optimizes the resources in\n the switch to support this level of features for\n 8 routed interfaces and 1024 VLANs.\n' };
+}
+
+/**
+ * Show System MTU
+ */
+function cmdShowSystemMtu(state: any, input: string, ctx: any): any {
+  return { success: true, output: '\nSystem MTU size is 1500 bytes\nSystem Jumbo MTU size is 1500 bytes\nRouting MTU size is 1500 bytes\n' };
 }

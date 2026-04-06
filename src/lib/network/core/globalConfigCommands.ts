@@ -977,3 +977,162 @@ function cmdIpSshVersion(state: any, input: string, ctx: any): any {
     newState: { sshVersion: version }
   };
 }
+
+/**
+ * IP DHCP Snooping VLAN
+ */
+function cmdIpDhcpSnoopingVlan(state: any, input: string, ctx: any): any {
+  if (state.currentMode !== 'config') return { success: false, error: '% Invalid command at this mode' };
+  const match = input.match(/^ip\s+dhcp\s+snooping\s+vlan\s+(.+)$/i);
+  if (!match) return { success: false, error: '% Invalid command' };
+  const vlans = match[1].split(',').map((v: string) => v.trim());
+  return { success: true, output: `DHCP snooping enabled on VLAN(s): ${vlans.join(', ')}`, newState: { dhcpSnoopingVlans: vlans } };
+}
+
+/**
+ * IP ARP Inspection VLAN
+ */
+function cmdIpArpInspection(state: any, input: string, ctx: any): any {
+  if (state.currentMode !== 'config') return { success: false, error: '% Invalid command at this mode' };
+  return { success: true, output: 'ARP inspection configured', newState: { arpInspectionEnabled: true } };
+}
+
+/**
+ * Spanning-Tree VLAN
+ */
+function cmdSpanningTreeVlan(state: any, input: string, ctx: any): any {
+  if (state.currentMode !== 'config') return { success: false, error: '% Invalid command at this mode' };
+  const match = input.match(/^spanning-tree\s+vlan\s+(\S+)\s+(priority|root)\s*(.*)$/i);
+  if (!match) return { success: false, error: '% Invalid spanning-tree vlan command' };
+  return { success: true, output: `Spanning-tree VLAN ${match[1]} ${match[2]} configured` };
+}
+
+/**
+ * Spanning-Tree Portfast (global)
+ */
+function cmdSpanningTreePortfastDefault(state: any, input: string, ctx: any): any {
+  if (state.currentMode !== 'config') return { success: false, error: '% Invalid command at this mode' };
+  return { success: true, output: 'PortFast will be configured in all non-trunking ports', newState: { spanningTreePortfastDefault: true } };
+}
+
+/**
+ * Errdisable Recovery
+ */
+function cmdErrdisableRecovery(state: any, input: string, ctx: any): any {
+  if (state.currentMode !== 'config') return { success: false, error: '% Invalid command at this mode' };
+  return { success: true, output: 'Errdisable recovery configured' };
+}
+
+/**
+ * VTP Password
+ */
+function cmdVtpPassword(state: any, input: string, ctx: any): any {
+  if (state.currentMode !== 'config') return { success: false, error: '% Invalid command at this mode' };
+  const match = input.match(/^vtp\s+password\s+(\S+)$/i);
+  if (!match) return { success: false, error: '% Invalid vtp password command' };
+  return { success: true, newState: { vtpPassword: match[1] } };
+}
+
+/**
+ * NTP Server
+ */
+function cmdNtpServer(state: any, input: string, ctx: any): any {
+  if (state.currentMode !== 'config') return { success: false, error: '% Invalid command at this mode' };
+  const match = input.match(/^ntp\s+server\s+(\S+)$/i);
+  if (!match) return { success: false, error: '% Invalid ntp server command' };
+  const servers = [...(state.ntpServers || [])];
+  if (!servers.includes(match[1])) servers.push(match[1]);
+  return { success: true, output: `NTP server ${match[1]} configured`, newState: { ntpServers: servers } };
+}
+
+/**
+ * Clock Timezone
+ */
+function cmdClockTimezone(state: any, input: string, ctx: any): any {
+  if (state.currentMode !== 'config') return { success: false, error: '% Invalid command at this mode' };
+  const match = input.match(/^clock\s+timezone\s+(\S+)\s+([+-]?\d+)(?:\s+(\d+))?$/i);
+  if (!match) return { success: false, error: '% Invalid clock timezone command' };
+  return { success: true, output: `Timezone set to ${match[1]} UTC${match[2]}` };
+}
+
+/**
+ * IP Name-Server
+ */
+function cmdIpNameServer(state: any, input: string, ctx: any): any {
+  if (state.currentMode !== 'config') return { success: false, error: '% Invalid command at this mode' };
+  const match = input.match(/^ip\s+name-server\s+(\S+)$/i);
+  if (!match) return { success: false, error: '% Invalid ip name-server command' };
+  return { success: true, output: `Name server ${match[1]} configured`, newState: { dnsServer: match[1] } };
+}
+
+/**
+ * IP Domain Lookup (re-enable)
+ */
+function cmdIpDomainLookup(state: any, input: string, ctx: any): any {
+  if (state.currentMode !== 'config') return { success: false, error: '% Invalid command at this mode' };
+  return { success: true, newState: { domainLookup: true } };
+}
+
+/**
+ * System MTU
+ */
+function cmdSystemMtu(state: any, input: string, ctx: any): any {
+  if (state.currentMode !== 'config') return { success: false, error: '% Invalid command at this mode' };
+  const match = input.match(/^system\s+mtu\s+(\d+)$/i);
+  if (!match) return { success: false, error: '% Invalid system mtu command' };
+  return { success: true, output: `Changes to the MTU will take effect after reload\nSystem MTU size is ${match[1]} bytes` };
+}
+
+/**
+ * SDM Prefer
+ */
+function cmdSdmPrefer(state: any, input: string, ctx: any): any {
+  if (state.currentMode !== 'config') return { success: false, error: '% Invalid command at this mode' };
+  return { success: true, output: 'Changes to the SDM preferences will take effect after reload' };
+}
+
+/**
+ * IPv6 Unicast-Routing
+ */
+function cmdIpv6UnicastRouting(state: any, input: string, ctx: any): any {
+  if (state.currentMode !== 'config') return { success: false, error: '% Invalid command at this mode' };
+  return { success: true, newState: { ipv6Enabled: true } };
+}
+
+/**
+ * IP SSH Authentication-Retries
+ */
+function cmdIpSshAuthRetries(state: any, input: string, ctx: any): any {
+  if (state.currentMode !== 'config') return { success: false, error: '% Invalid command at this mode' };
+  const match = input.match(/^ip\s+ssh\s+authentication-retries\s+(\d+)$/i);
+  if (!match) return { success: false, error: '% Invalid command' };
+  return { success: true, output: `SSH authentication retries set to ${match[1]}` };
+}
+
+/**
+ * Crypto Key Generate RSA
+ */
+function cmdCryptoKeyGenerateRsa(state: any, input: string, ctx: any): any {
+  if (state.currentMode !== 'config') return { success: false, error: '% Invalid command at this mode' };
+  return { success: true, output: 'The name for the keys will be: ' + (state.hostname || 'Switch') + '.' + (state.domainName || 'local') + '\nChoose the size of the key modulus in the range of 360 to 4096 for your\nGeneral Purpose Keys. Choosing a key modulus greater than 512 may take\na few minutes.\n\nHow many bits in the modulus [512]: \n% Generating 1024 bit RSA keys, keys will be non-exportable...\n[OK] (elapsed time was 1 seconds)\n' };
+}
+
+// Register new global config handlers
+Object.assign(globalConfigHandlers, {
+  'ip dhcp snooping vlan': cmdIpDhcpSnoopingVlan,
+  'ip arp inspection': cmdIpArpInspection,
+  'spanning-tree vlan': cmdSpanningTreeVlan,
+  'spanning-tree portfast default': cmdSpanningTreePortfastDefault,
+  'errdisable recovery': cmdErrdisableRecovery,
+  'errdisable recovery cause': cmdErrdisableRecovery,
+  'vtp password': cmdVtpPassword,
+  'ntp server': cmdNtpServer,
+  'clock timezone': cmdClockTimezone,
+  'ip name-server': cmdIpNameServer,
+  'ip domain lookup': cmdIpDomainLookup,
+  'system mtu': cmdSystemMtu,
+  'sdm prefer': cmdSdmPrefer,
+  'ipv6 unicast-routing': cmdIpv6UnicastRouting,
+  'ip ssh authentication-retries': cmdIpSshAuthRetries,
+  'crypto key generate rsa': cmdCryptoKeyGenerateRsa,
+});

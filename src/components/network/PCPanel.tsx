@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Laptop, Monitor, Terminal as TerminalIcon, X, CornerDownLeft, Command, Globe, Network, ShieldCheck, History, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Search, Copy, Save, Trash2, Download, Settings, Wifi } from 'lucide-react';
+import { Laptop, Monitor, Terminal as TerminalIcon, X, CornerDownLeft, Command, Globe, Network, ShieldCheck, History, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Search, Copy, Save, Trash2, Download, Settings, Wifi, Eye, EyeOff } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from "@/hooks/use-toast";
 import { isValidMAC, normalizeMAC, cn } from "@/lib/utils";
@@ -288,6 +288,7 @@ export function PCPanel({
   const [ssidDropdownOpen, setSsidDropdownOpen] = useState(false);
   const [wifiSecurity, setWifiSecurity] = useState(deviceFromTopology?.wifi?.security ?? 'open');
   const [wifiPassword, setWifiPassword] = useState(deviceFromTopology?.wifi?.password ?? '');
+  const [showWifiPassword, setShowWifiPassword] = useState(false);
   const [wifiChannel, setWifiChannel] = useState(deviceFromTopology?.wifi?.channel ?? '2.4GHz');
   const [wifiBSSID, setWifiBSSID] = useState(deviceFromTopology?.wifi?.bssid ?? '');
 
@@ -2994,14 +2995,24 @@ export function PCPanel({
                               <label className="text-[10px] font-black tracking-widest  text-slate-500 ml-1">
                                 {language === 'tr' ? 'Parola' : 'Password'}
                               </label>
-                              <Input
-                                type="password"
-                                value={wifiPassword}
-                                onChange={(e) => setWifiPassword(e.target.value)}
-                                placeholder="Security Key"
-                                disabled={!wifiEnabled}
-                                className="bg-background"
-                              />
+                              <div className="relative">
+                                <Input
+                                  type={showWifiPassword ? 'text' : 'password'}
+                                  value={wifiPassword}
+                                  onChange={(e) => setWifiPassword(e.target.value)}
+                                  placeholder="Security Key"
+                                  disabled={!wifiEnabled}
+                                  className="bg-background pr-9"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => setShowWifiPassword(v => !v)}
+                                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none"
+                                  tabIndex={-1}
+                                >
+                                  {showWifiPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                </button>
+                              </div>
                             </div>
                           )}
 
