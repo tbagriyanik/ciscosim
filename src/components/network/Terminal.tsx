@@ -1047,7 +1047,7 @@ export function Terminal({
           <div
             ref={terminalRef}
             className={cn(
-              "flex-1 scroll-y-sm font-mono leading-relaxed custom-scrollbar",
+              "flex-1 scroll-y-sm font-mono leading-relaxed custom-scrollbar mobile-scroll",
               isMobile ? "p-3" : "p-6",
               isPoweredOff ? "bg-black" : (isDark ? "bg-slate-950" : "bg-slate-50")
             )}

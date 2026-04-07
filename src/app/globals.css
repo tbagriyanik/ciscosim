@@ -150,7 +150,9 @@
 
   body {
     @apply bg-background text-foreground font-sans;
-    overscroll-behavior: none;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   button:not(:disabled),
@@ -190,6 +192,39 @@
   display: none;
 }
 
+/* Mobile terminal scrollbar - always visible on mobile */
+.mobile-scroll {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  -ms-overflow-style: auto;
+}
+
+.mobile-scroll::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+.mobile-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.mobile-scroll::-webkit-scrollbar-thumb {
+  background: rgb(148 163 184 / 0.3);
+  border-radius: 2px;
+}
+
+@media (pointer: coarse) {
+  .mobile-scroll::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  
+  .mobile-scroll::-webkit-scrollbar-thumb {
+    background: rgb(148 163 184 / 0.5);
+  }
+}
+
 /* Auto scroll on small screens */
 .scroll-y-sm {
   overflow-y: auto;
@@ -200,6 +235,43 @@
   .scroll-y-sm {
     overflow-y: visible;
   }
+}
+
+/* Mobile vertical scrolling utilities */
+.scroll-y-mobile {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: auto;
+  -ms-overflow-style: auto;
+}
+
+.scroll-y-mobile::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.scroll-y-mobile::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scroll-y-mobile::-webkit-scrollbar-thumb {
+  background: rgb(148 163 184 / 0.4);
+  border-radius: 3px;
+}
+
+/* Ensure content is scrollable on mobile */
+@supports (-webkit-touch-callout: none) {
+  /* iOS specific fixes */
+  .ios-scroll {
+    -webkit-overflow-scrolling: touch;
+    overflow-y: auto;
+  }
+}
+
+/* Prevent horizontal scroll on mobile */
+.prevent-x-scroll {
+  overflow-x: hidden;
+  max-width: 100vw;
 }
 
 /* Liquid Glass Effects */

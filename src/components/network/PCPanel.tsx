@@ -2502,7 +2502,7 @@ export function PCPanel({
                 </div>
 
                 {/* Content Area */}
-                <div className={`flex-1 flex flex-col ${terminalBg} relative pt-2.5`}>
+                <div className={`flex-1 flex flex-col ${terminalBg} relative pt-2.5 overflow-y-auto md:overflow-visible`}>
                   {activeTab === 'home' && (
                     <div className="flex-1 flex items-center justify-center p-2.5 pt-0">
                       <div className="w-full max-w-[700px] flex flex-row overflow-x-auto gap-2 rounded-xl p-2.5 bg-slate-800/30 border border-slate-700/30 shadow-sm md:grid md:grid-cols-5 md:place-items-center scrollbar-hide"
@@ -3219,7 +3219,7 @@ export function PCPanel({
                       )}
                       <div
                         ref={outputRef}
-                        className={`flex-1 scroll-smooth custom-scrollbar p-2 md:p-3 space-y-2 font-mono leading-relaxed flex flex-col overflow-x-hidden scroll-y-sm ${isPcPoweredOff ? 'bg-red-500' : ''}`}
+                        className={`flex-1 scroll-smooth custom-scrollbar p-2 md:p-3 space-y-2 font-mono leading-relaxed flex flex-col overflow-x-hidden scroll-y-sm mobile-scroll ${isPcPoweredOff ? 'bg-red-500' : ''}`}
                         style={{ fontSize: `${fontSize}px` }}
                       >
                         {isPcPoweredOff ? (
@@ -3407,7 +3407,7 @@ export function PCPanel({
                                   Tab ↹ {language === 'tr' ? 'ile tamamla' : 'to complete'}
                                 </span>
                               </div>
-                              <div className="max-h-40 overflow-y-auto">
+                              <div className="max-h-40 overflow-y-auto mobile-scroll">
                                 {renderAutocompleteSuggestions.map((cmd, idx) => (
                                   <button
                                     key={`${cmd}-${idx}`}

@@ -2256,7 +2256,7 @@ export default function Home() {
 
   return (
     <AppErrorBoundary fallbackTitle={language === 'tr' ? 'Uygulama hatası' : 'Application error'}>
-      <div className={`min-h-screen w-full flex flex-col relative overflow-hidden transition-colors duration-700 ${isAppLoading ? 'bg-slate-950 overflow-hidden' : (isDark ? 'bg-slate-950' : 'bg-slate-50')}`}>
+      <div className={`min-h-screen w-full flex flex-col relative transition-colors duration-700 ${isAppLoading ? 'bg-slate-950 overflow-hidden' : (isDark ? 'bg-slate-950' : 'bg-slate-50')}`}>
         {!isAppLoading && (
           <div className="fixed inset-0 pointer-events-none z-0 opacity-40 dark:opacity-20 transition-opacity duration-1000">
             <div className="absolute inset-0 mesh-gradient animate-liquid blur-[100px] scale-150 rotate-12" />
@@ -3194,8 +3194,8 @@ export default function Home() {
           </AlertDialog>
 
           {/* Main Content */}
-          <main className="flex-1 overflow-hidden flex flex-col min-h-0 md:pb-[68px]">
-            <div className={`${activeTab === 'topology' ? 'p-0 pb-0 sm:pb-0' : 'p-0'} w-full flex-1 flex flex-col min-h-0 overflow-hidden`}>
+          <main className="flex-1 overflow-y-auto overflow-x-hidden flex flex-col min-h-0 md:pb-[68px] md:overflow-hidden">
+            <div className={`${activeTab === 'topology' ? 'p-0 pb-0 sm:pb-0' : 'p-0'} w-full flex-1 flex flex-col min-h-0 overflow-y-auto overflow-x-hidden md:overflow-hidden`}>
               {/* Tab Content - Always render but hide non-active */}
               <div className={`flex-1 flex flex-col min-h-0 h-full ${activeTab === 'topology' ? 'block' : 'hidden'} print:block`}>
                 {/* Network Topology fills remaining space */}
