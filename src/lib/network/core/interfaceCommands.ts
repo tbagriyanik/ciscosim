@@ -652,13 +652,15 @@ function cmdIpAddress(state: any, input: string, ctx: any): any {
     return { success: false, error: '% No interface selected' };
   }
 
-  const match = input.match(/^ip\s+address\s+([0-9.]+)\s+([0-9.]+)$/i);
+  const match = input.match(/^ip\s+address\s+(\d{1,3}(?:\.\d{1,3}){3})(?:\s+(\d{1,3}(?:\.\d{1,3}){3})|\/(\d|[12]\d|3[0-2]))$/i);
   if (!match) {
-    return { success: false, error: '% Invalid input: ip address <ip> <mask>' };
+    return { success: false, error: '% Invalid input: ip address <ip> <mask> or ip address <ip>/<prefix>' };
   }
 
-  const [, ip, mask] = match;
-  if (!isValidIP(ip) || !isValidIP(mask)) {
+  const [, ip, dottedMask, prefixLength] = match;
+  const mask = dottedMask || prefixToSubnetMask(parseInt(prefixLength, 10));
+
+  if (!isValidIP(ip) || !mask || !isValidIP(mask)) {
     return { success: false, error: '% Invalid IP address format' };
   }
 
@@ -788,6 +790,21 @@ function isValidIP(ip: string): boolean {
     if (isNaN(num) || num < 0 || num > 255) return false;
   }
   return true;
+}
+
+function prefixToSubnetMask(prefixLength: number): string | null {
+  if (!Number.isInteger(prefixLength) || prefixLength < 0 || prefixLength > 32) {
+    return null;
+  }
+
+  const mask = [0, 0, 0, 0];
+  let remaining = prefixLength;
+  for (let i = 0; i < 4; i++) {
+    const bits = Math.min(8, Math.max(0, remaining));
+    mask[i] = bits === 0 ? 0 : (0xff << (8 - bits)) & 0xff;
+    remaining -= bits;
+  }
+  return mask.join('.');
 }
 
 function expandInterfaceRange(rangeSpec: string, state: any): string[] {

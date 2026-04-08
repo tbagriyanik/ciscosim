@@ -791,9 +791,9 @@ export const commandPatterns: Record<string, CommandPattern> = {
     maxArgs: 1
   },
   'ip address': {
-    pattern: /^ip\s+address\s+(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s+(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})(\s+secondary)?$/i,
+    pattern: /^ip\s+address\s+(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})(?:\s+(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})|\/(\d|[12]\d|3[0-2]))(\s+secondary)?$/i,
     modes: ['interface', 'config-if-range'],
-    minArgs: 2,
+    minArgs: 1,
     maxArgs: 3
   },
   'no ip address': {

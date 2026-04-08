@@ -7,7 +7,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import type { TerminalOutput } from './Terminal';
 import type { CanvasDevice } from './networkTopology.types';
-import { checkConnectivity, getWirelessSignalStrength, getWirelessDistance } from '@/lib/network/connectivity';
+import { checkConnectivity, getWirelessSignalStrength, getWirelessDistance, getDeviceWifiConfig } from '@/lib/network/connectivity';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -1055,6 +1055,23 @@ export function PCPanel({
     if (!sourceDevice || !targetDevice) return false;
     if (sourceDevice.status === 'offline' || targetDevice.status === 'offline') return false;
 
+    // DHCP discover can also traverse an implicit Wi-Fi link.
+    const sourceWifi = getDeviceWifiConfig(sourceDevice as any, deviceStates);
+    const targetWifi = getDeviceWifiConfig(targetDevice as any, deviceStates);
+    if (
+      sourceDevice.type === 'pc' &&
+      sourceWifi?.enabled &&
+      (sourceWifi.mode === 'client' || sourceWifi.mode === 'sta') &&
+      sourceWifi.ssid &&
+      targetWifi?.enabled &&
+      targetWifi.mode === 'ap' &&
+      targetWifi.ssid &&
+      sourceWifi.ssid.toLowerCase() === targetWifi.ssid.toLowerCase() &&
+      getWirelessSignalStrength(sourceDevice as any, topologyDevices as any, deviceStates) > 0
+    ) {
+      return true;
+    }
+
     const queue: string[] = [deviceId];
     const visited = new Set<string>([deviceId]);
 
@@ -1076,7 +1093,7 @@ export function PCPanel({
     }
 
     return false;
-  }, [deviceId, topologyConnections, topologyDevices]);
+  }, [deviceId, topologyConnections, topologyDevices, deviceStates]);
 
   const isValidIpv4 = useCallback((value: string) => /^(?:\d{1,3}\.){3}\d{1,3}$/.test(value.trim()), []);
 
@@ -1389,7 +1406,6 @@ export function PCPanel({
   }, []);
 
   const getDhcpLease = useCallback(() => {
-    const clientHasUsableIp = validateIP(pcIP) && pcIP !== '0.0.0.0' && !pcIP.startsWith('169.254.');
     const usedIps = new Set(
       topologyDevices
         .filter((d) => d.id !== deviceId && validateIP(d.ip || ''))
@@ -1404,7 +1420,7 @@ export function PCPanel({
         d.services?.dhcp?.enabled &&
         (d.services?.dhcp?.pools?.length || 0) > 0 &&
         !!d.ip &&
-        (clientHasUsableIp ? canReachTargetIp(d.ip) : hasPhysicalPathToDevice(d.id))
+        (hasPhysicalPathToDevice(d.id) || canReachTargetIp(d.ip))
     );
 
     for (const server of pcServers) {
@@ -1439,14 +1455,35 @@ export function PCPanel({
         const device = topologyDevices.find(d => d.id === deviceId_);
         if (!device || (device.type !== 'router' && device.type !== 'switchL2' && device.type !== 'switchL3')) continue;
 
-        // Check if this device has DHCP pools configured via CLI
-        const dhcpPools = state.services?.dhcp?.pools || [];
+        // Check DHCP pools from both runtime services mirror and raw CLI state.
+        // Some flows may have dhcpPools populated while services mirror is stale.
+        const mirroredPools = state.services?.dhcp?.pools || [];
+        const cliPools = Object.entries(state.dhcpPools || {}).map(([poolName, pool]: [string, any]) => {
+          const networkBase = typeof pool?.network === 'string' ? pool.network : '';
+          const networkPrefix = networkBase.split('.').slice(0, 3).join('.');
+          const fallbackStart = networkPrefix ? `${networkPrefix}.100` : '192.168.1.100';
+          const fallbackGateway = networkPrefix ? `${networkPrefix}.1` : '192.168.1.1';
+          return {
+            poolName,
+            subnetMask: pool?.subnetMask || '255.255.255.0',
+            startIp: pool?.startIp || fallbackStart,
+            defaultGateway: pool?.defaultRouter || fallbackGateway,
+            dnsServer: pool?.dnsServer || '8.8.8.8',
+            maxUsers: Number(pool?.maxUsers || 50),
+          };
+        });
+        const dhcpPools = [...mirroredPools];
+        for (const pool of cliPools) {
+          if (!dhcpPools.some((p: any) => p.poolName === pool.poolName)) {
+            dhcpPools.push(pool as any);
+          }
+        }
         if (dhcpPools.length === 0) continue;
 
-        // Find the device's IP to check connectivity
+        // DHCP DISCOVER is L2 broadcast; client has no usable IP yet.
+        // In that case, only physical path is required (no server IP prerequisite).
         let deviceIp = device.ip;
         if (!deviceIp && state.ports) {
-          // Try to find an interface IP
           for (const portId in state.ports) {
             const port = state.ports[portId];
             if (port.ipAddress && !port.shutdown) {
@@ -1455,10 +1492,11 @@ export function PCPanel({
             }
           }
         }
-        if (!deviceIp) continue;
 
-        // Check if PC can reach this DHCP server
-        const canReach = clientHasUsableIp ? canReachTargetIp(deviceIp) : hasPhysicalPathToDevice(deviceId_);
+        // Check if PC can reach this DHCP server:
+        // - no client IP yet => physical path is enough
+        // - client already has IP => normal reachability check by server IP
+        const canReach = hasPhysicalPathToDevice(deviceId_) || (!!deviceIp && canReachTargetIp(deviceIp));
         if (!canReach) continue;
 
         // Use this device's DHCP pools
@@ -1487,7 +1525,7 @@ export function PCPanel({
     }
 
     return null;
-  }, [canReachTargetIp, deviceId, deviceStates, hasPhysicalPathToDevice, ipToNumber, numberToIp, pcIP, topologyDevices, validateIP]);
+  }, [canReachTargetIp, deviceId, deviceStates, hasPhysicalPathToDevice, ipToNumber, numberToIp, topologyDevices, validateIP]);
 
   const applyDhcpLease = useCallback((force = false) => {
     const lease = getDhcpLease();
@@ -2720,25 +2758,43 @@ export function PCPanel({
                           variant={activeServiceTab === 'dns' ? 'secondary' : 'ghost'}
                           size="sm"
                           onClick={() => setActiveServiceTab('dns')}
-                          className={`h-8 px-3 text-xs font-medium transition-all ${activeServiceTab === 'dns' ? 'bg-purple-500/10 text-purple-600 border-purple-500/30' : 'text-slate-500 hover:text-purple-500'}`}
+                          className={`h-8 px-3 text-xs font-medium transition-all ${
+                            activeServiceTab === 'dns'
+                              ? 'bg-purple-500/15 text-purple-600 border-purple-500/30'
+                              : serviceDnsEnabled
+                                ? 'bg-purple-500/10 text-purple-600 border border-purple-500/25 hover:bg-purple-500/15'
+                                : 'text-slate-500 hover:text-purple-500'
+                          }`}
                         >
-                          DNS
+                          DNS{serviceDnsEnabled ? ' (Açık)' : ''}
                         </Button>
                         <Button
                           variant={activeServiceTab === 'http' ? 'secondary' : 'ghost'}
                           size="sm"
                           onClick={() => setActiveServiceTab('http')}
-                          className={`h-8 px-3 text-xs font-medium transition-all ${activeServiceTab === 'http' ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30' : 'text-slate-500 hover:text-emerald-500'}`}
+                          className={`h-8 px-3 text-xs font-medium transition-all ${
+                            activeServiceTab === 'http'
+                              ? 'bg-emerald-500/15 text-emerald-600 border-emerald-500/30'
+                              : serviceHttpEnabled
+                                ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/25 hover:bg-emerald-500/15'
+                                : 'text-slate-500 hover:text-emerald-500'
+                          }`}
                         >
-                          HTTP
+                          HTTP{serviceHttpEnabled ? ' (Açık)' : ''}
                         </Button>
                         <Button
                           variant={activeServiceTab === 'dhcp' ? 'secondary' : 'ghost'}
                           size="sm"
                           onClick={() => setActiveServiceTab('dhcp')}
-                          className={`h-8 px-3 text-xs font-medium transition-all ${activeServiceTab === 'dhcp' ? 'bg-sky-500/10 text-sky-600 border-sky-500/30' : 'text-slate-500 hover:text-sky-500'}`}
+                          className={`h-8 px-3 text-xs font-medium transition-all ${
+                            activeServiceTab === 'dhcp'
+                              ? 'bg-sky-500/15 text-sky-600 border-sky-500/30'
+                              : serviceDhcpEnabled
+                                ? 'bg-sky-500/10 text-sky-600 border border-sky-500/25 hover:bg-sky-500/15'
+                                : 'text-slate-500 hover:text-sky-500'
+                          }`}
                         >
-                          DHCP
+                          DHCP{serviceDhcpEnabled ? ' (Açık)' : ''}
                         </Button>
                       </div>
 
