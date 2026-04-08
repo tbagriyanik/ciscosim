@@ -856,6 +856,82 @@ export const exampleProjects = (language: 'tr' | 'en'): ExampleProject[] => {
   campusAcc2.ports['fa0/1'] = { ...campusAcc2.ports['fa0/1'], vlan: 20, mode: 'access', status: 'connected' };
   campusAcc2.ports['gi0/1'] = { ...campusAcc2.ports['gi0/1'], mode: 'trunk', allowedVlans: 'all', status: 'connected' };
 
+  // Example 12: Router SSH Lab (Basic) - 1 PC, 1 Router
+  const routerSshDevices = [
+    createPcDevice('pc-1', 'PC-1', 80, 220, '192.168.1.10', 1),
+    createRouterDevice('router-1', 'R1', 420, 220),
+  ];
+  const routerSshConnections: CanvasConnection[] = [];
+  connectPorts(routerSshDevices, routerSshConnections, 'pc-1', 'eth0', 'router-1', 'gi0/0', 'straight');
+  const routerSshNotes: CanvasNote[] = [
+    {
+      id: 'router-ssh-note',
+      text: isTr
+        ? 'Router SSH Lab:\nR1 hazır SSH ayarlı.\nPC-1 CMD: ssh user@192.168.1.150\nŞifre: 1234\nKontrol: show ssh'
+        : 'Router SSH Lab:\nR1 is preconfigured for SSH.\nPC-1 CMD: ssh user@192.168.1.150\nPassword: 1234\nVerify: show ssh',
+      x: 580,
+      y: 80,
+      width: 360,
+      height: 170,
+      color: '#22c55e',
+      font: 'verdana',
+      fontSize: 16,
+      opacity: 0.75
+    }
+  ];
+  const routerSshR1 = createInitialRouterState();
+  routerSshR1.hostname = 'R1';
+  routerSshR1.domainName = 'lab.local';
+  routerSshR1.sshVersion = 2;
+  routerSshR1.ports['gi0/0'] = {
+    ...routerSshR1.ports['gi0/0'],
+    ipAddress: '192.168.1.150',
+    subnetMask: '255.255.255.0',
+    status: 'connected'
+  };
+  routerSshR1.security = {
+    ...routerSshR1.security,
+    users: [{ username: 'user', password: '1234', privilege: 15 }],
+    vtyLines: {
+      ...routerSshR1.security.vtyLines,
+      login: true,
+      loginLocal: true,
+      transportInput: ['ssh']
+    }
+  };
+  routerSshR1.runningConfig = [
+    '!',
+    'hostname R1',
+    '!',
+    'ip domain-name lab.local',
+    'ip ssh version 2',
+    '!',
+    'username user privilege 15 secret 1234',
+    '!',
+    'interface GigabitEthernet0/0',
+    ' ip address 192.168.1.150 255.255.255.0',
+    ' no shutdown',
+    '!',
+    'line vty 0 4',
+    ' login local',
+    ' transport input ssh',
+    '!',
+    'end'
+  ];
+  const routerSshData: ProjectData = {
+    ...baseProjectData(routerSshDevices, routerSshConnections, routerSshNotes, [
+      { id: 'router-1', state: routerSshR1 }
+    ]),
+    activeDeviceId: 'router-1',
+    activeDeviceType: 'router',
+    cableInfo: {
+      connected: true,
+      cableType: 'straight',
+      sourceDevice: 'pc',
+      targetDevice: 'router'
+    }
+  };
+
   return [
     {
       id: 'basic-secure',
@@ -976,6 +1052,15 @@ export const exampleProjects = (language: 'tr' | 'en'): ExampleProject[] => {
       data: baseProjectData(wifiDevices, wifiConnections, wifiNotes, [
         { id: 'router-1', state: wifiR1State }
       ])
+    },
+    {
+      id: 'router-ssh-1pc',
+      tag: 'SSH',
+      title: isTr ? 'Router SSH (1 PC + 1 Router)' : 'Router SSH (1 PC + 1 Router)',
+      description: isTr ? 'PC-1 üzerinden R1 cihazına SSH ile bağlanma senaryosu.' : 'SSH access from PC-1 to router R1.',
+      detail: isTr ? 'Komut: ssh user@192.168.1.150 | parola: 1234' : 'Command: ssh user@192.168.1.150 | password: 1234',
+      level: 'basic',
+      data: routerSshData
     },
     {
       id: 'router-dhcp-2pc',

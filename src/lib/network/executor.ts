@@ -1706,9 +1706,9 @@ function handlePasswordInput(state: SwitchState, password: string, language: 'tr
     const useLocalLogin = !!state.security?.vtyLines?.loginLocal;
     const configuredPassword = state.security.vtyLines.password || '';
     const rawUsers = state.security?.users;
-    const configuredUsers = Array.isArray(rawUsers) ? rawUsers : Object.values(rawUsers || {});
+    const configuredUsers: any[] = Array.isArray(rawUsers) ? rawUsers : Object.values(rawUsers || {}) as any[];
     const sshUsername = state.sshLastUser || '';
-    const matchedUser = configuredUsers.find((user: any) => (user?.username || '').toLowerCase() === sshUsername.toLowerCase());
+    const matchedUser: any | undefined = configuredUsers.find((user: any) => (user?.username || '').toLowerCase() === sshUsername.toLowerCase());
     const validPassword = useLocalLogin
       ? !!matchedUser && String(matchedUser.password || '') === password
       : password === configuredPassword;
