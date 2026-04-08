@@ -792,8 +792,9 @@ function cmdShowFlash(
     { name: bootImage, length: 3024 },
   ];
 
-  const flashBackups: Array<{ name: string; length: number }> = Object.entries(state.flashFiles || {}).map(
-    ([name, lines]: [string, string[]]) => ({
+  const flashFiles = (state.flashFiles || {}) as Record<string, string[]>;
+  const flashBackups: Array<{ name: string; length: number }> = Object.entries(flashFiles).map(
+    ([name, lines]) => ({
       name,
       length: Array.isArray(lines) ? lines.join('\n').length : 0,
     })
