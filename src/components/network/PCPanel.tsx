@@ -486,7 +486,7 @@ export function PCPanel({
     return [{
       id: '1',
       type: 'output',
-      content: 'OS Windows [Version 10.0.19045.4412]\n(c) OS Corporation. All rights reserved.\n'
+      content: 'OS [Version 10.0.26200.8037]\n(c) OS Corporation. All rights reserved.\n'
     }];
   };
 
@@ -514,7 +514,7 @@ export function PCPanel({
       setPcOutput([{
         id: '1',
         type: 'output',
-        content: 'OS Windows [Version 10.0.19045.4412]\n(c) OS Corporation. All rights reserved.\n'
+        content: 'OS [Version 10.0.26200.8037]\n(c) OS Corporation. All rights reserved.\n'
       }]);
     }
   }, [deviceId, pcOutputs]);
@@ -1800,7 +1800,7 @@ export function PCPanel({
           addLocalOutput('output', internalPcHostname);
         }
       } else if (cmd === 'ver') {
-        addLocalOutput('output', `OS Windows [Version 10.0.19045.4412]`);
+        addLocalOutput('output', `OS [Version 10.0.26200.8037]`);
       } else if (cmd === 'dir') {
         addLocalOutput('output', ` Volume in drive C is OS
  Volume Serial Number is 1234-5678

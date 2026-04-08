@@ -25,7 +25,7 @@
 - ✅ `eslint.config.mjs` - ESLint konfigürasyonu
 - ✅ `components.json` - shadcn/ui konfigürasyonu
 - ✅ `Caddyfile` - Caddy web server config
-- ✅ `install-deps.bat` - Windows kurulum script
+- ✅ `install-deps.bat` - Win kurulum script
 - ✅ `next-env.d.ts` - Next.js TypeScript definitions
 - ✅ `README.md` - Proje README (güncellenmiş)
 - ✅ `INSTALL.md` - Kurulum talimatları (güncellenmiş)

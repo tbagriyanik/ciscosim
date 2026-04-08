@@ -299,7 +299,7 @@ export function useDeviceManager() {
     let outputs = pcOutputs.get(deviceId);
     if (!outputs) {
       outputs = [
-        { id: '0', type: 'output', content: 'OS Windows [Version 10.0.19045.3803]\n(c) OS Corporation. All rights reserved.\n' },
+        { id: '0', type: 'output', content: 'OS [Version 10.0.26200.8037]\n(c) OS Corporation. All rights reserved.\n' },
         { id: '1', type: 'output', content: '\nEthernet adapter Ethernet connection:\n' }
       ];
       setPcOutputs(prev => new Map(prev).set(deviceId, outputs!));
@@ -693,7 +693,7 @@ export function useDeviceManager() {
     setDeviceStates(new Map([['switch-1', createInitialState()]]));
     setDeviceOutputs(new Map());
     setPcOutputs(new Map([['pc-1', [
-      { id: '0', type: 'output', content: 'OS Windows [Version 10.0.19045.3803]\n(c) OS Corporation. All rights reserved.\n' },
+      { id: '0', type: 'output', content: 'OS [Version 10.0.26200.8037]\n(c) OS Corporation. All rights reserved.\n' },
       { id: '1', type: 'output', content: '\nEthernet adapter Ethernet connection:\n' }
     ]]]));
   };

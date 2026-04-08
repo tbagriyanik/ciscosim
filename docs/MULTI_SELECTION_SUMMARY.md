@@ -284,22 +284,6 @@ Potansiyel özellikler:
 
 ---
 
-## 📚 Referanslar
-
-### Tasarım Desenleri
-- **File Explorer Pattern**: Windows/Mac standart
-- **Canvas Pattern**: Figma, Sketch gibi tasarım araçları
-- **Game Editor Pattern**: Unity, Godot gibi oyun motorları
-
-### Benzer Uygulamalar
-- Windows File Explorer
-- macOS Finder
-- Figma/Sketch
-- Unity Editor
-- Google Drawings
-
----
-
 ## ✅ Kabul Kriterleri
 
 ### Fonksiyonel

@@ -243,22 +243,7 @@ Fixed and enhanced the multi-selection functionality in the network topology can
 - `src/components/network/DeviceNode.tsx` - Device visual representation
 - `src/app/page.tsx` - Parent component receiving selection events
 
----
 
-## 🔗 References
-
-### Design Patterns
-- **File Explorer Pattern**: Shift for range, Ctrl for toggle
-- **Canvas Pattern**: Drag selected items as group
-- **Game Pattern**: Multi-select units and move together
-
-### Similar Implementations
-- Windows File Explorer
-- macOS Finder
-- Figma/Sketch (design tools)
-- Unity/Godot (game editors)
-
----
 
 ## 💡 Future Enhancements
 

@@ -1563,7 +1563,7 @@ export const commandPatterns: Record<string, CommandPattern> = {
     maxArgs: 1
   },
 
-  // Tracert (Windows traceroute equivalent)
+  // Tracert (traceroute equivalent)
   'tracert': {
     pattern: /^tracert\s+([0-9.]+|[\w.-]+)$/i,
     modes: ['privileged'],

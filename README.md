@@ -48,7 +48,7 @@ The simulator supports **100+ commands** across multiple configuration modes:
 |---------|-------------|
 | `ping <host> [size] [count]` | Test connectivity to host with ICMP |
 | `traceroute <host>` | Trace route to destination (Unix style) |
-| `tracert <host>` | Trace route to destination (Windows style) |
+| `tracert <host>` | Trace route to destination (Win style) |
 | `telnet <host> [port]` | Connect to remote device via Telnet |
 | `ssh [-l username] <host>` | Connect via SSH |
 | `write memory` | Save running configuration to NVRAM |

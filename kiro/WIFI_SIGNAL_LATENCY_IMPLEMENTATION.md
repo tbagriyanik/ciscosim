@@ -6,7 +6,7 @@
 
 ## Özet
 
-WiFi bağlantılarında sinyal gücüne göre gerçekçi ping gecikmeleri ve görsel sinyal göstergeleri eklendi. Hem PC terminal (Windows ping) hem de CLI terminal desteklenmektedir.
+WiFi bağlantılarında sinyal gücüne göre gerçekçi ping gecikmeleri ve görsel sinyal göstergeleri eklendi. Hem PC terminal (ping) hem de CLI terminal desteklenmektedir.
 
 ## Özellikler
 
@@ -160,7 +160,7 @@ function cmdPing(state, input, ctx) {
 }
 ```
 
-**3. PCPanel.tsx** (Windows Ping)
+**3. PCPanel.tsx** (Ping)
 ```typescript
 // PC ping komutunda sinyal gücüne göre gecikme
 const generatePingTime = () => {
@@ -310,7 +310,7 @@ Reply from 192.168.1.1: bytes=32 time<1ms TTL=128
 - Mesafe bazlı sinyal hesaplaması fiziksel gerçekliği yansıtır
 
 ### Uyumluluk
-- Hem Windows ping (PC terminal) hem ping (CLI) desteklenir
+- Hem ping (PC terminal) hem ping (CLI) desteklenir
 - Tüm WiFi modları (AP, Client, STA) ile uyumlu
 - Kablolu bağlantılarda otomatik olarak devre dışı kalır
 - WiFi kontrol paneli tüm router ve switch cihazlarında çalışır

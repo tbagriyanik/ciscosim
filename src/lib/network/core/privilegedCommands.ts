@@ -482,7 +482,7 @@ function cmdTraceroute(state: any, input: string, ctx: any): any {
 }
 
 /**
- * Tracert - Trace route to destination (Windows style)
+ * Tracert - Trace route to destination 
  */
 function cmdTracert(state: any, input: string, ctx: any): any {
     if (state.currentMode !== 'privileged') {

@@ -46,7 +46,7 @@ Proje tamamlanmış durumda:
 |-------|----------|
 | `ping <host> [boyut] [adet]` | ICMP ile bağlantı testi |
 | `traceroute <host>` | Rota izleme (Unix tarzı) |
-| `tracert <host>` | Rota izleme (Windows tarzı) |
+| `tracert <host>` | Rota izleme (Win tarzı) |
 | `telnet <host> [port]` | Telnet bağlantısı |
 | `ssh [-l kullanıcı] <host>` | SSH bağlantısı |
 | `write memory` | Yapılandırmayı kaydet |

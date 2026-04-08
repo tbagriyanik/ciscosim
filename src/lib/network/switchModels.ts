@@ -53,15 +53,18 @@ export function getSwitchInfo(model: SwitchModel): SwitchModelInfo {
     return SWITCH_MODELS[model];
 }
 
-export function isLayer2Switch(model: SwitchModel): boolean {
-    return getSwitchLayer(model) === 'L2';
+export function isLayer2Switch(model: SwitchModel | string | undefined): boolean {
+    if (!model) return false;
+    return getSwitchLayer(model as SwitchModel) === 'L2';
 }
 
-export function isLayer3Switch(model: SwitchModel): boolean {
-    return getSwitchLayer(model) === 'L3';
+export function isLayer3Switch(model: SwitchModel | string | undefined): boolean {
+    if (!model) return false;
+    return getSwitchLayer(model as SwitchModel) === 'L3';
 }
 
-export function canAssignIPToPhysicalPort(model: SwitchModel): boolean {
+export function canAssignIPToPhysicalPort(model: SwitchModel | string | undefined): boolean {
+    if (!model) return true; // Default to allowing IP assignment if model is unknown (for routers)
     return isLayer3Switch(model);
 }
 
