@@ -5,7 +5,7 @@ const commitCount = execSync('git rev-list --count HEAD').toString().trim();
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   env: {
-    NEXT_PUBLIC_GIT_COMMIT_COUNT: (commitCount == 10) ? '510' : commitCount,
+    NEXT_PUBLIC_GIT_COMMIT_COUNT: (commitCount == 10) ? '520' : commitCount,
   },
 };
 

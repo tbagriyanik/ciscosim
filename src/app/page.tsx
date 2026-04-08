@@ -2491,7 +2491,7 @@ export default function Home() {
                         Main navigation and project controls
                       </SheetDescription>
                     </SheetHeader>
-                    <ScrollArea className="h-[calc(100vh-4rem)]">
+                    <ScrollArea className="">
                       <div className="p-3 space-y-4">
                         {/* Quick actions (primary) */}
                         <div className={`p-3 rounded-xl border ${isDark ? 'bg-slate-800/30 border-slate-800/50' : 'bg-slate-50 border-slate-200'}`}>
@@ -3346,7 +3346,7 @@ export default function Home() {
 
               {/* CMD Terminal Sekmesi */}
               {/* CMD Terminal Sekmesi - Always mounted, hidden via CSS */}
-              <div className={`w-full flex-1 min-h-0 overflow-y-auto custom-scrollbar flex flex-col  animate-fade-in ${activeTab === 'cmd' ? 'flex' : 'hidden'}`}>
+              <div className={`w-full animate-fade-in ${activeTab === 'cmd' ? 'flex' : 'hidden'}`}>
                 <PCPanel
                   key={`pc-panel-${activeDeviceId}`}
                   deviceId={activeDeviceId}
@@ -3371,8 +3371,8 @@ export default function Home() {
                 {/* Desktop Layout: Terminal sol, Running Config sağda sabit */}
                 <div className="flex flex-col md:flex-row gap-4 flex-1 min-h-0 overflow-y-auto custom-scrollbar">
                   {/* Terminal - Simplified: small (<640px no constraints), medium+ (640px+ 300px margin), 640-770px (50px less) */}
-                  <div className="flex flex-col h-full md:flex-1 md:max-h-[calc(100vh-30px)] max-h-[calc(100vh-250px)] ">
-                    <div className="flex flex-col h-full min-h-[400px]">
+                  <div className="flex flex-col h-full md:flex-1">
+                    <div className="flex flex-col h-full">
                       <Terminal
                         key={`terminal-${activeDeviceId}`}
                         className="flex-1"
@@ -3413,7 +3413,7 @@ export default function Home() {
                     </div>
                   </div>
                   {/* ConfigPanel - Simplified: hidden on small (<640px), visible on medium+ (640px+ 300px margin), 640-770px (50px less) */}
-                  <div className="hidden md:flex flex-col min-h-[400px] md:min-h-0 md:w-96 md:flex-shrink-0 md:h-full md:max-h-[calc(100vh-300px)] max-h-[calc(100vh-250px)] md:overflow-y-auto custom-scrollbar">
+                  <div className="hidden md:flex flex-col md:min-h-0 md:w-96 md:flex-shrink-0 md:h-full md:overflow-y-auto custom-scrollbar">
                     <ConfigPanel
                       state={state}
                       className="flex-1"

@@ -196,6 +196,8 @@
 .mobile-scroll {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
   scrollbar-width: thin;
   -ms-overflow-style: auto;
 }
@@ -219,7 +221,7 @@
     width: 6px;
     height: 6px;
   }
-  
+
   .mobile-scroll::-webkit-scrollbar-thumb {
     background: rgb(100 116 139 / 0.7);
   }
@@ -261,6 +263,7 @@
 
 /* Ensure content is scrollable on mobile */
 @supports (-webkit-touch-callout: none) {
+
   /* iOS specific fixes */
   .ios-scroll {
     -webkit-overflow-scrolling: touch;

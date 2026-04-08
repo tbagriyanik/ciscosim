@@ -141,6 +141,7 @@ export function PCPanel({
   const inputBorder = isDark ? 'border-slate-800' : 'border-slate-300';
 
   const [activeTab, setActiveTab] = useState<PCActiveTab>('home');
+  const [activeServiceTab, setActiveServiceTab] = useState<'dns' | 'http' | 'dhcp'>('dns');
   const tabletHistoryRef = useRef<PCActiveTab[]>(['home']);
   const tabletHistoryIndexRef = useRef(0);
   const isInternalTabletNavRef = useRef(false);
@@ -361,7 +362,7 @@ export function PCPanel({
     return results;
   }, [deviceStates, deviceId, topologyDevices]);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const activeServiceCount = Number(serviceDnsEnabled) + Number(serviceHttpEnabled) + Number(serviceDhcpEnabled);
+
 
   useEffect(() => {
     setIpConfigMode(deviceFromTopology?.ipConfigMode || 'static');
@@ -2227,7 +2228,7 @@ export function PCPanel({
   return (
     <>
       <div className={`
-        w-full flex-1 min-h-0 overflow-hidden flex flex-col items-center justify-start p-0 md:p-4
+        w-full
         ${isDark ? 'bg-slate-900' : 'bg-slate-100'}
       `}>
         {/* External Toolbar - Above Tablet Frame */}
@@ -2386,17 +2387,12 @@ export function PCPanel({
         </div>
 
         {/* Tablet Frame - Simple modern tablet design */}
-        <div className={`
-        w-full h-full min-h-0 flex-1 max-w-full mx-auto overflow-hidden self-center
-        relative flex flex-col 
-        ${isDark
-            ? 'bg-slate-800 md:border-2 md:border-slate-600 md:rounded-2xl md:shadow-xl'
-            : 'bg-slate-200 md:border-2 md:border-slate-300 md:rounded-2xl md:shadow-xl'
-          }
-      `}>
+        <div className={`w-full
+           ${isDark ? 'bg-slate-900' : 'bg-slate-100'}
+           `}>
           {/* Screen Area - Clean and simple */}
           <div className={`
-          flex-1 min-h-0 relative overflow-hidden
+          
           ${isDark
               ? 'bg-slate-900'
               : 'bg-white'
@@ -2428,7 +2424,7 @@ export function PCPanel({
                   : "bg-white/25 border border-white/40 backdrop-blur-xl shadow-lg shadow-white/10"
               )}
             >
-              <div className="flex flex-col flex-1 min-h-0 overflow-hidden bg-transparent">
+              <div className="bg-transparent">
                 <Dialog open={searchOpen} onOpenChange={setSearchOpen}>
                   <DialogContent className={`${isDark ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white'} sm:max-w-md`}>
                     <DialogHeader>
@@ -2495,7 +2491,7 @@ export function PCPanel({
                   >
                     <Globe className="w-4 h-4" />
                     <span className={isMobile ? 'sr-only' : 'hidden md:inline'}>
-                      {`${t.servicesTab} (${activeServiceCount}/3)`}
+                      {t.servicesTab}
                     </span>
                   </Button>
                   <Button
@@ -2510,10 +2506,10 @@ export function PCPanel({
                 </div>
 
                 {/* Content Area */}
-                <div className={`flex-1 min-h-0 flex flex-col ${terminalBg} relative pt-2.5 overflow-hidden md:overflow-visible`}>
+                <div className={`flex-1 min-h-0 flex flex-col ${terminalBg} relative pt-2.5 overflow-hidden overflow-y-auto md:overflow-visible`}>
                   {activeTab === 'home' && (
                     <div
-                      className="flex-1 min-h-0 flex items-center justify-center p-2.5 pt-0 overflow-y-auto mobile-scroll custom-scrollbar"
+                      className="flex-1 min-h-0 flex items-center justify-center p-2.5 pt-0"
                       style={mobileVerticalScrollStyle}
                     >
                       <div className="w-full max-w-[700px] flex flex-row overflow-x-auto gap-2 rounded-xl p-2.5 bg-slate-800/30 border border-slate-700/30 shadow-sm md:grid md:grid-cols-5 md:place-items-center scrollbar-hide"
@@ -2580,7 +2576,7 @@ export function PCPanel({
 
                   {activeTab === 'settings' && (
                     <div
-                      className="flex-1 min-h-0 p-3 md:p-4 space-y-3 md:space-y-4 overflow-x-hidden overflow-y-auto md:overflow-y-visible mobile-scroll custom-scrollbar pt-2.5"
+                      className="flex-1 min-h-0 p-3 overflow-y-auto"
                       style={mobileVerticalScrollStyle}
                     >
                       <div className="space-y-2">
@@ -2660,283 +2656,326 @@ export function PCPanel({
 
                   {activeTab === 'services' && (
                     <div
-                      className="flex-1 min-h-0 p-3 md:p-4 space-y-3 md:space-y-4 overflow-x-hidden overflow-y-auto md:overflow-y-visible mobile-scroll custom-scrollbar"
+                      className="flex-1 min-h-0 flex flex-col"
                       style={mobileVerticalScrollStyle}
                     >
-                      <div className={`rounded-xl border p-4 space-y-4 ${isDark ? 'border-slate-800 bg-slate-900/40' : 'border-slate-200 bg-white'}`}>
-                        <div className="flex items-center justify-between gap-3">
-                          <div>
-                            <h3 className="text-sm font-bold">
-                              {t.language === 'tr'
-                                ? 'DNS (Domain Name System - isim çözümleme)'
-                                : 'DNS (Domain Name System - name resolution)'}
-                            </h3>
-                            <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                              {t.dnsRecordManagerTip}
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-2 shrink-0">
-                            <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-full ${serviceDnsEnabled ? 'bg-cyan-500/15 text-cyan-600 border border-cyan-500/30' : 'bg-slate-200 text-slate-500 border border-slate-300'}`}>
-                              {serviceDnsEnabled ? 'ON' : 'OFF'}
-                            </span>
-                            <button
-                              type="button"
-                              role="switch"
-                              aria-checked={serviceDnsEnabled}
-                              onClick={() => setServiceDnsEnabled((prev) => !prev)}
-                              className={`relative inline-flex h-7 w-14 shrink-0 items-center rounded-full border transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/60 ${serviceDnsEnabled
-                                ? 'bg-cyan-500/90 border-cyan-400'
-                                : (isDark ? 'bg-slate-800 border-slate-700' : 'bg-slate-200 border-slate-300')
-                                }`}
-                            >
-                              <span
-                                className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform duration-200 ${serviceDnsEnabled ? 'translate-x-8' : 'translate-x-1'
-                                  }`}
-                              />
-                            </button>
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                          <Input
-                            value={dnsFormDomain}
-                            onChange={(e) => setDnsFormDomain(e.target.value)}
-                            placeholder={t.dnsDomainPlaceholder}
-                          />
-                          <Input
-                            value={dnsFormAddress}
-                            onChange={(e) => setDnsFormAddress(e.target.value)}
-                            placeholder={t.dnsAddressPlaceholder}
-                          />
-                          <Button
-                            onClick={() => {
-                              const domain = dnsFormDomain.trim().toLowerCase();
-                              const address = dnsFormAddress.trim();
-                              if (!domain || !address) return;
-                              setServiceDnsRecords((prev) => {
-                                const withoutSame = prev.filter((r) => r.domain.toLowerCase() !== domain);
-                                return [...withoutSame, { domain, address }];
-                              });
-                              setDnsFormDomain('');
-                              setDnsFormAddress('');
-                            }}
-                          >
-                            {t.addDnsRecord}
-                          </Button>
-                        </div>
-
-                        <div className="space-y-2">
-                          {serviceDnsRecords.length === 0 && (
-                            <div className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>
-                              {t.dnsNoRecords}
-                            </div>
-                          )}
-                          {serviceDnsRecords.map((record) => (
-                            <div key={`${record.domain}-${record.address}`} className={`flex items-center justify-between gap-3 rounded-lg px-3 py-2 ${isDark ? 'bg-slate-950 border border-slate-800' : 'bg-slate-50 border border-slate-200'}`}>
-                              <div className="text-xs font-mono">
-                                <span>{record.domain}</span>
-                                <span className="mx-2 opacity-30">-&gt;</span>
-                                <span>{record.address}</span>
-                              </div>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => setServiceDnsRecords((prev) => prev.filter((r) => !(r.domain === record.domain && r.address === record.address)))}
-                              >
-                                {t.delete}
-                              </Button>
-                            </div>
-                          ))}
-                        </div>
+                      {/* Inner Tabs for Services */}
+                      <div className={`flex items-center gap-1 px-3 py-2 border-b ${isDark ? 'border-slate-800 bg-slate-900/40' : 'border-slate-200 bg-slate-50'}`}>
+                        <Button
+                          variant={activeServiceTab === 'dns' ? 'secondary' : 'ghost'}
+                          size="sm"
+                          onClick={() => setActiveServiceTab('dns')}
+                          className={`h-8 px-3 text-xs font-medium transition-all ${activeServiceTab === 'dns' ? 'bg-purple-500/10 text-purple-600 border-purple-500/30' : 'text-slate-500 hover:text-purple-500'}`}
+                        >
+                          DNS
+                        </Button>
+                        <Button
+                          variant={activeServiceTab === 'http' ? 'secondary' : 'ghost'}
+                          size="sm"
+                          onClick={() => setActiveServiceTab('http')}
+                          className={`h-8 px-3 text-xs font-medium transition-all ${activeServiceTab === 'http' ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30' : 'text-slate-500 hover:text-emerald-500'}`}
+                        >
+                          HTTP
+                        </Button>
+                        <Button
+                          variant={activeServiceTab === 'dhcp' ? 'secondary' : 'ghost'}
+                          size="sm"
+                          onClick={() => setActiveServiceTab('dhcp')}
+                          className={`h-8 px-3 text-xs font-medium transition-all ${activeServiceTab === 'dhcp' ? 'bg-sky-500/10 text-sky-600 border-sky-500/30' : 'text-slate-500 hover:text-sky-500'}`}
+                        >
+                          DHCP
+                        </Button>
                       </div>
 
-                      <div className={`rounded-xl border p-4 space-y-4 ${isDark ? 'border-slate-800 bg-slate-900/40' : 'border-slate-200 bg-white'}`}>
-                        <div className="flex items-center justify-between gap-3">
-                          <div>
-                            <h3 className="text-sm font-bold">
-                              {t.language === 'tr'
-                                ? 'HTTP (Hypertext Transfer Protocol - web içeriği)'
-                                : 'HTTP (Hypertext Transfer Protocol - web content)'}
-                            </h3>
-                            <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                              {t.httpServiceDescription}
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-2 shrink-0">
-                            <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-full ${serviceHttpEnabled ? 'bg-emerald-500/15 text-emerald-600 border border-emerald-500/30' : 'bg-slate-200 text-slate-500 border border-slate-300'}`}>
-                              {serviceHttpEnabled ? 'ON' : 'OFF'}
-                            </span>
-                            <button
-                              type="button"
-                              role="switch"
-                              aria-checked={serviceHttpEnabled}
-                              onClick={() => setServiceHttpEnabled((prev) => !prev)}
-                              className={`relative inline-flex h-7 w-14 shrink-0 items-center rounded-full border transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 ${serviceHttpEnabled
-                                ? 'bg-emerald-500/90 border-emerald-400'
-                                : (isDark ? 'bg-slate-800 border-slate-700' : 'bg-slate-200 border-slate-300')
-                                }`}
-                            >
-                              <span
-                                className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform duration-200 ${serviceHttpEnabled ? 'translate-x-8' : 'translate-x-1'
-                                  }`}
-                              />
-                            </button>
-                          </div>
-                        </div>
-
-                        <div className="space-y-2">
-                          <label className="text-xs font-bold  tracking-wide text-slate-500">HTTP Content</label>
-                          <div className="flex items-center gap-2">
-                            <div className="flex gap-1">
-                              <Button type="button" size="icon" variant="outline" className="h-8 w-8 text-xs font-black" onClick={() => applyHttpFormatting('b')}>B</Button>
-                              <Button type="button" size="icon" variant="outline" className="h-8 w-8 text-xs font-black italic" onClick={() => applyHttpFormatting('i')}>I</Button>
-                              <Button type="button" size="icon" variant="outline" className="h-8 w-8 text-xs font-black underline" onClick={() => applyHttpFormatting('u')}>U</Button>
-                            </div>
-                            <span className="text-[10px] text-slate-500">{t.language === 'tr' ? 'Seçili metni biçimlendir' : 'Format selected text'}</span>
-                          </div>
-                          <textarea
-                            ref={httpContentRef}
-                            value={serviceHttpContent}
-                            onChange={(e) => setServiceHttpContent(e.target.value)}
-                            placeholder="Merhaba Dünya!"
-                            rows={6}
-                            className={`w-full rounded-lg border px-3 py-2 text-sm font-mono resize-y ${isDark ? 'bg-slate-900 border-slate-700 text-slate-200' : 'bg-white border-slate-300 text-slate-700'}`}
-                          />
-                          {serviceHttpEnabled && (
-                            <div className={`text-xs rounded-lg px-3 py-2 ${isDark ? 'bg-slate-950 border border-slate-800 text-slate-200' : 'bg-slate-50 border border-slate-200 text-slate-700'}`}>
-                              <span dangerouslySetInnerHTML={{ __html: sanitizeHTTPContent(serviceHttpContent || 'Merhaba Dünya!') }} />
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className={`rounded-xl border p-4 space-y-4 ${isDark ? 'border-slate-800 bg-slate-900/40' : 'border-slate-200 bg-white'}`}>
-                        <div className="flex items-center justify-between gap-3">
-                          <div>
-                            <h3 className="text-sm font-bold">
-                              {t.language === 'tr'
-                                ? 'DHCP (Dynamic Host Configuration Protocol - otomatik IP)'
-                                : 'DHCP (Dynamic Host Configuration Protocol - auto IP)'}
-                            </h3>
-                            <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                              {t.dhcpPoolsDescription}
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-2 shrink-0">
-                            <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-full ${serviceDhcpEnabled ? 'bg-sky-500/15 text-sky-600 border border-sky-500/30' : 'bg-slate-200 text-slate-500 border border-slate-300'}`}>
-                              {serviceDhcpEnabled ? 'ON' : 'OFF'}
-                            </span>
-                            <button
-                              type="button"
-                              role="switch"
-                              aria-checked={serviceDhcpEnabled}
-                              onClick={() => setServiceDhcpEnabled((prev) => !prev)}
-                              className={`relative inline-flex h-7 w-14 shrink-0 items-center rounded-full border transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/60 ${serviceDhcpEnabled
-                                ? 'bg-sky-500/90 border-sky-400'
-                                : (isDark ? 'bg-slate-800 border-slate-700' : 'bg-slate-200 border-slate-300')
-                                }`}
-                            >
-                              <span
-                                className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform duration-200 ${serviceDhcpEnabled ? 'translate-x-8' : 'translate-x-1'
-                                  }`}
-                              />
-                            </button>
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          <Input
-                            value={dhcpForm.poolName}
-                            onChange={(e) => setDhcpForm((prev) => ({ ...prev, poolName: e.target.value }))}
-                            placeholder={t.dhcpPoolNamePlaceholder}
-                          />
-                          <Input
-                            value={dhcpForm.defaultGateway}
-                            onChange={(e) => setDhcpForm((prev) => ({ ...prev, defaultGateway: e.target.value }))}
-                            placeholder={t.dhcpPoolGatewayPlaceholder}
-                          />
-                          <Input
-                            value={dhcpForm.dnsServer}
-                            onChange={(e) => setDhcpForm((prev) => ({ ...prev, dnsServer: e.target.value }))}
-                            placeholder={t.dhcpPoolDnsPlaceholder}
-                          />
-                          <Input
-                            value={dhcpForm.startIp}
-                            onChange={(e) => setDhcpForm((prev) => ({ ...prev, startIp: e.target.value }))}
-                            placeholder={t.dhcpPoolStartIpPlaceholder}
-                          />
-                          <Input
-                            value={dhcpForm.subnetMask}
-                            onChange={(e) => setDhcpForm((prev) => ({ ...prev, subnetMask: e.target.value }))}
-                            placeholder={t.dhcpPoolSubnetPlaceholder}
-                          />
-                          <Input
-                            type="number"
-                            min={1}
-                            value={dhcpForm.maxUsers}
-                            onChange={(e) => setDhcpForm((prev) => ({ ...prev, maxUsers: Number(e.target.value || 1) }))}
-                            placeholder={t.dhcpPoolMaxUsersPlaceholder}
-                          />
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          <Button onClick={saveDhcpPool}>
-                            {editingDhcpIndex === null ? t.addPool : t.updatePool}
-                          </Button>
-                          {editingDhcpIndex !== null && (
-                            <Button variant="outline" onClick={resetDhcpForm}>
-                              {t.cancel}
-                            </Button>
-                          )}
-                        </div>
-
-                        <div className="space-y-2">
-                          {serviceDhcpPools.length === 0 && (
-                            <div className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>
-                              {t.noDhcpPools}
-                            </div>
-                          )}
-                          {serviceDhcpPools.map((pool, index) => (
-                            <div key={`${pool.poolName}-${index}`} className={`rounded-lg px-3 py-2 space-y-2 ${isDark ? 'bg-slate-950 border border-slate-800' : 'bg-slate-50 border border-slate-200'}`}>
-                              <div className="text-xs font-mono">
-                                <div>{pool.poolName}</div>
-                                <div>GW: {pool.defaultGateway} | DNS: {pool.dnsServer}</div>
-                                <div>Start: {pool.startIp} | Mask: {pool.subnetMask} | Max: {pool.maxUsers}</div>
+                      {/* Service Content */}
+                      <div className="flex-1 min-h-0 overflow-y-auto">
+                        {activeServiceTab === 'dns' && (
+                          <div className="p-3">
+                            <div className={`rounded-xl border p-4 space-y-4 ${isDark ? 'border-slate-800 bg-slate-900/40' : 'border-slate-200 bg-white'}`}>
+                              <div className="flex items-center justify-between gap-3">
+                                <div>
+                                  <h3 className="text-sm font-bold">
+                                    {t.language === 'tr'
+                                      ? 'DNS (Domain Name System - isim çözümleme)'
+                                      : 'DNS (Domain Name System - name resolution)'}
+                                  </h3>
+                                  <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                                    {t.dnsRecordManagerTip}
+                                  </p>
+                                </div>
+                                <div className="flex items-center gap-2 shrink-0">
+                                  <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-full ${serviceDnsEnabled ? 'bg-purple-500/15 text-purple-600 border border-purple-500/30' : 'bg-slate-200 text-slate-500 border border-slate-300'}`}>
+                                    {serviceDnsEnabled ? 'ON' : 'OFF'}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    role="switch"
+                                    aria-checked={serviceDnsEnabled}
+                                    onClick={() => setServiceDnsEnabled((prev) => !prev)}
+                                    className={`relative inline-flex h-7 w-14 shrink-0 items-center rounded-full border transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500/60 ${serviceDnsEnabled
+                                      ? 'bg-purple-500/90 border-purple-400'
+                                      : (isDark ? 'bg-slate-800 border-slate-700' : 'bg-slate-200 border-slate-300')
+                                      }`}
+                                  >
+                                    <span
+                                      className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform duration-200 ${serviceDnsEnabled ? 'translate-x-8' : 'translate-x-1'
+                                        }`}
+                                    />
+                                  </button>
+                                </div>
                               </div>
+
+                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                <Input
+                                  value={dnsFormDomain}
+                                  onChange={(e) => setDnsFormDomain(e.target.value)}
+                                  placeholder={t.dnsDomainPlaceholder}
+                                />
+                                <Input
+                                  value={dnsFormAddress}
+                                  onChange={(e) => setDnsFormAddress(e.target.value)}
+                                  placeholder={t.dnsAddressPlaceholder}
+                                />
+                                <Button
+                                  onClick={() => {
+                                    const domain = dnsFormDomain.trim().toLowerCase();
+                                    const address = dnsFormAddress.trim();
+                                    if (!domain || !address) return;
+                                    setServiceDnsRecords((prev) => {
+                                      const withoutSame = prev.filter((r) => r.domain.toLowerCase() !== domain);
+                                      return [...withoutSame, { domain, address }];
+                                    });
+                                    setDnsFormDomain('');
+                                    setDnsFormAddress('');
+                                  }}
+                                >
+                                  {t.addDnsRecord}
+                                </Button>
+                              </div>
+
+                              <div className="space-y-2">
+                                {serviceDnsRecords.length === 0 && (
+                                  <div className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>
+                                    {t.dnsNoRecords}
+                                  </div>
+                                )}
+                                {serviceDnsRecords.map((record) => (
+                                  <div key={`${record.domain}-${record.address}`} className={`flex items-center justify-between gap-3 rounded-lg px-3 py-2 ${isDark ? 'bg-slate-950 border border-slate-800' : 'bg-slate-50 border border-slate-200'}`}>
+                                    <div className="text-xs font-mono">
+                                      <span>{record.domain}</span>
+                                      <span className="mx-2 opacity-30">-&gt;</span>
+                                      <span>{record.address}</span>
+                                    </div>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => setServiceDnsRecords((prev) => prev.filter((r) => !(r.domain === record.domain && r.address === record.address)))}
+                                    >
+                                      {t.delete}
+                                    </Button>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {activeServiceTab === 'http' && (
+                          <div className="p-3">
+                            <div className={`rounded-xl border p-4 space-y-4 ${isDark ? 'border-slate-800 bg-slate-900/40' : 'border-slate-200 bg-white'}`}>
+                              <div className="flex items-center justify-between gap-3">
+                                <div>
+                                  <h3 className="text-sm font-bold">
+                                    {t.language === 'tr'
+                                      ? 'HTTP (Hypertext Transfer Protocol - web içeriği)'
+                                      : 'HTTP (Hypertext Transfer Protocol - web content)'}
+                                  </h3>
+                                  <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                                    {t.httpServiceDescription}
+                                  </p>
+                                </div>
+                                <div className="flex items-center gap-2 shrink-0">
+                                  <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-full ${serviceHttpEnabled ? 'bg-emerald-500/15 text-emerald-600 border border-emerald-500/30' : 'bg-slate-200 text-slate-500 border border-slate-300'}`}>
+                                    {serviceHttpEnabled ? 'ON' : 'OFF'}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    role="switch"
+                                    aria-checked={serviceHttpEnabled}
+                                    onClick={() => setServiceHttpEnabled((prev) => !prev)}
+                                    className={`relative inline-flex h-7 w-14 shrink-0 items-center rounded-full border transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 ${serviceHttpEnabled
+                                      ? 'bg-emerald-500/90 border-emerald-400'
+                                      : (isDark ? 'bg-slate-800 border-slate-700' : 'bg-slate-200 border-slate-300')
+                                      }`}
+                                  >
+                                    <span
+                                      className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform duration-200 ${serviceHttpEnabled ? 'translate-x-8' : 'translate-x-1'
+                                        }`}
+                                    />
+                                  </button>
+                                </div>
+                              </div>
+
+                              <div className="space-y-2">
+                                <label className="text-xs font-bold  tracking-wide text-slate-500">HTTP Content</label>
+                                <div className="flex items-center gap-2">
+                                  <div className="flex gap-1">
+                                    <Button type="button" size="icon" variant="outline" className="h-8 w-8 text-xs font-black" onClick={() => applyHttpFormatting('b')}>B</Button>
+                                    <Button type="button" size="icon" variant="outline" className="h-8 w-8 text-xs font-black italic" onClick={() => applyHttpFormatting('i')}>I</Button>
+                                    <Button type="button" size="icon" variant="outline" className="h-8 w-8 text-xs font-black underline" onClick={() => applyHttpFormatting('u')}>U</Button>
+                                  </div>
+                                  <span className="text-[10px] text-slate-500">{t.language === 'tr' ? 'Seçili metni biçimlendir' : 'Format selected text'}</span>
+                                </div>
+                                <textarea
+                                  ref={httpContentRef}
+                                  value={serviceHttpContent}
+                                  onChange={(e) => setServiceHttpContent(e.target.value)}
+                                  placeholder="Merhaba Dünya!"
+                                  rows={6}
+                                  className={`w-full rounded-lg border px-3 py-2 text-sm font-mono resize-y ${isDark ? 'bg-slate-900 border-slate-700 text-slate-200' : 'bg-white border-slate-300 text-slate-700'}`}
+                                />
+                                {serviceHttpEnabled && (
+                                  <div className={`text-xs rounded-lg px-3 py-2 ${isDark ? 'bg-slate-950 border border-slate-800 text-slate-200' : 'bg-slate-50 border border-slate-200 text-slate-700'}`}>
+                                    <span dangerouslySetInnerHTML={{ __html: sanitizeHTTPContent(serviceHttpContent || 'Merhaba Dünya!') }} />
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {activeServiceTab === 'dhcp' && (
+                          <div className="p-3">
+                            <div className={`rounded-xl border p-4 space-y-4 ${isDark ? 'border-slate-800 bg-slate-900/40' : 'border-slate-200 bg-white'}`}>
+                              <div className="flex items-center justify-between gap-3">
+                                <div>
+                                  <h3 className="text-sm font-bold">
+                                    {t.language === 'tr'
+                                      ? 'DHCP (Dynamic Host Configuration Protocol - otomatik IP)'
+                                      : 'DHCP (Dynamic Host Configuration Protocol - auto IP)'}
+                                  </h3>
+                                  <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                                    {t.dhcpPoolsDescription}
+                                  </p>
+                                </div>
+                                <div className="flex items-center gap-2 shrink-0">
+                                  <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-full ${serviceDhcpEnabled ? 'bg-sky-500/15 text-sky-600 border border-sky-500/30' : 'bg-slate-200 text-slate-500 border border-slate-300'}`}>
+                                    {serviceDhcpEnabled ? 'ON' : 'OFF'}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    role="switch"
+                                    aria-checked={serviceDhcpEnabled}
+                                    onClick={() => setServiceDhcpEnabled((prev) => !prev)}
+                                    className={`relative inline-flex h-7 w-14 shrink-0 items-center rounded-full border transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/60 ${serviceDhcpEnabled
+                                      ? 'bg-sky-500/90 border-sky-400'
+                                      : (isDark ? 'bg-slate-800 border-slate-700' : 'bg-slate-200 border-slate-300')
+                                      }`}
+                                  >
+                                    <span
+                                      className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform duration-200 ${serviceDhcpEnabled ? 'translate-x-8' : 'translate-x-1'
+                                        }`}
+                                    />
+                                  </button>
+                                </div>
+                              </div>
+
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <Input
+                                  value={dhcpForm.poolName}
+                                  onChange={(e) => setDhcpForm((prev) => ({ ...prev, poolName: e.target.value }))}
+                                  placeholder={t.dhcpPoolNamePlaceholder}
+                                />
+                                <Input
+                                  value={dhcpForm.defaultGateway}
+                                  onChange={(e) => setDhcpForm((prev) => ({ ...prev, defaultGateway: e.target.value }))}
+                                  placeholder={t.dhcpPoolGatewayPlaceholder}
+                                />
+                                <Input
+                                  value={dhcpForm.dnsServer}
+                                  onChange={(e) => setDhcpForm((prev) => ({ ...prev, dnsServer: e.target.value }))}
+                                  placeholder={t.dhcpPoolDnsPlaceholder}
+                                />
+                                <Input
+                                  value={dhcpForm.startIp}
+                                  onChange={(e) => setDhcpForm((prev) => ({ ...prev, startIp: e.target.value }))}
+                                  placeholder={t.dhcpPoolStartIpPlaceholder}
+                                />
+                                <Input
+                                  value={dhcpForm.subnetMask}
+                                  onChange={(e) => setDhcpForm((prev) => ({ ...prev, subnetMask: e.target.value }))}
+                                  placeholder={t.dhcpPoolSubnetPlaceholder}
+                                />
+                                <Input
+                                  type="number"
+                                  min={1}
+                                  value={dhcpForm.maxUsers}
+                                  onChange={(e) => setDhcpForm((prev) => ({ ...prev, maxUsers: Number(e.target.value || 1) }))}
+                                  placeholder={t.dhcpPoolMaxUsersPlaceholder}
+                                />
+                              </div>
+
                               <div className="flex items-center gap-2">
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => {
-                                    setDhcpForm(pool);
-                                    setEditingDhcpIndex(index);
-                                  }}
-                                >
-                                  {t.edit}
+                                <Button onClick={saveDhcpPool}>
+                                  {editingDhcpIndex === null ? t.addPool : t.updatePool}
                                 </Button>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => {
-                                    setServiceDhcpPools((prev) => prev.filter((_, i) => i !== index));
-                                    if (editingDhcpIndex === index) {
-                                      resetDhcpForm();
-                                    }
-                                  }}
-                                >
-                                  {t.delete}
-                                </Button>
+                                {editingDhcpIndex !== null && (
+                                  <Button variant="outline" onClick={resetDhcpForm}>
+                                    {t.cancel}
+                                  </Button>
+                                )}
+                              </div>
+
+                              <div className="space-y-2">
+                                {serviceDhcpPools.length === 0 && (
+                                  <div className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>
+                                    {t.noDhcpPools}
+                                  </div>
+                                )}
+                                {serviceDhcpPools.map((pool, index) => (
+                                  <div key={`${pool.poolName}-${index}`} className={`rounded-lg px-3 py-2 space-y-2 ${isDark ? 'bg-slate-950 border border-slate-800' : 'bg-slate-50 border border-slate-200'}`}>
+                                    <div className="text-xs font-mono">
+                                      <div>{pool.poolName}</div>
+                                      <div>GW: {pool.defaultGateway} | DNS: {pool.dnsServer}</div>
+                                      <div>Start: {pool.startIp} | Mask: {pool.subnetMask} | Max: {pool.maxUsers}</div>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => {
+                                          setDhcpForm(pool);
+                                          setEditingDhcpIndex(index);
+                                        }}
+                                      >
+                                        {t.edit}
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => {
+                                          setServiceDhcpPools((prev) => prev.filter((_, i) => i !== index));
+                                          if (editingDhcpIndex === index) {
+                                            resetDhcpForm();
+                                          }
+                                        }}
+                                      >
+                                        {t.delete}
+                                      </Button>
+                                    </div>
+                                  </div>
+                                ))}
                               </div>
                             </div>
-                          ))}
-                        </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
 
                   {activeTab === 'wireless' && (
                     <div
-                      className="flex-1 min-h-0 p-3 md:p-4 space-y-3 md:space-y-4 overflow-x-hidden overflow-y-auto md:overflow-y-visible mobile-scroll custom-scrollbar"
+                      className="flex-1 min-h-0 p-3 overflow-y-auto"
                       style={mobileVerticalScrollStyle}
                     >
                       <div className={`rounded-2xl border p-5 space-y-5 ${isDark ? 'border-slate-800 bg-slate-900/40' : 'border-slate-200 bg-white'}`}>
@@ -3239,7 +3278,7 @@ export function PCPanel({
                       )}
                       <div
                         ref={outputRef}
-                        className={`flex-1 min-h-0 scroll-smooth custom-scrollbar p-2 md:p-3 space-y-2 font-mono leading-relaxed flex flex-col overflow-x-hidden overflow-y-auto mobile-scroll ${isPcPoweredOff ? 'bg-red-500' : ''}`}
+                        className={`flex-1 min-h-0 scroll-smooth p-2 md:p-3 space-y-2 font-mono  ${isPcPoweredOff ? 'bg-red-500' : ''}`}
                         style={{ ...mobileVerticalScrollStyle, fontSize: `${fontSize}px` }}
                       >
                         {isPcPoweredOff ? (

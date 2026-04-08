@@ -6,8 +6,8 @@ DNS service is used to resolve domain names to IP addresses.
 
 ### Enabling DNS Service
 
-1. Open the PC Panel and navigate to the **Services** tab
-2. Enable DNS service using the toggle switch in the **DNS** section
+1. Open the PC Panel and navigate to the **DNS** tab
+2. Enable DNS service using the toggle switch
 3. Add DNS records:
    - **Domain**: Enter domain name (e.g., `example.com`)
    - **Address**: Enter IP address (e.g., `192.168.1.10`)

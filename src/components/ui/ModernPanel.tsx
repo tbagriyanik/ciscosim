@@ -179,10 +179,7 @@ export function ModernPanel({
 
             {/* Content */}
             {!isCollapsed && (
-                <div className={cn(
-                    "flex-1 min-h-0",
-                    noPadding ? "overflow-hidden" : "p-4"
-                )}>
+                <div className="p-4">
                     {children}
                     {footer && <div className="mt-4 border-t pt-3">{footer}</div>}
                 </div>

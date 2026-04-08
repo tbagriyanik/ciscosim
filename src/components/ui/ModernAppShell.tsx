@@ -42,12 +42,12 @@ export function ModernAppShell({
                     {headerExtras && <div className="flex items-center">{headerExtras}</div>}
                 </header>
             )}
-            <div className="flex flex-1 min-h-0">
+            <div className="p-4">
                 {sidebar && (
                     <aside
                         className={cn(
                             'flex-shrink-0 border-r bg-muted/30 transition-all duration-200 flex flex-col',
-                            !sidebarOpen && 'w-0 overflow-hidden'
+                            !sidebarOpen && 'w-0 '
                         )}
                         style={{ width: sidebarOpen ? sidebarWidth : 0 }}
                     >
