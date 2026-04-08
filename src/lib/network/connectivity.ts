@@ -594,10 +594,10 @@ export function checkConnectivity(
   const hopNames = path.map(id => devices.find(d => d.id === id)?.name || id);
 
   // 2.5. Check subnet compatibility (Layer 3)
-  const sourceDeviceForSubnet = devices.find(d => d.id === sourceId);
+    const sourceDeviceForSubnet = devices.find(d => d.id === sourceId);
   if (sourceDeviceForSubnet && targetDevice) {
-    const sourceIp = sourceDeviceForSubnet.ip || '';
-    const sourceSubnet = sourceDeviceForSubnet.subnet || '255.255.255.0';
+    const sourceIp = getPrimaryDeviceIp(sourceId, devices, deviceStates);
+    const sourceSubnet = getSubnetForDeviceIp(sourceId, sourceIp, devices, deviceStates) || sourceDeviceForSubnet.subnet || '255.255.255.0';
     const targetIp_check = resolvedTargetIp;
 
     // Resolve target subnet mask
@@ -620,24 +620,24 @@ export function checkConnectivity(
     const isInSameSubnet = isIpInSubnet(sourceIp, targetIp_check, sourceSubnet);
 
     if (!isInSameSubnet) {
-      // Different subnets - check if there's a router with routing enabled
-      let hasRouter = false;
+      // Different subnets - check if there's a Layer-3 routing device in path
+      let hasL3Gateway = false;
       for (const deviceId of path) {
         const device = devices.find(d => d.id === deviceId);
         const state = deviceStates?.get(deviceId);
-        if (device?.type === 'router' && state?.ipRouting) {
-          hasRouter = true;
+        if ((device?.type === 'router' || device?.type === 'switchL3') && state?.ipRouting) {
+          hasL3Gateway = true;
           break;
         }
       }
 
-      if (!hasRouter) {
+      if (!hasL3Gateway) {
         return {
           success: false,
           hops: hopNames,
           hopIds: path,
           targetId: targetDevice.id,
-          error: `Subnet uyumsuzluğu: Kaynak ${sourceIp}/${sourceSubnet}, Hedef ${targetIp_check}/${targetSubnet}. Router ile routing gerekli.`
+          error: `Subnet uyumsuzluğu: Kaynak ${sourceIp}/${sourceSubnet}, Hedef ${targetIp_check}/${targetSubnet}. Layer 3 routing gerekli.`
         };
       }
     }
@@ -758,20 +758,7 @@ export function checkConnectivity(
       return getDeviceVlan(device, state);
     };
 
-    const sourceDevice = devices.find(d => d.id === sourceId);
-    let resolvedSourceIp = sourceDevice?.ip || '';
-    if (!resolvedSourceIp && deviceStates) {
-      const state = deviceStates.get(sourceId);
-      if (state) {
-        for (const pId in state.ports) {
-          if (state.ports[pId].ipAddress) {
-            resolvedSourceIp = state.ports[pId].ipAddress!;
-            break;
-          }
-        }
-      }
-    }
-    const sourceIp = resolvedSourceIp;
+    const sourceIp = getPrimaryDeviceIp(sourceId, devices, deviceStates);
     const sourceVlan = sourceIp ? getDeviceVlanForIp(sourceId, sourceIp) : null;
     const targetVlan = getDeviceVlanForIp(targetDevice.id, resolvedTargetIp);
 
@@ -834,8 +821,7 @@ export function checkConnectivity(
         // Router in path - check if it has routes to both source and target networks
         const routes = getRoutingTable(deviceId, deviceStates);
         // Get source IP from device data
-        const srcDevice = devices.find(d => d.id === sourceId);
-        const srcIp = srcDevice?.ip || deviceStates.get(sourceId)?.ports['vlan1']?.ipAddress || '';
+        const srcIp = getPrimaryDeviceIp(sourceId, devices, deviceStates);
         const sourceRoute = findRoute(srcIp, routes);
         const targetRoute = findRoute(resolvedTargetIp, routes);
 
@@ -858,7 +844,7 @@ export function checkConnectivity(
   // Currently, we'll assume if they have IPs and physical path, they can talk (Layer 2 focus)
 
   const sourceDevice = devices.find(d => d.id === sourceId);
-  if (!sourceDevice?.ip && !isManagementIpSet(sourceId, deviceStates)) {
+  if (!getPrimaryDeviceIp(sourceId, devices, deviceStates) && !isManagementIpSet(sourceId, deviceStates)) {
     return { success: false, hops: [], hopIds: [], error: 'Source has no IP address.' };
   }
 
@@ -885,14 +871,15 @@ export function checkDeviceConnectivity(
   }
 
   let resolvedTargetIp = targetDevice.ip;
+  const sourcePrimaryIp = getPrimaryDeviceIp(sourceId, devices, deviceStates);
+  const sourcePrimarySubnet = getSubnetForDeviceIp(sourceId, sourcePrimaryIp, devices, deviceStates) || '255.255.255.0';
   if (!resolvedTargetIp && deviceStates) {
     const targetState = deviceStates.get(targetId);
     if (targetState) {
       for (const pId in targetState.ports) {
         if (targetState.ports[pId].ipAddress) {
-          if (sourceDevice.ip) {
-            const subnet = sourceDevice.subnet || '255.255.255.0';
-            if (isIpInSubnet(sourceDevice.ip, targetState.ports[pId].ipAddress, subnet)) {
+          if (sourcePrimaryIp) {
+            if (isIpInSubnet(sourcePrimaryIp, targetState.ports[pId].ipAddress, sourcePrimarySubnet)) {
               resolvedTargetIp = targetState.ports[pId].ipAddress;
               break;
             }
@@ -1090,6 +1077,44 @@ function isIpInSubnet(ip: string, targetIp: string, subnet: string): boolean {
   }
 }
 
+function getPrimaryDeviceIp(
+  deviceId: string,
+  devices: CanvasDevice[],
+  deviceStates?: Map<string, SwitchState>
+): string {
+  const topologyIp = devices.find(d => d.id === deviceId)?.ip;
+  if (topologyIp) return topologyIp;
+
+  const state = deviceStates?.get(deviceId);
+  if (!state) return '';
+
+  for (const port of Object.values(state.ports)) {
+    if (port.ipAddress) return port.ipAddress;
+  }
+
+  return '';
+}
+
+function getSubnetForDeviceIp(
+  deviceId: string,
+  ip: string,
+  devices: CanvasDevice[],
+  deviceStates?: Map<string, SwitchState>
+): string {
+  if (!ip) return '';
+
+  const state = deviceStates?.get(deviceId);
+  if (state) {
+    for (const port of Object.values(state.ports)) {
+      if (port.ipAddress === ip && port.subnetMask) {
+        return port.subnetMask;
+      }
+    }
+  }
+
+  return devices.find(d => d.id === deviceId)?.subnet || '';
+}
+
 function isPortShutdown(deviceId: string, portId: string, devices: CanvasDevice[], deviceStates?: Map<string, SwitchState>): boolean {
   // Check deviceStates (Switch/Router)
   if (deviceStates) {
@@ -1116,7 +1141,7 @@ function isManagementIpSet(deviceId: string, deviceStates?: Map<string, SwitchSt
   if (!deviceStates) return false;
   const state = deviceStates.get(deviceId);
   if (!state) return false;
-  return !!state.ports['vlan1']?.ipAddress;
+  return Object.values(state.ports).some(port => !!port.ipAddress);
 }
 
 function isDevicePoweredOn(device: CanvasDevice | undefined): boolean {

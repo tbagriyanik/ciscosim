@@ -2987,14 +2987,26 @@ export function NetworkTopology({
       cancelAnimationFrame(pingAnimationRef.current);
     }
 
+    const getDevicePrimaryIp = (deviceId: string): string => {
+      const topologyIp = devices.find(d => d.id === deviceId)?.ip;
+      if (topologyIp) return topologyIp;
+
+      const state = deviceStates?.get(deviceId);
+      if (!state) return '';
+
+      for (const port of Object.values(state.ports)) {
+        if (port.ipAddress) return port.ipAddress;
+      }
+
+      return '';
+    };
+
     // Validate source device IP
-    const sourceDevice = devices.find(d => d.id === sourceId);
-    const sourceIp = sourceDevice?.ip || '';
+    const sourceIp = getDevicePrimaryIp(sourceId);
     const isSourceIpValid = /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/.test(sourceIp);
 
     // Validate target device IP
-    const targetDevice = devices.find(d => d.id === targetId);
-    const targetIp = targetDevice?.ip || deviceStates?.get(targetId)?.ports['vlan1']?.ipAddress || deviceStates?.get(targetId)?.ports['wlan0']?.ipAddress || '';
+    const targetIp = getDevicePrimaryIp(targetId);
     const isTargetIpValid = /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/.test(targetIp);
 
     // Check if both IPs are valid
