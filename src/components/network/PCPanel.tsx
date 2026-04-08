@@ -200,13 +200,6 @@ export function PCPanel({
   const [currentTime, setCurrentTime] = useState(new Date());
   const [showNetworkMenu, setShowNetworkMenu] = useState(false);
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
-  const [isDesktopOpening, setIsDesktopOpening] = useState(false);
-  const [openingDots, setOpeningDots] = useState('.');
-  const [showDesktopVersionText, setShowDesktopVersionText] = useState(false);
-  const [isCliOpening, setIsCliOpening] = useState(false);
-  const [cliHashes, setCliHashes] = useState('#');
-  const desktopOpeningStartedRef = useRef(false);
-  const cliOpeningStartedRef = useRef(false);
   const [fontSize, setFontSize] = useState<number>(() => {
     try { return parseInt(localStorage.getItem('terminal-font-size') || '13', 10); } catch { return 13; }
   });
@@ -216,66 +209,6 @@ export function PCPanel({
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
-
-  useEffect(() => {
-    const isPowerOffNow = topologyDevices.find((d) => d.id === deviceId)?.status === 'offline';
-    if (!isVisible || isPowerOffNow || activeTab !== 'desktop') {
-      desktopOpeningStartedRef.current = false;
-      setIsDesktopOpening(false);
-      setShowDesktopVersionText(false);
-      return;
-    }
-    if (desktopOpeningStartedRef.current) return;
-    desktopOpeningStartedRef.current = true;
-
-    setIsDesktopOpening(true);
-    setShowDesktopVersionText(false);
-    setOpeningDots('.');
-
-    const dotsTimer = setInterval(() => {
-      setOpeningDots((prev) => (prev.length >= 4 ? '.' : `${prev}.`));
-    }, 220);
-    const doneTimer = setTimeout(() => {
-      setIsDesktopOpening(false);
-      setShowDesktopVersionText(true);
-    }, 2000);
-
-    const versionTimer = setTimeout(() => {
-      setShowDesktopVersionText(false);
-    }, 4000);
-
-    return () => {
-      clearInterval(dotsTimer);
-      clearTimeout(doneTimer);
-      clearTimeout(versionTimer);
-    };
-  }, [activeTab, isVisible, deviceId]);
-
-  useEffect(() => {
-    const isPowerOffNow = topologyDevices.find((d) => d.id === deviceId)?.status === 'offline';
-    if (!isVisible || isPowerOffNow || activeTab !== 'terminal') {
-      cliOpeningStartedRef.current = false;
-      setIsCliOpening(false);
-      return;
-    }
-    if (cliOpeningStartedRef.current) return;
-    cliOpeningStartedRef.current = true;
-
-    setIsCliOpening(true);
-    setCliHashes('#');
-
-    const hashesTimer = setInterval(() => {
-      setCliHashes((prev) => (prev.length >= 2 ? '#' : `${prev}#`));
-    }, 220);
-    const doneTimer = setTimeout(() => {
-      setIsCliOpening(false);
-    }, 2000);
-
-    return () => {
-      clearInterval(hashesTimer);
-      clearTimeout(doneTimer);
-    };
-  }, [activeTab, isVisible, deviceId]);
 
   const handleFontSizeChange = (val: number) => {
     setFontSize(val);
@@ -786,9 +719,9 @@ export function PCPanel({
   }, [connectedDeviceId, topologyDevices]);
 
   const isConsoleTargetPoweredOff = isConsoleConnected && !!connectedConsoleDevice && connectedConsoleDevice.status === 'offline';
-  const isCmdInputDisabled = isPcPoweredOff || (activeTab === 'desktop' && isDesktopOpening);
+  const isCmdInputDisabled = isPcPoweredOff;
   const consoleAwaitingPassword = !!(connectedDeviceId && deviceStates?.get(connectedDeviceId)?.awaitingPassword);
-  const isConsoleInputDisabled = isPcPoweredOff || !isConsoleConnected || isConsoleTargetPoweredOff || (activeTab === 'terminal' && isCliOpening);
+  const isConsoleInputDisabled = isPcPoweredOff || !isConsoleConnected || isConsoleTargetPoweredOff;
 
   // Detect password/confirm states from device state
   const consoleNeedsPassword = useMemo(() => {
@@ -3459,24 +3392,6 @@ export function PCPanel({
                       >
                         {isPcPoweredOff ? (
                           <div className="flex-1 flex items-center justify-center text-slate-700">OFFLINE</div>
-                        ) : isDesktopOpening && activeTab === 'desktop' ? (
-                          <div className="flex-1 flex items-center justify-left">
-                            <span className={`${isDark ? 'text-slate-300' : 'text-slate-700'} text-sm font-semibold tracking-wide`}>
-                              {language === 'tr' ? `İstemci açılıyor${openingDots}` : `Host is opening${openingDots}`}
-                            </span>
-                          </div>
-                        ) : showDesktopVersionText && activeTab === 'desktop' ? (
-                          <div className="flex-1 flex items-center justify-left">
-                            <span className={`${isDark ? 'text-cyan-300' : 'text-cyan-700'} text-sm font-semibold tracking-wide`}>
-                              {`Version ${deviceState?.version?.nosVersion || '15.0'} | ${deviceState?.version?.modelName || 'Net Simulator PC'}`}
-                            </span>
-                          </div>
-                        ) : isCliOpening && activeTab === 'terminal' ? (
-                          <div className="flex-1 flex items-center justify-left">
-                            <span className={`${isDark ? 'text-slate-300' : 'text-slate-700'} text-sm font-semibold tracking-wide`}>
-                              {language === 'tr' ? `CLI hazırlanıyor${cliHashes}` : `Preparing CLI${cliHashes}`}
-                            </span>
-                          </div>
                         ) : gameActive && activeTab === 'desktop' ? (
                           <div className="flex-1 flex flex-col items-center justify-center gap-3">
                             <div className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>

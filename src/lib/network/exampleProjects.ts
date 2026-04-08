@@ -310,6 +310,77 @@ export const exampleProjects = (language: 'tr' | 'en'): ExampleProject[] => {
     }
   };
 
+  // Example 12: Router DHCP (2 PCs + 1 Router)
+  const routerDhcpDevices = [
+    createPcDevice('pc-1', 'PC-1', 110, 140, '0.0.0.0', 1),
+    createRouterDevice('router-1', 'R1', 420, 200),
+    createPcDevice('pc-2', 'PC-2', 110, 290, '0.0.0.0', 1)
+  ];
+  routerDhcpDevices[0].ipConfigMode = 'dhcp';
+  routerDhcpDevices[1].ipConfigMode = 'static';
+  routerDhcpDevices[2].ipConfigMode = 'dhcp';
+
+  const routerDhcpConnections: CanvasConnection[] = [];
+  connectPorts(routerDhcpDevices, routerDhcpConnections, 'pc-1', 'eth0', 'router-1', 'gi0/0', 'crossover');
+  connectPorts(routerDhcpDevices, routerDhcpConnections, 'pc-2', 'eth0', 'router-1', 'gi0/1', 'crossover');
+
+  const routerDhcpNotes: CanvasNote[] = [
+    {
+      id: 'router-dhcp-note',
+      text: isTr
+        ? 'Router DHCP Kurulumu (2 PC + 1 Router):\n1) R1> en\n2) conf t\n3) int gi0/0 -> ip address 192.168.10.1 255.255.255.0 -> no shut\n4) ip dhcp pool LAN\n5) network 192.168.10.0 255.255.255.0\n6) default-router 192.168.10.1\n7) dns-server 8.8.8.8\n8) PC-1 ve PC-2: IP mode DHCP, ardından ipconfig /renew\nBeklenen: PC’ler 192.168.10.100+ aralığından IP alır.'
+        : 'Router DHCP Setup (2 PCs + 1 Router):\n1) R1> en\n2) conf t\n3) int gi0/0 -> ip address 192.168.10.1 255.255.255.0 -> no shut\n4) ip dhcp pool LAN\n5) network 192.168.10.0 255.255.255.0\n6) default-router 192.168.10.1\n7) dns-server 8.8.8.8\n8) PC-1 and PC-2: set IP mode DHCP, then run ipconfig /renew\nExpected: PCs receive addresses from 192.168.10.100+ range.',
+      x: 610,
+      y: 40,
+      width: 430,
+      height: 220,
+      color: '#0ea5e9',
+      font: 'verdana',
+      fontSize: 16,
+      opacity: 0.75
+    }
+  ];
+
+  const routerDhcpR1 = createInitialRouterState();
+  routerDhcpR1.hostname = 'R1';
+  routerDhcpR1.ports['gi0/0'] = {
+    ...routerDhcpR1.ports['gi0/0'],
+    ipAddress: '192.168.10.1',
+    subnetMask: '255.255.255.0',
+    status: 'connected',
+    shutdown: false
+  };
+  routerDhcpR1.ports['gi0/1'] = {
+    ...routerDhcpR1.ports['gi0/1'],
+    status: 'connected',
+    shutdown: false
+  };
+  routerDhcpR1.dhcpPools = {
+    LAN: {
+      network: '192.168.10.0',
+      subnetMask: '255.255.255.0',
+      defaultRouter: '192.168.10.1',
+      dnsServer: '8.8.8.8',
+      leaseTime: '1'
+    }
+  };
+  routerDhcpR1.services = {
+    ...routerDhcpR1.services,
+    dhcp: {
+      enabled: true,
+      pools: [
+        {
+          poolName: 'LAN',
+          defaultGateway: '192.168.10.1',
+          dnsServer: '8.8.8.8',
+          startIp: '192.168.10.100',
+          subnetMask: '255.255.255.0',
+          maxUsers: 50
+        }
+      ]
+    }
+  } as any;
+
   // Update running config to include wifi mode
   wifiR1State.runningConfig = [
     '!',
@@ -904,6 +975,17 @@ export const exampleProjects = (language: 'tr' | 'en'): ExampleProject[] => {
       level: 'intermediate',
       data: baseProjectData(wifiDevices, wifiConnections, wifiNotes, [
         { id: 'router-1', state: wifiR1State }
+      ])
+    },
+    {
+      id: 'router-dhcp-2pc',
+      tag: 'DHCP',
+      title: isTr ? 'Router DHCP (2 PC + 1 Router)' : 'Router DHCP (2 PCs + 1 Router)',
+      description: isTr ? 'Router üzerinden DHCP havuzu ile iki PC’ye otomatik IP dağıtımı.' : 'Automatic IP assignment to two PCs via router DHCP pool.',
+      detail: isTr ? 'R1: ip dhcp pool LAN, PC-1/PC-2: ipconfig /renew' : 'R1: ip dhcp pool LAN, PC-1/PC-2: ipconfig /renew',
+      level: 'basic',
+      data: baseProjectData(routerDhcpDevices, routerDhcpConnections, routerDhcpNotes, [
+        { id: 'router-1', state: routerDhcpR1 }
       ])
     },
     {

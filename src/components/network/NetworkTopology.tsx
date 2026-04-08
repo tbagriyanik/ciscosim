@@ -2827,8 +2827,9 @@ export function NetworkTopology({
         return;
       }
 
-      // Delete selected device(s) or note(s)
-      if (e.key === 'Delete' || e.key === 'Backspace') {
+      // Delete selected device(s) or note(s) ONLY with plain Del key.
+      // Backspace and modified delete combos are intentionally ignored.
+      if (e.key === 'Delete' && !e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey) {
         if (!isEditable) {
           if (selectedDeviceIds.length > 0) {
             saveToHistory();
