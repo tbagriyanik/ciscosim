@@ -200,6 +200,13 @@ export function PCPanel({
   const [currentTime, setCurrentTime] = useState(new Date());
   const [showNetworkMenu, setShowNetworkMenu] = useState(false);
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
+  const [isDesktopOpening, setIsDesktopOpening] = useState(false);
+  const [openingDots, setOpeningDots] = useState('.');
+  const [showDesktopVersionText, setShowDesktopVersionText] = useState(false);
+  const [isCliOpening, setIsCliOpening] = useState(false);
+  const [cliHashes, setCliHashes] = useState('#');
+  const desktopOpeningStartedRef = useRef(false);
+  const cliOpeningStartedRef = useRef(false);
   const [fontSize, setFontSize] = useState<number>(() => {
     try { return parseInt(localStorage.getItem('terminal-font-size') || '13', 10); } catch { return 13; }
   });
@@ -209,6 +216,66 @@ export function PCPanel({
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    const isPowerOffNow = topologyDevices.find((d) => d.id === deviceId)?.status === 'offline';
+    if (!isVisible || isPowerOffNow || activeTab !== 'desktop') {
+      desktopOpeningStartedRef.current = false;
+      setIsDesktopOpening(false);
+      setShowDesktopVersionText(false);
+      return;
+    }
+    if (desktopOpeningStartedRef.current) return;
+    desktopOpeningStartedRef.current = true;
+
+    setIsDesktopOpening(true);
+    setShowDesktopVersionText(false);
+    setOpeningDots('.');
+
+    const dotsTimer = setInterval(() => {
+      setOpeningDots((prev) => (prev.length >= 4 ? '.' : `${prev}.`));
+    }, 220);
+    const doneTimer = setTimeout(() => {
+      setIsDesktopOpening(false);
+      setShowDesktopVersionText(true);
+    }, 2000);
+
+    const versionTimer = setTimeout(() => {
+      setShowDesktopVersionText(false);
+    }, 4000);
+
+    return () => {
+      clearInterval(dotsTimer);
+      clearTimeout(doneTimer);
+      clearTimeout(versionTimer);
+    };
+  }, [activeTab, isVisible, deviceId]);
+
+  useEffect(() => {
+    const isPowerOffNow = topologyDevices.find((d) => d.id === deviceId)?.status === 'offline';
+    if (!isVisible || isPowerOffNow || activeTab !== 'terminal') {
+      cliOpeningStartedRef.current = false;
+      setIsCliOpening(false);
+      return;
+    }
+    if (cliOpeningStartedRef.current) return;
+    cliOpeningStartedRef.current = true;
+
+    setIsCliOpening(true);
+    setCliHashes('#');
+
+    const hashesTimer = setInterval(() => {
+      setCliHashes((prev) => (prev.length >= 2 ? '#' : `${prev}#`));
+    }, 220);
+    const doneTimer = setTimeout(() => {
+      setIsCliOpening(false);
+    }, 2000);
+
+    return () => {
+      clearInterval(hashesTimer);
+      clearTimeout(doneTimer);
+    };
+  }, [activeTab, isVisible, deviceId]);
 
   const handleFontSizeChange = (val: number) => {
     setFontSize(val);
@@ -719,9 +786,9 @@ export function PCPanel({
   }, [connectedDeviceId, topologyDevices]);
 
   const isConsoleTargetPoweredOff = isConsoleConnected && !!connectedConsoleDevice && connectedConsoleDevice.status === 'offline';
-  const isCmdInputDisabled = isPcPoweredOff;
+  const isCmdInputDisabled = isPcPoweredOff || (activeTab === 'desktop' && isDesktopOpening);
   const consoleAwaitingPassword = !!(connectedDeviceId && deviceStates?.get(connectedDeviceId)?.awaitingPassword);
-  const isConsoleInputDisabled = isPcPoweredOff || !isConsoleConnected || isConsoleTargetPoweredOff;
+  const isConsoleInputDisabled = isPcPoweredOff || !isConsoleConnected || isConsoleTargetPoweredOff || (activeTab === 'terminal' && isCliOpening);
 
   // Detect password/confirm states from device state
   const consoleNeedsPassword = useMemo(() => {
@@ -2326,7 +2393,7 @@ export function PCPanel({
       `}>
         {/* External Toolbar - Above Tablet Frame */}
         <div className={`
-        w-full max-w-full md:max-w-4xl mx-auto mb-2 px-3 py-1.5 flex items-center justify-between relative z-50
+        w-full max-w-full md:max-w-4xl mx-auto mb-2 px-3 py-1.5 flex items-center justify-between sticky top-2 z-[70]
         rounded-lg border
         ${isDark
             ? 'bg-slate-800/90 border-slate-700 shadow-md'
@@ -2485,6 +2552,7 @@ export function PCPanel({
            `}>
           {/* Screen Area - Clean and simple */}
           <div className={`
+          relative
           
           ${isDark
               ? 'bg-slate-900'
@@ -2493,7 +2561,7 @@ export function PCPanel({
         `}>
             {/* Power Off Overlay - Tablet ekranını tamamen karartır */}
             {isPcPoweredOff && (
-              <div className="absolute inset-0 z-50 bg-black flex flex-col items-center justify-center">
+              <div className="absolute inset-0 z-40 bg-black flex flex-col items-center justify-center">
                 <div className="relative">
                   <div className="absolute inset-0 bg-red-500/20 blur-3xl rounded-full animate-pulse" />
                   <svg className="w-16 h-16 text-red-600 drop-shadow-xl relative z-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -2758,13 +2826,12 @@ export function PCPanel({
                           variant={activeServiceTab === 'dns' ? 'secondary' : 'ghost'}
                           size="sm"
                           onClick={() => setActiveServiceTab('dns')}
-                          className={`h-8 px-3 text-xs font-medium transition-all ${
-                            activeServiceTab === 'dns'
-                              ? 'bg-purple-500/15 text-purple-600 border-purple-500/30'
-                              : serviceDnsEnabled
-                                ? 'bg-purple-500/10 text-purple-600 border border-purple-500/25 hover:bg-purple-500/15'
-                                : 'text-slate-500 hover:text-purple-500'
-                          }`}
+                          className={`h-8 px-3 text-xs font-medium transition-all ${activeServiceTab === 'dns'
+                            ? 'bg-purple-500/15 text-purple-600 border-purple-500/30'
+                            : serviceDnsEnabled
+                              ? 'bg-purple-500/10 text-purple-600 border border-purple-500/25 hover:bg-purple-500/15'
+                              : 'text-slate-500 hover:text-purple-500'
+                            }`}
                         >
                           DNS{serviceDnsEnabled ? ' (Açık)' : ''}
                         </Button>
@@ -2772,13 +2839,12 @@ export function PCPanel({
                           variant={activeServiceTab === 'http' ? 'secondary' : 'ghost'}
                           size="sm"
                           onClick={() => setActiveServiceTab('http')}
-                          className={`h-8 px-3 text-xs font-medium transition-all ${
-                            activeServiceTab === 'http'
-                              ? 'bg-emerald-500/15 text-emerald-600 border-emerald-500/30'
-                              : serviceHttpEnabled
-                                ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/25 hover:bg-emerald-500/15'
-                                : 'text-slate-500 hover:text-emerald-500'
-                          }`}
+                          className={`h-8 px-3 text-xs font-medium transition-all ${activeServiceTab === 'http'
+                            ? 'bg-emerald-500/15 text-emerald-600 border-emerald-500/30'
+                            : serviceHttpEnabled
+                              ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/25 hover:bg-emerald-500/15'
+                              : 'text-slate-500 hover:text-emerald-500'
+                            }`}
                         >
                           HTTP{serviceHttpEnabled ? ' (Açık)' : ''}
                         </Button>
@@ -2786,13 +2852,12 @@ export function PCPanel({
                           variant={activeServiceTab === 'dhcp' ? 'secondary' : 'ghost'}
                           size="sm"
                           onClick={() => setActiveServiceTab('dhcp')}
-                          className={`h-8 px-3 text-xs font-medium transition-all ${
-                            activeServiceTab === 'dhcp'
-                              ? 'bg-sky-500/15 text-sky-600 border-sky-500/30'
-                              : serviceDhcpEnabled
-                                ? 'bg-sky-500/10 text-sky-600 border border-sky-500/25 hover:bg-sky-500/15'
-                                : 'text-slate-500 hover:text-sky-500'
-                          }`}
+                          className={`h-8 px-3 text-xs font-medium transition-all ${activeServiceTab === 'dhcp'
+                            ? 'bg-sky-500/15 text-sky-600 border-sky-500/30'
+                            : serviceDhcpEnabled
+                              ? 'bg-sky-500/10 text-sky-600 border border-sky-500/25 hover:bg-sky-500/15'
+                              : 'text-slate-500 hover:text-sky-500'
+                            }`}
                         >
                           DHCP{serviceDhcpEnabled ? ' (Açık)' : ''}
                         </Button>
@@ -3394,6 +3459,24 @@ export function PCPanel({
                       >
                         {isPcPoweredOff ? (
                           <div className="flex-1 flex items-center justify-center text-slate-700">OFFLINE</div>
+                        ) : isDesktopOpening && activeTab === 'desktop' ? (
+                          <div className="flex-1 flex items-center justify-left">
+                            <span className={`${isDark ? 'text-slate-300' : 'text-slate-700'} text-sm font-semibold tracking-wide`}>
+                              {language === 'tr' ? `İstemci açılıyor${openingDots}` : `Host is opening${openingDots}`}
+                            </span>
+                          </div>
+                        ) : showDesktopVersionText && activeTab === 'desktop' ? (
+                          <div className="flex-1 flex items-center justify-left">
+                            <span className={`${isDark ? 'text-cyan-300' : 'text-cyan-700'} text-sm font-semibold tracking-wide`}>
+                              {`Version ${deviceState?.version?.nosVersion || '15.0'} | ${deviceState?.version?.modelName || 'Net Simulator PC'}`}
+                            </span>
+                          </div>
+                        ) : isCliOpening && activeTab === 'terminal' ? (
+                          <div className="flex-1 flex items-center justify-left">
+                            <span className={`${isDark ? 'text-slate-300' : 'text-slate-700'} text-sm font-semibold tracking-wide`}>
+                              {language === 'tr' ? `CLI hazırlanıyor${cliHashes}` : `Preparing CLI${cliHashes}`}
+                            </span>
+                          </div>
                         ) : gameActive && activeTab === 'desktop' ? (
                           <div className="flex-1 flex flex-col items-center justify-center gap-3">
                             <div className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
