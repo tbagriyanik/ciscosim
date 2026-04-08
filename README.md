@@ -6,7 +6,7 @@ A modern and interactive web-based Network simulator designed for students and n
 ![Tech Stack](https://img.shields.io/badge/stack-Next.js%2016%20|%20React%2019%20|%20TypeScript%20|%20Tailwind%204-green)
 ![FOSS](https://img.shields.io/badge/FOSS-Free%20Open%20Source-brightgreen)
 ![Commits](https://img.shields.io/badge/commits-365+-orange)
-![Lines of Code](https://img.shields.io/badge/lines--of--code-65k+-blueviolet)
+![Lines of Code](https://img.shields.io/badge/lines--of--code-68k+-blueviolet)
 
 ## ✨ Key Features
 
@@ -107,6 +107,9 @@ The simulator supports **100+ commands** across multiple configuration modes:
 | `router ospf [<id>]` | Enable OSPF routing |
 | `no router rip` | Disable RIP |
 | `no router ospf` | Disable OSPF |
+| `ip dhcp pool <name>` | Create DHCP pool / enter dhcp-config mode |
+| `no ip dhcp pool <name>` | Remove DHCP pool |
+| `ip dhcp excluded-address <low> [<high>]` | Exclude addresses from DHCP |
 | `ntp server <ip>` | Configure NTP server |
 | `clock timezone <name> <offset>` | Set timezone |
 | `ip name-server <ip>` | Configure DNS server |
@@ -197,6 +200,15 @@ The simulator supports **100+ commands** across multiple configuration modes:
 | `passive-interface <intf>` | Set passive interface |
 | `default-information {originate\|always}` | Control default route |
 
+#### DHCP Pool Configuration Commands (`dhcp-config` mode)
+| Command | Description |
+|---------|-------------|
+| `network <address> <mask>` | Set pool network and subnet mask |
+| `default-router <ip>` | Set default gateway for clients |
+| `dns-server <ip>` | Set DNS server for clients |
+| `lease <days> [hours] [minutes]` | Set lease duration (or `infinite`) |
+| `domain-name <name>` | Set domain name for clients |
+
 #### Show Commands
 | Command | Description |
 |---------|-------------|
@@ -218,6 +230,8 @@ The simulator supports **100+ commands** across multiple configuration modes:
 | `show port-security` | Display port security status |
 | `show wireless` | Display wireless status |
 | `show ip dhcp snooping` | Display DHCP snooping |
+| `show ip dhcp pool` | Display DHCP pool configuration |
+| `show ip dhcp binding` | Display DHCP bindings |
 | `show interfaces status` | Display interface status |
 | `show cdp` | Display CDP information |
 | `show vtp status` | Display VTP status |
@@ -248,6 +262,7 @@ The simulator supports **100+ commands** across multiple configuration modes:
 - **Line Mode** `(config-line)#` - Line configuration
 - **VLAN Mode** `(config-vlan)#` - VLAN configuration
 - **Router Config Mode** `(config-router)#` - Routing protocol config
+- **DHCP Pool Mode** `(dhcp-config)#` - DHCP pool configuration
 
 ### Features
 - **Tab Completion**: Auto-complete commands with TAB
@@ -424,9 +439,9 @@ Theme selection is done from the theme selector in the top right corner.
 
 - Scope: `src/`
 - Source files: `244`
-- Total lines: `67,068`
+- Total lines: `68,068`
 - CLI commands: `100+`
-- Last updated: `2026-04-06`
+- Last updated: `2026-04-08`
 
 ## 🐛 Troubleshooting
 
@@ -496,8 +511,8 @@ Sorular veya öneriler için lütfen issue açın. / For questions or suggestion
 
 ---
 
-**Sürüm**: 1.2.1  
-**Son Güncelleme**: 2026-04-05  
+**Sürüm**: 1.2.2  
+**Son Güncelleme**: 2026-04-08  
 **Durum**: Production Ready ✅
 
 ---
@@ -505,6 +520,6 @@ Sorular veya öneriler için lütfen issue açın. / For questions or suggestion
 **Bu proje açık kaynaklıdır.** 🚀  
 GitHub üzerinden katkıda bulunabilirsiniz: [github.com/tbagriyanik/ciscosim](https://github.com/tbagriyanik/ciscosim)
 
-**Sürüm**: 1.2.1  
-**Son Güncelleme**: 2026-04-05  
+**Sürüm**: 1.2.2  
+**Son Güncelleme**: 2026-04-08  
 **Durum**: Production Ready ✅

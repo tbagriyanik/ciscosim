@@ -190,6 +190,29 @@ export function buildRunningConfig(state: SwitchState): string[] {
         lines.push('!');
     }
 
+    // DHCP excluded addresses and pools (CLI-configured via ip dhcp pool)
+    if (state.dhcpPools && Object.keys(state.dhcpPools).length > 0) {
+        Object.entries(state.dhcpPools).forEach(([poolName, pool]) => {
+            lines.push(`ip dhcp pool ${poolName}`);
+            if (pool.network && pool.subnetMask) {
+                lines.push(` network ${pool.network} ${pool.subnetMask}`);
+            }
+            if (pool.defaultRouter) {
+                lines.push(` default-router ${pool.defaultRouter}`);
+            }
+            if (pool.dnsServer) {
+                lines.push(` dns-server ${pool.dnsServer}`);
+            }
+            if (pool.domainName) {
+                lines.push(` domain-name ${pool.domainName}`);
+            }
+            if (pool.leaseTime) {
+                lines.push(` lease ${pool.leaseTime}`);
+            }
+            lines.push('!');
+        });
+    }
+
     // line con 0
     lines.push('line con 0');
     if (state.security.consoleLine.password) {

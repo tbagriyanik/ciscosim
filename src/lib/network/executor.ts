@@ -30,6 +30,8 @@ export function getPrompt(state: SwitchState): string {
       return `${hostname}(config-vlan)#`;
     case 'router-config':
       return `${hostname}(config-router)#`;
+    case 'dhcp-config':
+      return `${hostname}(dhcp-config)#`;
     default:
       return `${hostname}>`;
   }
@@ -43,6 +45,7 @@ import { globalConfigHandlers } from './core/globalConfigCommands';
 import { routerConfigHandlers } from './core/routerConfigCommands';
 import { lineHandlers } from './core/lineCommands';
 import { privilegedHandlers } from './core/privilegedCommands';
+import { dhcpConfigHandlers } from './core/dhcpConfigCommands';
 
 // --- Command handler types & context ---
 export interface CommandContext {
@@ -457,8 +460,31 @@ export const commandHelp: Record<string, Record<string, string[]>> = {
     'banner mot': ['motd'],
     'banner motd': [''],
 
-    'ip': ['default-gateway', 'domain-name', 'ssh', 'http'],
-    'ip d': ['default-gateway', 'domain-name'],
+    'ip': ['default-gateway', 'domain-name', 'ssh', 'http', 'dhcp', 'routing'],
+    'ip d': ['default-gateway', 'domain-name', 'dhcp'],
+    'ip dh': ['dhcp'],
+    'ip dhc': ['dhcp'],
+    'ip dhcp': ['pool', 'excluded-address', 'snooping'],
+    'ip dhcp p': ['pool'],
+    'ip dhcp po': ['pool'],
+    'ip dhcp poo': ['pool'],
+    'ip dhcp pool': ['<pool-name>'],
+    'ip dhcp e': ['excluded-address'],
+    'ip dhcp ex': ['excluded-address'],
+    'ip dhcp exc': ['excluded-address'],
+    'ip dhcp excl': ['excluded-address'],
+    'ip dhcp exclu': ['excluded-address'],
+    'ip dhcp exclud': ['excluded-address'],
+    'ip dhcp exclude': ['excluded-address'],
+    'ip dhcp excluded': ['excluded-address'],
+    'ip dhcp excluded-': ['excluded-address'],
+    'ip dhcp excluded-a': ['excluded-address'],
+    'ip dhcp excluded-ad': ['excluded-address'],
+    'ip dhcp excluded-add': ['excluded-address'],
+    'ip dhcp excluded-addr': ['excluded-address'],
+    'ip dhcp excluded-addre': ['excluded-address'],
+    'ip dhcp excluded-addres': ['excluded-address'],
+    'ip dhcp excluded-address': ['<low-ip>', '<high-ip>'],
     'ip de': ['default-gateway'],
     'ip def': ['default-gateway'],
     'ip defa': ['default-gateway'],
@@ -993,6 +1019,63 @@ export const commandHelp: Record<string, Record<string, string[]>> = {
     'default-': ['default-information'],
     'default-i': ['default-information'],
     'default-information': ['originate'],
+
+    'ex': ['exit'],
+    'exi': ['exit'],
+    'exit': [''],
+    'end': [''],
+  },
+  'dhcp-config': {
+    '': ['network', 'default-router', 'dns-server', 'lease', 'domain-name', 'exit', 'end', '?', 'help'],
+    'n': ['network'],
+    'ne': ['network'],
+    'net': ['network'],
+    'netw': ['network'],
+    'netwo': ['network'],
+    'networ': ['network'],
+    'network': ['<network-address>', '<subnet-mask>'],
+
+    'd': ['default-router', 'dns-server', 'domain-name'],
+    'de': ['default-router'],
+    'def': ['default-router'],
+    'defa': ['default-router'],
+    'defau': ['default-router'],
+    'defaul': ['default-router'],
+    'default': ['default-router'],
+    'default-': ['default-router'],
+    'default-r': ['default-router'],
+    'default-ro': ['default-router'],
+    'default-rou': ['default-router'],
+    'default-rout': ['default-router'],
+    'default-route': ['default-router'],
+    'default-router': ['<ip-address>'],
+
+    'dn': ['dns-server'],
+    'dns': ['dns-server'],
+    'dns-': ['dns-server'],
+    'dns-s': ['dns-server'],
+    'dns-se': ['dns-server'],
+    'dns-ser': ['dns-server'],
+    'dns-serv': ['dns-server'],
+    'dns-serve': ['dns-server'],
+    'dns-server': ['<ip-address>'],
+
+    'l': ['lease'],
+    'le': ['lease'],
+    'lea': ['lease'],
+    'leas': ['lease'],
+    'lease': ['infinite', '1', '7', '30'],
+
+    'do': ['domain-name'],
+    'dom': ['domain-name'],
+    'doma': ['domain-name'],
+    'domai': ['domain-name'],
+    'domain': ['domain-name'],
+    'domain-': ['domain-name'],
+    'domain-n': ['domain-name'],
+    'domain-na': ['domain-name'],
+    'domain-nam': ['domain-name'],
+    'domain-name': ['<domain>'],
 
     'ex': ['exit'],
     'exi': ['exit'],
@@ -1640,6 +1723,9 @@ const commandHandlers: Record<string, CommandHandler> = {
 
   // Privileged EXEC commands
   ...privilegedHandlers,
+
+  // DHCP pool sub-commands
+  ...dhcpConfigHandlers,
 };
 
 

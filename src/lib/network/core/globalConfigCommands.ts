@@ -1117,6 +1117,70 @@ function cmdCryptoKeyGenerateRsa(state: any, input: string, ctx: any): any {
   return { success: true, output: 'The name for the keys will be: ' + (state.hostname || 'Switch') + '.' + (state.domainName || 'local') + '\nChoose the size of the key modulus in the range of 360 to 4096 for your\nGeneral Purpose Keys. Choosing a key modulus greater than 512 may take\na few minutes.\n\nHow many bits in the modulus [512]: \n% Generating 1024 bit RSA keys, keys will be non-exportable...\n[OK] (elapsed time was 1 seconds)\n' };
 }
 
+/**
+ * ip dhcp pool <name> - Enter DHCP pool configuration mode
+ */
+function cmdIpDhcpPool(state: any, input: string, ctx: any): any {
+  if (state.currentMode !== 'config') {
+    return { success: false, error: '% Invalid command at this mode' };
+  }
+  const match = input.match(/^ip\s+dhcp\s+pool\s+(\S+)$/i);
+  if (!match) return { success: false, error: '% Invalid ip dhcp pool command' };
+
+  const poolName = match[1];
+  const pools = { ...(state.dhcpPools || {}) };
+  if (!pools[poolName]) {
+    pools[poolName] = {};
+  }
+  return {
+    success: true,
+    newState: {
+      currentMode: 'dhcp-config',
+      currentDhcpPool: poolName,
+      dhcpPools: pools,
+    }
+  };
+}
+
+/**
+ * no ip dhcp pool <name> - Remove a DHCP pool
+ */
+function cmdNoIpDhcpPool(state: any, input: string, ctx: any): any {
+  if (state.currentMode !== 'config') {
+    return { success: false, error: '% Invalid command at this mode' };
+  }
+  const match = input.match(/^no\s+ip\s+dhcp\s+pool\s+(\S+)$/i);
+  if (!match) return { success: false, error: '% Invalid no ip dhcp pool command' };
+
+  const poolName = match[1];
+  const pools = { ...(state.dhcpPools || {}) };
+  if (!pools[poolName]) {
+    return { success: false, error: `% DHCP pool ${poolName} not found` };
+  }
+  delete pools[poolName];
+  return { success: true, newState: { dhcpPools: pools } };
+}
+
+/**
+ * ip dhcp excluded-address <low> [<high>]
+ */
+function cmdIpDhcpExcludedAddress(state: any, input: string, ctx: any): any {
+  if (state.currentMode !== 'config') {
+    return { success: false, error: '% Invalid command at this mode' };
+  }
+  return { success: true };
+}
+
+/**
+ * no ip dhcp excluded-address <low> [<high>]
+ */
+function cmdNoIpDhcpExcludedAddress(state: any, input: string, ctx: any): any {
+  if (state.currentMode !== 'config') {
+    return { success: false, error: '% Invalid command at this mode' };
+  }
+  return { success: true };
+}
+
 // Register new global config handlers
 Object.assign(globalConfigHandlers, {
   'ip dhcp snooping vlan': cmdIpDhcpSnoopingVlan,
@@ -1135,4 +1199,9 @@ Object.assign(globalConfigHandlers, {
   'ipv6 unicast-routing': cmdIpv6UnicastRouting,
   'ip ssh authentication-retries': cmdIpSshAuthRetries,
   'crypto key generate rsa': cmdCryptoKeyGenerateRsa,
+  // DHCP pool
+  'ip dhcp pool': cmdIpDhcpPool,
+  'no ip dhcp pool': cmdNoIpDhcpPool,
+  'ip dhcp excluded-address': cmdIpDhcpExcludedAddress,
+  'no ip dhcp excluded-address': cmdNoIpDhcpExcludedAddress,
 });

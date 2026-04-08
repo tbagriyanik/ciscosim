@@ -48,6 +48,8 @@ export const showHandlers: Record<string, CommandHandler> = {
   'show memory': cmdShowMemory,
   'show sdm prefer': cmdShowSdmPrefer,
   'show system mtu': cmdShowSystemMtu,
+  'show ip dhcp pool': cmdShowIpDhcpPool,
+  'show ip dhcp binding': cmdShowIpDhcpBinding,
 };
 
 function getSwitchDisplayProfile(state: any) {
@@ -1248,4 +1250,45 @@ function cmdShowSdmPrefer(state: any, input: string, ctx: any): any {
  */
 function cmdShowSystemMtu(state: any, input: string, ctx: any): any {
   return { success: true, output: '\nSystem MTU size is 1500 bytes\nSystem Jumbo MTU size is 1500 bytes\nRouting MTU size is 1500 bytes\n' };
+}
+
+function cmdShowIpDhcpPool(state: any, input: string, ctx: any): any {
+  const pools = state.dhcpPools || {};
+  const poolNames = Object.keys(pools);
+  if (poolNames.length === 0) {
+    return { success: true, output: '\n% No DHCP pools configured\n' };
+  }
+  let output = '\n';
+  poolNames.forEach(name => {
+    const p = pools[name];
+    output += `Pool ${name} :\n`;
+    output += ` Utilization mark (high/low)    : 100 / 0\n`;
+    output += ` Subnet size (first/next)        : 0 / 0\n`;
+    output += ` Total addresses                 : 254\n`;
+    output += ` Leased addresses                : 0\n`;
+    output += ` Pending event                   : none\n`;
+    if (p.network && p.subnetMask) {
+      output += ` 1 subnet is currently in the pool :\n`;
+      output += ` Current index        IP address range                    Leased addresses\n`;
+      output += ` ${(p.network + '').padEnd(21)} ${p.network} - ${p.network.replace(/\.\d+$/, '.254')}   0\n`;
+    }
+    output += `\n`;
+    output += `Pool ${name}:\n`;
+    output += ` Network             : ${p.network || 'not set'} ${p.subnetMask || ''}\n`;
+    output += ` Default router      : ${p.defaultRouter || 'not set'}\n`;
+    output += ` DNS server          : ${p.dnsServer || 'not set'}\n`;
+    if (p.domainName) output += ` Domain name         : ${p.domainName}\n`;
+    if (p.leaseTime) output += ` Lease               : ${p.leaseTime}\n`;
+    output += '\n';
+  });
+  return { success: true, output };
+}
+
+function cmdShowIpDhcpBinding(state: any, input: string, ctx: any): any {
+  return {
+    success: true,
+    output: '\nIP address       Client-ID/              Lease expiration        Type\n' +
+      '                 Hardware address\n' +
+      '% No bindings found\n'
+  };
 }

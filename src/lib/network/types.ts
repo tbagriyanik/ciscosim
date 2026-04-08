@@ -8,7 +8,8 @@ export type CommandMode =
   | 'config-if-range' // Switch(config-if-range)#
   | 'line'           // Switch(config-line)#
   | 'vlan'           // Switch(config-vlan)#
-  | 'router-config'; // Router(config)#
+  | 'router-config'  // Router(config-router)#
+  | 'dhcp-config';   // Router(dhcp-config)#
 
 export type PortStatus = 'connected' | 'notconnect' | 'disabled' | 'blocked';
 export type PortMode = 'access' | 'trunk' | 'routed';
@@ -140,6 +141,16 @@ export interface SwitchState {
   staticRoutes?: Route[];          // Static routing table
   dynamicRoutes?: Route[];         // Dynamic routing table
   routingProtocol?: 'none' | 'rip' | 'ospf'; // Routing protocol
+  // DHCP pool CLI config (ip dhcp pool <name>)
+  currentDhcpPool?: string;
+  dhcpPools?: Record<string, {
+    network?: string;
+    subnetMask?: string;
+    defaultRouter?: string;
+    dnsServer?: string;
+    leaseTime?: string;
+    domainName?: string;
+  }>;
   // Services (DHCP, DNS, HTTP)
   services?: {
     dhcp?: {

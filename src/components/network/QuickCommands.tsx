@@ -62,6 +62,7 @@ export function QuickCommands({ currentMode, onExecuteCommand, t, theme, languag
     line: t.modeLine,
     vlan: t.modeVlanLabel,
     'router-config': t.modeConfig,
+    'dhcp-config': 'DHCP Pool',
   };
 
   const cardBg = isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200';

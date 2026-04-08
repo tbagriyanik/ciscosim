@@ -145,6 +145,14 @@ function cmdExit(
           currentMode: 'config'
         }
       };
+    case 'dhcp-config':
+      return {
+        success: true,
+        newState: {
+          currentMode: 'config',
+          currentDhcpPool: undefined
+        }
+      };
     case 'privileged':
     case 'user':
       return {
@@ -172,6 +180,7 @@ function cmdEnd(
     case 'line':
     case 'vlan':
     case 'router-config':
+    case 'dhcp-config':
       return {
         success: true,
         newState: {
@@ -180,6 +189,7 @@ function cmdEnd(
           selectedInterfaces: undefined,
           currentLine: undefined,
           currentVlan: undefined,
+          currentDhcpPool: undefined,
           ospfProcessId: undefined,
           ripEnabled: undefined
         }

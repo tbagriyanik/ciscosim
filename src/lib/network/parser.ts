@@ -33,19 +33,19 @@ export const commandPatterns: Record<string, CommandPattern> = {
   },
   'exit': {
     pattern: /^(exit|quit)$/i,
-    modes: ['privileged', 'config', 'interface', 'config-if-range', 'line', 'vlan'],
+    modes: ['privileged', 'config', 'interface', 'config-if-range', 'line', 'vlan', 'dhcp-config'],
     minArgs: 0,
     maxArgs: 0
   },
   'end': {
     pattern: /^end$/i,
-    modes: ['config', 'interface', 'config-if-range', 'line', 'vlan'],
+    modes: ['config', 'interface', 'config-if-range', 'line', 'vlan', 'dhcp-config'],
     minArgs: 0,
     maxArgs: 0
   },
   'abort': {
     pattern: /^abort$/i,
-    modes: ['config', 'interface', 'config-if-range', 'line', 'vlan'],
+    modes: ['config', 'interface', 'config-if-range', 'line', 'vlan', 'dhcp-config'],
     minArgs: 0,
     maxArgs: 0
   },
@@ -271,7 +271,7 @@ export const commandPatterns: Record<string, CommandPattern> = {
   // Router config subcommands
   'network': {
     pattern: /^network\s+([0-9.]+)(\s+([0-9.]+))?(\s+area\s+(\d+))?$/i,
-    modes: ['router-config'],
+    modes: ['router-config', 'dhcp-config'],
     minArgs: 1,
     maxArgs: 4
   },
@@ -1336,6 +1336,18 @@ export const commandPatterns: Record<string, CommandPattern> = {
     minArgs: 0,
     maxArgs: 1
   },
+  'show ip dhcp pool': {
+    pattern: /^show\s+ip\s+dhcp\s+pool(\s+(\S+))?$/i,
+    modes: ['privileged'],
+    minArgs: 0,
+    maxArgs: 1
+  },
+  'show ip dhcp binding': {
+    pattern: /^show\s+ip\s+dhcp\s+binding(\s+(.+))?$/i,
+    modes: ['privileged'],
+    minArgs: 0,
+    maxArgs: 1
+  },
   'show ip arp inspection': {
     pattern: /^show\s+ip\s+arp\s+inspection(\s+(vlan|interface|statistics)\s*(.+)?)?$/i,
     modes: ['privileged'],
@@ -1819,6 +1831,58 @@ export const commandPatterns: Record<string, CommandPattern> = {
     modes: ['interface', 'config-if-range'],
     minArgs: 0,
     maxArgs: 1
+  },
+
+  // ── DHCP Pool (config mode) ──────────────────────────────────────────────
+  'ip dhcp pool': {
+    pattern: /^ip\s+dhcp\s+pool\s+(\S+)$/i,
+    modes: ['config'],
+    minArgs: 1,
+    maxArgs: 1
+  },
+  'no ip dhcp pool': {
+    pattern: /^no\s+ip\s+dhcp\s+pool\s+(\S+)$/i,
+    modes: ['config'],
+    minArgs: 1,
+    maxArgs: 1
+  },
+  'ip dhcp excluded-address': {
+    pattern: /^ip\s+dhcp\s+excluded-address\s+\d+\.\d+\.\d+\.\d+(?:\s+\d+\.\d+\.\d+\.\d+)?$/i,
+    modes: ['config'],
+    minArgs: 1,
+    maxArgs: 2
+  },
+  'no ip dhcp excluded-address': {
+    pattern: /^no\s+ip\s+dhcp\s+excluded-address\s+\d+\.\d+\.\d+\.\d+(?:\s+\d+\.\d+\.\d+\.\d+)?$/i,
+    modes: ['config'],
+    minArgs: 1,
+    maxArgs: 2
+  },
+
+  // ── DHCP Pool sub-commands (dhcp-config mode) ────────────────────────────
+  'default-router': {
+    pattern: /^default-router\s+\d+\.\d+\.\d+\.\d+(?:\s+\d+\.\d+\.\d+\.\d+)*$/i,
+    modes: ['dhcp-config'],
+    minArgs: 1,
+    maxArgs: 8
+  },
+  'dns-server': {
+    pattern: /^dns-server\s+\d+\.\d+\.\d+\.\d+(?:\s+\d+\.\d+\.\d+\.\d+)*$/i,
+    modes: ['dhcp-config'],
+    minArgs: 1,
+    maxArgs: 8
+  },
+  'lease': {
+    pattern: /^lease\s+(?:infinite|\d+(?:\s+\d+(?:\s+\d+)?)?)$/i,
+    modes: ['dhcp-config'],
+    minArgs: 1,
+    maxArgs: 3
+  },
+  'domain-name': {
+    pattern: /^domain-name\s+(\S+)$/i,
+    modes: ['dhcp-config'],
+    minArgs: 1,
+    maxArgs: 1
   }
 };
 
@@ -1915,6 +1979,7 @@ function getModeError(input: string, currentMode: CommandMode): string {
     line: 'Line Configuration',
     vlan: 'VLAN Configuration',
     'router-config': 'Router Configuration',
+    'dhcp-config': 'DHCP Pool Configuration',
   };
 
   const firstNonSpace = input.search(/\S|$/);
@@ -2144,6 +2209,16 @@ Mevcut komutlar:
   redistribute <protocol>     - Rota yeniden dağıt
   exit                        - Config mode'a dön
   end                         - Privileged mode'a dön
+`,
+    'dhcp-config': `
+Mevcut komutlar:
+  network <ağ-adresi> <alt-ağ-maskesi> - DHCP havuz ağı
+  default-router <ip>         - Varsayılan ağ geçidi
+  dns-server <ip>             - DNS sunucusu
+  lease <gün> [saat] [dakika] - Kira süresi (veya infinite)
+  domain-name <alan-adı>      - Alan adı
+  exit                        - Config mode'a dön
+  end                         - Privileged mode'a dön
 `
   };
 
@@ -2342,6 +2417,16 @@ Available commands:
   version <1|2>               - RIP version
   no auto-summary             - Disable auto-summary
   redistribute <protocol>     - Redistribute routes
+  exit                        - Return to config mode
+  end                         - Return to privileged mode
+`,
+    'dhcp-config': `
+Available commands:
+  network <network-address> <subnet-mask> - DHCP pool network
+  default-router <ip>         - Default gateway
+  dns-server <ip>             - DNS server
+  lease <days> [hours] [minutes] - Lease time (or infinite)
+  domain-name <domain>        - Domain name
   exit                        - Return to config mode
   end                         - Return to privileged mode
 `

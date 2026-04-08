@@ -80,6 +80,9 @@ Proje tamamlanmış durumda:
 | `router rip` | RIP yönlendirmesi |
 | `router ospf [<id>]` | OSPF yönlendirmesi |
 | `ntp server <ip>` | NTP sunucusu |
+| `ip dhcp pool <ad>` | DHCP havuzu oluştur / dhcp-config moduna gir |
+| `no ip dhcp pool <ad>` | DHCP havuzunu sil |
+| `ip dhcp excluded-address <düşük> [<yüksek>]` | DHCP dışı adres aralığı |
 
 #### Arayüz Konfigürasyonu
 | Komut | Açıklama |
@@ -135,6 +138,15 @@ Proje tamamlanmış durumda:
 | `passive-interface <arayüz>` | Pasif arayüz |
 | `default-information {originate\|always}` | Varsayılan rota |
 
+#### DHCP Havuz Konfigürasyonu (`dhcp-config` modu)
+| Komut | Açıklama |
+|-------|----------|
+| `network <adres> <maske>` | Havuz ağı ve alt ağ maskesi |
+| `default-router <ip>` | İstemciler için varsayılan ağ geçidi |
+| `dns-server <ip>` | İstemciler için DNS sunucusu |
+| `lease <gün> [saat] [dakika]` | Kira süresi (veya `infinite`) |
+| `domain-name <ad>` | İstemciler için alan adı |
+
 #### Show Komutları
 | Komut | Açıklama |
 |-------|----------|
@@ -151,6 +163,8 @@ Proje tamamlanmış durumda:
 | `show port-security` | Port güvenliği |
 | `show wireless` | Kablosuz durum |
 | `show arp` | ARP tablosu |
+| `show ip dhcp pool` | DHCP havuz konfigürasyonu |
+| `show ip dhcp binding` | DHCP kiraları |
 | `show users` | Aktif kullanıcılar |
 | `show processes` | CPU işlemleri |
 | `show memory` | Bellek kullanımı |
@@ -163,10 +177,20 @@ Proje tamamlanmış durumda:
 - **Line Mode** `(config-line)#` - Hat konfigürasyonu
 - **VLAN Mode** `(config-vlan)#` - VLAN konfigürasyonu
 - **Router Config Mode** `(config-router)#` - Yönlendirme protokolü
+- **DHCP Pool Mode** `(dhcp-config)#` - DHCP havuz konfigürasyonu
 
 ---
 
 ## Tamamlananlar
+
+### 2026-04-08 – DHCP Pool CLI Desteği
+- `ip dhcp pool <ad>` komutu eklendi — `Router(dhcp-config)#` moduna giriş
+- `network <adres> <maske>`, `default-router`, `dns-server`, `lease`, `domain-name` alt komutları
+- `no ip dhcp pool`, `ip dhcp excluded-address` komutları
+- `show ip dhcp pool`, `show ip dhcp binding` komutları
+- `dhcp-config` modu: exit/end desteği, tab completion, inline help (`?`)
+- `buildRunningConfig` DHCP pool'larını `show running-config` çıktısına ekliyor
+- `interface gigabitethernet` zaten destekleniyordu, `int gi` alias'ı aktif
 
 ### 2026-04-05 – WiFi Sinyal Gücü ve Ping Gecikmeleri
 - PC ve CLI terminallerinde WiFi sinyal gücü göstergesi eklendi
@@ -245,9 +269,10 @@ Aşağıdaki maddeler artık tamamen uygulanmış ve çalışır durumda:
 8. ✅ Notes Sistemi - Drag, resize, customize
 9. ✅ Tablet UI - PC tablet ile entegre çalışma
 10. ✅ HTTP/DNS/DHCP - Servisler aktif
-11. ✅ Dark/Light Mode - Tema desteği
-12. ✅ TR/EN Dil - Çift dil desteği
-13. ✅ Build Sağlığı - `npm run build` başarılı
+11. ✅ DHCP Pool CLI - `ip dhcp pool`, `network`, `default-router`, `dns-server` komutları
+12. ✅ Dark/Light Mode - Tema desteği
+13. ✅ TR/EN Dil - Çift dil desteği
+14. ✅ Build Sağlığı - `npm run build` başarılı
 
 ## Sonraki Adımlar (Opsiyonel İyileştirmeler)
 
@@ -267,6 +292,6 @@ Proje tamamlanmış durumda:
 - UI/UX: Modern ve işlevsel ✅
 - Dokümantasyon: Güncellendi ✅
 
-**Sürüm**: 1.2.1  
-**Son Güncelleme**: 2026-04-05  
+**Sürüm**: 1.2.2  
+**Son Güncelleme**: 2026-04-08  
 **Durum**: Tamamlandı ✅
