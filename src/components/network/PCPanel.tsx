@@ -1879,8 +1879,15 @@ export function PCPanel({
         } else {
           addLocalOutput('output', 'Usage: nbtstat [-n]');
         }
+      } else if (cmd === 'getmac') {
+        const mac = formatMacForArp(pcMAC).toUpperCase();
+        await addMultilineOutput(
+          'output',
+          `Physical Address    Transport Name\n=================== ============================================\n${mac.padEnd(19)} \\Device\\Tcpip_{${deviceId.toUpperCase()}}`,
+          60
+        );
       } else if (cmd === 'help' || cmd === '?') {
-        addLocalOutput('output', `Available commands: ipconfig, ping, tracert, telnet, netstat, nbtstat, nslookup, http, arp, hostname, dir, ver, cls, exit, quit, snake`);
+        addLocalOutput('output', `Available commands: ipconfig, ping, tracert, telnet, netstat, nbtstat, getmac, nslookup, http, arp, hostname, dir, ver, cls, exit, quit, snake`);
       } else if (cmd === 'cls') {
         setPcOutput([]);
       } else if (cmd === 'exit' || cmd === 'quit') {
@@ -2600,7 +2607,7 @@ export function PCPanel({
                 </div>
 
                 {/* Content Area */}
-                <div className={`flex-1 min-h-0 flex flex-col ${terminalBg} relative pt-2.5 overflow-hidden overflow-y-auto md:overflow-visible`}>
+                <div className={`flex-1 min-h-0 h-full max-h-[70vh] sm:max-h-[72vh] lg:max-h-[74vh] flex flex-col ${terminalBg} relative pt-2.5 overflow-hidden overflow-y-auto`}>
                   {activeTab === 'home' && (
                     <div
                       className="flex-1 min-h-0 flex items-center justify-center p-2.5 pt-0"
@@ -3387,7 +3394,7 @@ export function PCPanel({
                       )}
                       <div
                         ref={outputRef}
-                        className={`flex-1 min-h-0 scroll-smooth p-2 md:p-3 space-y-2 font-mono  ${isPcPoweredOff ? 'bg-red-500' : ''}`}
+                        className={`flex-1 min-h-0 overflow-y-auto scroll-smooth p-2 md:p-3 pb-24 md:pb-28 space-y-2 font-mono ${isPcPoweredOff ? 'bg-red-500' : ''}`}
                         style={{ ...mobileVerticalScrollStyle, fontSize: `${fontSize}px` }}
                       >
                         {isPcPoweredOff ? (
