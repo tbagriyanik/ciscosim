@@ -1613,8 +1613,10 @@ Extracting files from flash:c2960-lanbase-mz.152-2.E6.bin...
 }
 
 function handleSshConnect(state: SwitchState, language: 'tr' | 'en'): CommandResult {
+  const existingSessions = Array.isArray(state.sshSessions) ? state.sshSessions : [];
+  const nextSourceIndex = existingSessions.length;
   const user = state.sshLastUser || state.hostname || 'admin';
-  const source = state.sshLastSource || 'vty0';
+  const source = `vty${nextSourceIndex}`;
 
   let output = '';
   if (state.bannerMOTD) {
@@ -1701,9 +1703,23 @@ function handlePasswordInput(state: SwitchState, password: string, language: 'tr
   }
 
   if (state.passwordContext === 'vty') {
+    const useLocalLogin = !!state.security?.vtyLines?.loginLocal;
     const configuredPassword = state.security.vtyLines.password || '';
-    const validPassword = password === configuredPassword;
+    const rawUsers = state.security?.users;
+    const configuredUsers = Array.isArray(rawUsers) ? rawUsers : Object.values(rawUsers || {});
+    const sshUsername = state.sshLastUser || '';
+    const matchedUser = configuredUsers.find((user: any) => (user?.username || '').toLowerCase() === sshUsername.toLowerCase());
+    const validPassword = useLocalLogin
+      ? !!matchedUser && String(matchedUser.password || '') === password
+      : password === configuredPassword;
     if (validPassword) {
+      const sessionUser = state.sshLastUser || state.hostname || 'admin';
+      const sessionSource = state.sshLastSource || 'vty0';
+      const existingSessions = Array.isArray(state.sshSessions) ? state.sshSessions : [];
+      const nextSessions = [
+        ...existingSessions.filter((session) => session.source !== sessionSource),
+        { user: sessionUser, source: sessionSource, state: 'established' }
+      ];
       let output = '';
       if (state.bannerMOTD) {
         output = `\n${state.bannerMOTD}\n\n`;
@@ -1717,13 +1733,9 @@ function handlePasswordInput(state: SwitchState, password: string, language: 'tr
           telnetAuthenticated: true,
           awaitingPassword: false,
           passwordContext: undefined,
-          sshSessions: [{
-            user: state.sshLastUser || state.hostname || 'admin',
-            source: state.sshLastSource || 'vty0',
-            state: 'established'
-          }],
-          sshLastUser: state.sshLastUser || state.hostname || 'admin',
-          sshLastSource: state.sshLastSource || 'vty0',
+          sshSessions: nextSessions,
+          sshLastUser: sessionUser,
+          sshLastSource: sessionSource,
         }
       };
     } else {

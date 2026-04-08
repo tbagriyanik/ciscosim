@@ -1043,15 +1043,7 @@ function cmdShowSsh(
   output += `VTY Transport Input: ${transportInput.length > 0 ? transportInput.join(' ') : 'none'}\n`;
 
   const activeSessions = Array.isArray(state.sshSessions) ? state.sshSessions : [];
-  const normalizedSessions = activeSessions.length > 0
-    ? activeSessions
-    : (sshEnabled
-      ? [{
-        user: state.sshLastUser || state.hostname || 'admin',
-        source: state.sshLastSource || 'vty0',
-        state: 'established',
-      }]
-      : []);
+  const normalizedSessions = activeSessions;
 
   output += `\nActive SSH Sessions: ${normalizedSessions.length}\n`;
   if (normalizedSessions.length > 0) {

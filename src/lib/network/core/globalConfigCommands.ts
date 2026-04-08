@@ -150,19 +150,23 @@ function cmdUsername(state: any, input: string, ctx: any): any {
   const username = match[1];
   const privilege = match[4] ? parseInt(match[4]) : 0;
   const password = match[5] || '';
-  const passwordType = input.toLowerCase().includes('secret') ? 'secret' : 'password';
-
-  const newUsers = { ...state.users };
-  newUsers[username] = {
+  const currentUsers = Array.isArray(state.security?.users) ? state.security.users : [];
+  const normalizedUsername = username.toLowerCase();
+  const newUsers = currentUsers.filter((user: any) => (user?.username || '').toLowerCase() !== normalizedUsername);
+  newUsers.push({
     username,
-    privilege,
     password,
-    passwordType
-  };
+    privilege
+  });
 
   return {
     success: true,
-    newState: { users: newUsers }
+    newState: {
+      security: {
+        ...state.security,
+        users: newUsers
+      }
+    }
   };
 }
 
@@ -954,12 +958,17 @@ function cmdNoUsername(state: any, input: string, ctx: any): any {
   }
 
   const username = match[1];
-  const newUsers = { ...state.users };
-  delete newUsers[username];
+  const currentUsers = Array.isArray(state.security?.users) ? state.security.users : [];
+  const newUsers = currentUsers.filter((user: any) => (user?.username || '').toLowerCase() !== username.toLowerCase());
 
   return {
     success: true,
-    newState: { users: newUsers }
+    newState: {
+      security: {
+        ...state.security,
+        users: newUsers
+      }
+    }
   };
 }
 

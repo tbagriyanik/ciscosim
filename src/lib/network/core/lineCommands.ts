@@ -110,16 +110,19 @@ function cmdLogin(state: any, input: string, ctx: any): any {
   }
 
   const newSecurity = { ...state.security };
+  const useLocalLogin = /\blogin\s+local\b/i.test(input);
 
   if (state.currentLine.startsWith('console')) {
     newSecurity.consoleLine = {
       ...newSecurity.consoleLine,
-      login: true
+      login: true,
+      loginLocal: false
     };
   } else if (state.currentLine.startsWith('vty')) {
     newSecurity.vtyLines = {
       ...newSecurity.vtyLines,
-      login: true
+      login: true,
+      loginLocal: useLocalLogin
     };
   }
 
@@ -142,12 +145,14 @@ function cmdNoLogin(state: any, input: string, ctx: any): any {
   if (state.currentLine.startsWith('console')) {
     newSecurity.consoleLine = {
       ...newSecurity.consoleLine,
-      login: false
+      login: false,
+      loginLocal: false
     };
   } else if (state.currentLine.startsWith('vty')) {
     newSecurity.vtyLines = {
       ...newSecurity.vtyLines,
-      login: false
+      login: false,
+      loginLocal: false
     };
   }
 
