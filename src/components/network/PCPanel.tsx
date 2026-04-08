@@ -1396,7 +1396,8 @@ export function PCPanel({
         .map((d) => d.ip)
     );
 
-    const servers = topologyDevices.filter(
+    // 1. Check PC DHCP servers from topology
+    const pcServers = topologyDevices.filter(
       (d) =>
         d.id !== deviceId &&
         d.type === 'pc' &&
@@ -1406,7 +1407,7 @@ export function PCPanel({
         (clientHasUsableIp ? canReachTargetIp(d.ip) : hasPhysicalPathToDevice(d.id))
     );
 
-    for (const server of servers) {
+    for (const server of pcServers) {
       const pools = server.services?.dhcp?.pools || [];
       for (const pool of pools) {
         if (!validateIP(pool.startIp) || !validateIP(pool.subnetMask) || !validateIP(pool.defaultGateway) || !validateIP(pool.dnsServer)) {
@@ -1431,8 +1432,62 @@ export function PCPanel({
       }
     }
 
+    // 2. Check Router/Switch DHCP servers from deviceStates (CLI-configured pools)
+    if (deviceStates) {
+      for (const [deviceId_, state] of deviceStates.entries()) {
+        if (deviceId_ === deviceId) continue;
+        const device = topologyDevices.find(d => d.id === deviceId_);
+        if (!device || (device.type !== 'router' && device.type !== 'switchL2' && device.type !== 'switchL3')) continue;
+
+        // Check if this device has DHCP pools configured via CLI
+        const dhcpPools = state.services?.dhcp?.pools || [];
+        if (dhcpPools.length === 0) continue;
+
+        // Find the device's IP to check connectivity
+        let deviceIp = device.ip;
+        if (!deviceIp && state.ports) {
+          // Try to find an interface IP
+          for (const portId in state.ports) {
+            const port = state.ports[portId];
+            if (port.ipAddress && !port.shutdown) {
+              deviceIp = port.ipAddress;
+              break;
+            }
+          }
+        }
+        if (!deviceIp) continue;
+
+        // Check if PC can reach this DHCP server
+        const canReach = clientHasUsableIp ? canReachTargetIp(deviceIp) : hasPhysicalPathToDevice(deviceId_);
+        if (!canReach) continue;
+
+        // Use this device's DHCP pools
+        for (const pool of dhcpPools) {
+          if (!validateIP(pool.startIp) || !validateIP(pool.subnetMask) || !validateIP(pool.defaultGateway) || !validateIP(pool.dnsServer)) {
+            continue;
+          }
+          const start = ipToNumber(pool.startIp);
+          if (start === null) continue;
+          const maxUsers = Math.max(1, Number(pool.maxUsers || 50));
+          for (let i = 0; i < maxUsers; i += 1) {
+            const candidate = numberToIp(start + i);
+            if (!usedIps.has(candidate)) {
+              return {
+                ip: candidate,
+                subnetMask: pool.subnetMask,
+                gateway: pool.defaultGateway,
+                dns: pool.dnsServer,
+                serverName: device.name || state.hostname || deviceId_,
+                poolName: pool.poolName,
+              };
+            }
+          }
+        }
+      }
+    }
+
     return null;
-  }, [canReachTargetIp, deviceId, hasPhysicalPathToDevice, ipToNumber, numberToIp, pcIP, topologyDevices, validateIP]);
+  }, [canReachTargetIp, deviceId, deviceStates, hasPhysicalPathToDevice, ipToNumber, numberToIp, pcIP, topologyDevices, validateIP]);
 
   const applyDhcpLease = useCallback((force = false) => {
     const lease = getDhcpLease();
