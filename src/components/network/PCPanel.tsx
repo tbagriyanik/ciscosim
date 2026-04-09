@@ -315,6 +315,9 @@ export function PCPanel({
   const [serviceHttpContent, setServiceHttpContent] = useState(deviceFromTopology?.services?.http?.content || 'Merhaba Dünya!');
   const [serviceDhcpEnabled, setServiceDhcpEnabled] = useState(deviceFromTopology?.services?.dhcp?.enabled ?? false);
   const [serviceDhcpPools, setServiceDhcpPools] = useState<DhcpPoolConfig[]>(deviceFromTopology?.services?.dhcp?.pools || []);
+  const isDhcpEditingRef = useRef(false); // Track if user is actively editing DHCP pools
+  const isDnsEditingRef = useRef(false); // Track if user is actively editing DNS records
+  const checkDhcpAvailabilityRef = useRef<() => { available: boolean; reason: string }>(() => ({ available: true, reason: '' }));
   const [dhcpForm, setDhcpForm] = useState<DhcpPoolConfig>({
     poolName: '',
     defaultGateway: '',
@@ -387,32 +390,49 @@ export function PCPanel({
   const [errors, setErrors] = useState<Record<string, string>>({});
 
 
+  // Track previous device ID and services to detect changes
+  const prevDeviceIdRef = useRef<string | null>(null);
+  const prevServicesRef = useRef<any>(null);
+  
+  // Reset services state only when device changes or first entering services tab
   useEffect(() => {
+    const deviceChanged = prevDeviceIdRef.current !== deviceId;
+    const servicesChanged = JSON.stringify(deviceFromTopology?.services) !== JSON.stringify(prevServicesRef.current);
+    
+    // Reset if device changed (user switched to different PC)
+    // OR if this is first load (prevDeviceIdRef.current is null)
+    if (deviceChanged || prevDeviceIdRef.current === null) {
+      prevDeviceIdRef.current = deviceId;
+      prevServicesRef.current = deviceFromTopology?.services;
+      
+      setServiceDnsEnabled(deviceFromTopology?.services?.dns?.enabled ?? false);
+      setServiceDnsRecords(deviceFromTopology?.services?.dns?.records || []);
+      setServiceHttpEnabled(deviceFromTopology?.services?.http?.enabled ?? false);
+      setServiceHttpContent(deviceFromTopology?.services?.http?.content || 'Merhaba Dünya!');
+      setServiceDhcpEnabled(deviceFromTopology?.services?.dhcp?.enabled ?? false);
+      setServiceDhcpPools(deviceFromTopology?.services?.dhcp?.pools || []);
+      
+      setDnsFormDomain('');
+      setDnsFormAddress('');
+      setEditingDnsIndex(null);
+      setDhcpForm({
+        poolName: '',
+        defaultGateway: '',
+        dnsServer: '',
+        startIp: '',
+        subnetMask: '255.255.255.0',
+        maxUsers: 50,
+      });
+      setEditingDhcpIndex(null);
+    }
+    
     setIpConfigMode(deviceFromTopology?.ipConfigMode || 'static');
-    setServiceDnsEnabled(deviceFromTopology?.services?.dns?.enabled ?? false);
-    setServiceDnsRecords(deviceFromTopology?.services?.dns?.records || []);
-    setDnsFormDomain('');
-    setDnsFormAddress('');
-    setEditingDnsIndex(null);
-    setServiceHttpEnabled(deviceFromTopology?.services?.http?.enabled ?? false);
-    setServiceHttpContent(deviceFromTopology?.services?.http?.content || 'Merhaba Dünya!');
-    setServiceDhcpEnabled(deviceFromTopology?.services?.dhcp?.enabled ?? false);
-    setServiceDhcpPools(deviceFromTopology?.services?.dhcp?.pools || []);
-    setDhcpForm({
-      poolName: '',
-      defaultGateway: '',
-      dnsServer: '',
-      startIp: '',
-      subnetMask: '255.255.255.0',
-      maxUsers: 50,
-    });
-    setEditingDhcpIndex(null);
     setWifiEnabled(deviceFromTopology?.wifi?.enabled ?? false);
     setWifiSSID(deviceFromTopology?.wifi?.ssid ?? '');
     setWifiSecurity(deviceFromTopology?.wifi?.security ?? 'open');
     setWifiPassword(deviceFromTopology?.wifi?.password ?? '');
     setWifiChannel(deviceFromTopology?.wifi?.channel ?? '2.4GHz');
-  }, [deviceId, deviceFromTopology?.services, deviceFromTopology?.wifi]);
+  }, [deviceId]);
 
   // When tablet powers on, navigate to CMD screen
   useEffect(() => {
@@ -1434,6 +1454,7 @@ export function PCPanel({
       maxUsers: 50,
     });
     setEditingDhcpIndex(null);
+    isDhcpEditingRef.current = false;
   }, []);
 
   const saveDhcpPool = useCallback(() => {
@@ -1450,6 +1471,7 @@ export function PCPanel({
       return;
     }
 
+    isDhcpEditingRef.current = true;
     setServiceDhcpPools((prev) => {
       if (editingDhcpIndex === null) {
         return [...prev, cleaned];
@@ -1457,6 +1479,10 @@ export function PCPanel({
       return prev.map((pool, idx) => (idx === editingDhcpIndex ? cleaned : pool));
     });
 
+    // Reset editing flag after a delay to allow useEffect to sync
+    setTimeout(() => {
+      isDhcpEditingRef.current = false;
+    }, 1000);
     resetDhcpForm();
   }, [dhcpForm, editingDhcpIndex, resetDhcpForm]);
 
@@ -1474,7 +1500,7 @@ export function PCPanel({
     return `${a}.${b}.${c}.${d}`;
   }, []);
 
-  const getDhcpLease = useCallback(() => {
+  const getDhcpLease = useCallback((): { ip: string; subnetMask: string; gateway: string; dns: string; serverName: string; poolName: string } | null => {
     const usedIps = new Set(
       topologyDevices
         .filter((d) => d.id !== deviceId && validateIP(d.ip || ''))
@@ -1501,6 +1527,21 @@ export function PCPanel({
         const start = ipToNumber(pool.startIp);
         if (start === null) continue;
         const maxUsers = Math.max(1, Number(pool.maxUsers || 1));
+        
+        // Check if pool is full
+        let availableCount = 0;
+        for (let i = 0; i < maxUsers; i += 1) {
+          const candidate = numberToIp(start + i);
+          if (!usedIps.has(candidate)) {
+            availableCount++;
+          }
+        }
+        
+        // Skip full pools
+        if (availableCount === 0) {
+          continue;
+        }
+        
         for (let i = 0; i < maxUsers; i += 1) {
           const candidate = numberToIp(start + i);
           if (!usedIps.has(candidate)) {
@@ -1576,6 +1617,21 @@ export function PCPanel({
           const start = ipToNumber(pool.startIp);
           if (start === null) continue;
           const maxUsers = Math.max(1, Number(pool.maxUsers || 50));
+          
+          // Check if pool is full
+          let availableCount = 0;
+          for (let i = 0; i < maxUsers; i += 1) {
+            const candidate = numberToIp(start + i);
+            if (!usedIps.has(candidate)) {
+              availableCount++;
+            }
+          }
+          
+          // Skip full pools
+          if (availableCount === 0) {
+            continue;
+          }
+          
           for (let i = 0; i < maxUsers; i += 1) {
             const candidate = numberToIp(start + i);
             if (!usedIps.has(candidate)) {
@@ -1595,6 +1651,122 @@ export function PCPanel({
 
     return null;
   }, [canReachTargetIp, deviceId, deviceStates, hasPhysicalPathToDevice, ipToNumber, numberToIp, topologyDevices, validateIP]);
+
+  // Check if DHCP pools are available and get failure reason
+  const checkDhcpAvailability = useCallback((): { available: boolean; reason: string } => {
+    const usedIps = new Set(
+      topologyDevices
+        .filter((d) => d.id !== deviceId && validateIP(d.ip || ''))
+        .map((d) => d.ip)
+    );
+
+    // Check PC DHCP servers
+    const pcServers = topologyDevices.filter(
+      (d) =>
+        d.id !== deviceId &&
+        d.type === 'pc' &&
+        d.services?.dhcp?.enabled &&
+        (d.services?.dhcp?.pools?.length || 0) > 0 &&
+        !!d.ip &&
+        (hasPhysicalPathToDevice(d.id) || canReachTargetIp(d.ip))
+    );
+
+    for (const server of pcServers) {
+      const pools = server.services?.dhcp?.pools || [];
+      for (const pool of pools) {
+        if (!validateIP(pool.startIp) || !validateIP(pool.subnetMask) || !validateIP(pool.defaultGateway) || !validateIP(pool.dnsServer)) {
+          continue;
+        }
+        const start = ipToNumber(pool.startIp);
+        if (start === null) continue;
+        const maxUsers = Math.max(1, Number(pool.maxUsers || 1));
+        
+        let availableCount = 0;
+        for (let i = 0; i < maxUsers; i += 1) {
+          const candidate = numberToIp(start + i);
+          if (!usedIps.has(candidate)) {
+            availableCount++;
+          }
+        }
+        
+        if (availableCount > 0) {
+          return { available: true, reason: '' };
+        }
+      }
+    }
+
+    // Check Router/Switch DHCP servers
+    if (deviceStates) {
+      for (const [deviceId_, state] of deviceStates.entries()) {
+        if (deviceId_ === deviceId) continue;
+        const device = topologyDevices.find(d => d.id === deviceId_);
+        if (!device || (device.type !== 'router' && device.type !== 'switchL2' && device.type !== 'switchL3')) continue;
+
+        const mirroredPools = state.services?.dhcp?.pools || [];
+        const cliPools = Object.entries(state.dhcpPools || {}).map(([poolName, pool]: [string, any]) => {
+          const networkBase = typeof pool?.network === 'string' ? pool.network : '';
+          const networkPrefix = networkBase.split('.').slice(0, 3).join('.');
+          const fallbackStart = networkPrefix ? `${networkPrefix}.100` : '192.168.1.100';
+          const fallbackGateway = networkPrefix ? `${networkPrefix}.1` : '192.168.1.1';
+          return {
+            poolName,
+            subnetMask: pool?.subnetMask || '255.255.255.0',
+            startIp: pool?.startIp || fallbackStart,
+            defaultGateway: pool?.defaultRouter || fallbackGateway,
+            dnsServer: pool?.dnsServer || '8.8.8.8',
+            maxUsers: Number(pool?.maxUsers || 50),
+          };
+        });
+        const dhcpPools = [...mirroredPools];
+        for (const pool of cliPools) {
+          if (!dhcpPools.some((p: any) => p.poolName === pool.poolName)) {
+            dhcpPools.push(pool as any);
+          }
+        }
+        if (dhcpPools.length === 0) continue;
+
+        let deviceIp = device.ip;
+        if (!deviceIp && state.ports) {
+          for (const portId in state.ports) {
+            const port = state.ports[portId];
+            if (port.ipAddress && !port.shutdown) {
+              deviceIp = port.ipAddress;
+              break;
+            }
+          }
+        }
+
+        const canReach = hasPhysicalPathToDevice(deviceId_) || (!!deviceIp && canReachTargetIp(deviceIp));
+        if (!canReach) continue;
+
+        for (const pool of dhcpPools) {
+          if (!validateIP(pool.startIp) || !validateIP(pool.subnetMask) || !validateIP(pool.defaultGateway) || !validateIP(pool.dnsServer)) {
+            continue;
+          }
+          const start = ipToNumber(pool.startIp);
+          if (start === null) continue;
+          const maxUsers = Math.max(1, Number(pool.maxUsers || 50));
+          
+          let availableCount = 0;
+          for (let i = 0; i < maxUsers; i += 1) {
+            const candidate = numberToIp(start + i);
+            if (!usedIps.has(candidate)) {
+              availableCount++;
+            }
+          }
+          
+          if (availableCount > 0) {
+            return { available: true, reason: '' };
+          }
+        }
+      }
+    }
+
+    return { available: false, reason: 'all_pools_full' };
+  }, [canReachTargetIp, deviceId, deviceStates, hasPhysicalPathToDevice, ipToNumber, numberToIp, topologyDevices, validateIP]);
+
+  // Keep ref in sync with callback
+  checkDhcpAvailabilityRef.current = checkDhcpAvailability;
 
   const applyDhcpLease = useCallback((force = false) => {
     const lease = getDhcpLease();
@@ -1642,16 +1814,26 @@ export function PCPanel({
       // Only show failure toast if we actually switched TO dhcp mode
       // or if we explicitly want to notify about continued failure.
       if (prevIpConfigModeRef.current !== 'dhcp') {
+        // Check if pools are full or no servers available
+        const dhcpCheck = checkDhcpAvailabilityRef.current();
+        
+        let errorMessage = t.dhcpFailureDescription;
+        if (dhcpCheck.reason === 'all_pools_full') {
+          errorMessage = language === 'tr' 
+            ? 'DHCP havuzları dolu! Maksimum IP sayısına ulaşıldı.'
+            : 'All DHCP pools are full! Maximum number of IP addresses reached.';
+        }
+        
         toast({
           title: t.dhcpFailureTitle,
-          description: t.dhcpFailureDescription,
+          description: errorMessage,
           variant: 'destructive',
         });
       }
     }
 
     prevIpConfigModeRef.current = ipConfigMode;
-  }, [applyDhcpLease, ipConfigMode, t, topologyConnections, pcIP]);
+  }, [applyDhcpLease, ipConfigMode, t, topologyConnections, pcIP, language]);
 
   const handleConnect = async () => {
     if (!consoleDevice) return;
@@ -3053,6 +3235,7 @@ export function PCPanel({
                                 />
                                 <Button
                                   onClick={() => {
+                                    isDnsEditingRef.current = true;
                                     const domain = dnsFormDomain.trim().toLowerCase();
                                     const address = dnsFormAddress.trim();
                                     if (!domain || !address) return;
@@ -3062,6 +3245,8 @@ export function PCPanel({
                                     });
                                     setDnsFormDomain('');
                                     setDnsFormAddress('');
+                                    // Reset editing flag after a delay
+                                    setTimeout(() => { isDnsEditingRef.current = false; }, 1000);
                                   }}
                                 >
                                   {t.addDnsRecord}
@@ -3084,7 +3269,12 @@ export function PCPanel({
                                     <Button
                                       size="sm"
                                       variant="outline"
-                                      onClick={() => setServiceDnsRecords((prev) => prev.filter((r) => !(r.domain === record.domain && r.address === record.address)))}
+                                      onClick={() => {
+                                        isDnsEditingRef.current = true;
+                                        setServiceDnsRecords((prev) => prev.filter((r) => !(r.domain === record.domain && r.address === record.address)));
+                                        // Reset editing flag after a delay
+                                        setTimeout(() => { isDnsEditingRef.current = false; }, 1000);
+                                      }}
                                     >
                                       {t.delete}
                                     </Button>
@@ -3259,6 +3449,7 @@ export function PCPanel({
                                         size="sm"
                                         variant="outline"
                                         onClick={() => {
+                                          isDhcpEditingRef.current = true;
                                           setDhcpForm(pool);
                                           setEditingDhcpIndex(index);
                                         }}
@@ -3269,6 +3460,7 @@ export function PCPanel({
                                         size="sm"
                                         variant="outline"
                                         onClick={() => {
+                                          isDhcpEditingRef.current = true;
                                           setServiceDhcpPools((prev) => prev.filter((_, i) => i !== index));
                                           if (editingDhcpIndex === index) {
                                             resetDhcpForm();
