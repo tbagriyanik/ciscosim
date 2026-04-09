@@ -1265,6 +1265,22 @@ export function executeCommand(
     if (lowerInput.startsWith('int vlan')) cmdToProcess = cmdToProcess.replace(/int vlan/i, 'interface vlan');
   }
 
+  // Special handling for enable command when no password is set
+  // Direct console access (no remote session) can bypass this check
+  // Remote session = telnet or SSH connection (has telnetAuthenticated flag)
+  if (cmdToProcess.toLowerCase() === 'enable') {
+    const isRemoteSession = state.telnetAuthenticated || state.consoleAuthenticated;
+    if (isRemoteSession) {
+      const hasEnablePassword = !!(state.security?.enableSecret || state.security?.enablePassword);
+      if (!hasEnablePassword) {
+        return {
+          success: false,
+          error: language === 'tr' ? '% Erişim reddedildi' : '% Access denied'
+        };
+      }
+    }
+  }
+
   const isHelpRequest = (cmdToProcess.endsWith('?') && cmdToProcess.length > 0) ||
     cmdToProcess.toLowerCase().trim() === 'help' ||
     cmdToProcess.toLowerCase().trim().endsWith(' help');
@@ -1464,12 +1480,19 @@ Extracting files from flash:c2960-lanbase-mz.152-2.E6.bin...
   output += `\nReady!\n\n`;
 
   if (!needsLogin) {
-    const prompt = getPrompt(state);
+    // Check if enable password is configured - if not, start in privileged mode
+    const needsEnablePassword = !!(state.security?.enableSecret || state.security?.enablePassword);
+    const initialMode = needsEnablePassword ? 'user' : 'privileged';
+
+    const prompt = getPrompt({ ...state, currentMode: initialMode });
     output += prompt;
     return {
       success: true,
       output,
-      newState: { consoleAuthenticated: true }
+      newState: {
+        consoleAuthenticated: true,
+        currentMode: initialMode
+      }
     };
   }
 
@@ -1625,12 +1648,19 @@ Extracting files from flash:c2960-lanbase-mz.152-2.E6.bin...
       output += `\n${state.bannerMOTD}\n`;
     }
     output += `\nReady!\n\n`;
-    const prompt = getPrompt(state);
+
+    // Telnet authentication always starts in user mode - enable password required to go to privileged
+    const initialMode = 'user';
+
+    const prompt = getPrompt({ ...state, currentMode: initialMode });
     output += prompt;
     return {
       success: true,
       output,
-      newState: { telnetAuthenticated: true }
+      newState: {
+        telnetAuthenticated: true,
+        currentMode: initialMode
+      }
     };
   }
 
@@ -1660,6 +1690,9 @@ function handleSshConnect(state: SwitchState, language: 'tr' | 'en', requestedUs
   const user = requestedUser || state.sshLastUser || state.hostname || 'admin';
   const source = `vty${nextSourceIndex}`;
 
+  // SSH authentication always starts in user mode - enable password required to go to privileged
+  const initialMode = 'user';
+
   let output = '';
   if (state.bannerMOTD) {
     output = `\n${state.bannerMOTD}\n\n`;
@@ -1674,6 +1707,7 @@ function handleSshConnect(state: SwitchState, language: 'tr' | 'en', requestedUs
       telnetAuthenticated: false,
       awaitingPassword: true,
       passwordContext: 'vty' as const,
+      currentMode: initialMode,
       sshLastUser: user,
       sshLastSource: source,
     }
@@ -1682,11 +1716,25 @@ function handleSshConnect(state: SwitchState, language: 'tr' | 'en', requestedUs
 
 function handlePasswordInput(state: SwitchState, password: string, language: 'tr' | 'en'): CommandResult {
   if (state.passwordContext === 'enable') {
+    // Check if enable password is configured
+    const hasEnablePassword = !!(state.security.enableSecret || state.security.enablePassword);
+    
+    if (!hasEnablePassword) {
+      return {
+        success: false,
+        error: language === 'tr' ? '% Parola ayarlanmamış' : '% No password set',
+        newState: {
+          awaitingPassword: false,
+          passwordContext: undefined
+        }
+      };
+    }
+    
     const validPassword = state.security.enableSecret
       ? password === state.security.enableSecret
       : state.security.enablePassword
         ? password === state.security.enablePassword
-        : true;
+        : false;
 
     if (validPassword) {
       let output = '';

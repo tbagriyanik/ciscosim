@@ -115,7 +115,8 @@ function cmdPing(state: any, input: string, ctx: any): any {
  * Telnet - Connect to remote device
  */
 function cmdTelnet(state: any, input: string, ctx: any): any {
-    if (state.currentMode !== 'privileged') {
+    // Allow telnet from both user and privileged modes
+    if (state.currentMode !== 'user' && state.currentMode !== 'privileged') {
         return { success: false, error: '% Invalid command at this mode' };
     }
 
@@ -126,6 +127,43 @@ function cmdTelnet(state: any, input: string, ctx: any): any {
 
     const host = match[1];
     const port = match[2] || '23';
+
+    // Connectivity logic
+    if (ctx?.sourceDeviceId && Array.isArray(ctx.devices)) {
+        const connectivity = checkConnectivity(
+            ctx.sourceDeviceId,
+            host,
+            ctx.devices,
+            ctx.connections || [],
+            ctx.deviceStates,
+            ctx.language
+        );
+
+        if (!connectivity.success) {
+            return {
+                success: false,
+                output: `Trying ${host} ${port} ...`,
+                error: connectivity.error || (ctx.language === 'tr' ? 'Hedefe ulaşılamadı.' : 'Destination host unreachable.')
+            };
+        }
+
+        // Check target device configuration
+        const targetDeviceId = connectivity.targetId;
+        const targetState = ctx.deviceStates?.get(targetDeviceId);
+
+        if (targetState) {
+            const transportInput = targetState.security?.vtyLines?.transportInput || [];
+            const isTelnetActive = transportInput.includes('all') || transportInput.includes('telnet');
+
+            if (!isTelnetActive) {
+                return {
+                    success: false,
+                    output: `Connecting to ${host}...`,
+                    error: `% Connection refused by remote host`
+                };
+            }
+        }
+    }
 
     return {
         success: true,
@@ -139,7 +177,8 @@ function cmdTelnet(state: any, input: string, ctx: any): any {
  * SSH - Connect to remote device via SSH
  */
 function cmdSsh(state: any, input: string, ctx: any): any {
-    if (state.currentMode !== 'privileged') {
+    // Allow ssh from both user and privileged modes
+    if (state.currentMode !== 'user' && state.currentMode !== 'privileged') {
         return { success: false, error: '% Invalid command at this mode' };
     }
 
@@ -165,6 +204,43 @@ function cmdSsh(state: any, input: string, ctx: any): any {
             'twitter.com': '104.244.42.1',
         };
         resolvedIp = knownDomains[host.toLowerCase()] || host;
+    }
+
+    // Connectivity logic
+    if (ctx?.sourceDeviceId && Array.isArray(ctx.devices)) {
+        const connectivity = checkConnectivity(
+            ctx.sourceDeviceId,
+            host,
+            ctx.devices,
+            ctx.connections || [],
+            ctx.deviceStates,
+            ctx.language
+        );
+
+        if (!connectivity.success) {
+            return {
+                success: false,
+                output: `Connecting to ${host}...`,
+                error: connectivity.error || (ctx.language === 'tr' ? 'Hedefe ulaşılamadı.' : 'Destination host unreachable.')
+            };
+        }
+
+        // Check target device configuration
+        const targetDeviceId = connectivity.targetId;
+        const targetState = ctx.deviceStates?.get(targetDeviceId);
+
+        if (targetState) {
+            const transportInput = targetState.security?.vtyLines?.transportInput || [];
+            const isSshActive = transportInput.includes('all') || transportInput.includes('ssh');
+
+            if (!isSshActive) {
+                return {
+                    success: false,
+                    output: `Connecting to ${host}...`,
+                    error: `% Connection refused by remote host`
+                };
+            }
+        }
     }
 
     let output = `Connecting to ${host}`;

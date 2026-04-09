@@ -1913,6 +1913,27 @@ export function PCPanel({
 	          // Find target device to see if it's a switch or router
 	          const targetDevice = topologyDevices.find(d => d.id === result.targetId);
 	          if (targetDevice && ((targetDevice.type === 'switchL2' || targetDevice.type === 'switchL3') || targetDevice.type === 'router')) {
+	            // Check target device's transport input configuration
+	            if (deviceStates) {
+	              const targetState = deviceStates.get(result.targetId);
+	              if (targetState?.security?.vtyLines) {
+	                const transportInput = targetState.security.vtyLines.transportInput || [];
+	                if (isSsh) {
+	                  const isSshActive = transportInput.includes('all') || transportInput.includes('ssh');
+	                  if (!isSshActive) {
+	                    addLocalOutput('error', `Connecting to ${targetIp}...Could not open connection to the host, on port 22: Connect failed`);
+	                    return;
+	                  }
+	                } else {
+	                  const isTelnetActive = transportInput.includes('all') || transportInput.includes('telnet');
+	                  if (!isTelnetActive) {
+	                    addLocalOutput('error', `Connecting to ${targetIp}...Could not open connection to the host, on port 23: Connect failed`);
+	                    return;
+	                  }
+	                }
+	              }
+	            }
+
 	            // Successfully connected - switch to terminal tab and connect
 	            addLocalOutput('success', isSsh
 	              ? `Trying ${username}@${targetIp} ${port} ...\nConnected to ${targetIp} as ${username}.`

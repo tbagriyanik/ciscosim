@@ -170,17 +170,28 @@ function cmdTransportInput(state: any, input: string, ctx: any): any {
     return { success: false, error: '% Invalid command at this mode' };
   }
 
-  const match = input.match(/^transport\s+input\s+(ssh|telnet|all|none)$/i);
+  const match = input.match(/^transport\s+input\s+(.+)$/i);
   if (!match) {
+    return { success: false, error: '% Invalid transport input command' };
+  }
+
+  const parts = match[1].toLowerCase().split(/\s+/);
+  const protocols = parts.filter(p => ['ssh', 'telnet', 'all', 'none'].includes(p));
+
+  if (protocols.length === 0) {
     return { success: false, error: '% Invalid transport input protocol' };
   }
+
+  // If 'all' or 'none' is present, it usually takes precedence or clears others in real IOS, 
+  // but we'll just store the list for simplicity.
+  const finalProtocols = protocols.includes('all') ? ['all'] : protocols.includes('none') ? ['none'] : protocols;
 
   const newSecurity = { ...state.security };
 
   if (state.currentLine.startsWith('vty')) {
     newSecurity.vtyLines = {
       ...newSecurity.vtyLines,
-      transportInput: [match[1].toLowerCase()]
+      transportInput: finalProtocols
     };
   }
 

@@ -41,6 +41,7 @@ function cmdEnable(
     };
   }
 
+  // If no enable password is set, allow direct access to privileged mode
   return {
     success: true,
     newState: {

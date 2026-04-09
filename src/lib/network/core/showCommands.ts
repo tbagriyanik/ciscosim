@@ -1182,7 +1182,7 @@ function cmdShowSsh(
 ): any {
   const version = state.sshVersion || 2;
   const transportInput = state.security?.vtyLines?.transportInput || [];
-  const sshEnabled = version > 0 && transportInput.includes('ssh');
+  const sshEnabled = version > 0 && (transportInput.includes('ssh') || transportInput.includes('all'));
   const timeout = state.sshTimeout || 60;
   const retries = state.sshAuthenticationRetries || 3;
   const domainName = state.domainName || 'not set';
