@@ -12,7 +12,8 @@ Bu belge, projenin mevcut durumunu dürüst biçimde özetler. Amaç, "tamamland
 Proje tamamlanmış durumda:
 - `next build` başarılı ✅
 - TypeScript derlemesi temiz ✅
-- **69,377 satır kod** (.ts/.tsx) - toplam proje kodu
+- **73,772 satır kod** (164 kaynak dosya) - toplam proje kodu
+- **55,071 satır** TypeScript/TSX
 - **100+ CLI komutu** destekleniyor
 - Tüm CLI komutları çalışır durumda
 - Tablet UI, WiFi (sinyal gücü göstergesi), Ping animasyonları (gerçekçi gecikmeler), Notes sistemi aktif
@@ -185,6 +186,11 @@ Proje tamamlanmış durumda:
 
 ## Tamamlananlar
 
+### 2026-04-09 – Temizlik, Trunk2Sw Örneği ve Paket Düzeltmeleri
+- Gereksiz paketler temizlendi, eksik npm paketleri düzeltildi
+- Yeni örnek proje: `Trunk2Sw` (2 switch trunk bağlantısı)
+- Test dosyaları silindi, kod satır sayısı güncellendi
+
 ### 2026-04-09 – Sekme Koruma, Cihaz Kimliği Benzersizliği ve Dynamic Switchport Modları
 - Cihaz menüsünden seçimde aktif sekme korunacak şekilde davranış düzeltildi.
 - Seçilen cihaz mevcut sekmeyi desteklemiyorsa fallback `topology` olacak şekilde sabitlendi.
@@ -194,6 +200,16 @@ Proje tamamlanmış durumda:
 - Switch/Router yeni cihaz oluşturma sırasında topology adı ile CLI hostname senkronu güçlendirildi.
 - `switchport mode dynamic auto` ve `switchport mode dynamic desirable` komutları eklendi.
 - `show running-config` / `show startup-config` çıktılarında dynamic switchport modları gösterilmeye başlandı.
+
+### 2026-04-08 – SSH Bağlantı Desteği ve show interfaces trunk
+- SSH bağlantı simülasyonu tüm cihazlarda aktif (`ssh [-l kullanıcı] <host>`)
+- SSH örneği ve parola doğrulama hatası mesajları eklendi
+- `show interfaces trunk` komutu eklendi — trunk port bilgilerini gösterir
+- `copy flash:` ile kaydet ve geri yükleme desteği
+- PC için VLAN güncelleme ve trunk sonuç görüntüleme
+- Interface `description` puan desteği
+- CMD tab completion ve scroll iyileştirmeleri
+- Router/Switch'ten PC'ye ping atma düzeltmesi
 
 ### 2026-04-08 – DHCP Pool CLI Desteği
 - `ip dhcp pool <ad>` komutu eklendi — `Router(dhcp-config)#` moduna giriş
@@ -282,9 +298,11 @@ Aşağıdaki maddeler artık tamamen uygulanmış ve çalışır durumda:
 9. ✅ Tablet UI - PC tablet ile entegre çalışma
 10. ✅ HTTP/DNS/DHCP - Servisler aktif
 11. ✅ DHCP Pool CLI - `ip dhcp pool`, `network`, `default-router`, `dns-server` komutları
-12. ✅ Dark/Light Mode - Tema desteği
-13. ✅ TR/EN Dil - Çift dil desteği
-14. ✅ Build Sağlığı - `npm run build` başarılı
+12. ✅ SSH Bağlantı - Tüm cihazlarda SSH simülasyonu
+13. ✅ show interfaces trunk - Trunk port bilgileri
+14. ✅ Dark/Light Mode - Tema desteği
+15. ✅ TR/EN Dil - Çift dil desteği
+16. ✅ Build Sağlığı - `npm run build` başarılı
 
 ## Sonraki Adımlar (Opsiyonel İyileştirmeler)
 

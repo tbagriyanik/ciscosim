@@ -2,11 +2,11 @@
 
 A modern and interactive web-based Network simulator designed for students and networking enthusiasts.
 
-![Version](https://img.shields.io/badge/version-1.2.1-blue)
-![Tech Stack](https://img.shields.io/badge/stack-Next.js%2016%20|%20React%2019%20|%20TypeScript%20|%20Tailwind%204-green)
+![Version](https://img.shields.io/badge/version-1.2.2-blue)
+![Tech Stack](https://img.shields.io/badge/stack-Next.js%2016%20|%20React%2019%20|%20TypeScript%205.9%20|%20Tailwind%204-green)
 ![FOSS](https://img.shields.io/badge/FOSS-Free%20Open%20Source-brightgreen)
-![Commits](https://img.shields.io/badge/commits-365+-orange)
-![Lines of Code](https://img.shields.io/badge/lines--of--code-69k+-blueviolet)
+![Commits](https://img.shields.io/badge/commits-540+-orange)
+![Lines of Code](https://img.shields.io/badge/lines--of--code-73k+-blueviolet)
 
 ## ✨ Key Features
 
@@ -219,6 +219,7 @@ The simulator supports **100+ commands** across multiple configuration modes:
 | `show startup-config` | Display startup configuration |
 | `show version` | Display version information |
 | `show interfaces` | Display all interfaces |
+| `show interfaces trunk` | Display trunk interface information |
 | `show interface <name>` | Display specific interface |
 | `show ip interface brief` | Display IP interface summary |
 | `show vlan [brief]` | Display VLAN information |
@@ -440,8 +441,12 @@ Theme selection is done from the theme selector in the top right corner.
 ## 🔢 Code Metrics
 
 - Scope: `src/`
-- Source files: `244`
-- Total lines: `50,339`
+- Source files: `164`
+- Total lines: `73,772`
+- TS/TSX files: `157` (55,071 lines)
+- Network components: `37`
+- Custom hooks: `15`
+- Example projects: `6`
 - CLI commands: `100+`
 - Last updated: `2026-04-09`
 
@@ -463,65 +468,10 @@ Contributions are welcome. Please:
 4. Push (`git push origin feature/AmazingFeature`)
 5. Open Pull Request
 
-## 📞 Contact
-
-For questions or suggestions, please open an issue.
-
 ---
 
-## 🌍 Dil Desteği / Language Support
+**Sürüm**: 1.2.2
+**Son Güncelleme**: 2026-04-09
+**Durum**: Production Ready
 
-- ✅ **Türkçe** - Tam destek / Full support
-- ✅ **English** - Tam destek / Full support
-
-Dil seçimi sağ üst köşedeki dil seçicisinden yapılır.
-
-## 🎨 Tema Desteği / Theme Support
-
-- ✅ **Dark Mode** - Koyu tema / Dark theme
-- ✅ **Light Mode** - Açık tema / Light theme
-
-Tema seçimi sağ üst köşedeki tema seçicisinden yapılır.
-
-## 📊 Sistem Gereksinimleri / System Requirements
-
-- **Node.js**: 18.0 veya üzeri / 18.0 or higher
-- **npm**: 9.0 veya üzeri (veya Bun) / 9.0 or higher (or bun)
-- **Tarayıcı**: Modern tarayıcı (Chrome, Firefox, Safari, Edge) / Modern browser (Chrome, Firefox, Safari, Edge)
-
-## 🐛 Sorun Giderme / Troubleshooting
-
-Sorunlar için [INSTALL.md](INSTALL.md) dosyasındaki "Sorun Giderme" bölümünü kontrol edin. / For issues, check the "Troubleshooting" section in [INSTALL.md](INSTALL.md).
-
-## 📝 Lisans / License
-
-FOSS License - Detaylar için [LICENSE](LICENSE) dosyasını kontrol edin. / FOSS License - Check [LICENSE](LICENSE) for details.
-
-## 🤝 Katkıda Bulunma / Contributing
-
-Katkılar memnuniyetle karşılanır. Lütfen: / Contributions are welcome. Please:
-
-1. Fork yapın / Fork
-2. Feature branch oluşturun (`git checkout -b feature/AmazingFeature`) / Create feature branch
-3. Commit yapın (`git commit -m 'Add some AmazingFeature'`) / Commit
-4. Push yapın (`git push origin feature/AmazingFeature`) / Push
-5. Pull Request açın / Open Pull Request
-
-## 📞 İletişim / Contact
-
-Sorular veya öneriler için lütfen issue açın. / For questions or suggestions, please open an issue.
-
----
-
-**Sürüm**: 1.2.2  
-**Son Güncelleme**: 2026-04-09  
-**Durum**: Production Ready ✅
-
----
-
-**Bu proje açık kaynaklıdır.** 🚀  
-GitHub üzerinden katkıda bulunabilirsiniz: [github.com/tbagriyanik/ciscosim](https://github.com/tbagriyanik/ciscosim)
-
-**Sürüm**: 1.2.2  
-**Son Güncelleme**: 2026-04-09  
-**Durum**: Production Ready ✅
+GitHub: [github.com/tbagriyanik/ciscosim](https://github.com/tbagriyanik/ciscosim)
