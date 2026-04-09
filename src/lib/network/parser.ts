@@ -1102,12 +1102,6 @@ export const commandPatterns: Record<string, CommandPattern> = {
     minArgs: 0,
     maxArgs: 0
   },
-  'show interfaces': {
-    pattern: /^show(\s+interfaces?|\s+int)(\s+(status|description|counter|\S+))?$/i,
-    modes: ['privileged'],
-    minArgs: 0,
-    maxArgs: 2
-  },
   'show interfaces status': {
     pattern: /^show\s+interfaces?\s+status$/i,
     modes: ['privileged'],
@@ -1125,6 +1119,12 @@ export const commandPatterns: Record<string, CommandPattern> = {
     modes: ['privileged'],
     minArgs: 0,
     maxArgs: 0
+  },
+  'show interfaces': {
+    pattern: /^show(\s+interfaces?|\s+int)(\s+(status|description|counter|\S+))?$/i,
+    modes: ['privileged'],
+    minArgs: 0,
+    maxArgs: 2
   },
   'show interface': {
     pattern: /^show\s+interface\s+(.+)$/i,
