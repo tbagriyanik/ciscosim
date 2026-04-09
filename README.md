@@ -92,6 +92,11 @@ The simulator supports **100+ commands** across multiple configuration modes:
 | `enable secret <password>` | Set enable secret |
 | `enable password <password>` | Set enable password |
 | `banner motd #<message>#` | Set MOTD banner |
+| `banner login #<message>#` | Set login banner |
+| `banner exec #<message>#` | Set exec banner |
+| `no banner motd` | Remove MOTD banner |
+| `no banner login` | Remove login banner |
+| `no banner exec` | Remove exec banner |
 | `vtp mode {server\|client\|transparent}` | Set VTP mode |
 | `vtp domain <name>` | Set VTP domain |
 | `spanning-tree mode {pvst\|rapid-pvst\|mst}` | Set STP mode |

@@ -536,7 +536,7 @@ function cmdShowInterface(
 }
 
 /**
- * Show Interface Trunk (Cisco-like summary)
+ * Show Interface Trunk
  */
 function cmdShowInterfaceTrunk(
   state: any,
@@ -583,7 +583,7 @@ function cmdShowInterfaceTrunk(
     const connected = hasActiveConnection(portId);
     const peer = connected ? getPeerPortState(portId) : null;
 
-    // Mode column similar to Cisco: on/auto/desirable
+    // Mode column : on/auto/desirable
     const mode =
       port.mode === 'trunk' ? 'on' :
         port.mode === 'dynamic-auto' ? 'auto' :

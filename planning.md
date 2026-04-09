@@ -74,7 +74,12 @@ Proje tamamlanmış durumda:
 | `ip ssh version {1\|2}` | SSH versiyonu |
 | `service password-encryption` | Şifre şifreleme |
 | `enable secret <şifre>` | Enable secret ayarla |
-| `banner motd #<mesaj>#` | Giriş mesajı |
+| `banner motd #<mesaj>#` | Giriş mesajı (MOTD) |
+| `banner login #<mesaj>#` | Login banner |
+| `banner exec #<mesaj>#` | Exec banner |
+| `no banner motd` | MOTD banner sil |
+| `no banner login` | Login banner sil |
+| `no banner exec` | Exec banner sil |
 | `vtp mode {server\|client\|transparent}` | VTP modu |
 | `spanning-tree mode {pvst\|rapid-pvst\|mst}` | STP modu |
 | `username <ad> privilege <seviye> password <şifre>` | Kullanıcı oluştur |

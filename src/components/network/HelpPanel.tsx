@@ -70,6 +70,9 @@ export function HelpPanel({ t, theme, initialOpen = false, onClose }: HelpPanelP
         ['ip routing', isTR ? 'IP yonlendirme' : 'Enable IP routing'],
         ['router rip', isTR ? 'RIP yonlendirmesi' : 'Enable RIP'],
         ['router ospf', isTR ? 'OSPF yonlendirmesi' : 'Enable OSPF'],
+        ['banner motd #<msg>#', isTR ? 'MOTD banner' : 'MOTD banner'],
+        ['banner login #<msg>#', isTR ? 'Login banner' : 'Login banner'],
+        ['banner exec #<msg>#', isTR ? 'Exec banner' : 'Exec banner'],
       ]
     },
     {
