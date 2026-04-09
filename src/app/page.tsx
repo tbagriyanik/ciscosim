@@ -1938,9 +1938,46 @@ export default function Home() {
   // Refresh network connections and WiFi status
   const handleRefreshNetwork = useCallback(() => {
     const isSwitchDeviceType = (type: string) => type === 'switchL2' || type === 'switchL3';
-    const normalizeWifiMode = (mode: string | undefined) => {
+    const normalizeWifiMode = (mode: string | undefined): 'ap' | 'client' | 'disabled' => {
       if (!mode) return 'disabled';
-      return mode.toLowerCase().replace(/^wifi-/, '');
+      const normalized = mode.toLowerCase().replace(/^wifi-/, '');
+      if (normalized === 'client' || normalized === 'sta') return 'client';
+      if (normalized === 'ap') return 'ap';
+      return 'disabled';
+    };
+    const hasValidIp = (ip: string | undefined) => !!ip && ip !== '0.0.0.0' && ip !== '169.254.0.0';
+    const ipToNumber = (ip: string): number | null => {
+      const parts = ip.split('.').map((p) => Number(p));
+      if (parts.length !== 4 || parts.some((p) => Number.isNaN(p) || p < 0 || p > 255)) return null;
+      return ((parts[0] << 24) >>> 0) + ((parts[1] << 16) >>> 0) + ((parts[2] << 8) >>> 0) + (parts[3] >>> 0);
+    };
+    const isIpInPoolRange = (ip: string, pool: { startIp: string; maxUsers: number }) => {
+      const ipNum = ipToNumber(ip);
+      const startNum = ipToNumber(pool.startIp);
+      if (ipNum === null || startNum === null) return false;
+      const maxUsers = Math.max(1, Number(pool.maxUsers || 1));
+      return ipNum >= startNum && ipNum < (startNum + maxUsers);
+    };
+    const getEffectiveWifi = (device: CanvasDevice): CanvasDevice['wifi'] => {
+      const state = deviceStates?.get(device.id);
+      const wlan = state?.ports?.['wlan0'];
+      const runtimeWifi = wlan?.wifi;
+      if (!runtimeWifi) return device.wifi;
+
+      const normalizedMode = normalizeWifiMode(runtimeWifi.mode);
+      const enabled = !wlan.shutdown && normalizedMode !== 'disabled';
+      const fallbackMode: 'ap' | 'client' = device.type === 'pc' ? 'client' : 'ap';
+      const resolvedMode: 'ap' | 'client' = normalizedMode === 'disabled'
+        ? (device.wifi?.mode || fallbackMode)
+        : (normalizedMode === 'client' ? 'client' : 'ap');
+      return {
+        enabled,
+        ssid: runtimeWifi.ssid || device.wifi?.ssid || '',
+        security: runtimeWifi.security || device.wifi?.security || 'open',
+        password: runtimeWifi.password || device.wifi?.password,
+        channel: runtimeWifi.channel || device.wifi?.channel || '2.4GHz',
+        mode: resolvedMode,
+      };
     };
 
     let refreshCount = 0;
@@ -1948,17 +1985,26 @@ export default function Home() {
     let disconnectedAPs: string[] = [];
     let connectedPCs: string[] = [];
     let activeAPs: string[] = [];
+    let dhcpServerActiveCount = 0;
+    let dhcpServerNoPoolCount = 0;
+    let dhcpClientWithLeaseCount = 0;
+    let dhcpClientNoLeaseCount = 0;
 
     if (topologyDevices && deviceStates) {
+      const refreshedDevices = topologyDevices.map((device) => ({
+        ...device,
+        wifi: getEffectiveWifi(device),
+      }));
+
       // 1. Check and update PC connections to APs
-      topologyDevices.filter(d => d.type === 'pc').forEach(pc => {
+      refreshedDevices.filter(d => d.type === 'pc').forEach(pc => {
         const pcWifi = pc.wifi;
         if (!pcWifi?.enabled || !pcWifi.ssid) return;
 
         let isConnected = false;
 
         // Check router/switch APs
-        topologyDevices.forEach(ap => {
+        refreshedDevices.forEach(ap => {
           if (ap.id === pc.id) return;
           if (ap.type !== 'router' && !isSwitchDeviceType(ap.type)) return;
 
@@ -1983,14 +2029,14 @@ export default function Home() {
       });
 
       // 2. Check and update AP connections (router/switch)
-      topologyDevices.filter(d => d.type === 'router' || isSwitchDeviceType(d.type)).forEach(ap => {
+      refreshedDevices.filter(d => d.type === 'router' || isSwitchDeviceType(d.type)).forEach(ap => {
         const apWifi = ap.wifi;
         if (!apWifi || apWifi.mode !== 'ap' || !apWifi.ssid) return;
 
         let hasClient = false;
 
         // Check if any PC is connected to this AP
-        topologyDevices.forEach(pc => {
+        refreshedDevices.forEach(pc => {
           if (pc.type !== 'pc') return;
           const pcWifi = pc.wifi;
           if (!pcWifi?.enabled || !pcWifi.ssid) return;
@@ -2012,9 +2058,51 @@ export default function Home() {
         refreshCount++;
       });
 
-      // 3. Force update deviceStates to trigger re-render of all terminals and WiFi indicators
+      // 3. Build deterministic DHCP pool table across topology + runtime states
+      const allDhcpPools: Array<{ startIp: string; maxUsers: number }> = [];
+      refreshedDevices.forEach((device) => {
+        const state = deviceStates.get(device.id);
+        const topologyPools = device.services?.dhcp?.pools || [];
+        const runtimePools = state?.services?.dhcp?.pools || [];
+        const cliPools = Object.values(state?.dhcpPools || {}).map((pool: any) => {
+          const networkPrefix = (pool?.network || '').split('.').slice(0, 3).join('.');
+          return {
+            startIp: pool?.startIp || (networkPrefix ? `${networkPrefix}.100` : ''),
+            maxUsers: Number(pool?.maxUsers || 50),
+          };
+        }).filter((p: any) => p.startIp);
+
+        topologyPools.forEach((p) => allDhcpPools.push({ startIp: p.startIp, maxUsers: Number(p.maxUsers || 50) }));
+        runtimePools.forEach((p) => allDhcpPools.push({ startIp: p.startIp, maxUsers: Number(p.maxUsers || 50) }));
+        cliPools.forEach((p: any) => allDhcpPools.push({ startIp: p.startIp, maxUsers: Number(p.maxUsers || 50) }));
+      });
+
+      // 4. Scan DHCP status across all devices
+      refreshedDevices.forEach((device) => {
+        const state = deviceStates.get(device.id);
+        const topologyPools = device.services?.dhcp?.pools || [];
+        const runtimePools = state?.services?.dhcp?.pools || [];
+        const cliPools = state?.dhcpPools ? Object.keys(state.dhcpPools).length : 0;
+        const dhcpEnabled = !!(device.services?.dhcp?.enabled || state?.services?.dhcp?.enabled);
+        const poolCount = Math.max(topologyPools.length, runtimePools.length, cliPools);
+
+        if (dhcpEnabled) {
+          if (poolCount > 0) dhcpServerActiveCount++;
+          else dhcpServerNoPoolCount++;
+        }
+
+        if (device.type === 'pc' && device.ipConfigMode === 'dhcp') {
+          const runtimeIp = state?.ports?.['eth0']?.ipAddress || state?.ports?.['wlan0']?.ipAddress || '';
+          const candidateIp = hasValidIp(device.ip) ? device.ip : runtimeIp;
+          const hasDeterministicLease = hasValidIp(candidateIp) && allDhcpPools.some((pool) => isIpInPoolRange(candidateIp, pool));
+          if (hasDeterministicLease) dhcpClientWithLeaseCount++;
+          else dhcpClientNoLeaseCount++;
+        }
+      });
+
+      // 5. Force update deviceStates to trigger re-render of all terminals and WiFi indicators
       const updatedDeviceStates = new Map(deviceStates);
-      topologyDevices.forEach(device => {
+      refreshedDevices.forEach(device => {
         const deviceState = updatedDeviceStates.get(device.id);
         if (deviceState) {
           updatedDeviceStates.set(device.id, { ...deviceState });
@@ -2022,44 +2110,70 @@ export default function Home() {
       });
       setDeviceStates(updatedDeviceStates);
 
-      // 4. Force update topology devices — each device gets a new object reference
+      // 6. Force update topology devices — each device gets a new object reference
       //    so NetworkTopology's WiFi signal useMemo re-evaluates for every device
-      setTopologyDevices(prev => prev.map(d => ({ ...d })));
+      setTopologyDevices(refreshedDevices);
 
-      // 5. Show detailed notification
+      // 7. Show detailed notification
       const totalDevices = connectedPCs.length + activeAPs.length + disconnectedPCs.length + disconnectedAPs.length;
       if (totalDevices > 0) {
-        const messages = [];
+        const wifiMessages = [];
         if (connectedPCs.length > 0) {
-          messages.push(language === 'tr'
+          wifiMessages.push(language === 'tr'
             ? `✓ ${connectedPCs.length} PC bağlı`
             : `✓ ${connectedPCs.length} PC connected`);
         }
         if (activeAPs.length > 0) {
-          messages.push(language === 'tr'
+          wifiMessages.push(language === 'tr'
             ? `✓ ${activeAPs.length} AP aktif`
             : `✓ ${activeAPs.length} AP active`);
         }
         if (disconnectedPCs.length > 0) {
-          messages.push(language === 'tr'
+          wifiMessages.push(language === 'tr'
             ? `⚠ ${disconnectedPCs.length} PC bağlantısız`
             : `⚠ ${disconnectedPCs.length} PC disconnected`);
         }
         if (disconnectedAPs.length > 0) {
-          messages.push(language === 'tr'
+          wifiMessages.push(language === 'tr'
             ? `⚠ ${disconnectedAPs.length} AP istemcisiz`
             : `⚠ ${disconnectedAPs.length} AP no clients`);
         }
+        const dhcpMessages = [
+          language === 'tr'
+            ? `DHCP: ${dhcpServerActiveCount} sunucu aktif`
+            : `DHCP: ${dhcpServerActiveCount} active servers`,
+          language === 'tr'
+            ? `${dhcpClientWithLeaseCount} istemci lease aldı`
+            : `${dhcpClientWithLeaseCount} clients leased`,
+        ];
+        if (dhcpServerNoPoolCount > 0) {
+          dhcpMessages.push(language === 'tr'
+            ? `⚠ ${dhcpServerNoPoolCount} sunucuda havuz yok`
+            : `⚠ ${dhcpServerNoPoolCount} servers no pool`);
+        }
+        if (dhcpClientNoLeaseCount > 0) {
+          dhcpMessages.push(language === 'tr'
+            ? `⚠ ${dhcpClientNoLeaseCount} istemci lease alamadı`
+            : `⚠ ${dhcpClientNoLeaseCount} clients no lease`);
+        }
 
         toast({
-          title: language === 'tr' ? '🔄 WiFi Durumu Güncellendi' : '🔄 WiFi Status Updated',
-          description: messages.join(' • '),
+          title: language === 'tr' ? '🔄 WiFi + DHCP Durumu Güncellendi' : '🔄 WiFi + DHCP Status Updated',
+          description: (
+            <div className="space-y-1">
+              {wifiMessages.length > 0 && <div>{wifiMessages.join(' • ')}</div>}
+              <div>{dhcpMessages.join(' • ')}</div>
+            </div>
+          ),
           variant: 'default'
         });
       } else {
+        const dhcpSummary = language === 'tr'
+          ? `DHCP: ${dhcpServerActiveCount} sunucu aktif, ${dhcpClientWithLeaseCount} lease`
+          : `DHCP: ${dhcpServerActiveCount} active servers, ${dhcpClientWithLeaseCount} leases`;
         toast({
           title: language === 'tr' ? '🔄 Ağ Yenilendi' : '🔄 Network Refreshed',
-          description: language === 'tr' ? 'WiFi cihazı bulunamadı' : 'No WiFi devices found',
+          description: `${language === 'tr' ? 'WiFi cihazı bulunamadı' : 'No WiFi devices found'} • ${dhcpSummary}`,
           variant: 'default'
         });
       }

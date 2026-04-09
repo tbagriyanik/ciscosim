@@ -4618,7 +4618,7 @@ export function NetworkTopology({
       <div
         className={`px-4 py-0 border-b shrink-0 ${isDark ? 'border-slate-700/40 bg-slate-900/60' : 'border-slate-200/40 bg-white/60'} liquid-glass sticky top-0 z-40`}
       >
-        <div className="hidden sm:flex flex items-center justify-between gap-2 overflow-x-auto no-scrollbar">
+        <div className="hidden sm:flex flex items-center justify-between gap-2 overflow-hidden no-scrollbar">
           <div className="flex items-center gap-2 sm:gap-4 shrink-0">
 
             {/* MD/LG Screen Quick Tools */}
