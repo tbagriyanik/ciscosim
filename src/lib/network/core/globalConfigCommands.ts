@@ -931,20 +931,6 @@ function cmdNoIpHttpServer(state: any, input: string, ctx: any): any {
 }
 
 /**
- * No Banner MOTD - Clear banner
- */
-function cmdNoBannerMotd(state: any, input: string, ctx: any): any {
-  if (state.currentMode !== 'config') {
-    return { success: false, error: '% Invalid command at this mode' };
-  }
-
-  return {
-    success: true,
-    newState: { bannerMOTD: '' }
-  };
-}
-
-/**
  * No IP Domain Lookup - Disable domain lookup
  */
 function cmdNoIpDomainLookup(state: any, input: string, ctx: any): any {

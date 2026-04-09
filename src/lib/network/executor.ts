@@ -511,16 +511,7 @@ export const commandHelp: Record<string, Record<string, string[]>> = {
     'line vty 0': ['4'],
     'line vty 0 4': [''],
 
-    'b': ['banner'],
-    'ba': ['banner'],
-    'ban': ['banner'],
-    'bann': ['banner'],
-    'banne': ['banner'],
-    'banner': ['motd', 'login'],
-    'banner m': ['motd'],
-    'banner mo': ['motd'],
-    'banner mot': ['motd'],
-    'banner motd': [''],
+    // Banner completions removed - handled by config section above
 
     'ip': ['default-gateway', 'domain-name', 'ssh', 'http', 'dhcp', 'routing'],
     'ip d': ['default-gateway', 'domain-name', 'dhcp'],
@@ -1683,7 +1674,7 @@ Extracting files from flash:c2960-lanbase-mz.152-2.E6.bin...
   }
 
   // Display banner MOTD before login prompt (and banner login if configured)
-  let output = '';
+  output = '';
   if (state.bannerLogin) {
     output += `${state.bannerLogin}\n`;
   }
@@ -1716,8 +1707,13 @@ function handleSshConnect(state: SwitchState, language: 'tr' | 'en', requestedUs
   const initialMode = 'user';
 
   let output = '';
+  if (state.bannerLogin) {
+    output += `${state.bannerLogin}\n`;
+  }
   if (state.bannerMOTD) {
-    output = `\n${state.bannerMOTD}\n\n`;
+    output += `\n${state.bannerMOTD}\n\n`;
+  } else {
+    output += '\n';
   }
   output += 'Password: ';
   return {
