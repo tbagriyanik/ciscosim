@@ -9,6 +9,8 @@ export const showHandlers: Record<string, CommandHandler> = {
   'show version': cmdShowVersion,
   'show interfaces': cmdShowInterfaces,
   'show interface': cmdShowInterface,
+  'show interface trunk': cmdShowInterfaceTrunk,
+  'show interfaces trunk': cmdShowInterfaceTrunk,
   'show ip interface brief': cmdShowIpInterfaceBrief,
   'show ip interface': cmdShowIpInterfaceBrief,
   'show vlan brief': cmdShowVlan,
@@ -52,6 +54,28 @@ export const showHandlers: Record<string, CommandHandler> = {
   'show ip dhcp pool': cmdShowIpDhcpPool,
   'show ip dhcp binding': cmdShowIpDhcpBinding,
 };
+
+function isPhysicalEthernetPort(portId: string): boolean {
+  const p = portId.toLowerCase();
+  return (p.startsWith('fa') || p.startsWith('gi')) && !p.includes('.') && !p.startsWith('vlan') && !p.startsWith('wlan') && p !== 'console';
+}
+
+function isDtpCapableMode(mode: any): mode is 'trunk' | 'dynamic-auto' | 'dynamic-desirable' {
+  return mode === 'trunk' || mode === 'dynamic-auto' || mode === 'dynamic-desirable';
+}
+
+function getAllowedVlansString(port: any): string {
+  const allowed = port?.allowedVlans ?? port?.trunkAllowedVlans;
+  if (!allowed) return '1-4094';
+  if (Array.isArray(allowed)) return allowed.join(',');
+  if (allowed === 'all') return '1-4094';
+  return String(allowed);
+}
+
+function getNativeVlanString(port: any): string {
+  const native = port?.nativeVlan;
+  return native ? String(native) : '1';
+}
 
 function getSwitchDisplayProfile(state: any) {
   const switchModel = state.switchModel || 'WS-C2960-24TT-L';
@@ -508,6 +532,91 @@ function cmdShowInterface(
   output += `     0 lost carrier, 0 no carrier, 0 PAUSE output\n`;
   output += '!\n\n';
 
+  return { success: true, output };
+}
+
+/**
+ * Show Interface Trunk (Cisco-like summary)
+ */
+function cmdShowInterfaceTrunk(
+  state: any,
+  input: string,
+  ctx: any
+): any {
+  const connections = ctx.connections || [];
+  const sourceDeviceId = ctx.sourceDeviceId;
+
+  const portIds = Object.keys(state.ports || {}).filter(isPhysicalEthernetPort);
+
+  const trunkPorts = portIds.filter((portId) => {
+    const port = state.ports?.[portId];
+    return isDtpCapableMode(port?.mode);
+  });
+
+  if (trunkPorts.length === 0) {
+    return { success: true, output: '\nNo trunking ports found\n!\n' };
+  }
+
+  const hasActiveConnection = (portId: string) =>
+    connections.some((conn: any) =>
+      (conn.sourceDeviceId === sourceDeviceId && conn.sourcePort === portId) ||
+      (conn.targetDeviceId === sourceDeviceId && conn.targetPort === portId)
+    );
+
+  const getPeerPortState = (portId: string) => {
+    const conn = connections.find((c: any) =>
+      (c.sourceDeviceId === sourceDeviceId && c.sourcePort === portId) ||
+      (c.targetDeviceId === sourceDeviceId && c.targetPort === portId)
+    );
+    if (!conn) return null;
+    const peerDeviceId = conn.sourceDeviceId === sourceDeviceId ? conn.targetDeviceId : conn.sourceDeviceId;
+    const peerPortId = conn.sourceDeviceId === sourceDeviceId ? conn.targetPort : conn.sourcePort;
+    const peerState = ctx.deviceStates?.get(peerDeviceId);
+    const peerPort = peerState?.ports?.[peerPortId];
+    return { peerPortId, peerPort };
+  };
+
+  let output = '\nPort        Mode         Encapsulation  Status        Native vlan\n';
+
+  trunkPorts.forEach((portId) => {
+    const port = state.ports?.[portId] || {};
+    const connected = hasActiveConnection(portId);
+    const peer = connected ? getPeerPortState(portId) : null;
+
+    // Mode column similar to Cisco: on/auto/desirable
+    const mode =
+      port.mode === 'trunk' ? 'on' :
+        port.mode === 'dynamic-auto' ? 'auto' :
+          port.mode === 'dynamic-desirable' ? 'desirable' :
+            'on';
+
+    const peerCapable = peer?.peerPort ? isDtpCapableMode(peer.peerPort.mode) : false;
+    const status = connected && (port.mode === 'trunk' || peerCapable) ? 'trunking' : 'not-trunking';
+    const nativeVlan = getNativeVlanString(port);
+
+    output += `${String(portId).padEnd(11)} ${String(mode).padEnd(12)} ${'802.1q'.padEnd(13)} ${String(status).padEnd(12)} ${nativeVlan}\n`;
+  });
+
+  output += '\nPort        Vlans allowed on trunk\n';
+  trunkPorts.forEach((portId) => {
+    const port = state.ports?.[portId] || {};
+    output += `${String(portId).padEnd(11)} ${getAllowedVlansString(port)}\n`;
+  });
+
+  output += '\nPort        Vlans allowed and active in management domain\n';
+  const activeVlans = Object.keys(state.vlans || {}).length > 0
+    ? Object.keys(state.vlans || {}).sort((a, b) => Number(a) - Number(b)).join(',')
+    : '1';
+  trunkPorts.forEach((portId) => {
+    output += `${String(portId).padEnd(11)} ${activeVlans}\n`;
+  });
+
+  output += '\nPort        Vlans in spanning tree forwarding state and not pruned\n';
+  trunkPorts.forEach((portId) => {
+    output += `${String(portId).padEnd(11)} ${activeVlans}\n`;
+  });
+
+  output += '!\n';
   return { success: true, output };
 }
 

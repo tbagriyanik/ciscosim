@@ -1114,6 +1114,18 @@ export const commandPatterns: Record<string, CommandPattern> = {
     minArgs: 0,
     maxArgs: 0
   },
+  'show interface trunk': {
+    pattern: /^show\s+interface\s+trunk$/i,
+    modes: ['privileged'],
+    minArgs: 0,
+    maxArgs: 0
+  },
+  'show interfaces trunk': {
+    pattern: /^show\s+interfaces?\s+trunk$/i,
+    modes: ['privileged'],
+    minArgs: 0,
+    maxArgs: 0
+  },
   'show interface': {
     pattern: /^show\s+interface\s+(.+)$/i,
     modes: ['privileged'],

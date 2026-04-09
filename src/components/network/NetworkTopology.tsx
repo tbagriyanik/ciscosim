@@ -2651,7 +2651,35 @@ export function NetworkTopology({
           return port;
         });
 
-        return portChanged ? { ...device, ports: updatedPorts } : device;
+        const baseDevice = portChanged ? { ...device, ports: updatedPorts } : device;
+
+        // Keep PC VLAN in sync with the connected switch/router access VLAN.
+        if (baseDevice.type === 'pc') {
+          const pcConnection = connections.find((conn) =>
+            (conn.sourceDeviceId === baseDevice.id && conn.sourcePort === 'eth0') ||
+            (conn.targetDeviceId === baseDevice.id && conn.targetPort === 'eth0')
+          );
+
+          if (pcConnection) {
+            const peerDeviceId = pcConnection.sourceDeviceId === baseDevice.id
+              ? pcConnection.targetDeviceId
+              : pcConnection.sourceDeviceId;
+            const peerPortId = pcConnection.sourceDeviceId === baseDevice.id
+              ? pcConnection.targetPort
+              : pcConnection.sourcePort;
+
+            const peerState = deviceStates.get(peerDeviceId);
+            const peerPort = peerState?.ports?.[peerPortId];
+            const peerVlan = Number(peerPort?.accessVlan || peerPort?.vlan || 1);
+
+            if (Number(baseDevice.vlan || 1) !== peerVlan) {
+              hasChanges = true;
+              return { ...baseDevice, vlan: peerVlan };
+            }
+          }
+        }
+
+        return baseDevice;
       });
       return hasChanges ? updatedDevices : prev;
     });
