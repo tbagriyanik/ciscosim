@@ -51,7 +51,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
-import { ChevronDown, Menu, Plus, Save, FolderOpen, Languages, Sun, Moon, Network, ShieldCheck, Database, Info, File, Layers, Terminal as TerminalIcon, Undo2, Redo2, Link2, Pencil, StickyNote, Sparkles, Cloud, Search, Monitor, X } from "lucide-react";
+import { ChevronDown, Menu, Plus, Save, FolderOpen, Languages, Sun, Moon, Network, ShieldCheck, Database, Info, File, Layers, Terminal as TerminalIcon, Undo2, Redo2, Link2, Pencil, StickyNote, Sparkles, Cloud, Search, Monitor, X, Compass } from "lucide-react";
 
 import { Button } from '@/components/ui/button';
 import {
@@ -1837,67 +1837,67 @@ export default function Home() {
   // Onboarding content + controls
   const onboardingSteps = [
     {
-      title: language === 'tr' ? 'Hoş geldin' : 'Welcome',
+      title: language === 'tr' ? '🎓 Hoş Geldiniz' : '🎓 Welcome',
       description:
         language === 'tr'
-          ? 'Bu kısa turla temel kontrolleri 30 saniyede öğren.'
-          : 'This quick tour shows the essentials in ~30 seconds.',
+          ? 'Network Simulator 2026\'ya hoş geldiniz! Bu kısa turda temel özellikleri keşfedeceksiniz. Bağlantıları yapılandırın, cihazları yönetin ve ağ becerilerinizi geliştirin.'
+          : 'Welcome to Network Simulator 2026! This quick tour will show you the essential features. Configure connections, manage devices, and develop your networking skills.',
     },
     {
-      title: language === 'tr' ? 'Topoloji' : 'Topology',
+      title: language === 'tr' ? '📐 Topoloji Editörü' : '📐 Topology Editor',
       description:
         language === 'tr'
-          ? 'Cihazları ekle, bağla ve sürükleyerek konumlandır. Çift tıkla: PC için CMD, Switch/Router için CLI.'
-          : 'Add/connect devices and drag to position. Double-click: CMD for PC, CLI for Switch/Router.',
+          ? 'Sürükle-bırak ile cihazları yerleştirin. Bağlantı kurmak için: 1) Bağla düğmesine tıkla, 2) Kaynak cihaz/port seç, 3) Hedef cihaz/port seç. Çift tıklama: PC\'de CMD, Switch/Router\'da CLI açar.'
+          : 'Drag and drop to position devices. To connect: 1) Click Connect button, 2) Select source device/port, 3) Select target device/port. Double-click: Opens CMD on PC, CLI on Switch/Router.',
     },
     {
-      title: language === 'tr' ? 'Cihaz seçimi' : 'Device selection',
+      title: language === 'tr' ? '🔌 Kablo Türleri' : '🔌 Cable Types',
       description:
         language === 'tr'
-          ? 'Üstteki cihaz menüsünden aktif cihazı seç. Nokta rengi cihazın online/offline durumunu gösterir.'
-          : 'Use the device menu in the header. The colored dot shows online/offline status.',
+          ? 'Dört kablo türü mevcut: Straight (mavi) - PC↔Switch/Router, Crossover (turuncu) - Switch↔Switch/Router↔Router, Console (cyan) - PC↔Cihaz yapılandırma, Wireless (mor) - Kablosuz bağlantılar.'
+          : 'Four cable types available: Straight (blue) - PC↔Switch/Router, Crossover (orange) - Switch↔Switch/Router↔Router, Console (cyan) - PC↔Device config, Wireless (purple) - Wireless connections.',
     },
     {
-      title: language === 'tr' ? 'Görev ilerlemesi' : 'Task progress',
+      title: language === 'tr' ? '💻 Cihaz Yönetimi' : '💻 Device Management',
       description:
         language === 'tr'
-          ? 'Sekmelerdeki rozetler (ör. 2/6) o alandaki görev ilerlemeni gösterir.'
-          : 'Badges on tabs (e.g., 2/6) show your progress for that area.',
+          ? 'Cihazları aç/kapat (güç düğmesi), yapılandır (CLI/Panel), ve monitör et. CLI sekmesinde komut satırından yapılandırma yapın. Görevler sekmesinde VLAN, port ve güvenlik görevlerini tamamlayın.'
+          : 'Power on/off devices (power button), configure (CLI/Panel), and monitor. Use CLI tab for command-line configuration. Complete VLAN, port and security tasks in Tasks tab.',
     },
     {
-      title: language === 'tr' ? 'Grafik Kalitesi' : 'Graphics Quality',
+      title: language === 'tr' ? '📡 Ping ve Bağlantı Testi' : '📡 Ping & Connectivity',
       description:
         language === 'tr'
-          ? 'Sağ üstteki grafik kalitesi düğmesi ile yüksek (✨) veya düşük (☁️) çözünürlük arasında geçiş yap. Yüksek kalite daha detaylı görünüm sağlar.'
-          : 'Toggle graphics quality in the top-right corner between high (✨) and low (☁️) resolution. High quality provides more detail.',
+          ? 'Ping modu ile cihazlar arası bağlantıyı test edin. Başarılı pingler yeşil, başarısız olanlar kırmızı animasyonla gösterilir. DHCP otomatik IP atama, statik IP için manuel yapılandırma yapın.'
+          : 'Test connectivity with Ping mode. Successful pings show green, failed ones show red animation. DHCP auto-assigns IPs, or configure static IPs manually.',
     },
     {
-      title: language === 'tr' ? 'Ping Testi' : 'Ping Test',
+      title: language === 'tr' ? '🌐 WiFi ve Kablosuz' : '🌐 WiFi & Wireless',
       description:
         language === 'tr'
-          ? 'Cihazlar arasında bağlantı test et. Topoloji sekmesinde cihazı seç ve ping animasyonunu izle. Başarılı bağlantılar yeşil, başarısız olanlar kırmızı gösterilir.'
-          : 'Test connectivity between devices. Select a device in the Topology tab and watch the ping animation. Green = success, Red = failed.',
+          ? 'Router ve Switch\'leri Access Point moduna alın (WiFi ayarları). SSID, şifreleme (WPA2/WPA3) ve şifre ayarlayın. PC\'ler otomatik olarak erişim noktalarına bağlanır.'
+          : 'Set Routers and Switches to Access Point mode (WiFi settings). Configure SSID, encryption (WPA2/WPA3) and password. PCs automatically connect to available access points.',
     },
     {
-      title: language === 'tr' ? 'Kablo Türleri' : 'Cable Types',
+      title: language === 'tr' ? '💾 Proje Yönetimi' : '💾 Project Management',
       description:
         language === 'tr'
-          ? 'Farklı kablo türleri kullan: Straight (mavi), Crossover (turuncu), Console (cyan), Wireless (mor). Uyumsuz kablolar kırmızı gösterilir.'
-          : 'Use different cable types: Straight (blue), Crossover (orange), Console (cyan), Wireless (purple). Incompatible cables show in red.',
+          ? 'Projeleri kaydet (Ctrl+S), yükle (Ctrl+O) veya yeni başlat (Ctrl+N). Örnek projeler ile hazır senaryoları inceleyin. Tüm yapılandırmalar JSON formatında kaydedilir.'
+          : 'Save (Ctrl+S), load (Ctrl+O), or start new projects (Ctrl+N). Explore ready scenarios with example projects. All configurations are saved in JSON format.',
     },
     {
-      title: language === 'tr' ? 'Tema ve Dil' : 'Theme & Language',
+      title: language === 'tr' ? '🎨 Arayüz Özelleştirme' : '🎨 Interface Customization',
       description:
         language === 'tr'
-          ? 'Sağ üstteki düğmelerle tema (🌙/☀️) ve dili (🌐) değiştir. Tercihler otomatik kaydedilir.'
-          : 'Change theme (🌙/☀️) and language (🌐) using buttons in the top-right. Your preferences are saved automatically.',
+          ? 'Karanlık/Açık tema (🌙/☀️) ve dil (🇹🇷/🇬🇧) tercihlerinizi ayarlayın. Grafik kalitesi düşük/yüksek arasında geçiş yapın. Tüm tercihler tarayıcıda otomatik kaydedilir.'
+          : 'Set Dark/Light theme (🌙/☀️) and language (🇹🇷/🇬🇧) preferences. Toggle graphics quality between low/high. All preferences are automatically saved in browser.',
     },
     {
-      title: language === 'tr' ? 'Başarılar' : 'You\'re Ready!',
+      title: language === 'tr' ? '🚀 Başlamaya Hazırsınız!' : '🚀 You\'re Ready!',
       description:
         language === 'tr'
-          ? 'Artık başlamaya hazırsın! Örnek projeleri yükle veya sıfırdan bir topoloji oluştur. İyi eğlenceler!'
-          : 'You\'re all set! Load example projects or create your own topology from scratch. Have fun!',
+          ? 'Artık ağ simülasyonuna başlamaya hazırsınız! Örnek projeleri inceleyin veya kendi topolojinizi oluşturun. Yardım paneli (sağ alt köşe) ve komut referansı her zaman yanınızda. İyi çalışmalar!'
+          : 'You\'re now ready to start network simulation! Explore example projects or create your own topology. Help panel (bottom-right) and command reference are always available. Good luck!',
     },
   ];
 
@@ -2618,7 +2618,7 @@ export default function Home() {
                         Main navigation and project controls
                       </SheetDescription>
                     </SheetHeader>
-                    <ScrollArea className="">
+                    <ScrollArea className="h-[calc(100vh-80px)]">
                       <div className="p-3 space-y-4">
                         {/* Quick actions (primary) */}
                         <div className={`p-3 rounded-xl border ${isDark ? 'bg-slate-800/30 border-slate-800/50' : 'bg-slate-50 border-slate-200'}`}>
@@ -2652,7 +2652,7 @@ export default function Home() {
                               className="justify-start gap-2 h-9 text-xs font-bold"
                               onClick={() => { setShowOnboarding(true); setOnboardingStep(0); setShowMobileMenu(false); }}
                             >
-                              <Info className="w-3.5 h-3.5" /> {language === 'tr' ? 'Tur' : 'Tour'}
+                              <Compass className="w-3.5 h-3.5" /> {language === 'tr' ? 'Tur' : 'Tour'}
                             </Button>
                           </div>
                         </div>
@@ -2686,6 +2686,40 @@ export default function Home() {
                             })}
                           </div>
                         </div>
+
+                        <Separator className="bg-slate-800/30" />
+
+                        {/* Language & Theme Controls - Mobile */}
+                        <div className="grid grid-cols-2 gap-2">
+                          <Button
+                            variant="outline"
+                            className="justify-start gap-2 h-9 text-xs font-bold"
+                            onClick={() => setLanguage(language === 'tr' ? 'en' : 'tr')}
+                          >
+                            <Languages className="w-3.5 h-3.5" />
+                            {language === 'tr' ? 'English' : 'Türkçe'}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            className="justify-start gap-2 h-9 text-xs font-bold"
+                            onClick={() => setTheme(isDark ? 'light' : 'dark')}
+                          >
+                            {isDark ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
+                            {isDark ? (language === 'tr' ? 'Açık Tema' : 'Light') : (language === 'tr' ? 'Koyu Tema' : 'Dark')}
+                          </Button>
+                        </div>
+
+                        <Separator className="bg-slate-800/30" />
+
+                        {/* Help Button */}
+                        <Button
+                          variant="outline"
+                          className="w-full justify-start gap-2 h-9 text-xs font-bold"
+                          onClick={() => { setShowAboutModal(true); setShowMobileMenu(false); }}
+                        >
+                          <Info className="w-3.5 h-3.5" />
+                          {language === 'tr' ? 'Yardım & Hakkında' : 'Help & About'}
+                        </Button>
 
                         <Separator className="bg-slate-800/30" />
 
@@ -2923,10 +2957,18 @@ export default function Home() {
                           value={deviceSearchQuery}
                           onChange={e => setDeviceSearchQuery(e.target.value)}
                           placeholder={language === 'tr' ? 'Ara...' : 'Search...'}
-                          className="h-7 pl-6 text-xs"
+                          className="h-7 pl-6 pr-7 text-xs"
                           autoFocus
                           onKeyDown={e => e.stopPropagation()}
                         />
+                        {deviceSearchQuery && (
+                          <button
+                            onClick={() => setDeviceSearchQuery('')}
+                            className="absolute right-1 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        )}
                       </div>
                     </div>
                   )}
@@ -3098,16 +3140,25 @@ export default function Home() {
                   </div>
 
                   {/* Search Box */}
-                  <div className={`rounded-xl border px-4 py-2.5 flex items-center gap-2 ${isDark ? 'bg-slate-900/40 border-slate-800/60' : 'bg-white/50 border-slate-200/60'}`}>
+                  <div className={`relative rounded-xl border px-4 py-2.5 flex items-center gap-2 ${isDark ? 'bg-slate-900/40 border-slate-800/60' : 'bg-white/50 border-slate-200/60'}`}>
                     <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
                     <input
                       type="text"
+                      value={projectSearchQuery}
                       placeholder={language === 'tr' ? 'Proje ara...' : 'Search projects...'}
                       onChange={(e) => setProjectSearchQuery(e.target.value)}
                       className={`flex-1 bg-transparent outline-none text-sm ${isDark ? 'text-white placeholder-slate-500' : 'text-slate-900 placeholder-slate-400'}`}
                     />
+                    {projectSearchQuery && (
+                      <button
+                        onClick={() => setProjectSearchQuery('')}
+                        className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
                   </div>
                 </div>
 
@@ -3212,20 +3263,30 @@ export default function Home() {
               else setShowOnboarding(true);
             }}
           >
-            <DialogContent className={`liquid-glass-strong sm:max-w-lg`}>
-              <DialogHeader>
-                <DialogTitle className="flex items-center justify-between gap-3">
-                  <span>{onboardingSteps[onboardingStep]?.title}</span>
-                  <span className={`text-[11px] font-bold px-2 py-1 rounded-full ${isDark ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>
-                    {onboardingStep + 1}/{onboardingSteps.length}
+            <DialogContent className={`${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'} sm:max-w-2xl md:max-w-3xl p-0 overflow-hidden`}>
+              {/* Progress Bar */}
+              <div className="w-full h-1 bg-slate-200 dark:bg-slate-800">
+                <div 
+                  className="h-full bg-gradient-to-r from-cyan-500 to-blue-500 transition-all duration-300"
+                  style={{ width: `${((onboardingStep + 1) / onboardingSteps.length) * 100}%` }}
+                />
+              </div>
+              
+              <DialogHeader className="px-8 pt-6 pb-2">
+                <div className="flex items-center justify-between gap-4 mb-2">
+                  <DialogTitle className={`text-2xl md:text-3xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                    {onboardingSteps[onboardingStep]?.title}
+                  </DialogTitle>
+                  <span className={`text-sm font-bold px-3 py-1.5 rounded-full ${isDark ? 'bg-slate-800 text-cyan-400 border border-slate-700' : 'bg-slate-100 text-cyan-600 border border-slate-200'}`}>
+                    {onboardingStep + 1} / {onboardingSteps.length}
                   </span>
-                </DialogTitle>
-                <DialogDescription className={isDark ? 'text-slate-400' : 'text-slate-600'}>
+                </div>
+                <DialogDescription className={`text-base md:text-lg leading-relaxed ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
                   {onboardingSteps[onboardingStep]?.description}
                 </DialogDescription>
               </DialogHeader>
 
-              <div className="flex items-center justify-between gap-2 pt-2">
+              <div className="flex items-center justify-between gap-4 px-8 py-6 bg-slate-50/50 dark:bg-slate-800/30 border-t border-slate-200 dark:border-slate-800 mt-4">
                 <Button variant="ghost" onClick={closeOnboardingForever} className="text-xs font-semibold">
                   {language === 'tr' ? 'Geç' : 'Skip'}
                 </Button>

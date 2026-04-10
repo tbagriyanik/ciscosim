@@ -1720,6 +1720,29 @@ export function PCPanel({
         (hasPhysicalPathToDevice(d.id) || canReachTargetIp(d.ip))
     );
 
+    // Check Router/Switch DHCP servers availability
+    let hasAnyDhcpService = pcServers.length > 0;
+    
+    if (!hasAnyDhcpService && deviceStates) {
+      for (const [deviceId_, state] of deviceStates.entries()) {
+        if (deviceId_ === deviceId) continue;
+        const device = topologyDevices.find(d => d.id === deviceId_);
+        if (!device || (device.type !== 'router' && device.type !== 'switchL2' && device.type !== 'switchL3')) continue;
+        
+        const mirroredPools = state.services?.dhcp?.pools || [];
+        const cliPools = Object.entries(state.dhcpPools || {}).length;
+        if (mirroredPools.length > 0 || cliPools > 0) {
+          hasAnyDhcpService = true;
+          break;
+        }
+      }
+    }
+
+    // If no DHCP service available at all
+    if (!hasAnyDhcpService) {
+      return { available: false, reason: 'no_dhcp_service' };
+    }
+
     for (const server of pcServers) {
       const pools = server.services?.dhcp?.pools || [];
       for (const pool of pools) {
@@ -1870,9 +1893,13 @@ export function PCPanel({
         
         let errorMessage = t.dhcpFailureDescription;
         if (dhcpCheck.reason === 'all_pools_full') {
-          errorMessage = language === 'tr' 
+          errorMessage = language === 'tr'
             ? 'DHCP havuzları dolu! Maksimum IP sayısına ulaşıldı.'
             : 'All DHCP pools are full! Maximum number of IP addresses reached.';
+        } else if (dhcpCheck.reason === 'no_dhcp_service') {
+          errorMessage = language === 'tr'
+            ? 'Ağda DHCP hizmeti bulunamadı! Lütfen bir DHCP sunucusu yapılandırın.'
+            : 'No DHCP service found on the network! Please configure a DHCP server.';
         }
         
         toast({
@@ -2981,11 +3008,24 @@ export function PCPanel({
                         {t.searchOutputDescription}
                       </DialogDescription>
                     </DialogHeader>
-                    <Input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder={t.searchPlaceholder} autoFocus />
+                    <div className="relative">
+                      <Input
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder={t.searchPlaceholder}
+                        className="pr-9"
+                        autoFocus
+                      />
+                      {searchQuery && (
+                        <button
+                          onClick={() => setSearchQuery('')}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
                     <div className="flex justify-end gap-2 pt-1">
-                      <Button variant="outline" onClick={() => setSearchQuery('')} className="text-xs font-semibold" disabled={!searchQuery.trim()}>
-                        {t.clearTerminalBtn}
-                      </Button>
                       <Button onClick={() => setSearchOpen(false)} className="text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white">
                         {t.close}
                       </Button>

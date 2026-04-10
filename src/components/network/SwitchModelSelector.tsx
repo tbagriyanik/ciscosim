@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { SWITCH_MODELS, SwitchModel, getAvailableSwitchModels } from '@/lib/network/switchModels';
-import { Check, Search, Layers } from 'lucide-react';
+import { Check, Search, Layers, X } from 'lucide-react';
 
 interface SwitchModelSelectorProps {
     isOpen: boolean;
@@ -96,9 +96,17 @@ export function SwitchModelSelector({
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             placeholder={t.placeholder}
-                            className="w-full pl-10 pr-4 py-2.5 border rounded-lg bg-background text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 border-slate-200 dark:border-slate-700"
+                            className="w-full pl-10 pr-10 py-2.5 border rounded-lg bg-background text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 border-slate-200 dark:border-slate-700"
                             autoFocus
                         />
+                        {searchQuery && (
+                            <button
+                                onClick={() => setSearchQuery('')}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+                            >
+                                <X className="w-4 h-4" />
+                            </button>
+                        )}
                     </div>
                 </div>
 

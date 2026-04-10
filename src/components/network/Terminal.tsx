@@ -1326,7 +1326,23 @@ export function Terminal({
               {language === 'tr' ? 'Terminal çıktısında arama yapın' : 'Search in terminal output'}
             </DialogDescription>
           </DialogHeader>
-          <Input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder={t.search + "..."} autoFocus />
+          <div className="relative">
+            <Input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder={t.search + "..."}
+              className="pr-9"
+              autoFocus
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
       {/* ... Password and Confirm Dialogs ... */}

@@ -2,7 +2,7 @@
 
 import { CableType } from '@/lib/network/types';
 import { X } from 'lucide-react';
-import { CABLE_COLORS, DEVICE_ICONS } from './networkTopology.constants';
+import { DEVICE_ICONS } from './networkTopology.constants';
 import { CanvasDevice, SelectedPortRef } from './networkTopology.types';
 import { useLanguage } from '@/contexts/LanguageContext';
 
@@ -71,15 +71,25 @@ export function NetworkTopologyPortSelectorModal({
               <span className={`text-xs font-bold tracking-widest ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                 {t.cableType.toUpperCase()}:
               </span>
-              <div className="flex bg-slate-100 dark:bg-slate-800/50 p-1 rounded-xl border border-slate-200 dark:border-slate-800">
+              <div className={`flex items-center rounded-lg border overflow-hidden ${isDark ? 'bg-slate-800/50 border-slate-800' : 'bg-slate-100 border-slate-200'}`}>
                 {(['straight', 'crossover', 'console'] as CableType[]).map((type) => (
                   <button
                     key={type}
                     onClick={() => onCableTypeChange(type)}
-                    className={`px-4 py-2 rounded-lg text-[10px] font-black tracking-widest transition-all duration-300 ${cableType === type
-                      ? `${CABLE_COLORS[type].bg} text-white shadow-lg shadow-black/10`
-                      : isDark ? 'text-slate-500 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600'}`}
+                    className={`h-8 px-3 flex items-center gap-1.5 transition-all text-xs font-bold
+                      ${isDark ? 'hover:bg-slate-700/50' : 'hover:bg-slate-200/50'}
+                      ${cableType === type
+                        ? isDark ? 'bg-slate-700/80' : 'bg-slate-200/80'
+                        : ''
+                      }
+                      ${type === 'straight'
+                        ? (cableType === type ? 'text-blue-400' : 'text-blue-500 hover:text-blue-400')
+                        : type === 'crossover'
+                          ? (cableType === type ? 'text-orange-400' : 'text-orange-500 hover:text-orange-400')
+                          : (cableType === type ? 'text-cyan-400' : 'text-cyan-500 hover:text-cyan-400')
+                      }`}
                   >
+                    <div className={`w-2 h-2 rounded-full ${type === 'straight' ? 'bg-blue-500' : type === 'crossover' ? 'bg-orange-500' : 'bg-cyan-500'}`} />
                     {type === 'straight' ? t.straight : type === 'crossover' ? t.crossover : t.console}
                   </button>
                 ))}

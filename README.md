@@ -2,11 +2,11 @@
 
 A modern and interactive web-based Network simulator designed for students and networking enthusiasts.
 
-![Version](https://img.shields.io/badge/version-1.2.2-blue)
+![Version](https://img.shields.io/badge/version-1.3.0-blue)
 ![Tech Stack](https://img.shields.io/badge/stack-Next.js%2016%20|%20React%2019%20|%20TypeScript%205.9%20|%20Tailwind%204-green)
 ![FOSS](https://img.shields.io/badge/FOSS-Free%20Open%20Source-brightgreen)
 ![Commits](https://img.shields.io/badge/commits-540+-orange)
-![Lines of Code](https://img.shields.io/badge/lines--of--code-73k+-blueviolet)
+![Lines of Code](https://img.shields.io/badge/lines--of--code-51.3k-blueviolet)
 
 ## ✨ Key Features
 
@@ -446,14 +446,14 @@ Theme selection is done from the theme selector in the top right corner.
 ## 🔢 Code Metrics
 
 - Scope: `src/`
-- Source files: `164`
-- Total lines: `73,772`
-- TS/TSX files: `157` (55,071 lines)
-- Network components: `37`
-- Custom hooks: `15`
+- Source files: `160+`
+- Total lines: `51,332`
+- TS/TSX files: `150+`
+- Network components: `40+`
+- Custom hooks: `15+`
 - Example projects: `6`
 - CLI commands: `100+`
-- Last updated: `2026-04-09`
+- Last updated: `2026-04-10`
 
 ## 🐛 Troubleshooting
 
@@ -475,8 +475,8 @@ Contributions are welcome. Please:
 
 ---
 
-**Sürüm**: 1.2.2
-**Son Güncelleme**: 2026-04-09
+**Sürüm**: 1.3.0
+**Son Güncelleme**: 2026-04-10
 **Durum**: Production Ready
 
 GitHub: [github.com/tbagriyanik/ciscosim](https://github.com/tbagriyanik/ciscosim)

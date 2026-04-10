@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Translations } from '@/contexts/LanguageContext';
-import { HelpCircle, X, Terminal, Globe, Wifi, Settings, Eye, Server, Router, ChevronDown } from 'lucide-react';
+import { HelpCircle, X, Terminal, Globe, Wifi, Settings, Eye, Server, Router, ChevronDown, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-breakpoint';
 
@@ -15,6 +15,7 @@ interface HelpPanelProps {
 
 export function HelpPanel({ t, theme, initialOpen = false, onClose }: HelpPanelProps) {
   const [open, setOpen] = useState(initialOpen);
+  const [searchQuery, setSearchQuery] = useState('');
   const [expanded, setExpanded] = useState<Record<string, boolean>>({
     system: true,
     privileged: false,
@@ -34,7 +35,8 @@ export function HelpPanel({ t, theme, initialOpen = false, onClose }: HelpPanelP
     setExpanded(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const categories = [
+  // Define categories with useMemo to prevent recreating on each render
+  const categories = useMemo(() => [
     {
       id: 'system',
       icon: Terminal,
@@ -122,7 +124,32 @@ export function HelpPanel({ t, theme, initialOpen = false, onClose }: HelpPanelP
         ['show ip route', isTR ? 'Yonlendirme tablosu' : 'Routing table'],
       ]
     },
-  ];
+  ], [isTR]);
+
+  // Filter categories based on search query
+  const filteredCategories = useMemo(() => {
+    if (!searchQuery.trim()) return categories;
+    
+    const query = searchQuery.toLowerCase();
+    return categories.map(cat => ({
+      ...cat,
+      cmds: cat.cmds.filter(([cmd, desc]) => 
+        cmd.toLowerCase().includes(query) || 
+        desc.toLowerCase().includes(query)
+      )
+    })).filter(cat => cat.cmds.length > 0);
+  }, [searchQuery, categories]);
+
+  // Auto-expand categories when searching
+  useEffect(() => {
+    if (searchQuery.trim()) {
+      const newExpanded: Record<string, boolean> = {};
+      filteredCategories.forEach(cat => {
+        newExpanded[cat.id] = true;
+      });
+      setExpanded(prev => ({ ...prev, ...newExpanded }));
+    }
+  }, [searchQuery, filteredCategories]);
 
   if (!open) {
     return (
@@ -176,8 +203,41 @@ export function HelpPanel({ t, theme, initialOpen = false, onClose }: HelpPanelP
 
         {/* Content */}
         <div className="flex-1 overflow-auto p-4 space-y-3">
+          {/* Search */}
+          <div className="relative">
+            <Search className={cn('absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4', isDark ? 'text-slate-500' : 'text-slate-400')} />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder={isTR ? 'Komut ara...' : 'Search commands...'}
+              className={cn(
+                'w-full pl-9 pr-9 py-2.5 rounded-lg text-sm border outline-none transition-all',
+                isDark 
+                  ? 'bg-slate-900 border-slate-700 text-slate-200 placeholder:text-slate-500 focus:border-emerald-500/50' 
+                  : 'bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-emerald-500'
+              )}
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className={cn('absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full transition-colors', isDark ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-slate-100 text-slate-500')}
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+
+          {/* Search Results Info */}
+          {searchQuery.trim() && (
+            <div className={cn('text-xs px-1', isDark ? 'text-slate-400' : 'text-slate-500')}>
+              {filteredCategories.reduce((acc, cat) => acc + cat.cmds.length, 0)} {isTR ? 'komut bulundu' : 'commands found'}
+            </div>
+          )}
+
           {/* Command Modes */}
-          <div className={cn('p-3 rounded-lg text-xs space-y-1', isDark ? 'bg-slate-900 border border-slate-700' : 'bg-slate-50 border border-slate-200')}>
+          {!searchQuery.trim() && (
+            <div className={cn('p-3 rounded-lg text-xs space-y-1', isDark ? 'bg-slate-900 border border-slate-700' : 'bg-slate-50 border border-slate-200')}>
             <p className={cn('font-semibold mb-2', isDark ? 'text-slate-200' : 'text-slate-700')}>
               {isTR ? 'Komut Modlari:' : 'Command Modes:'}
             </p>
@@ -192,9 +252,10 @@ export function HelpPanel({ t, theme, initialOpen = false, onClose }: HelpPanelP
               <span className={isDark ? 'text-slate-400' : 'text-slate-600'}>{isTR ? 'Arayuz config' : 'Interface config'}</span>
             </div>
           </div>
+          )}
 
           {/* Categories */}
-          {categories.map((cat) => {
+          {filteredCategories.map((cat) => {
             const Icon = cat.icon;
             const isExp = expanded[cat.id];
             return (

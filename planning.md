@@ -12,8 +12,7 @@ Bu belge, projenin mevcut durumunu dürüst biçimde özetler. Amaç, "tamamland
 Proje tamamlanmış durumda:
 - `next build` başarılı ✅
 - TypeScript derlemesi temiz ✅
-- **73,772 satır kod** (164 kaynak dosya) - toplam proje kodu
-- **55,071 satır** TypeScript/TSX
+- **51,332 satır kod** (160+ kaynak dosya) - toplam proje kodu
 - **100+ CLI komutu** destekleniyor
 - Tüm CLI komutları çalışır durumda
 - Tablet UI, WiFi (sinyal gücü göstergesi), Ping animasyonları (gerçekçi gecikmeler), Notes sistemi aktif
@@ -191,6 +190,17 @@ Proje tamamlanmış durumda:
 
 ## Tamamlananlar
 
+### 2026-04-10 – UI/UX İyileştirmeleri ve Toolbar Düzenlemeleri
+- **Topology Toolbar**: Bağla, Ping, Not, Yenile düğmeleri tek renk (slate) button group haline getirildi
+- **Kablo Türü Düğmeleri**: Straight (mavi), Crossover (turuncu), Console (turkuaz) renk kodlamasıyla button group yapıldı
+- **IoT Simgesi**: Radio buton tarzı turkuaz simgeye dönüştürüldü
+- **Arama Kutuları**: Tüm arama inputlarına sağ tarafta X (temizle) butonu eklendi
+- **Komut Referansı**: HelpPanel içinde komut arama desteği eklendi (komut ve açıklamada arama)
+- **Tur Penceresi**: Büyütüldü (max-w-2xl → max-w-3xl), progress bar eklendi, 9 detaylı adım
+- **Mobil Menü**: Scroll desteği, dil/tema butonları, Compass simgeli Tur butonu, Yardım & Hakkında butonu
+- **DHCP Mesajları**: "DHCP havuzları dolu" ve "DHCP hizmeti yok" ayrımı
+- **Versiyon**: 1.3.0, Kod satırı: 51,332
+
 ### 2026-04-09 – Temizlik, Trunk2Sw Örneği ve Paket Düzeltmeleri
 - Gereksiz paketler temizlendi, eksik npm paketleri düzeltildi
 - Yeni örnek proje: `Trunk2Sw` (2 switch trunk bağlantısı)
@@ -327,6 +337,6 @@ Proje tamamlanmış durumda:
 - UI/UX: Modern ve işlevsel ✅
 - Dokümantasyon: Güncellendi ✅
 
-**Sürüm**: 1.2.2  
-**Son Güncelleme**: 2026-04-09  
-**Durum**: Tamamlandı ✅
+**Sürüm**: 1.3.0  
+**Son Güncelleme**: 2026-04-10  
+**Durum**: Production Ready ✅
