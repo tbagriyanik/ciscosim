@@ -211,6 +211,7 @@ export function HelpPanel({ t, theme, initialOpen = false, onClose }: HelpPanelP
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={isTR ? 'Komut ara...' : 'Search commands...'}
+              autoFocus
               className={cn(
                 'w-full pl-9 pr-9 py-2.5 rounded-lg text-sm border outline-none transition-all',
                 isDark 

@@ -3149,6 +3149,7 @@ export default function Home() {
                       value={projectSearchQuery}
                       placeholder={language === 'tr' ? 'Proje ara...' : 'Search projects...'}
                       onChange={(e) => setProjectSearchQuery(e.target.value)}
+                      autoFocus
                       className={`flex-1 bg-transparent outline-none text-sm ${isDark ? 'text-white placeholder-slate-500' : 'text-slate-900 placeholder-slate-400'}`}
                     />
                     {projectSearchQuery && (
