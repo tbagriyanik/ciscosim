@@ -7,6 +7,7 @@ interface DeviceNodeProps {
   isDragging: boolean;
   isDark: boolean;
   isActive?: boolean;
+  iotUpdateTrigger?: number;
   onMouseDown: (e: React.MouseEvent<SVGGElement>, deviceId: string) => void;
   onClick: (e: React.MouseEvent<SVGGElement>, device: CanvasDevice) => void;
   onDoubleClick: (device: CanvasDevice) => void;
@@ -25,6 +26,7 @@ export const DeviceNode = memo(function DeviceNode({
   isDragging,
   isDark,
   isActive,
+  iotUpdateTrigger,
   onMouseDown,
   onClick,
   onDoubleClick,
@@ -109,6 +111,11 @@ export const DeviceNode = memo(function DeviceNode({
     prevProps.isDragging !== nextProps.isDragging ||
     prevProps.isDark !== nextProps.isDark
   ) {
+    return false; // Re-render et
+  }
+
+  // IoT update trigger değişmişse re-render et (for continuous measurement updates)
+  if (prevProps.iotUpdateTrigger !== nextProps.iotUpdateTrigger) {
     return false; // Re-render et
   }
 

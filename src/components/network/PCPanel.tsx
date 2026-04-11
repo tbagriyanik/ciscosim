@@ -3612,18 +3612,18 @@ export function PCPanel({
                         <div className="flex items-center gap-2 text-cyan-500">
                           <Radio className="w-5 h-5" />
                           <h3 className="text-sm font-black tracking-widest">
-                            {language === 'tr' ? 'IoT Yonetimi' : 'IoT Management'}
+                            {language === 'tr' ? 'IoT Yönetimi' : 'IoT Management'}
                           </h3>
                         </div>
 
                         {iotDevices.length === 0 ? (
                           <div className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-                            {language === 'tr' ? 'Topolojide IoT nesnesi yok. Once topolojiye IoT ekleyin.' : 'No IoT object in topology. Add one first.'}
+                            {language === 'tr' ? 'Topolojide IoT nesnesi yoktur. Önce topolojiye IoT nesnesi ekleyiniz.' : 'No IoT object in topology. Add one first.'}
                           </div>
                         ) : (
                           <>
                             <div className="space-y-2">
-                              <label className="text-xs font-bold text-slate-500">{language === 'tr' ? 'Nesne Secimi' : 'Object Selection'}</label>
+                              <label className="text-xs font-bold text-slate-500">{language === 'tr' ? 'Nesne Seçimi' : 'Object Selection'}</label>
                               <Select value={selectedIotDeviceId} onValueChange={setSelectedIotDeviceId}>
                                 <SelectTrigger>
                                   <SelectValue placeholder="IoT" />
@@ -3638,7 +3638,7 @@ export function PCPanel({
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                               <div className="space-y-2">
-                                <label className="text-xs font-bold text-slate-500">{language === 'tr' ? 'Sensor Tipi' : 'Sensor Type'}</label>
+                                <label className="text-xs font-bold text-slate-500">{language === 'tr' ? 'Sensör Tipi' : 'Sensor Type'}</label>
                                 <Select value={iotSensorType} onValueChange={(v) => setIotSensorType(v as any)}>
                                   <SelectTrigger><SelectValue /></SelectTrigger>
                                   <SelectContent>
@@ -3651,7 +3651,7 @@ export function PCPanel({
                                 </Select>
                               </div>
                               <div className="space-y-2">
-                                <label className="text-xs font-bold text-slate-500">{language === 'tr' ? 'Birlikte Calisma' : 'Collaboration'}</label>
+                                <label className="text-xs font-bold text-slate-500">{language === 'tr' ? 'Birlikte Çalışma' : 'Collaboration'}</label>
                                 <button
                                   type="button"
                                   role="switch"
@@ -3671,12 +3671,12 @@ export function PCPanel({
                                 onChange={(e) => setIotDataStore(e.target.value)}
                                 rows={5}
                                 className={`w-full rounded-md border px-3 py-2 text-sm ${isDark ? 'bg-slate-950 border-slate-800 text-slate-100' : 'bg-white border-slate-300 text-slate-900'}`}
-                                placeholder={language === 'tr' ? 'Sensor verisi veya notlar...' : 'Sensor data or notes...'}
+                                placeholder={language === 'tr' ? 'Sensör verisi veya notlar...' : 'Sensor data or notes...'}
                               />
                             </div>
 
                             <Button onClick={saveIotConfig} className="bg-cyan-600 hover:bg-cyan-700 text-white">
-                              {language === 'tr' ? 'IoT Ayarlarini Kaydet' : 'Save IoT Settings'}
+                              {language === 'tr' ? 'Kaydet' : 'Save'}
                             </Button>
                           </>
                         )}

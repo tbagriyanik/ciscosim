@@ -254,6 +254,15 @@ export function NetworkTopology({
     setDeviceStatesVersion(prev => prev + 1);
   }, [deviceStates]);
 
+  // Force continuous updates for IoT measurements
+  const [iotUpdateTrigger, setIotUpdateTrigger] = useState(0);
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setIotUpdateTrigger(prev => prev + 1);
+    }, 1000); // Update every second
+    return () => clearInterval(interval);
+  }, []);
+
   const [zoom, setZoom] = useState(DEFAULT_ZOOM);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
@@ -2473,21 +2482,30 @@ export function NetworkTopology({
 
   const getIotMeasuredValue = useCallback((device: CanvasDevice) => {
     const sensorType = device.iot?.sensorType || 'temperature';
+    const baseTemp = environment?.temperature ?? 22;
+    const baseHumidity = environment?.humidity ?? 50;
+    const baseLight = environment?.light ?? 70;
+
+    // Add small random fluctuation to simulate real sensor readings
+    const tempFluctuation = (Math.random() - 0.5) * 2; // ±1°C
+    const humidityFluctuation = (Math.random() - 0.5) * 4; // ±2%
+    const lightFluctuation = (Math.random() - 0.5) * 10; // ±5%
+
     switch (sensorType) {
       case 'temperature':
-        return '35°C';
+        return `${(baseTemp + tempFluctuation).toFixed(1)}°C`;
+      case 'humidity':
+        return `${(baseHumidity + humidityFluctuation).toFixed(1)}%`;
+      case 'light':
+        return `${(baseLight + lightFluctuation).toFixed(0)}lx`;
       case 'sound':
-        return '62dB';
+        return `${Math.floor(40 + Math.random() * 40)}dB`;
       case 'motion':
         return language === 'tr' ? 'Hareket: Var' : 'Motion: Yes';
-      case 'humidity':
-        return '%48 RH';
-      case 'light':
-        return '420lx';
       default:
         return '-';
     }
-  }, [language]);
+  }, [language, environment]);
 
   const getLivePortVlanText = useCallback((deviceId: string, portId: string) => {
     const device = devices.find(d => d.id === deviceId);
@@ -4161,9 +4179,56 @@ export function NetworkTopology({
           </text>
         )}
         {device.type === 'iot' && (
-          <text x={deviceWidth / 2} y={81} fill={isDark ? '#fb923c' : '#ea580c'} fontSize="9" textAnchor="middle" fontFamily="monospace" className="select-none pointer-events-none">
-            {getIotMeasuredValue(device)}
-          </text>
+          <>
+            {isSelected ? (
+              (() => {
+                const sensorType = device.iot?.sensorType || 'temperature';
+                const value = getIotMeasuredValue(device);
+                switch (sensorType) {
+                  case 'temperature':
+                    return (
+                      <text x={deviceWidth / 2} y={81} fill={isDark ? '#f97316' : '#ea580c'} fontSize="8" textAnchor="middle" fontFamily="monospace" className="select-none pointer-events-none">
+                        {t.temperature}: {value}
+                      </text>
+                    );
+                  case 'humidity':
+                    return (
+                      <text x={deviceWidth / 2} y={81} fill={isDark ? '#3b82f6' : '#2563eb'} fontSize="8" textAnchor="middle" fontFamily="monospace" className="select-none pointer-events-none">
+                        {t.humidity}: {value}
+                      </text>
+                    );
+                  case 'light':
+                    return (
+                      <text x={deviceWidth / 2} y={81} fill={isDark ? '#eab308' : '#ca8a04'} fontSize="8" textAnchor="middle" fontFamily="monospace" className="select-none pointer-events-none">
+                        {t.lightLevel}: {value}
+                      </text>
+                    );
+                  case 'sound':
+                    return (
+                      <text x={deviceWidth / 2} y={81} fill={isDark ? '#a855f7' : '#9333ea'} fontSize="8" textAnchor="middle" fontFamily="monospace" className="select-none pointer-events-none">
+                        Sound: {value}
+                      </text>
+                    );
+                  case 'motion':
+                    return (
+                      <text x={deviceWidth / 2} y={81} fill={isDark ? '#22c55e' : '#16a34a'} fontSize="8" textAnchor="middle" fontFamily="monospace" className="select-none pointer-events-none">
+                        Motion: {value}
+                      </text>
+                    );
+                  default:
+                    return (
+                      <text x={deviceWidth / 2} y={81} fill={isDark ? '#fb923c' : '#ea580c'} fontSize="9" textAnchor="middle" fontFamily="monospace" className="select-none pointer-events-none">
+                        {value}
+                      </text>
+                    );
+                }
+              })()
+            ) : (
+              <text x={deviceWidth / 2} y={81} fill={isDark ? '#fb923c' : '#ea580c'} fontSize="9" textAnchor="middle" fontFamily="monospace" className="select-none pointer-events-none">
+                {getIotMeasuredValue(device)}
+              </text>
+            )}
+          </>
         )}
 
         {/* Ports - wrapped 6 per row */}
@@ -5492,10 +5557,12 @@ export function NetworkTopology({
                         isDragging={isCurrentlyDragging}
                         isActive={activeDeviceId === device.id}
                         isDark={isDark}
+                        iotUpdateTrigger={iotUpdateTrigger}
                         onMouseDown={(e, id) => handleDeviceMouseDown(e as unknown as ReactMouseEvent, id)}
-                        onClick={(e, dev) => handleDeviceClick(e as unknown as ReactMouseEvent, dev)}
+                        onClick={(e, device) => handleDeviceClick(e as unknown as ReactMouseEvent, device)}
                         onDoubleClick={() => handleDeviceDoubleClick(device)}
                         onContextMenu={(e, id) => handleContextMenu(e as unknown as ReactMouseEvent, id)}
+                        onMouseLeave={(e, id) => handleDeviceMouseLeave(e as unknown as ReactMouseEvent, id)}
                         onTouchStart={(e, id) => handleDeviceTouchStart(e as unknown as ReactTouchEvent, id)}
                         onTouchMove={handleDeviceTouchMove}
                         onTouchEnd={handleDeviceTouchEnd}
