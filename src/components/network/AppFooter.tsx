@@ -55,7 +55,7 @@ export function AppFooter({ state, selectedDevice, activeDeviceId, activeDeviceN
             </div>
             <div>
               <div className={`text-[10px] font-bold tracking-wider ${dark ? 'text-slate-500' : 'text-slate-400'}`}>
-                {language === 'tr' ? 'Aktif Sistem' : 'Active System'}
+                {t.activeSystem}
               </div>
               <div className={`text-base font-black tracking-tight ${dark ? 'text-white' : 'text-slate-900'}`}>
                 {deviceName}

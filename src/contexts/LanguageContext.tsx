@@ -311,6 +311,124 @@ export interface Translations {
   copy: string;
   power: string;
   tasks: string;
+  basicHint: string;
+  intermediateHint: string;
+  advancedHint: string;
+  syslogStarted: string;
+  bootReady: string;
+  bootLoading: string;
+  bootInitializing: string;
+  bootingFlash: string;
+  extractingFiles: string;
+  performanceOptimization: string;
+  spatialPartitioning: string;
+  viewportCulling: string;
+  virtualScrolling: string;
+  skeletonScreens: string;
+  assetLoading: string;
+  nodePooling: string;
+  layer3Switching: string;
+  routedPorts: string;
+  dynamicRouting: string;
+  ipRoutingEngine: string;
+  routingTasks: string;
+  accessibility: string;
+  ariaManagement: string;
+  keyboardNav: string;
+  highContrast: string;
+  screenReader: string;
+  wifiSignal: string;
+  wifiConnected: string;
+  wifiDisconnected: string;
+  wifiConfig: string;
+  wifiControlPanel: string;
+  wifiMode: string;
+  wifiSsid: string;
+  wifiPassword: string;
+  wifiSecurity: string;
+  wifiChannel: string;
+  wifiAp: string;
+  wifiClient: string;
+  saveSuccess: string;
+  saveError: string;
+  copySuccess: string;
+  copyError: string;
+  selectAll: string;
+  cut: string;
+  paste: string;
+  rename: string;
+  powerOn: string;
+  powerOff: string;
+  reload: string;
+  clear: string;
+  confirm: string;
+  yes: string;
+  no: string;
+  newNote: string;
+  deviceOff: string;
+  wifiOff: string;
+  wifiOn: string;
+  statusLabel: string;
+  modeLabel: string;
+  securityLabel: string;
+  channelLabel: string;
+  connectedLabel: string;
+  refreshNetwork: string;
+  exitPingMode: string;
+  selectSource: string;
+  selectTarget: string;
+  alignLeft: string;
+  alignTop: string;
+  togglePower: string;
+  topologyAriaLabel: string;
+  colorLabel: string;
+  fontLabel: string;
+  fontSizeLabel: string;
+  opacityLabel: string;
+  duplicateLabel: string;
+  noIp: string;
+  deviceNameLabel: string;
+  measurementLabel: string;
+  noServices: string;
+  dhcpPoolLabel: string;
+  dnsRecordsLabel: string;
+  httpServerLabel: string;
+  exportLabel: string;
+  pressEnterToConfirm: string;
+  enterPassword: string;
+  typeCommandPlaceholder: string;
+  searchTerminal: string;
+  commandReference: string;
+  commandsFound: string;
+  commandModes: string;
+  basicCommands: string;
+  allCommands: string;
+  globalConfigLabel: string;
+  interfaceConfigLabel: string;
+  activeSystem: string;
+  tutorialWelcomeTitle: string;
+  tutorialWelcomeDesc: string;
+  tutorialTopologyTitle: string;
+  tutorialTopologyDesc: string;
+  tutorialCablesTitle: string;
+  tutorialCablesDesc: string;
+  tutorialDevicesTitle: string;
+  tutorialDevicesDesc: string;
+  tutorialPingTitle: string;
+  tutorialPingDesc: string;
+  tutorialWifiTitle: string;
+  tutorialWifiDesc: string;
+  tutorialProjectTitle: string;
+  tutorialProjectDesc: string;
+  tutorialThemeTitle: string;
+  tutorialThemeDesc: string;
+  tutorialReadyTitle: string;
+  tutorialReadyDesc: string;
+  projectSaved: string;
+  jsonDownloaded: string;
+  invalidProject: string;
+  corruptedProject: string;
+  wifiDhcpStatusUpdated: string;
 }
 
 const translations: Record<Language, Translations> = {
@@ -580,6 +698,124 @@ const translations: Record<Language, Translations> = {
     copy: 'Kopyala',
     power: 'Güç',
     tasks: 'Görevler',
+    basicHint: 'Temel komutlar ve ilk topoloji adımları',
+    intermediateHint: 'Servisler, VLAN ve yönlendirme senaryoları',
+    advancedHint: 'Kapsamlı kurulum ve doğrulama laboratuvarları',
+    syslogStarted: '*** Syslog istemcisi başlatıldı',
+    bootReady: 'Hazır!',
+    bootLoading: 'Sistem yükleniyor...',
+    bootInitializing: 'Donanım başlatılıyor...',
+    bootingFlash: 'Flash üzerinden önyükleme yapılıyor...',
+    extractingFiles: 'Dosyalar flash üzerinden çıkarılıyor...',
+    performanceOptimization: 'Performans Optimizasyonu',
+    spatialPartitioning: 'Uzamsal Bölümleme',
+    viewportCulling: 'Görünüm Alanı Ayıklama',
+    virtualScrolling: 'Sanal Kaydırma',
+    skeletonScreens: 'İskelet Ekranlar',
+    assetLoading: 'Varlık Yükleme Stratejisi',
+    nodePooling: 'Düğüm Havuzlama',
+    layer3Switching: 'Katman 3 Anahtarlama',
+    routedPorts: 'Yönlendirilmiş Portlar',
+    dynamicRouting: 'Dinamik Yönlendirme',
+    ipRoutingEngine: 'IP Yönlendirme Motoru',
+    routingTasks: 'Yönlendirme Görevleri',
+    accessibility: 'Erişilebilirlik',
+    ariaManagement: 'ARIA Yönetimi',
+    keyboardNav: 'Klavye Navigasyonu',
+    highContrast: 'Yüksek Kontrast Desteği',
+    screenReader: 'Ekran Okuyucu Duyuruları',
+    wifiSignal: 'WiFi Sinyal Gücü',
+    wifiConnected: 'WiFi Bağlı',
+    wifiDisconnected: 'WiFi Bağlantısı Kesildi',
+    wifiConfig: 'WiFi Yapılandırması',
+    wifiControlPanel: 'WiFi Kontrol Paneli',
+    wifiMode: 'WiFi Modu',
+    wifiSsid: 'SSID',
+    wifiPassword: 'Şifre',
+    wifiSecurity: 'Güvenlik',
+    wifiChannel: 'Kanal',
+    wifiAp: 'Erişim Noktası (AP)',
+    wifiClient: 'İstemci',
+    saveSuccess: 'Yapılandırma başarıyla kaydedildi',
+    saveError: 'Kaydetme sırasında bir hata oluştu',
+    copySuccess: 'Panoya kopyalandı',
+    copyError: 'Kopyalama başarısız',
+    selectAll: 'Tümünü Seç',
+    cut: 'Kes',
+    paste: 'Yapıştır',
+    rename: 'Yeniden Adlandır',
+    powerOn: 'Gücü Aç',
+    powerOff: 'Gücü Kapat',
+    reload: 'Yeniden Yükle',
+    clear: 'Temizle',
+    confirm: 'Onayla',
+    yes: 'Evet',
+    no: 'Hayır',
+    newNote: 'Yeni not...',
+    deviceOff: 'Cihaz Kapalı',
+    wifiOff: 'WiFi Kapalı',
+    wifiOn: 'WiFi Açık',
+    statusLabel: 'Durum:',
+    modeLabel: 'Mod:',
+    securityLabel: 'Güvenlik:',
+    channelLabel: 'Kanal:',
+    connectedLabel: 'Bağlı:',
+    refreshNetwork: 'Ağı Yenile',
+    exitPingMode: 'Ping modundan çık (ESC)',
+    selectSource: 'Kaynak seç',
+    selectTarget: 'Hedef seç',
+    alignLeft: 'Sola Hizala',
+    alignTop: 'Üste Hizala',
+    togglePower: 'Gücü Aç/Kapat',
+    topologyAriaLabel: 'Ağ topolojisi tuvali. Cihazları sürükleyerek taşıyabilirsiniz.',
+    colorLabel: 'Renk',
+    fontLabel: 'Yazı Tipi',
+    fontSizeLabel: 'Boyut',
+    opacityLabel: 'Saydamlık',
+    duplicateLabel: 'Çoğalt',
+    noIp: 'IP Yok',
+    deviceNameLabel: 'Cihaz Adı',
+    measurementLabel: 'Ölçüm:',
+    noServices: 'Servis yok',
+    dhcpPoolLabel: 'DHCP Havuzu',
+    dnsRecordsLabel: 'DNS Kayıtları',
+    httpServerLabel: 'HTTP Sunucu',
+    exportLabel: 'Dışa Aktar',
+    pressEnterToConfirm: 'Devam etmek için Enter\'a basın',
+    enterPassword: 'Parolayı girin...',
+    typeCommandPlaceholder: 'Enter\'a basın veya yazın...',
+    searchTerminal: 'Terminal çıktısında arama yapın',
+    commandReference: 'Komut Referansı',
+    commandsFound: 'komut bulundu',
+    commandModes: 'Komut Modları:',
+    basicCommands: 'Temel komutlar',
+    allCommands: 'Tüm komutlar',
+    globalConfigLabel: 'Global yapılandırma',
+    interfaceConfigLabel: 'Arayüz yapılandırması',
+    activeSystem: 'Aktif Sistem',
+    tutorialWelcomeTitle: '🎓 Hoş Geldiniz',
+    tutorialWelcomeDesc: 'Network Simulator 2026\'ya hoş geldiniz! Bu kısa turda temel özellikleri keşfedeceksiniz. Bağlantıları yapılandırın, cihazları yönetin ve ağ becerilerinizi geliştirin.',
+    tutorialTopologyTitle: '📐 Topoloji Editörü',
+    tutorialTopologyDesc: 'Sürükle-bırak ile cihazları yerleştirin. Bağlantı kurmak için: 1) Bağla düğmesine tıkla, 2) Kaynak cihaz/port seç, 3) Hedef cihaz/port seç. Çift tıklama: PC\'de CMD, Switch/Router\'da CLI açar.',
+    tutorialCablesTitle: '🔌 Kablo Türleri',
+    tutorialCablesDesc: 'Dört kablo türü mevcut: Straight (mavi) - PC↔Switch/Router, Crossover (turuncu) - Switch↔Switch/Router↔Router, Console (cyan) - PC↔Cihaz yapılandırma, Wireless (mor) - Kablosuz bağlantılar.',
+    tutorialDevicesTitle: '💻 Cihaz Yönetimi',
+    tutorialDevicesDesc: 'Cihazları aç/kapat (güç düğmesi), yapılandır (CLI/Panel), ve monitör et. CLI sekmesinde komut satırından yapılandırma yapın. Görevler sekmesinde VLAN, port ve güvenlik görevlerini tamamlayın.',
+    tutorialPingTitle: '📡 Ping ve Bağlantı Testi',
+    tutorialPingDesc: 'Ping modu ile cihazlar arası bağlantıyı test edin. Başarılı pingler yeşil, başarısız olanlar kırmızı animasyonla gösterilir. DHCP otomatik IP atama, statik IP için manuel yapılandırma yapın.',
+    tutorialWifiTitle: '🌐 WiFi ve Kablosuz',
+    tutorialWifiDesc: 'Router ve Switch\'leri Access Point moduna alın (WiFi ayarları). SSID, şifreleme (WPA2/WPA3) ve şifre ayarlayın. PC\'ler otomatik olarak erişim noktalarına bağlanır.',
+    tutorialProjectTitle: '💾 Proje Yönetimi',
+    tutorialProjectDesc: 'Projeleri kaydet (Ctrl+S), yükle (Ctrl+O) veya yeni başlat (Ctrl+N). Örnek projeler ile hazır senaryoları inceleyin. Tüm yapılandırmalar JSON formatında kaydedilir.',
+    tutorialThemeTitle: '🎨 Arayüz Özelleştirme',
+    tutorialThemeDesc: 'Karanlık/Açık tema (🌙/☀️) ve dil (🇹🇷/🇬🇧) tercihlerinizi ayarlayın. Grafik kalitesi düşük/yüksek arasında geçiş yapın. Tüm tercihler tarayıcıda otomatik kaydedilir.',
+    tutorialReadyTitle: '🚀 Başlamaya Hazırsınız!',
+    tutorialReadyDesc: 'Artık ağ simülasyonuna başlamaya hazırsınız! Örnek projeleri inceleyin veya kendi topolojinizi oluşturun. Yardım paneli (sağ alt köşe) ve komut referansı her zaman yanınızda. İyi çalışmalar!',
+    projectSaved: 'Proje kaydedildi',
+    jsonDownloaded: 'JSON dosyası indirildi.',
+    invalidProject: 'Hata',
+    corruptedProject: 'Proje dosyası bozuk veya uyumsuz!',
+    wifiDhcpStatusUpdated: '🔄 WiFi + DHCP Durumu Güncellendi',
     dhcpSuccessTitle: 'DHCP ataması başarılı',
     dhcpSuccessDescription: 'DHCP ile {ip} atandı.',
     dhcpFailureTitle: 'DHCP ataması başarısız',
@@ -855,6 +1091,124 @@ const translations: Record<Language, Translations> = {
     copy: 'Copy',
     power: 'Power',
     tasks: 'Tasks',
+    basicHint: 'Core commands and first topology steps',
+    intermediateHint: 'Services, VLAN and routing scenarios',
+    advancedHint: 'Comprehensive setup and verification labs',
+    syslogStarted: '*** Syslog client started',
+    bootReady: 'Ready!',
+    bootLoading: 'Loading system...',
+    bootInitializing: 'Initializing hardware...',
+    bootingFlash: 'Booting from flash...',
+    extractingFiles: 'Extracting files from flash...',
+    performanceOptimization: 'Performance Optimization',
+    spatialPartitioning: 'Spatial Partitioning',
+    viewportCulling: 'Viewport Culling',
+    virtualScrolling: 'Virtual Scrolling',
+    skeletonScreens: 'Skeleton Screens',
+    assetLoading: 'Asset Loading Strategy',
+    nodePooling: 'Node Pooling',
+    layer3Switching: 'Layer 3 Switching',
+    routedPorts: 'Routed Ports',
+    dynamicRouting: 'Dynamic Routing',
+    ipRoutingEngine: 'IP Routing Engine',
+    routingTasks: 'Routing Tasks',
+    accessibility: 'Accessibility',
+    ariaManagement: 'ARIA Management',
+    keyboardNav: 'Keyboard Navigation',
+    highContrast: 'High Contrast Support',
+    screenReader: 'Screen Reader Announcements',
+    wifiSignal: 'WiFi Signal Strength',
+    wifiConnected: 'WiFi Connected',
+    wifiDisconnected: 'WiFi Disconnected',
+    wifiConfig: 'WiFi Configuration',
+    wifiControlPanel: 'WiFi Control Panel',
+    wifiMode: 'WiFi Mode',
+    wifiSsid: 'SSID',
+    wifiPassword: 'Password',
+    wifiSecurity: 'Security',
+    wifiChannel: 'Channel',
+    wifiAp: 'Access Point (AP)',
+    wifiClient: 'Client',
+    saveSuccess: 'Configuration saved successfully',
+    saveError: 'Error occurred while saving',
+    copySuccess: 'Copied to clipboard',
+    copyError: 'Copy failed',
+    selectAll: 'Select All',
+    cut: 'Cut',
+    paste: 'Paste',
+    rename: 'Rename',
+    powerOn: 'Power On',
+    powerOff: 'Power Off',
+    reload: 'Reload',
+    clear: 'Clear',
+    confirm: 'Confirm',
+    yes: 'Yes',
+    no: 'No',
+    newNote: 'New note...',
+    deviceOff: 'Device Off',
+    wifiOff: 'WiFi Off',
+    wifiOn: 'WiFi On',
+    statusLabel: 'Status:',
+    modeLabel: 'Mode:',
+    securityLabel: 'Security:',
+    channelLabel: 'Channel:',
+    connectedLabel: 'Connected:',
+    refreshNetwork: 'Refresh Network',
+    exitPingMode: 'Exit ping mode (ESC)',
+    selectSource: 'Select source',
+    selectTarget: 'Select target',
+    alignLeft: 'Align Left',
+    alignTop: 'Align Top',
+    togglePower: 'Toggle Power',
+    topologyAriaLabel: 'Network topology canvas. You can drag devices to move them.',
+    colorLabel: 'Color',
+    fontLabel: 'Font',
+    fontSizeLabel: 'Size',
+    opacityLabel: 'Opacity',
+    duplicateLabel: 'Duplicate',
+    noIp: 'No IP',
+    deviceNameLabel: 'Device Name',
+    measurementLabel: 'Measurement:',
+    noServices: 'No services',
+    dhcpPoolLabel: 'DHCP Pool',
+    dnsRecordsLabel: 'DNS Records',
+    httpServerLabel: 'HTTP Server',
+    exportLabel: 'Export',
+    pressEnterToConfirm: 'Press Enter to confirm',
+    enterPassword: 'Enter password...',
+    typeCommandPlaceholder: 'Press Enter or type...',
+    searchTerminal: 'Search in terminal output',
+    commandReference: 'Command Reference',
+    commandsFound: 'commands found',
+    commandModes: 'Command Modes:',
+    basicCommands: 'Basic commands',
+    allCommands: 'All commands',
+    globalConfigLabel: 'Global config',
+    interfaceConfigLabel: 'Interface config',
+    activeSystem: 'Active System',
+    tutorialWelcomeTitle: '🎓 Welcome',
+    tutorialWelcomeDesc: 'Welcome to Network Simulator 2026! This quick tour will show you the essential features. Configure connections, manage devices, and develop your networking skills.',
+    tutorialTopologyTitle: '📐 Topology Editor',
+    tutorialTopologyDesc: 'Drag and drop to position devices. To connect: 1) Click Connect button, 2) Select source device/port, 3) Select target device/port. Double-click: Opens CMD on PC, CLI on Switch/Router.',
+    tutorialCablesTitle: '🔌 Cable Types',
+    tutorialCablesDesc: 'Four cable types available: Straight (blue) - PC↔Switch/Router, Crossover (orange) - Switch↔Switch/Router↔Router, Console (cyan) - PC↔Device config, Wireless (purple) - Wireless connections.',
+    tutorialDevicesTitle: '💻 Device Management',
+    tutorialDevicesDesc: 'Power on/off devices (power button), configure (CLI/Panel), and monitor. Use CLI tab for command-line configuration. Complete VLAN, port and security tasks in Tasks tab.',
+    tutorialPingTitle: '📡 Ping & Connectivity',
+    tutorialPingDesc: 'Test connectivity with Ping mode. Successful pings show green, failed ones show red animation. DHCP auto-assigns IPs, or configure static IPs manually.',
+    tutorialWifiTitle: '🌐 WiFi & Wireless',
+    tutorialWifiDesc: 'Set Routers and Switches to Access Point mode (WiFi settings). Configure SSID, encryption (WPA2/WPA3) and password. PCs automatically connect to available access points.',
+    tutorialProjectTitle: '💾 Project Management',
+    tutorialProjectDesc: 'Save (Ctrl+S), load (Ctrl+O), or start new projects (Ctrl+N). Explore ready scenarios with example projects. All configurations are saved in JSON format.',
+    tutorialThemeTitle: '🎨 Interface Customization',
+    tutorialThemeDesc: 'Set Dark/Light theme (🌙/☀️) and language (🇹🇷/🇬🇧) preferences. Toggle graphics quality between low/high. All preferences are automatically saved in browser.',
+    tutorialReadyTitle: '🚀 You\'re Ready!',
+    tutorialReadyDesc: 'You\'re now ready to start network simulation! Explore example projects or create your own topology. Help panel (bottom-right) and command reference are always available. Good luck!',
+    projectSaved: 'Project saved',
+    jsonDownloaded: 'JSON file downloaded.',
+    invalidProject: 'Error',
+    corruptedProject: 'Project file is corrupted or incompatible!',
+    wifiDhcpStatusUpdated: '🔄 WiFi + DHCP Status Updated',
     dhcpSuccessTitle: 'DHCP assignment successful',
     dhcpSuccessDescription: 'Assigned via DHCP: {ip}',
     dhcpFailureTitle: 'DHCP assignment failed',

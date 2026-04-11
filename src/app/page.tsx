@@ -168,11 +168,11 @@ export default function Home() {
 
   const exampleLevelHints = useMemo(
     () => ({
-      basic: language === 'tr' ? 'Temel komutlar ve ilk topoloji adımları' : 'Core commands and first topology steps',
-      intermediate: language === 'tr' ? 'Servisler, VLAN ve yönlendirme senaryoları' : 'Services, VLAN and routing scenarios',
-      advanced: language === 'tr' ? 'Kapsamlı kurulum ve doğrulama laboratuvarları' : 'Comprehensive setup and verification labs'
+      basic: t.basicHint,
+      intermediate: t.intermediateHint,
+      advanced: t.advancedHint
     }),
-    [language]
+    [t]
   );
 
   const groupedExampleProjects = useMemo(() => {
@@ -878,7 +878,7 @@ export default function Home() {
           const suffix = state?.macAddress || deviceId;
 
           if (isRouter) {
-            const syslog = language === 'tr' ? '*** Syslog istemcisi başlatıldı' : '*** Syslog client started';
+            const syslog = t.syslogStarted;
             bootMessages = [
               { id: `boot-1-${suffix}`, type: 'output', content: `\n\nSystem Bootstrap, Version 15.1(4)M4, RELEASE SOFTWARE (fc1)\nTechnical Support: http://yunus.sf.net\nCopyright (c) 1994-2011 by Network Systems, Inc.\n` },
               { id: `boot-2-${suffix}`, type: 'output', content: `ISR4451/K9 platform with 4096 K bytes of memory\n\n${syslog}\nLoad/bootstrap symbols loaded, GOXR initialization\nReading all bootflash vectors\nPOST: CPU PCIe port Check PASS\nCPU memory test . . . . . . . . . . . . . OK\nBoard initialization completed\nInitializing flash file system\n` },
@@ -887,7 +887,7 @@ export default function Home() {
               { id: `boot-ready-${suffix}`, type: 'output', content: BOOT_PROGRESS_MARKER }
             ];
           } else if (isL3Switch) {
-            const syslog = language === 'tr' ? '*** Syslog istemcisi başlatıldı' : '*** Syslog client started';
+            const syslog = t.syslogStarted;
             bootMessages = [
               { id: `boot-1-${suffix}`, type: 'output', content: `\n\nSystem Bootstrap, Version 12.2(55r)SE, RELEASE SOFTWARE (fc1)\nTechnical Support: http://yunus.sf.net\nCopyright (c) 1994-2011 by Network Systems, Inc.\n` },
               { id: `boot-2-${suffix}`, type: 'output', content: `C3560 platform with 131072 K bytes of memory\n\n${syslog}\nLoad/bootstrap symbols loaded\nReading all bootflash vectors\nPOST: CPU PCIe port Check PASS\nCPU memory test . . . . . . . . . . . . . OK\nBoard initialization completed\nInitializing flash file system\n` },
@@ -896,7 +896,7 @@ export default function Home() {
               { id: `boot-ready-${suffix}`, type: 'output', content: BOOT_PROGRESS_MARKER }
             ];
           } else {
-            const syslog = language === 'tr' ? '*** Syslog istemcisi başlatıldı' : '*** Syslog client started';
+            const syslog = t.syslogStarted;
             bootMessages = [
               { id: `boot-1-${suffix}`, type: 'output', content: `\n\nSystem Bootstrap, Version 12.2(11r)EA1, RELEASE SOFTWARE (fc1)\nTechnical Support: http://yunus.sf.net\nCopyright (c) 1994-2010 by Network Systems, Inc.\n` },
               { id: `boot-2-${suffix}`, type: 'output', content: `C2960 platform with 65536 K bytes of memory\n\n${syslog}\nLoad/bootstrap symbols loaded\nReading all bootflash vectors\nPOST: CPU Ethernet port Check PASS\nCPU memory test . . . . . . . . . . . . . OK\nBoard initialization completed\nInitializing flash file system\n` },
@@ -998,10 +998,10 @@ export default function Home() {
     } catch (error) {
       console.error("Error loading project data", error);
       toast({
-        title: language === 'tr' ? 'Hata' : 'Error',
-        description: language === 'tr' ? 'Proje dosyası bozuk veya uyumsuz!' : 'Project file is corrupted or incompatible!',
-        variant: 'destructive',
-      });
+      variant: 'destructive',
+      title: t.invalidProject,
+      description: t.corruptedProject,
+    });
       return false;
     }
   }, [setDeviceStates, setDeviceOutputs, setPcOutputs, setPcHistories, setTopologyDevices, setTopologyConnections, setTopologyNotes, setCableInfo, setActiveDeviceId, setActiveDeviceType, setActiveTab, setTopologyKey, setHasUnsavedChanges, resetHistory, toast, setZoom, setPan, language, normalizeDeviceType]);
@@ -1481,8 +1481,8 @@ export default function Home() {
     setHasUnsavedChanges(false);
     setLastSaveTime(new Date().toLocaleTimeString());
     toast({
-      title: language === 'tr' ? 'Proje kaydedildi' : 'Project saved',
-      description: language === 'tr' ? 'JSON dosyası indirildi.' : 'JSON file downloaded.',
+      title: t.projectSaved,
+      description: t.jsonDownloaded,
     });
   }, [deviceStates, deviceOutputs, pcOutputs, pcHistories, topologyDevices, topologyConnections, topologyNotes, cableInfo, activeDeviceId, activeDeviceType, setHasUnsavedChanges, setLastSaveTime, language]);
 
@@ -1837,67 +1837,40 @@ export default function Home() {
   // Onboarding content + controls
   const onboardingSteps = [
     {
-      title: language === 'tr' ? '🎓 Hoş Geldiniz' : '🎓 Welcome',
-      description:
-        language === 'tr'
-          ? 'Network Simulator 2026\'ya hoş geldiniz! Bu kısa turda temel özellikleri keşfedeceksiniz. Bağlantıları yapılandırın, cihazları yönetin ve ağ becerilerinizi geliştirin.'
-          : 'Welcome to Network Simulator 2026! This quick tour will show you the essential features. Configure connections, manage devices, and develop your networking skills.',
+      title: t.tutorialWelcomeTitle,
+      description: t.tutorialWelcomeDesc,
     },
     {
-      title: language === 'tr' ? '📐 Topoloji Editörü' : '📐 Topology Editor',
-      description:
-        language === 'tr'
-          ? 'Sürükle-bırak ile cihazları yerleştirin. Bağlantı kurmak için: 1) Bağla düğmesine tıkla, 2) Kaynak cihaz/port seç, 3) Hedef cihaz/port seç. Çift tıklama: PC\'de CMD, Switch/Router\'da CLI açar.'
-          : 'Drag and drop to position devices. To connect: 1) Click Connect button, 2) Select source device/port, 3) Select target device/port. Double-click: Opens CMD on PC, CLI on Switch/Router.',
+      title: t.tutorialTopologyTitle,
+      description: t.tutorialTopologyDesc,
     },
     {
-      title: language === 'tr' ? '🔌 Kablo Türleri' : '🔌 Cable Types',
-      description:
-        language === 'tr'
-          ? 'Dört kablo türü mevcut: Straight (mavi) - PC↔Switch/Router, Crossover (turuncu) - Switch↔Switch/Router↔Router, Console (cyan) - PC↔Cihaz yapılandırma, Wireless (mor) - Kablosuz bağlantılar.'
-          : 'Four cable types available: Straight (blue) - PC↔Switch/Router, Crossover (orange) - Switch↔Switch/Router↔Router, Console (cyan) - PC↔Device config, Wireless (purple) - Wireless connections.',
+      title: t.tutorialCablesTitle,
+      description: t.tutorialCablesDesc,
     },
     {
-      title: language === 'tr' ? '💻 Cihaz Yönetimi' : '💻 Device Management',
-      description:
-        language === 'tr'
-          ? 'Cihazları aç/kapat (güç düğmesi), yapılandır (CLI/Panel), ve monitör et. CLI sekmesinde komut satırından yapılandırma yapın. Görevler sekmesinde VLAN, port ve güvenlik görevlerini tamamlayın.'
-          : 'Power on/off devices (power button), configure (CLI/Panel), and monitor. Use CLI tab for command-line configuration. Complete VLAN, port and security tasks in Tasks tab.',
+      title: t.tutorialDevicesTitle,
+      description: t.tutorialDevicesDesc,
     },
     {
-      title: language === 'tr' ? '📡 Ping ve Bağlantı Testi' : '📡 Ping & Connectivity',
-      description:
-        language === 'tr'
-          ? 'Ping modu ile cihazlar arası bağlantıyı test edin. Başarılı pingler yeşil, başarısız olanlar kırmızı animasyonla gösterilir. DHCP otomatik IP atama, statik IP için manuel yapılandırma yapın.'
-          : 'Test connectivity with Ping mode. Successful pings show green, failed ones show red animation. DHCP auto-assigns IPs, or configure static IPs manually.',
+      title: t.tutorialPingTitle,
+      description: t.tutorialPingDesc,
     },
     {
-      title: language === 'tr' ? '🌐 WiFi ve Kablosuz' : '🌐 WiFi & Wireless',
-      description:
-        language === 'tr'
-          ? 'Router ve Switch\'leri Access Point moduna alın (WiFi ayarları). SSID, şifreleme (WPA2/WPA3) ve şifre ayarlayın. PC\'ler otomatik olarak erişim noktalarına bağlanır.'
-          : 'Set Routers and Switches to Access Point mode (WiFi settings). Configure SSID, encryption (WPA2/WPA3) and password. PCs automatically connect to available access points.',
+      title: t.tutorialWifiTitle,
+      description: t.tutorialWifiDesc,
     },
     {
-      title: language === 'tr' ? '💾 Proje Yönetimi' : '💾 Project Management',
-      description:
-        language === 'tr'
-          ? 'Projeleri kaydet (Ctrl+S), yükle (Ctrl+O) veya yeni başlat (Ctrl+N). Örnek projeler ile hazır senaryoları inceleyin. Tüm yapılandırmalar JSON formatında kaydedilir.'
-          : 'Save (Ctrl+S), load (Ctrl+O), or start new projects (Ctrl+N). Explore ready scenarios with example projects. All configurations are saved in JSON format.',
+      title: t.tutorialProjectTitle,
+      description: t.tutorialProjectDesc,
     },
     {
-      title: language === 'tr' ? '🎨 Arayüz Özelleştirme' : '🎨 Interface Customization',
-      description:
-        language === 'tr'
-          ? 'Karanlık/Açık tema (🌙/☀️) ve dil (🇹🇷/🇬🇧) tercihlerinizi ayarlayın. Grafik kalitesi düşük/yüksek arasında geçiş yapın. Tüm tercihler tarayıcıda otomatik kaydedilir.'
-          : 'Set Dark/Light theme (🌙/☀️) and language (🇹🇷/🇬🇧) preferences. Toggle graphics quality between low/high. All preferences are automatically saved in browser.',
+      title: t.tutorialThemeTitle,
+      description: t.tutorialThemeDesc,
     },
     {
-      title: language === 'tr' ? '🚀 Başlamaya Hazırsınız!' : '🚀 You\'re Ready!',
-      description:
-        language === 'tr'
-          ? 'Artık ağ simülasyonuna başlamaya hazırsınız! Örnek projeleri inceleyin veya kendi topolojinizi oluşturun. Yardım paneli (sağ alt köşe) ve komut referansı her zaman yanınızda. İyi çalışmalar!'
-          : 'You\'re now ready to start network simulation! Explore example projects or create your own topology. Help panel (bottom-right) and command reference are always available. Good luck!',
+      title: t.tutorialReadyTitle,
+      description: t.tutorialReadyDesc,
     },
   ];
 

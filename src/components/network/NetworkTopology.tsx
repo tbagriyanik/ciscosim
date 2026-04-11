@@ -140,6 +140,7 @@ export function NetworkTopology({
   const { language, t } = useLanguage();
   const { theme } = useTheme();
   const isDark = theme === 'dark';
+  const isTR = language === 'tr';
 
   // Helper function to generate all switch ports - 24 FastEthernet ports
   const generateSwitchPorts = () => {
@@ -1840,7 +1841,7 @@ export function NetworkTopology({
     if (port.status === 'connected') {
       // Port is already in use - cannot connect
       if (isDrawingConnection) {
-        setConnectionError(language === 'tr' ? 'Bu port zaten kullanımda!' : 'This port is already in use!');
+        setConnectionError(t.portInUse);
         setTimeout(() => setConnectionError(null), 3000);
         setIsDrawingConnection(false);
         setConnectionStart(null);
@@ -2074,7 +2075,7 @@ export function NetworkTopology({
       y: 200 + Math.random() * 100,
       width: 200,
       height: 150,
-      text: language === 'tr' ? 'Yeni not...' : 'New note...',
+      text: t.newNote,
       color: '#fef3c7',
       font: 'Arial',
       fontSize: 12,
@@ -3113,8 +3114,8 @@ export function NetworkTopology({
     // Check if both IPs are valid
     if (!isSourceIpValid || !isTargetIpValid) {
       const errorMessage = !isSourceIpValid
-        ? (language === 'tr' ? 'Kaynak cihazın IP adresi geçersiz' : 'Source device IP is invalid')
-        : (language === 'tr' ? 'Hedef cihazın IP adresi geçersiz' : 'Target device IP is invalid');
+        ? (isTR ? 'Kaynak cihazın IP adresi geçersiz' : 'Source device IP is invalid')
+        : (isTR ? 'Hedef cihazın IP adresi geçersiz' : 'Target device IP is invalid');
 
       setPingAnimation({
         sourceId,
@@ -3129,7 +3130,7 @@ export function NetworkTopology({
       });
 
       setErrorToast({
-        message: language === 'tr' ? 'Ping başarısız!' : 'Ping failed!',
+        message: isTR ? 'Ping başarısız!' : 'Ping failed!',
         details: errorMessage
       });
 
@@ -3160,7 +3161,7 @@ export function NetworkTopology({
 
       // Show persistent error toast
       setErrorToast({
-        message: language === 'tr' ? 'Ping başarısız!' : 'Ping failed!',
+        message: isTR ? 'Ping başarısız!' : 'Ping failed!',
         details: errorMessage
       });
 
@@ -3187,7 +3188,7 @@ export function NetworkTopology({
 
       // Show persistent error toast
       setErrorToast({
-        message: language === 'tr' ? 'Ping başarısız!' : 'Ping failed!',
+        message: isTR ? 'Ping başarısız!' : 'Ping failed!',
         details: 'Fiziksel bağlantı yok'
       });
 
@@ -3899,23 +3900,23 @@ export function NetworkTopology({
             }
 
             const getStatusText = () => {
-              if (device.status === 'offline') return language === 'tr' ? 'Cihaz Kapalı' : 'Device Off';
-              if (!isEnabled) return language === 'tr' ? 'WiFi Kapalı' : 'WiFi Off';
-              if (isConnected) return language === 'tr' ? 'Bağlı' : 'Connected';
-              return language === 'tr' ? 'Açık' : 'On';
+              if (device.status === 'offline') return t.deviceOff;
+              if (!isEnabled) return t.wifiOff;
+              if (isConnected) return t.connected;
+              return t.on;
             };
 
             const getModeText = () => {
-              if (wifiMode === 'ap') return language === 'tr' ? 'Erişim Noktası (AP)' : 'Access Point (AP)';
-              if (wifiMode === 'client') return language === 'tr' ? 'İstemci' : 'Client';
-              return language === 'tr' ? 'Kapalı' : 'Disabled';
+              if (wifiMode === 'ap') return t.wifiAp;
+              if (wifiMode === 'client') return t.wifiClient;
+              return t.off;
             };
 
             const getSecurityText = () => {
               if (wifiSecurity === 'wpa3') return 'WPA3';
               if (wifiSecurity === 'wpa2') return 'WPA2';
               if (wifiSecurity === 'wpa') return 'WPA';
-              return language === 'tr' ? 'Açık' : 'Open';
+              return t.on;
             };
 
             const getStatusColor = () => {
@@ -3983,7 +3984,7 @@ export function NetworkTopology({
                     </div>
                     <div className="space-y-0.5">
                       <div className="text-xs font-bold">
-                        {language === 'tr' ? 'Durum:' : 'Status:'}{' '}
+                        {t.statusLabel}{' '}
                         <span className={getStatusColor()}>
                           {getStatusText()}
                         </span>
@@ -3995,24 +3996,24 @@ export function NetworkTopology({
                         </div>
                       )}
                       <div className="text-xs font-bold">
-                        {language === 'tr' ? 'Mod:' : 'Mode:'}{' '}
+                        {t.modeLabel}{' '}
                         <span>{getModeText()}</span>
                       </div>
                       {wifiMode !== 'disabled' && (
                         <>
                           <div className="text-xs font-bold">
-                            {language === 'tr' ? 'Güvenlik:' : 'Security:'}{' '}
+                            {t.securityLabel}{' '}
                             <span>{getSecurityText()}</span>
                           </div>
                           {wifiChannel && (
                             <div className="text-xs font-bold">
-                              {language === 'tr' ? 'Kanal:' : 'Channel:'}{' '}
+                              {t.channelLabel}{' '}
                               <span>{wifiChannel}</span>
                             </div>
                           )}
                           {wifiMode === 'ap' && (
                             <div className="text-xs font-bold">
-                              {language === 'tr' ? 'Bağlı:' : 'Connected:'}{' '}
+                              {t.connectedLabel}{' '}
                               <span className="text-cyan-500">{connectedDevices}</span>
                             </div>
                           )}
@@ -4123,7 +4124,7 @@ export function NetworkTopology({
             </g>
           </TooltipTrigger>
           <TooltipContent>
-            {isPoweredOff ? (language === 'tr' ? 'Gücü Aç' : 'Power On') : (language === 'tr' ? 'Gücü Kapat' : 'Power Off')}
+            {isPoweredOff ? t.powerOn : t.powerOff}
           </TooltipContent>
         </Tooltip>
 
@@ -4774,7 +4775,7 @@ export function NetworkTopology({
                         </svg>
                       </button>
                     </TooltipTrigger>
-                    <TooltipContent>{language === 'tr' ? 'PC Ekle' : 'Add PC'}</TooltipContent>
+                    <TooltipContent>{t.addPc}</TooltipContent>
                   </Tooltip>
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -4787,7 +4788,7 @@ export function NetworkTopology({
                         </svg>
                       </button>
                     </TooltipTrigger>
-                    <TooltipContent>{language === 'tr' ? 'L2 Switch Ekle' : 'Add L2 Switch'}</TooltipContent>
+                    <TooltipContent>{isTR ? 'L2 Switch Ekle' : 'Add L2 Switch'}</TooltipContent>
                   </Tooltip>
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -4800,7 +4801,7 @@ export function NetworkTopology({
                         </svg>
                       </button>
                     </TooltipTrigger>
-                    <TooltipContent>{language === 'tr' ? 'L3 Switch Ekle' : 'Add L3 Switch'}</TooltipContent>
+                    <TooltipContent>{isTR ? 'L3 Switch Ekle' : 'Add L3 Switch'}</TooltipContent>
                   </Tooltip>
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -4814,7 +4815,7 @@ export function NetworkTopology({
                         </svg>
                       </button>
                     </TooltipTrigger>
-                    <TooltipContent>{language === 'tr' ? 'Router Ekle' : 'Add Router'}</TooltipContent>
+                    <TooltipContent>{t.addRouter}</TooltipContent>
                   </Tooltip>
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -4825,7 +4826,7 @@ export function NetworkTopology({
                         {DEVICE_ICONS['iot']}
                       </button>
                     </TooltipTrigger>
-                    <TooltipContent>{language === 'tr' ? 'IoT Ekle' : 'Add IoT'}</TooltipContent>
+                    <TooltipContent>{isTR ? 'IoT Ekle' : 'Add IoT'}</TooltipContent>
                   </Tooltip>
                 </div>
 
@@ -4860,10 +4861,10 @@ export function NetworkTopology({
                       </TooltipTrigger>
                       <TooltipContent>
                         {type === 'straight'
-                          ? (language === 'tr' ? 'Düz Kablo' : 'Straight Cable')
+                          ? (isTR ? 'Düz Kablo' : 'Straight Cable')
                           : type === 'crossover'
-                            ? (language === 'tr' ? 'Çapraz Kablo' : 'Crossover Cable')
-                            : (language === 'tr' ? 'Konsol Kablosu' : 'Console Cable')}
+                            ? (isTR ? 'Çapraz Kablo' : 'Crossover Cable')
+                            : (isTR ? 'Konsol Kablosu' : 'Console Cable')}
                       </TooltipContent>
                     </Tooltip>
                   ))}
@@ -4888,10 +4889,10 @@ export function NetworkTopology({
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 0 0 -5.656 0l-4 4a4 4 0 1 0 5.656 5.656l1.102-1.101m-.758-4.899a4 4 0 0 0 5.656 0l4-4a4 4 0 0 0 -5.656-5.656l-1.1 1.1" />
                   </svg>
-                  <span className="hidden sm:inline text-sm">{language === 'tr' ? 'Bağla' : 'Connect'}</span>
+                  <span className="hidden sm:inline text-sm">{t.connect}</span>
                 </button>
               </TooltipTrigger>
-              <TooltipContent>{language === 'tr' ? 'Bağla' : 'Connect'}</TooltipContent>
+              <TooltipContent>{t.connect}</TooltipContent>
             </Tooltip>
             <div className={`w-px h-4 ${isDark ? 'bg-slate-700' : 'bg-slate-300'}`} />
             {/* Ping Button */}
@@ -4918,8 +4919,8 @@ export function NetworkTopology({
               </TooltipTrigger>
               <TooltipContent>
                 {pingMode
-                  ? (language === 'tr' ? 'Ping modundan çık (ESC)' : 'Exit ping mode (ESC)')
-                  : (language === 'tr' ? 'Ping: Kaynak → Hedef seç' : 'Ping: Select source → target')}
+                  ? t.exitPingMode
+                  : (isTR ? 'Ping: Kaynak → Hedef seç' : 'Ping: Select source → target')}
               </TooltipContent>
             </Tooltip>
             <div className={`w-px h-4 ${isDark ? 'bg-slate-700' : 'bg-slate-300'}`} />
@@ -4933,10 +4934,10 @@ export function NetworkTopology({
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 0 0 -2 2v11a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-5m-1.414-9.414a2 2 0 1 1 2.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                   </svg>
-                  <span className="hidden sm:inline text-sm">{language === 'tr' ? 'Not' : 'Note'}</span>
+                  <span className="hidden sm:inline text-sm">{t.note}</span>
                 </button>
               </TooltipTrigger>
-              <TooltipContent>{language === 'tr' ? 'Not' : 'Note'}</TooltipContent>
+              <TooltipContent>{t.note}</TooltipContent>
             </Tooltip>
             <div className={`w-px h-4 ${isDark ? 'bg-slate-700' : 'bg-slate-300'}`} />
             {/* Refresh Network Button */}
@@ -4953,10 +4954,10 @@ export function NetworkTopology({
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                   </svg>
-                  <span className="hidden sm:inline text-sm">{language === 'tr' ? 'Yenile' : 'Refresh'}</span>
+                  <span className="hidden sm:inline text-sm">{isTR ? 'Yenile' : 'Refresh'}</span>
                 </button>
               </TooltipTrigger>
-              <TooltipContent>{language === 'tr' ? 'Ağı Yenile (F5)' : 'Refresh Network (F5) '}</TooltipContent>
+              <TooltipContent>{isTR ? 'Ağı Yenile (F5)' : 'Refresh Network (F5) '}</TooltipContent>
             </Tooltip>
           </div>
         </div>
@@ -4971,7 +4972,7 @@ export function NetworkTopology({
               <SheetHeader className="p-6 border-b border-slate-800/50">
                 <SheetTitle className="text-lg font-bold flex items-center gap-2">
                   <Plus className="w-5 h-5 text-cyan-500" />
-                  {language === 'tr' ? 'Cihaz veya Kablo Ekle' : 'Add Device or Cable'}
+                  {t.addDeviceOrCable}
                 </SheetTitle>
               </SheetHeader>
               <div className="p-6 space-y-8">
@@ -4988,7 +4989,7 @@ export function NetworkTopology({
                         {DEVICE_ICONS['pc']}
                       </div>
                       <span className="text-xs font-bold text-center">
-                        {language === 'tr' ? 'PC Ekle' : 'Add PC'}
+                        {t.addPc}
                       </span>
                     </button>
                     <button
@@ -5000,7 +5001,7 @@ export function NetworkTopology({
                         {DEVICE_ICONS['switch']}
                       </div>
                       <span className="text-xs font-bold text-center">
-                        {language === 'tr' ? 'L2 Switch' : 'L2 Switch'}
+                        {isTR ? 'L2 Switch' : 'L2 Switch'}
                       </span>
                     </button>
                     <button
@@ -5014,7 +5015,7 @@ export function NetworkTopology({
                         </svg>
                       </div>
                       <span className="text-xs font-bold text-center">
-                        {language === 'tr' ? 'L3 Switch' : 'L3 Switch'}
+                        {isTR ? 'L3 Switch' : 'L3 Switch'}
                       </span>
                     </button>
                     <button
@@ -5026,7 +5027,7 @@ export function NetworkTopology({
                         {DEVICE_ICONS['router']}
                       </div>
                       <span className="text-xs font-bold text-center">
-                        {language === 'tr' ? 'Router Ekle' : 'Add Router'}
+                        {t.addRouter}
                       </span>
                     </button>
                     <button
@@ -5038,7 +5039,7 @@ export function NetworkTopology({
                         {DEVICE_ICONS['iot']}
                       </div>
                       <span className="text-xs font-bold text-center">
-                        {language === 'tr' ? 'IoT Ekle' : 'Add IoT'}
+                        {isTR ? 'IoT Ekle' : 'Add IoT'}
                       </span>
                     </button>
                   </div>
@@ -5092,8 +5093,8 @@ export function NetworkTopology({
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                 </svg>
                 {pingSource
-                  ? (language === 'tr' ? `Hedef seç` : `Select target`)
-                  : (language === 'tr' ? 'Kaynak seç' : 'Select source')
+                  ? t.selectTarget
+                  : t.selectSource
                 }
               </div>
             </div>
@@ -5103,13 +5104,13 @@ export function NetworkTopology({
               } backdrop-blur-md`}>
               <div className="flex items-center gap-2 border-r pr-4 border-slate-700/30">
                 <span className="text-xs font-bold tracking-wider opacity-30">
-                  {language === 'tr' ? 'Hizala' : 'Align'}
+                  {isTR ? 'Hizala' : 'Align'}
                 </span>
                 <div className="flex items-center gap-1">
                   <button
                     onClick={() => handleAlign('left')}
                     className={`p-1.5 rounded-lg transition-colors ${isDark ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-slate-100 text-slate-600'}`}
-                    title={language === 'tr' ? 'Sola Hizala' : 'Align Left'}
+                    title={t.alignLeft}
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 2v20M8 5h10M8 11h7M8 17h12" />
@@ -5119,7 +5120,7 @@ export function NetworkTopology({
                   <button
                     onClick={() => handleAlign('top')}
                     className={`p-1.5 rounded-lg transition-colors ${isDark ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-slate-100 text-slate-600'}`}
-                    title={language === 'tr' ? 'Üste Hizala' : 'Align Top'}
+                    title={t.alignTop}
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2 4h20M5 8v10M11 8v7M17 8v12" />
@@ -5130,7 +5131,7 @@ export function NetworkTopology({
 
               <div className="flex items-center gap-3">
                 <span className="text-sm font-semibold whitespace-nowrap">
-                  {language === 'tr' ? `${selectedDeviceIds.length} Cihaz` : `${selectedDeviceIds.length} Devices`}
+                  {isTR ? `${selectedDeviceIds.length} Cihaz` : `${selectedDeviceIds.length} Devices`}
                 </span>
                 <div className="flex gap-1">
                   <button
@@ -5142,10 +5143,10 @@ export function NetworkTopology({
                       ? 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border-amber-500/20'
                       : 'bg-amber-50 hover:bg-amber-100 text-amber-700 border-amber-200'
                       }`}
-                    title={language === 'tr' ? 'Gücü Aç/Kapat' : 'Toggle Power'}
+                    title={t.togglePower}
                   >
                     <Power className="w-4 h-4" />
-                    {language === 'tr' ? 'Güç' : 'Power'}
+                    {isTR ? 'Güç' : 'Power'}
                   </button>
                   <button
                     onClick={() => {
@@ -5156,7 +5157,7 @@ export function NetworkTopology({
                     }}
                     className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${isDark ? 'bg-slate-700 hover:bg-slate-600 text-slate-200' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'}`}
                   >
-                    {language === 'tr' ? 'İptal' : 'Cancel'}
+                    {t.cancel}
                   </button>
                   <button
                     onClick={() => {
@@ -5166,7 +5167,7 @@ export function NetworkTopology({
                     }}
                     className="px-3 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white text-xs font-bold transition-all border border-red-500/20"
                   >
-                    {language === 'tr' ? 'Sil' : 'Delete'}
+                    {t.delete}
                   </button>
                 </div>
               </div>
@@ -5178,7 +5179,7 @@ export function NetworkTopology({
             ref={canvasRef}
             className={`w-full h-full flex-1 min-h-[500px] overflow-hidden relative touch-none select-none print:overflow-visible print:h-auto print:min-h-full topology-print-area ${pingMode ? 'cursor-crosshair' : 'cursor-grab active:cursor-grabbing'}`}
             role="application"
-            aria-label={language === 'tr' ? 'Ağ topolojisi tuvali. Cihazları sürükleyerek taşıyabilirsiniz.' : 'Network topology canvas. You can drag devices to move them.'}
+            aria-label={t.topologyAriaLabel}
             tabIndex={0}
             onMouseDown={handleCanvasMouseDown}
             onTouchStart={handleTouchStart}

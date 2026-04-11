@@ -1044,7 +1044,7 @@ export function Terminal({
             </div>
           </TooltipTrigger>
           <TooltipContent>
-            {language === 'tr' ? 'WiFi Sinyal Gücü' : 'WiFi Signal Strength'}
+            {t.wifiSignal}
           </TooltipContent>
         </Tooltip>
       )}
@@ -1073,7 +1073,7 @@ export function Terminal({
             <Download className="w-4 h-4" />
           </Button>
         </TooltipTrigger>
-        <TooltipContent>{language === 'tr' ? 'Dışa Aktar' : 'Export'}</TooltipContent>
+        <TooltipContent>{t.exportLabel}</TooltipContent>
       </Tooltip>
       <Tooltip>
         <TooltipTrigger asChild>
@@ -1113,7 +1113,7 @@ export function Terminal({
         {showSettings && (
           <div className="px-4 py-2 border-b bg-muted/30 flex items-center gap-4 animate-in slide-in-from-top-2">
             <label className="text-[10px] font-black tracking-widest text-muted-foreground whitespace-nowrap">
-              {language === 'tr' ? 'Yazı Boyutu' : 'Font Size'}: {fontSize}px
+              {t.fontSizeLabel}: {fontSize}px
             </label>
             <input
               type="range" min="10" max="20" value={fontSize}
@@ -1186,8 +1186,8 @@ export function Terminal({
                 {(confirmDialog?.show || isReloadConfirmationPending) && (
                   <div className="absolute -top-7 left-4 right-4 text-[10px] font-black tracking-widest text-amber-400 animate-pulse">
                     {confirmDialog?.show
-                      ? (confirmDialog.message || (language === 'tr' ? 'Onaylamak için Enter\'a basın' : 'Press Enter to confirm'))
-                      : (language === 'tr' ? 'Devam etmek için Enter\'a basın [confirm]' : 'Press Enter to confirm [confirm]')}
+                      ? (confirmDialog.message || t.pressEnterToConfirm)
+                      : `${t.pressEnterToConfirm} [confirm]`}
                   </div>
                 )}
                 <div className={cn(
@@ -1230,9 +1230,9 @@ export function Terminal({
                     className="flex-1 bg-transparent border-none outline-none font-mono text-[13px] placeholder:text-muted-foreground/50"
                     placeholder={
                       state.awaitingPassword || localPasswordPrompt
-                        ? (language === 'tr' ? 'Parolayı girin...' : 'Enter password...')
+                        ? t.enterPassword
                         : confirmDialog?.show || isReloadConfirmationPending
-                          ? (language === 'tr' ? 'Enter\'a basın veya yazın...' : 'Press Enter or type...')
+                          ? t.typeCommandPlaceholder
                           : t.typeCommand
                     }
                     autoComplete="off"
@@ -1260,7 +1260,7 @@ export function Terminal({
                       }
                       setInput('');
                     }}
-                    title={language === 'tr' ? 'İptal' : 'Cancel'}
+                    title={t.cancel}
                   >
                     <X className={cn("w-5 h-5", isMobile && "w-4 h-4")} />
                   </Button>
@@ -1323,8 +1323,8 @@ export function Terminal({
           <DialogHeader>
             <DialogTitle>{t.search}</DialogTitle>
             <DialogDescription>
-              {language === 'tr' ? 'Terminal çıktısında arama yapın' : 'Search in terminal output'}
-            </DialogDescription>
+                {t.searchTerminal}
+              </DialogDescription>
           </DialogHeader>
           <div className="relative">
             <Input

@@ -13,7 +13,8 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { Info, Terminal, Search, X } from 'lucide-react';
+import { Info, Terminal, Search, X, ChevronDown } from 'lucide-react';
+import { getCommandCategories } from './networkTopology.commands';
 
 interface AboutModalProps {
   isOpen: boolean;
@@ -32,65 +33,7 @@ export function AboutModal({ isOpen, onClose }: AboutModalProps) {
   const isTR = lang === 'tr';
 
   // Help content data - memoized to prevent infinite loops
-  const helpCategories = useMemo(() => [
-    {
-      id: 'system',
-      title: isTR ? 'Sistem & Oturum' : 'System & Session',
-      cmds: [
-        ['enable', isTR ? 'Ayrıcalıklı moda geç' : 'Enter privileged mode'],
-        ['configure terminal', isTR ? 'Konfigürasyon modu' : 'Enter config mode'],
-        ['exit', isTR ? 'Moddan çık' : 'Exit current mode'],
-        ['end', isTR ? 'Ayrıcalıklı moda dön' : 'Return to privileged'],
-      ]
-    },
-    {
-      id: 'privileged',
-      title: isTR ? 'Privileged EXEC' : 'Privileged EXEC',
-      cmds: [
-        ['ping <host>', isTR ? 'Bağlantı testi' : 'Ping host'],
-        ['traceroute <host>', isTR ? 'Rota izleme' : 'Trace route'],
-        ['telnet <host>', isTR ? 'Telnet bağlantısı' : 'Telnet connection'],
-        ['ssh <host>', isTR ? 'SSH bağlantısı' : 'SSH connection'],
-        ['write memory', isTR ? 'Yapılandırmayı kaydet' : 'Save config'],
-        ['reload', isTR ? 'Cihazı yeniden yükle' : 'Reload device'],
-      ]
-    },
-    {
-      id: 'global',
-      title: isTR ? 'Global Konfigürasyon' : 'Global Config',
-      cmds: [
-        ['hostname <name>', isTR ? 'Cihaz adı' : 'Set hostname'],
-        ['vlan <id>', isTR ? 'VLAN oluştur' : 'Create VLAN'],
-        ['interface <name>', isTR ? 'Arayüz seç' : 'Select interface'],
-        ['ip routing', isTR ? 'IP yönlendirme' : 'Enable IP routing'],
-        ['router rip', isTR ? 'RIP yönlendirmesi' : 'Enable RIP'],
-        ['router ospf', isTR ? 'OSPF yönlendirmesi' : 'Enable OSPF'],
-      ]
-    },
-    {
-      id: 'interface',
-      title: isTR ? 'Arayüz Konfigürasyonu' : 'Interface Config',
-      cmds: [
-        ['shutdown', isTR ? 'Arayüzü kapat' : 'Disable interface'],
-        ['no shutdown', isTR ? 'Arayüzü aç' : 'Enable interface'],
-        ['speed {10|100|1000|auto}', isTR ? 'Hız ayarla' : 'Set speed'],
-        ['switchport mode access', isTR ? 'Erişim modu' : 'Access mode'],
-        ['switchport mode trunk', isTR ? 'Trunk modu' : 'Trunk mode'],
-        ['ip address <ip> <mask>', isTR ? 'IP adresi ata' : 'Set IP address'],
-      ]
-    },
-    {
-      id: 'show',
-      title: isTR ? 'Show Komutları' : 'Show Commands',
-      cmds: [
-        ['show running-config', isTR ? 'Çalışan config' : 'Running config'],
-        ['show ip interface brief', isTR ? 'IP özet' : 'IP interface brief'],
-        ['show vlan', isTR ? 'VLAN listesi' : 'VLAN list'],
-        ['show mac address-table', isTR ? 'MAC tablosu' : 'MAC table'],
-        ['show ip route', isTR ? 'Yönlendirme tablosu' : 'Routing table'],
-      ]
-    },
-  ], [isTR]);
+  const helpCategories = useMemo(() => getCommandCategories(isTR), [isTR]);
 
   const [expandedHelp, setExpandedHelp] = useState<Record<string, boolean>>({
     system: true,
@@ -131,7 +74,7 @@ export function AboutModal({ isOpen, onClose }: AboutModalProps) {
       <DialogContent className="sm:max-w-[600px] md:max-w-2xl lg:max-w-3xl max-h-[80vh]">
         <DialogHeader>
           <DialogTitle className="sr-only">
-            {activeTab === 'about' ? t.aboutTitle : (isTR ? 'Komut Referansı' : 'Command Reference')}
+            {activeTab === 'about' ? t.aboutTitle : t.commandReference}
           </DialogTitle>
           <div className="flex items-center gap-2 mb-2">
             <button
@@ -164,11 +107,11 @@ export function AboutModal({ isOpen, onClose }: AboutModalProps) {
               )}
             >
               <Terminal className="w-4 h-4" />
-              {isTR ? 'Komut Referansı' : 'Command Reference'}
+              {t.commandReference}
             </button>
           </div>
           <DialogDescription className="sr-only">
-            {activeTab === 'about' ? t.aboutIntro : (isTR ? 'CLI Komut Referansı' : 'CLI Command Reference')}
+            {activeTab === 'about' ? t.aboutIntro : t.commandReference}
           </DialogDescription>
         </DialogHeader>
 
@@ -210,7 +153,7 @@ export function AboutModal({ isOpen, onClose }: AboutModalProps) {
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder={isTR ? 'Komut ara...' : 'Search commands...'}
+                  placeholder={t.search}
                   autoFocus
                   className={cn(
                     'w-full pl-9 pr-9 py-2.5 rounded-lg text-sm border outline-none transition-all',
@@ -232,7 +175,7 @@ export function AboutModal({ isOpen, onClose }: AboutModalProps) {
               {/* Search Results Info */}
               {searchQuery.trim() && (
                 <div className={cn('text-xs px-1', isDark ? 'text-slate-400' : 'text-slate-500')}>
-                  {filteredHelpCategories.reduce((acc, cat) => acc + cat.cmds.length, 0)} {isTR ? 'komut bulundu' : 'commands found'}
+                  {filteredHelpCategories.reduce((acc, cat) => acc + cat.cmds.length, 0)} {t.commandsFound}
                 </div>
               )}
 
@@ -240,32 +183,37 @@ export function AboutModal({ isOpen, onClose }: AboutModalProps) {
               {!searchQuery.trim() && (
                 <div className={cn('p-3 rounded-lg text-xs space-y-1', isDark ? 'bg-slate-900 border border-slate-700' : 'bg-slate-50 border border-slate-200')}>
                   <p className={cn('font-semibold mb-2', isDark ? 'text-slate-200' : 'text-slate-700')}>
-                    {isTR ? 'Komut Modları:' : 'Command Modes:'}
+                    {t.commandModes}
                   </p>
                   <div className="grid grid-cols-2 gap-x-4 gap-y-1">
                     <span className={isDark ? 'text-emerald-400' : 'text-emerald-600'}>User (&gt;)</span>
-                    <span className={isDark ? 'text-slate-400' : 'text-slate-600'}>{isTR ? 'Temel komutlar' : 'Basic commands'}</span>
+                    <span className={isDark ? 'text-slate-400' : 'text-slate-600'}>{t.basicCommands}</span>
                     <span className={isDark ? 'text-emerald-400' : 'text-emerald-600'}>Privileged (#)</span>
-                    <span className={isDark ? 'text-slate-400' : 'text-slate-600'}>{isTR ? 'Tüm komutlar' : 'All commands'}</span>
+                    <span className={isDark ? 'text-slate-400' : 'text-slate-600'}>{t.allCommands}</span>
                     <span className={isDark ? 'text-emerald-400' : 'text-emerald-600'}>Config (config)#</span>
-                    <span className={isDark ? 'text-slate-400' : 'text-slate-600'}>{isTR ? 'Global config' : 'Global config'}</span>
+                    <span className={isDark ? 'text-slate-400' : 'text-slate-600'}>{t.globalConfigLabel}</span>
                   </div>
                 </div>
               )}
 
               {/* Help Categories */}
               {filteredHelpCategories.map((cat) => {
+                const Icon = cat.icon;
                 const isExp = expandedHelp[cat.id];
                 return (
-                  <div key={cat.id} className={cn('rounded-lg border overflow-hidden', isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200')}>
+                  <div key={cat.id} className={cn('rounded-lg border overflow-hidden', isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border border-slate-200')}>
                     <button
                       onClick={() => toggleHelp(cat.id)}
                       className={cn('w-full flex items-center justify-between p-3 text-left transition-colors', isDark ? 'hover:bg-slate-800' : 'hover:bg-slate-50')}
                     >
-                      <span className={cn('font-medium text-sm', isDark ? 'text-slate-200' : 'text-slate-700')}>{cat.title}</span>
-                      <span className={cn('text-xs px-2 py-0.5 rounded-full', isDark ? 'bg-slate-800 text-slate-400' : 'bg-slate-100 text-slate-500')}>
-                        {cat.cmds.length}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <Icon className={cn('w-4 h-4', isDark ? 'text-slate-400' : 'text-slate-500')} />
+                        <span className={cn('font-medium text-sm', isDark ? 'text-slate-200' : 'text-slate-700')}>{cat.title}</span>
+                        <span className={cn('text-xs px-2 py-0.5 rounded-full', isDark ? 'bg-slate-800 text-slate-400' : 'bg-slate-100 text-slate-500')}>
+                          {cat.cmds.length}
+                        </span>
+                      </div>
+                      <ChevronDown className={cn('w-4 h-4 transition-transform', isExp ? 'rotate-180' : '', isDark ? 'text-slate-400' : 'text-slate-500')} />
                     </button>
                     {isExp && (
                       <div className={cn('border-t', isDark ? 'border-slate-700' : 'border-slate-200')}>
