@@ -12,7 +12,7 @@ export function getCommandCategories(isTR: boolean): CommandDefinition[] {
     {
       id: 'system',
       icon: Terminal,
-      title: isTR ? 'Sistem & Oturum' : 'System & Session',
+      title: isTR ? 'Oturum' : 'Session',
       cmds: [
         ['enable', isTR ? 'Ayrıcalıklı moda geç' : 'Enter privileged mode'],
         ['disable', isTR ? 'Kullanıcı moduna dön' : 'Return to user mode'],

@@ -3,6 +3,16 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import { CanvasDevice, CanvasConnection, CanvasNote } from '@/components/network/networkTopology.types';
 import { SwitchState } from '@/lib/network/types';
 
+// Environment settings types
+export type EnvironmentBackground = 'none' | 'house' | 'twoStoryGarage';
+
+export interface EnvironmentSettings {
+    background: EnvironmentBackground;
+    temperature: number; // Celsius
+    humidity: number; // Percentage 0-100
+    light: number; // Percentage 0-100
+}
+
 // Types for the store
 interface TopologyState {
     devices: CanvasDevice[];
@@ -11,6 +21,7 @@ interface TopologyState {
     selectedDeviceId: string | null;
     zoom: number;
     pan: { x: number; y: number };
+    environment: EnvironmentSettings;
 }
 
 interface DeviceStates {
@@ -46,6 +57,7 @@ interface AppState {
     setSelectedDevice: (deviceId: string | null) => void;
     setZoom: (zoom: number | ((prev: number) => number)) => void;
     setPan: (pan: { x: number; y: number } | ((prev: { x: number; y: number }) => { x: number; y: number })) => void;
+    setEnvironment: (settings: EnvironmentSettings | ((prev: EnvironmentSettings) => EnvironmentSettings)) => void;
 
     // Device state management
     setSwitchState: (deviceId: string, state: SwitchState) => void;
@@ -64,6 +76,13 @@ interface AppState {
 }
 
 // Initial state
+const initialEnvironmentSettings: EnvironmentSettings = {
+    background: 'none',
+    temperature: 22,
+    humidity: 50,
+    light: 70,
+};
+
 const initialTopologyState: TopologyState = {
     devices: [],
     connections: [],
@@ -71,6 +90,7 @@ const initialTopologyState: TopologyState = {
     selectedDeviceId: null,
     zoom: 1,
     pan: { x: 0, y: 0 },
+    environment: initialEnvironmentSettings,
 };
 
 const initialDeviceStates: DeviceStates = {
@@ -99,7 +119,12 @@ function isValidTopologyState(value: any): value is TopologyState {
         typeof value.zoom === 'number' &&
         !!value.pan &&
         typeof value.pan.x === 'number' &&
-        typeof value.pan.y === 'number';
+        typeof value.pan.y === 'number' &&
+        !!value.environment &&
+        typeof value.environment.background === 'string' &&
+        typeof value.environment.temperature === 'number' &&
+        typeof value.environment.humidity === 'number' &&
+        typeof value.environment.light === 'number';
 }
 
 function isValidDeviceStates(value: any): value is DeviceStates {
@@ -116,7 +141,16 @@ function sanitizePersistedState(input: any): Partial<AppState> {
     if (isValidTopologyState(input?.topology)) {
         safe.topology = input.topology;
     } else {
-        safe.topology = initialTopologyState;
+        // Preserve existing topology data but ensure environment is set
+        const topology = input?.topology || {};
+        safe.topology = {
+            ...initialTopologyState,
+            ...topology,
+            environment: {
+                ...initialEnvironmentSettings,
+                ...(topology.environment || {})
+            }
+        };
     }
 
     if (isValidDeviceStates(input?.deviceStates)) {
@@ -246,6 +280,11 @@ const createActions = (set: any, get: any) => ({
     setPan: (pan: { x: number; y: number } | ((prev: { x: number; y: number }) => { x: number; y: number })) => {
         const nextPan = typeof pan === 'function' ? pan(get().topology.pan) : pan;
         set({ topology: { ...get().topology, pan: nextPan } });
+    },
+
+    setEnvironment: (settings: EnvironmentSettings | ((prev: EnvironmentSettings) => EnvironmentSettings)) => {
+        const nextSettings = typeof settings === 'function' ? settings(get().topology.environment) : settings;
+        set({ topology: { ...get().topology, environment: nextSettings } });
     },
 
     // Device state actions
@@ -384,7 +423,16 @@ if (typeof window !== 'undefined') {
 
                 useAppStore.setState((prev) => ({
                     ...prev,
-                    ...(nextState.topology ? { topology: nextState.topology } : {}),
+                    ...(nextState.topology ? {
+                        topology: {
+                            ...prev.topology,
+                            ...nextState.topology,
+                            // Merge environment separately to preserve partial updates
+                            environment: nextState.topology.environment
+                                ? { ...prev.topology.environment, ...nextState.topology.environment }
+                                : prev.topology.environment
+                        }
+                    } : {}),
                     ...(nextState.deviceStates ? { deviceStates: nextState.deviceStates } : {}),
                     ...(nextState.activeTab ? { activeTab: nextState.activeTab } : {}),
                     ...(typeof nextState.activePanel !== 'undefined' ? { activePanel: nextState.activePanel } : {}),
@@ -428,5 +476,8 @@ export const useUIState = () => useAppStore(state => ({
     activePanel: state.activePanel,
     sidebarOpen: state.sidebarOpen,
 }));
+
+// Environment selector
+export const useEnvironment = () => useAppStore(state => state.topology.environment);
 
 export default useAppStore;

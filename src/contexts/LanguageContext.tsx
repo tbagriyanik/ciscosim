@@ -431,6 +431,17 @@ export interface Translations {
   invalidProject: string;
   corruptedProject: string;
   wifiDhcpStatusUpdated: string;
+  // Environmental settings
+  environmentSettings: string;
+  environmentBackground: string;
+  backgroundNone: string;
+  backgroundHouse: string;
+  backgroundTwoStoryGarage: string;
+  temperature: string;
+  humidity: string;
+  lightLevel: string;
+  celsius: string;
+  percent: string;
 }
 
 const translations: Record<Language, Translations> = {
@@ -827,6 +838,17 @@ const translations: Record<Language, Translations> = {
     confirmResetTitle: 'Fabrika Ayarlarına Sıfırla?',
     confirmResetDescription: 'Tüm yapılandırma silinecek ve fabrika ayarları geri yüklenecek. Cihaz yeniden başlatılacak. Bu işlem geri alınamaz.',
     confirmReset: 'Cihazı Sıfırla',
+    // Environmental settings
+    environmentSettings: 'Ayarlar',
+    environmentBackground: 'Arka Plan',
+    backgroundNone: 'Yok',
+    backgroundHouse: 'Ev Krokisi',
+    backgroundTwoStoryGarage: '2 Katlı Bina (Garaj)',
+    temperature: 'Sıcaklık',
+    humidity: 'Nem',
+    lightLevel: 'Işık',
+    celsius: '°C',
+    percent: '%',
   },
   en: {
     title: 'Network Simulator 2026',
@@ -1197,9 +1219,9 @@ const translations: Record<Language, Translations> = {
     tutorialCablesDesc: 'Four cable types available: Straight (blue) - PC↔Switch/Router, Crossover (orange) - Switch↔Switch/Router↔Router, Console (cyan) - PC↔Device config, Wireless (purple) - Wireless connections.',
     tutorialDevicesTitle: '💻 Device Management',
     tutorialDevicesDesc: 'Power on/off devices (power button), configure (CLI/Panel), and monitor. Use CLI tab for command-line configuration. Complete VLAN, port and security tasks in Tasks tab.',
-    tutorialPingTitle: '📡 Ping & Connectivity',
+    tutorialPingTitle: '📡 Ping Connectivity',
     tutorialPingDesc: 'Test connectivity with Ping mode. Successful pings show green, failed ones show red animation. DHCP auto-assigns IPs, or configure static IPs manually.',
-    tutorialWifiTitle: '🌐 WiFi & Wireless',
+    tutorialWifiTitle: '🌐 WiFi Wireless',
     tutorialWifiDesc: 'Set Routers and Switches to Access Point mode (WiFi settings). Configure SSID, encryption (WPA2/WPA3) and password. PCs automatically connect to available access points.',
     tutorialProjectTitle: '💾 Project Management',
     tutorialProjectDesc: 'Save (Ctrl+S), load (Ctrl+O), or start new projects (Ctrl+N). Explore ready scenarios with example projects. All configurations are saved in JSON format.',
@@ -1220,7 +1242,18 @@ const translations: Record<Language, Translations> = {
     confirmResetTitle: 'Reset to Factory Defaults?',
     confirmResetDescription: 'This will erase all configuration and restore factory defaults. The device will reload. This action cannot be undone.',
     confirmReset: 'Reset Device',
-    close: 'Close'
+    close: 'Close',
+    // Environmental settings
+    environmentSettings: 'Settings',
+    environmentBackground: 'Background',
+    backgroundNone: 'None',
+    backgroundHouse: 'House Sketch',
+    backgroundTwoStoryGarage: '2-Story Building (Garage)',
+    temperature: 'Temperature',
+    humidity: 'Humidity',
+    lightLevel: 'Light',
+    celsius: '°C',
+    percent: '%',
   }
 };
 

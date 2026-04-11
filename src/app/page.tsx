@@ -2691,7 +2691,7 @@ export default function Home() {
                           onClick={() => { setShowAboutModal(true); setShowMobileMenu(false); }}
                         >
                           <Info className="w-3.5 h-3.5" />
-                          {language === 'tr' ? 'Yardım & Hakkında' : 'Help & About'}
+                          {language === 'tr' ? 'Yardım' : 'Help'}
                         </Button>
 
                         <Separator className="bg-slate-800/30" />

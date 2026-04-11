@@ -1143,7 +1143,7 @@ function cmdShowWireless(
   input: string,
   ctx: any
 ): any {
-  let output = '\nWireless Configuration & Status\n';
+  let output = '\nWireless Configuration Status\n';
   output += '-------------------------------------------\n';
   output += 'Interface   Mode     SSID           Security   Channel  Status\n';
   output += '---------   ------   -------------  ---------  -------  ----------\n';

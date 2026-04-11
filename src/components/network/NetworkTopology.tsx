@@ -16,6 +16,8 @@ import { ConnectionLine } from './ConnectionLine';
 import { DeviceNode } from './DeviceNode';
 import LazyNetworkTopologyContextMenu from './LazyNetworkTopologyContextMenu';
 import { LazyNetworkTopologyPortSelectorModal } from './LazyNetworkTopologyPortSelectorModal';
+import { EnvironmentSettingsPanel } from './EnvironmentSettingsPanel';
+import { useEnvironment } from '@/lib/store/appStore';
 import { Plus, Power, Trash2, Monitor, Network, Laptop } from "lucide-react";
 import { cn } from '@/lib/utils';
 
@@ -523,6 +525,10 @@ export function NetworkTopology({
   // UI state
   const [isPaletteOpen, setIsPaletteOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isEnvironmentPanelOpen, setIsEnvironmentPanelOpen] = useState(false);
+
+  // Get environment settings
+  const environment = useEnvironment();
 
   // Touch/Mobile state
   const isMobile = useIsMobile();
@@ -4959,6 +4965,12 @@ export function NetworkTopology({
               </TooltipTrigger>
               <TooltipContent>{isTR ? 'Ağı Yenile (F5)' : 'Refresh Network (F5) '}</TooltipContent>
             </Tooltip>
+            <div className={`w-px h-4 ${isDark ? 'bg-slate-700' : 'bg-slate-300'}`} />
+            {/* Environment Settings Button */}
+            <EnvironmentSettingsPanel
+              isOpen={isEnvironmentPanelOpen}
+              onOpenChange={setIsEnvironmentPanelOpen}
+            />
           </div>
         </div>
       </div>
@@ -5334,6 +5346,93 @@ export function NetworkTopology({
                     height={getCanvasDimensions().height}
                     fill="url(#gridPattern)"
                   />
+
+                  {/* Environment Backgrounds */}
+                  {environment?.background !== 'none' && (
+                    <g opacity="0.15">
+                      {environment?.background === 'house' && (
+                        <svg x="50" y="50" width="600" height="450" viewBox="0 0 600 450">
+                          {/* House sketch - simple single story house */}
+                          <g fill="none" stroke={isDark ? '#94a3b8' : '#64748b'} strokeWidth="3">
+                            {/* Main house body */}
+                            <rect x="75" y="180" width="300" height="195" rx="3" />
+                            {/* Roof */}
+                            <path d="M60 180 L225 60 L390 180" />
+                            {/* Door */}
+                            <rect x="187.5" y="255" width="75" height="120" rx="3" />
+                            <circle cx="225" cy="315" r="4.5" fill={isDark ? '#94a3b8' : '#64748b'} />
+                            {/* Windows */}
+                            <rect x="105" y="225" width="60" height="60" rx="3" />
+                            <line x1="135" y1="225" x2="135" y2="285" />
+                            <line x1="105" y1="255" x2="165" y2="255" />
+                            <rect x="285" y="225" width="60" height="60" rx="3" />
+                            <line x1="315" y1="225" x2="315" y2="285" />
+                            <line x1="285" y1="255" x2="345" y2="255" />
+                            {/* Chimney */}
+                            <rect x="285" y="90" width="37.5" height="75" rx="3" />
+                            <ellipse cx="303.75" cy="82.5" rx="18" ry="6" />
+                            {/* Garage */}
+                            <rect x="390" y="240" width="150" height="135" rx="3" />
+                            <path d="M390 240 L465 195 L540 240" />
+                            {/* Garage door */}
+                            <rect x="412.5" y="277.5" width="105" height="97.5" rx="1.5" />
+                            <line x1="412.5" y1="300" x2="517.5" y2="300" />
+                            <line x1="412.5" y1="322.5" x2="517.5" y2="322.5" />
+                            <line x1="412.5" y1="345" x2="517.5" y2="345" />
+                          </g>
+                        </svg>
+                      )}
+                      {environment?.background === 'twoStoryGarage' && (
+                        <svg x="50" y="20" width="750" height="600" viewBox="0 0 750 600">
+                          {/* Two story building with garage */}
+                          <g fill="none" stroke={isDark ? '#94a3b8' : '#64748b'} strokeWidth="3">
+                            {/* Main building - 2 stories */}
+                            <rect x="75" y="120" width="300" height="360" rx="3" />
+                            {/* First floor line */}
+                            <line x1="75" y1="300" x2="375" y2="300" />
+                            {/* Roof */}
+                            <path d="M60 120 L225 30 L390 120" />
+                            {/* Main entrance door */}
+                            <rect x="195" y="330" width="60" height="150" rx="3" />
+                            <circle cx="225" cy="405" r="4.5" fill={isDark ? '#94a3b8' : '#64748b'} />
+                            {/* First floor windows - 3 windows */}
+                            <rect x="105" y="195" width="67.5" height="75" rx="3" />
+                            <line x1="138" y1="195" x2="138" y2="270" />
+                            <line x1="105" y1="232.5" x2="172.5" y2="232.5" />
+                            <rect x="190.5" y="195" width="67.5" height="75" rx="3" />
+                            <line x1="223.5" y1="195" x2="223.5" y2="270" />
+                            <line x1="190.5" y1="232.5" x2="258" y2="232.5" />
+                            <rect x="277.5" y="195" width="67.5" height="75" rx="3" />
+                            <line x1="310.5" y1="195" x2="310.5" y2="270" />
+                            <line x1="277.5" y1="232.5" x2="345" y2="232.5" />
+                            {/* Ground floor windows */}
+                            <rect x="105" y="345" width="67.5" height="105" rx="3" />
+                            <line x1="138" y1="345" x2="138" y2="450" />
+                            <line x1="105" y1="397.5" x2="172.5" y2="397.5" />
+                            <rect x="277.5" y="345" width="67.5" height="105" rx="3" />
+                            <line x1="310.5" y1="345" x2="310.5" y2="450" />
+                            <line x1="277.5" y1="397.5" x2="345" y2="397.5" />
+                            {/* Attached garage */}
+                            <rect x="405" y="270" width="240" height="210" rx="3" />
+                            {/* Garage roof */}
+                            <path d="M405 270 L525 210 L645 270" />
+                            {/* Garage door */}
+                            <rect x="465" y="330" width="120" height="150" rx="1.5" />
+                            <line x1="465" y1="367.5" x2="585" y2="367.5" />
+                            <line x1="465" y1="405" x2="585" y2="405" />
+                            <line x1="465" y1="442.5" x2="585" y2="442.5" />
+                            {/* Garage side window */}
+                            <rect x="427.5" y="315" width="30" height="45" rx="3" />
+                            <line x1="442.5" y1="315" x2="442.5" y2="360" />
+                            <line x1="427.5" y1="337.5" x2="457.5" y2="337.5" />
+                            {/* Chimney */}
+                            <rect x="300" y="52.5" width="37.5" height="75" rx="3" />
+                            <ellipse cx="318.75" cy="45" rx="18" ry="6" />
+                          </g>
+                        </svg>
+                      )}
+                    </g>
+                  )}
 
                   {/* Visual Connection Lines (Behind devices) */}
                   {connections.map((conn, index) => {

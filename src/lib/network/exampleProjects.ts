@@ -1106,7 +1106,7 @@ export const exampleProjects = (language: 'tr' | 'en'): ExampleProject[] => {
     {
       id: 'mac-arp-lab',
       tag: isTr ? 'MAC' : 'MAC',
-      title: isTr ? 'ARP & MAC Tablo Çalışması' : 'ARP vs MAC Table',
+      title: isTr ? 'ARP ve MAC Tablo Çalışması' : 'ARP vs MAC Table',
       description: isTr
         ? 'PC terminalinden arp -a ve SWITCH-1 konsolundan show mac ile adresleri eşleştirin.'
         : 'Match ARP and show mac address-table output between PCs and SWITCH-1.',
