@@ -2045,6 +2045,9 @@ export function NetworkTopology({
       iot: type === 'iot'
         ? { sensorType: 'temperature', collaborationEnabled: false, dataStore: '' }
         : undefined,
+      wifi: type === 'iot'
+        ? { enabled: true, ssid: '', security: 'open', password: '', channel: '2.4GHz', mode: 'client' }
+        : undefined,
     };
     setDevices((prev) => [...prev, newDevice]);
     setSelectedDeviceIds([newDevice.id]);
@@ -2493,15 +2496,15 @@ export function NetworkTopology({
 
     switch (sensorType) {
       case 'temperature':
-        return `${(baseTemp + tempFluctuation).toFixed(1)}°C`;
+        return `${(baseTemp + tempFluctuation).toFixed(1)} °C`;
       case 'humidity':
-        return `${(baseHumidity + humidityFluctuation).toFixed(1)}%`;
+        return `${(baseHumidity + humidityFluctuation).toFixed(1)} %`;
       case 'light':
-        return `${(baseLight + lightFluctuation).toFixed(0)}lx`;
+        return `${(baseLight + lightFluctuation).toFixed(0)} lx`;
       case 'sound':
-        return `${Math.floor(40 + Math.random() * 40)}dB`;
+        return `${Math.floor(40 + Math.random() * 40)} dB`;
       case 'motion':
-        return language === 'tr' ? 'Hareket: Var' : 'Motion: Yes';
+        return language === 'tr' ? 'Hareket Var' : 'Motion Yes';
       default:
         return '-';
     }
@@ -3702,16 +3705,20 @@ export function NetworkTopology({
         : (hasConnection ? (isDark ? 'fill-green-500' : 'fill-green-600') : (isDark ? 'fill-slate-800' : 'fill-slate-300'));
 
     const deviceFill = isDark
-      ? (isPcLike
-        ? 'url(#pcGradientDark)'
-        : isSwitchDevice(device.type)
-          ? 'url(#switchGradientDark)'
-          : 'url(#routerGradientDark)')
-      : (isPcLike
-        ? 'url(#pcGradientLight)'
-        : isSwitchDevice(device.type)
-          ? 'url(#switchGradientLight)'
-          : 'url(#routerGradientLight)');
+      ? (device.type === 'iot'
+        ? 'url(#iotGradientDark)'
+        : isPcLike
+          ? 'url(#pcGradientDark)'
+          : isSwitchDevice(device.type)
+            ? 'url(#switchGradientDark)'
+            : 'url(#routerGradientDark)')
+      : (device.type === 'iot'
+        ? 'url(#iotGradientLight)'
+        : isPcLike
+          ? 'url(#pcGradientLight)'
+          : isSwitchDevice(device.type)
+            ? 'url(#switchGradientLight)'
+            : 'url(#routerGradientLight)');
 
     // Calculate device height based on number of ports (8 per row for switch/router)
     const portsPerRow = isPcLike ? 2 : 8;
@@ -4098,10 +4105,12 @@ export function NetworkTopology({
               />
             )}
             {device.type === 'iot' && (
-              <g transform="translate(12, 12)">
-                <circle cx="0" cy="0" r="2" fill="#f97316" />
-                <circle cx="0" cy="0" r="5" fill="none" stroke="#f97316" strokeWidth="1.5" />
-                <circle cx="0" cy="0" r="8" fill="none" stroke="#f97316" strokeWidth="1.5" />
+              <g transform="translate(1, 1)" stroke="#14b8a6" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M16.247 7.761a6 6 0 0 1 0 8.478" />
+                <path d="M19.075 4.933a10 10 0 0 1 0 14.134" />
+                <path d="M4.925 19.067a10 10 0 0 1 0-14.134" />
+                <path d="M7.753 16.239a6 6 0 0 1 0-8.478" />
+                <circle cx="12" cy="12" r="2" fill="#14b8a6" />
               </g>
             )}
             {isSwitchDeviceType(device.type) && (
@@ -4166,7 +4175,7 @@ export function NetworkTopology({
         </text>
 
         {/* Device IP */}
-        {isPcLike && (
+        {device.type === 'pc' && (
           <text x={deviceWidth / 2} y={70} fill={isDark ? '#94a3b8' : '#64748b'} fontSize="10" textAnchor="middle" fontFamily="monospace" className="select-none pointer-events-none">
             {device.ip}
           </text>
@@ -4179,56 +4188,53 @@ export function NetworkTopology({
           </text>
         )}
         {device.type === 'iot' && (
-          <>
-            {isSelected ? (
-              (() => {
-                const sensorType = device.iot?.sensorType || 'temperature';
-                const value = getIotMeasuredValue(device);
-                switch (sensorType) {
-                  case 'temperature':
-                    return (
-                      <text x={deviceWidth / 2} y={81} fill={isDark ? '#f97316' : '#ea580c'} fontSize="8" textAnchor="middle" fontFamily="monospace" className="select-none pointer-events-none">
-                        {t.temperature}: {value}
-                      </text>
-                    );
-                  case 'humidity':
-                    return (
-                      <text x={deviceWidth / 2} y={81} fill={isDark ? '#3b82f6' : '#2563eb'} fontSize="8" textAnchor="middle" fontFamily="monospace" className="select-none pointer-events-none">
-                        {t.humidity}: {value}
-                      </text>
-                    );
-                  case 'light':
-                    return (
-                      <text x={deviceWidth / 2} y={81} fill={isDark ? '#eab308' : '#ca8a04'} fontSize="8" textAnchor="middle" fontFamily="monospace" className="select-none pointer-events-none">
-                        {t.lightLevel}: {value}
-                      </text>
-                    );
-                  case 'sound':
-                    return (
-                      <text x={deviceWidth / 2} y={81} fill={isDark ? '#a855f7' : '#9333ea'} fontSize="8" textAnchor="middle" fontFamily="monospace" className="select-none pointer-events-none">
-                        Sound: {value}
-                      </text>
-                    );
-                  case 'motion':
-                    return (
-                      <text x={deviceWidth / 2} y={81} fill={isDark ? '#22c55e' : '#16a34a'} fontSize="8" textAnchor="middle" fontFamily="monospace" className="select-none pointer-events-none">
-                        Motion: {value}
-                      </text>
-                    );
-                  default:
-                    return (
-                      <text x={deviceWidth / 2} y={81} fill={isDark ? '#fb923c' : '#ea580c'} fontSize="9" textAnchor="middle" fontFamily="monospace" className="select-none pointer-events-none">
-                        {value}
-                      </text>
-                    );
-                }
-              })()
-            ) : (
-              <text x={deviceWidth / 2} y={81} fill={isDark ? '#fb923c' : '#ea580c'} fontSize="9" textAnchor="middle" fontFamily="monospace" className="select-none pointer-events-none">
-                {getIotMeasuredValue(device)}
-              </text>
-            )}
-          </>
+          (() => {
+            const sensorType = device.iot?.sensorType || 'temperature';
+            const value = getIotMeasuredValue(device);
+            switch (sensorType) {
+              case 'temperature':
+                return (
+                  <text x={deviceWidth / 2} y={70} fill={isDark ? '#3cf916' : '#0c9849'} fontSize="10" textAnchor="middle" fontFamily="monospace" className="select-none pointer-events-none" filter="drop-shadow(1px 1px 0px rgba(0,0,0,1))">
+                    <tspan x={deviceWidth / 2} dy="0">{t.temperature}:</tspan>
+                    <tspan x={deviceWidth / 2} dy="12">{value}</tspan>
+                  </text>
+                );
+              case 'humidity':
+                return (
+                  <text x={deviceWidth / 2} y={70} fill={isDark ? '#3b82f6' : '#2563eb'} fontSize="10" textAnchor="middle" fontFamily="monospace" className="select-none pointer-events-none" filter="drop-shadow(1px 1px 0px rgba(0,0,0,1))">
+                    <tspan x={deviceWidth / 2} dy="0">{t.humidity}:</tspan>
+                    <tspan x={deviceWidth / 2} dy="12">{value}</tspan>
+                  </text>
+                );
+              case 'light':
+                return (
+                  <text x={deviceWidth / 2} y={70} fill={isDark ? '#eab308' : '#ca8a04'} fontSize="10" textAnchor="middle" fontFamily="monospace" className="select-none pointer-events-none" filter="drop-shadow(1px 1px 0px rgba(0,0,0,1))">
+                    <tspan x={deviceWidth / 2} dy="0">{t.lightLevel}:</tspan>
+                    <tspan x={deviceWidth / 2} dy="12">{value}</tspan>
+                  </text>
+                );
+              case 'sound':
+                return (
+                  <text x={deviceWidth / 2} y={70} fill={isDark ? '#a855f7' : '#9333ea'} fontSize="10" textAnchor="middle" fontFamily="monospace" className="select-none pointer-events-none" filter="drop-shadow(1px 1px 0px rgba(0,0,0,1))">
+                    <tspan x={deviceWidth / 2} dy="0">Sound:</tspan>
+                    <tspan x={deviceWidth / 2} dy="12">{value}</tspan>
+                  </text>
+                );
+              case 'motion':
+                return (
+                  <text x={deviceWidth / 2} y={70} fill={isDark ? '#22c55e' : '#16a34a'} fontSize="10" textAnchor="middle" fontFamily="monospace" className="select-none pointer-events-none" filter="drop-shadow(1px 1px 0px rgba(0,0,0,1))">
+                    <tspan x={deviceWidth / 2} dy="0">Motion:</tspan>
+                    <tspan x={deviceWidth / 2} dy="12">{value}</tspan>
+                  </text>
+                );
+              default:
+                return (
+                  <text x={deviceWidth / 2} y={70} fill={isDark ? '#fb923c' : '#ea580c'} fontSize="9" textAnchor="middle" fontFamily="monospace" className="select-none pointer-events-none" filter="drop-shadow(1px 1px 0px rgba(0,0,0,1))">
+                    {value}
+                  </text>
+                );
+            }
+          })()
         )}
 
         {/* Ports - wrapped 6 per row */}
@@ -5370,6 +5376,11 @@ export function NetworkTopology({
                     <stop offset="30%" stopColor="#7c3aed" />
                     <stop offset="100%" stopColor="#5b21b6" />
                   </linearGradient>
+                  <linearGradient id="iotGradientDark" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stopColor="#f89d5c" />
+                    <stop offset="30%" stopColor="#ef9463" />
+                    <stop offset="100%" stopColor="#ca643c" />
+                  </linearGradient>
                   {/* Device 3D Gradients for Light Mode */}
                   <linearGradient id="pcGradientLight" x1="0%" y1="0%" x2="0%" y2="100%">
                     <stop offset="0%" stopColor="#eff6ff" />
@@ -5382,6 +5393,10 @@ export function NetworkTopology({
                   <linearGradient id="routerGradientLight" x1="0%" y1="0%" x2="0%" y2="100%">
                     <stop offset="0%" stopColor="#f5f3ff" />
                     <stop offset="100%" stopColor="#ede9fe" />
+                  </linearGradient>
+                  <linearGradient id="iotGradientLight" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stopColor="#ffedd5" />
+                    <stop offset="100%" stopColor="#fed7aa" />
                   </linearGradient>
                 </defs>
 

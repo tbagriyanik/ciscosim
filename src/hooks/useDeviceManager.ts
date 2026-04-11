@@ -214,7 +214,7 @@ export function useDeviceManager() {
 
   const getOrCreateDeviceState = useCallback((deviceId: string, deviceType: DeviceType, initialHostname?: string, initialMac?: string, switchModel?: string): SwitchState => {
     let deviceState = deviceStates.get(deviceId);
-    const defaultName = deviceType === 'router' ? 'Router' : 'Switch';
+    const defaultName = deviceType === 'router' ? 'Router' : (deviceType === 'iot' ? 'IoT' : 'Switch');
 
     if (!deviceState) {
       // Use the provided switchModel, default to L2 for switches, or L3 for routers
@@ -222,8 +222,30 @@ export function useDeviceManager() {
       deviceState = deviceType === 'router' ? createInitialRouterState(initialMac) : createInitialState(initialMac, model as any);
       const hostname = initialHostname || defaultName;
       deviceState = { ...deviceState, hostname };
+      
+      // IoT devices should be WiFi clients, not AP
+      if (deviceType === 'iot' && deviceState.ports['wlan0']) {
+        deviceState = {
+          ...deviceState,
+          ports: {
+            ...deviceState.ports,
+            wlan0: {
+              ...deviceState.ports['wlan0'],
+              wifi: {
+                ssid: deviceState.ports['wlan0'].wifi?.ssid || '',
+                security: deviceState.ports['wlan0'].wifi?.security || 'open',
+                password: deviceState.ports['wlan0'].wifi?.password || '',
+                channel: deviceState.ports['wlan0'].wifi?.channel || '2.4GHz',
+                mode: 'client',
+                hidden: false
+              }
+            }
+          }
+        };
+      }
+      
       // Rebuild runningConfig from actual state so wlan0 and all ports are reflected correctly
-      deviceState = { ...deviceState, runningConfig: buildRunningConfig({ ...deviceState }) };
+      deviceState = { ...deviceState, runningConfig: buildRunningConfig({ ...deviceState }) } as SwitchState;
       setDeviceStates(prev => new Map(prev).set(deviceId, deviceState!));
     } else {
       // Update existing device state if switchModel is provided and differs
