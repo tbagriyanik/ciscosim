@@ -151,6 +151,33 @@ const createRouterDevice = (id: string, name: string, x: number, y: number): Can
   ]
 });
 
+const createIotDevice = (id: string, name: string, x: number, y: number, sensorType: 'temperature' | 'humidity' | 'motion' | 'light' | 'sound'): CanvasDevice => ({
+  id,
+  type: 'iot',
+  name,
+  x,
+  y,
+  ip: '',
+  macAddress: nextExampleMac(),
+  status: 'online',
+  iot: {
+    sensorType,
+    collaborationEnabled: false,
+    dataStore: ''
+  },
+  wifi: {
+    enabled: true,
+    ssid: '',
+    security: 'open',
+    password: '',
+    channel: '2.4GHz',
+    mode: 'client'
+  },
+  ports: [
+    { id: 'wlan0', label: 'WLAN0', status: 'disconnected' as const, wifi: { ssid: '', security: 'open', channel: '2.4GHz', mode: 'client' } }
+  ]
+});
+
 const connectPorts = (
   devices: CanvasDevice[],
   connections: CanvasConnection[],
@@ -217,6 +244,164 @@ export const exampleProjects = (language: 'tr' | 'en'): ExampleProject[] => {
     createPcDevice('pc-1', 'PC-1', 40, 220, '192.168.1.10', 1),
     createRouterDevice('router-1', 'R1', 350, 220),
     createPcDevice('pc-2', 'PC-2', 650, 220, '192.168.1.11', 1)
+  ];
+
+  // Example 13: IoT WiFi Lab - 3 IoT devices, 1 PC, 1 Router (WiFi with connected IoT)
+  const iotWifiDevices = [
+    createPcDevice('pc-1', 'PC-1', 50, 100, '192.168.1.10', 1),
+    createRouterDevice('router-1', 'R1', 300, 100),
+    createIotDevice('iot-1', 'IoT-Temp', 50, 280, 'temperature'),
+    createIotDevice('iot-2', 'IoT-Humidity', 200, 320, 'humidity'),
+    createIotDevice('iot-3', 'IoT-Motion', 350, 280, 'motion')
+  ];
+
+  // Configure R1 for WiFi with open security
+  iotWifiDevices[1].wifi = {
+    enabled: true,
+    ssid: 'IoT-Network',
+    security: 'open',
+    password: '',
+    channel: '2.4GHz',
+    mode: 'ap'
+  };
+  iotWifiDevices[1].ports = [
+    {
+      id: 'wlan0',
+      label: 'WLAN0',
+      status: 'connected' as const,
+      ipAddress: '192.168.1.1',
+      subnetMask: '255.255.255.0',
+      wifi: {
+        ssid: 'IoT-Network',
+        security: 'open',
+        channel: '2.4GHz',
+        mode: 'ap'
+      }
+    },
+    ...iotWifiDevices[1].ports
+  ];
+
+  // Configure PC-1 for WiFi (Client mode, open)
+  iotWifiDevices[0].wifi = {
+    enabled: true,
+    ssid: 'IoT-Network',
+    security: 'open',
+    password: '',
+    channel: '2.4GHz',
+    mode: 'client'
+  };
+  iotWifiDevices[0].ip = '192.168.1.10';
+  iotWifiDevices[0].subnet = '255.255.255.0';
+  iotWifiDevices[0].gateway = '192.168.1.1';
+
+  // Configure IoT devices to connect to the router's WiFi
+  iotWifiDevices[2].wifi = {
+    enabled: true,
+    ssid: 'IoT-Network',
+    security: 'open',
+    password: '',
+    channel: '2.4GHz',
+    mode: 'client'
+  };
+  iotWifiDevices[2].ports[0].status = 'connected';
+  iotWifiDevices[2].ports[0].wifi = { ssid: 'IoT-Network', security: 'open', channel: '2.4GHz', mode: 'client' };
+
+  iotWifiDevices[3].wifi = {
+    enabled: true,
+    ssid: 'IoT-Network',
+    security: 'open',
+    password: '',
+    channel: '2.4GHz',
+    mode: 'client'
+  };
+  iotWifiDevices[3].ports[0].status = 'connected';
+  iotWifiDevices[3].ports[0].wifi = { ssid: 'IoT-Network', security: 'open', channel: '2.4GHz', mode: 'client' };
+
+  iotWifiDevices[4].wifi = {
+    enabled: true,
+    ssid: 'IoT-Network',
+    security: 'open',
+    password: '',
+    channel: '2.4GHz',
+    mode: 'client'
+  };
+  iotWifiDevices[4].ports[0].status = 'connected';
+  iotWifiDevices[4].ports[0].wifi = { ssid: 'IoT-Network', security: 'open', channel: '2.4GHz', mode: 'client' };
+
+  const iotWifiConnections: CanvasConnection[] = [];
+  const iotWifiNotes: CanvasNote[] = [
+    {
+      id: 'iot-wifi-note',
+      text: isTr
+        ? 'IoT WiFi Laboratuvarı:\n1) R1 (Router) wlan0 üzerinde AP modunda SSID: IoT-Network (Open) yayınlar.\n2) PC-1 kablosuz ağa (WiFi Client) bağlıdır.\n3) 3 IoT cihazı (Sıcaklık, Nem, Hareket) WiFi üzerinden bağlıdır.\n4) R1 üzerinde http 192.168.1.1 ile WiFi panelinden IoT cihazlarını yönetin.\n5) PC-1 > ping 192.168.1.1 ile bağlantıyı test edin.'
+        : 'IoT WiFi Lab:\n1) R1 (Router) broadcasts SSID: IoT-Network (Open) on wlan0 in AP mode.\n2) PC-1 is connected wirelessly (WiFi Client).\n3) 3 IoT devices (Temperature, Humidity, Motion) connected via WiFi.\n4) Manage IoT devices from R1 WiFi panel via http 192.168.1.1.\n5) Test connectivity with PC-1 > ping 192.168.1.1.',
+      x: 500,
+      y: 80,
+      width: 450,
+      height: 200,
+      color: '#10b981',
+      font: 'verdana',
+      fontSize: 16,
+      opacity: 0.75
+    }
+  ];
+
+  const iotWifiR1State = createInitialRouterState();
+  iotWifiR1State.hostname = 'R1';
+  iotWifiR1State.ports['wlan0'] = {
+    ...iotWifiR1State.ports['wlan0'],
+    status: 'connected',
+    shutdown: false,
+    ipAddress: '192.168.1.1',
+    subnetMask: '255.255.255.0',
+    wifi: {
+      ssid: 'IoT-Network',
+      security: 'open',
+      password: '',
+      channel: '2.4GHz',
+      mode: 'ap'
+    }
+  };
+  iotWifiR1State.ports['wlan0'].wifi!.mode = 'ap';
+
+  // Add DHCP service for WiFi clients
+  iotWifiR1State.services = {
+    ...iotWifiR1State.services,
+    dhcp: {
+      enabled: true,
+      pools: [{
+        poolName: 'iot-pool',
+        defaultGateway: '192.168.1.1',
+        dnsServer: '8.8.8.8',
+        startIp: '192.168.1.100',
+        subnetMask: '255.255.255.0',
+        maxUsers: 50
+      }]
+    }
+  };
+
+  // Update running config
+  iotWifiR1State.runningConfig = [
+    '!',
+    'hostname R1',
+    '!',
+    'interface WLAN0',
+    ' ip address 192.168.1.1 255.255.255.0',
+    ' no shutdown',
+    ' wifi-mode ap',
+    ' ssid IoT-Network',
+    '!',
+    'ip dhcp pool iot-pool',
+    ' network 192.168.1.0 255.255.255.0',
+    ' default-router 192.168.1.1',
+    ' dns-server 8.8.8.8',
+    '!',
+    'line con 0',
+    'line aux 0',
+    'line vty 0 4',
+    ' login',
+    '!',
+    'end'
   ];
   // Configure R1 for WiFi
   wifiDevices[1].wifi = {
@@ -1055,6 +1240,17 @@ export const exampleProjects = (language: 'tr' | 'en'): ExampleProject[] => {
       level: 'intermediate',
       data: baseProjectData(wifiDevices, wifiConnections, wifiNotes, [
         { id: 'router-1', state: wifiR1State }
+      ])
+    },
+    {
+      id: 'iot-wifi-lab',
+      tag: 'IoT',
+      title: isTr ? 'IoT WiFi Laboratuvarı' : 'IoT WiFi Lab',
+      description: isTr ? '3 IoT cihazı (Sıcaklık, Nem, Hareket), WiFi açık PC ve Router.' : '3 IoT devices (Temp, Humidity, Motion), WiFi open PC and Router.',
+      detail: isTr ? 'SSID: IoT-Network (Open), IoT cihazları WiFi panelinden yönetilebilir' : 'SSID: IoT-Network (Open), IoT devices manageable via WiFi panel',
+      level: 'intermediate',
+      data: baseProjectData(iotWifiDevices, iotWifiConnections, iotWifiNotes, [
+        { id: 'router-1', state: iotWifiR1State }
       ])
     },
     {

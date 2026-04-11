@@ -407,6 +407,69 @@ export default function Home() {
 
     window.addEventListener('update-topology-device-config', handleDeviceUpdate);
     return () => window.removeEventListener('update-topology-device-config', handleDeviceUpdate);
+  }, []);
+
+  // Listen for add-topology-device event (from router admin panel IoT add)
+  useEffect(() => {
+    const handleAddDevice = (event: any) => {
+      const { device } = event.detail;
+      if (!device) return;
+
+      setTopologyDevices(prev => [...prev, device]);
+
+      // Also add device state for IoT devices
+      if (device.type === 'iot') {
+        setDeviceStates(prev => {
+          const next = new Map(prev);
+          // Create initial IoT device state with minimal required fields
+          const iotState: any = {
+            hostname: device.name,
+            macAddress: device.macAddress || '00:00:00:00:00:00',
+            switchModel: 'WS-C2960-24TT-L',
+            switchLayer: 'L2' as const,
+            currentMode: 'user' as const,
+            ports: {
+              eth0: {
+                id: 'eth0',
+                label: 'Eth0',
+                status: 'disconnected' as const,
+                shutdown: false,
+              },
+              wlan0: {
+                id: 'wlan0',
+                label: 'Wlan0',
+                status: 'connected' as const,
+                shutdown: false,
+                wifi: {
+                  ssid: device.wifi?.ssid || '',
+                  security: device.wifi?.security || 'open',
+                  password: device.wifi?.password || '',
+                  channel: device.wifi?.channel || '2.4GHz',
+                  mode: 'client' as const,
+                },
+              },
+            },
+            vlans: {},
+            security: {},
+            runningConfig: [],
+            commandHistory: [],
+            historyIndex: -1,
+            version: {
+              nosVersion: '1.0',
+              modelName: 'IoT Device',
+              serialNumber: 'N/A',
+              uptime: '0d 0h 0m',
+            },
+            macAddressTable: [],
+          };
+          next.set(device.id, iotState);
+          return next;
+        });
+      }
+    };
+
+    window.addEventListener('add-topology-device', handleAddDevice);
+    return () => window.removeEventListener('add-topology-device', handleAddDevice);
   }, []); // Actions from useAppStore are stable, and functional updates avoid stale data issues.
 
   // Initialize graphics quality to 'high' for first-time visitors

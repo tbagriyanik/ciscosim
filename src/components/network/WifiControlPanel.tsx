@@ -14,12 +14,29 @@ export interface WifiAdminConfig {
   maxClients?: number;
 }
 
+export interface ConnectedIoTDevice {
+  id: string;
+  name: string;
+  sensorType: string;
+  connected: boolean;
+  ip?: string;
+}
+
+export interface AvailableIoTDevice {
+  id: string;
+  name: string;
+  sensorType: string;
+  currentSsid?: string;
+}
+
 export interface RouterWebConfig {
   wifi: WifiAdminConfig;
   deviceName: string;
   deviceIp: string;
   deviceId?: string;
   adminPassword?: string;
+  connectedIotDevices?: ConnectedIoTDevice[];
+  availableIotDevices?: AvailableIoTDevice[];
 }
 
 /**
@@ -27,7 +44,7 @@ export interface RouterWebConfig {
  * Styled like a typical router web admin page (e.g., 192.168.1.1)
  */
 export function generateWifiControlPanelHTML(config: RouterWebConfig): string {
-  const { wifi, deviceName, deviceIp, deviceId } = config;
+  const { wifi, deviceName, deviceIp, deviceId, connectedIotDevices = [], availableIotDevices = [] } = config;
 
   const securityOptions = [
     { value: 'open', label: 'Open (No Security)' },
@@ -462,13 +479,14 @@ export function generateWifiControlPanelHTML(config: RouterWebConfig): string {
     </div>
     
     <div class="nav-tabs">
-      <div class="nav-tab active">📶 Wireless</div>
-      <div class="nav-tab">🔐 Security</div>
-      <div class="nav-tab">📊 Status</div>
-      <div class="nav-tab">⚙️ Advanced</div>
+      <div class="nav-tab active" onclick="showTab('wireless')">📶 Wireless</div>
+      <div class="nav-tab" onclick="showTab('iot')">🛜 IoT Devices</div>
+      <div class="nav-tab" onclick="showTab('status')">📊 Status</div>
+      <div class="nav-tab" onclick="showTab('advanced')">⚙️ Advanced</div>
     </div>
     
-    <div class="content">
+    <!-- Wireless Tab -->
+    <div id="wireless-tab" class="content">
       <div class="toggle-switch">
         <div>
           <h3>Wireless Radio</h3>
@@ -536,6 +554,160 @@ export function generateWifiControlPanelHTML(config: RouterWebConfig): string {
         </div>
       </form>
     </div>
+      
+    <!-- IoT Devices Tab -->
+      <div id="iot-tab" class="content" style="display:none;">
+        <h2 class="panel-title" style="margin-bottom:20px;">🛜 Connected IoT Devices</h2>
+        
+        <div class="status-card" style="margin-bottom:20px;">
+          <div class="status-info">
+            <h3>IoT Network</h3>
+            <p>${connectedIotDevices.length} device(s) connected to this AP</p>
+          </div>
+          <span class="status-badge">${connectedIotDevices.filter(d => d.connected).length} Active</span>
+        </div>
+        
+        ${connectedIotDevices.length > 0 ? `
+        <div class="iot-device-list" style="margin-bottom:25px;">
+          <p style="color:#6c757d;margin-bottom:15px;font-size:13px;">Manage connected IoT devices:</p>
+          ${connectedIotDevices.map(device => `
+            <div class="iot-device-card connected" data-device-id="${device.id}" style="display:flex;align-items:center;justify-content:space-between;padding:15px;background:#f8f9fa;border-radius:10px;margin-bottom:10px;border:1px solid #e9ecef;">
+              <div style="display:flex;align-items:center;gap:12px;">
+                <input type="checkbox" class="iot-disconnect-checkbox" data-device-id="${device.id}" style="width:20px;height:20px;cursor:pointer;" onclick="event.stopPropagation();toggleConnectedDeviceSelection('${device.id}')">
+                <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg, #16cbf9 0%, #0ea5e9 100%);display:flex;align-items:center;justify-content:center;color:white;font-size:18px;">
+                  🛜
+                </div>
+                <div>
+                  <div style="font-weight:600;color:#333;">${device.name}</div>
+                  <div style="font-size:12px;color:#6c757d;">
+                    Sensor: ${device.sensorType}
+                    ${device.ip ? `<span style="margin-left:8px;padding:2px 6px;background:#e0f2fe;border-radius:4px;color:#0369a1;font-family:monospace;">${device.ip}</span>` : ''}
+                  </div>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;">
+                <span style="padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600;background:${device.connected ? '#dcfce7' : '#fef3c7'};color:${device.connected ? '#166534' : '#92400e'};">
+                  ${device.connected ? '● Connected' : '○ Disconnected'}
+                </span>
+                <button type="button" style="padding:6px 12px;border:none;border-radius:6px;background:#ef4444;color:white;font-size:12px;font-weight:600;cursor:pointer;" onclick="event.stopPropagation();disconnectIotDevice('${device.id}')">
+                  ✕
+                </button>
+              </div>
+            </div>
+          `).join('')}
+          <div class="actions" style="margin-top:20px;">
+            <button type="button" class="btn btn-secondary" style="background:#ef4444;color:white;" onclick="disconnectSelectedDevices()" id="disconnect-selected-btn">
+              ✕ Disconnect Selected
+            </button>
+          </div>
+        </div>
+        ` : `
+        <div style="text-align:center;padding:30px;color:#6c757d;">
+          <div style="font-size:48px;margin-bottom:15px;">📡</div>
+          <p>No IoT devices connected yet</p>
+          <p style="font-size:12px;">Add a new IoT device below to get started</p>
+        </div>
+        `}
+        
+        <h2 class="panel-title">Connect IoT Devices</h2>
+        
+        ${availableIotDevices.filter(d => !d.currentSsid).length > 0 ? `
+        <div class="available-iot-list" style="margin-bottom:25px;">
+          <p style="color:#6c757d;margin-bottom:15px;font-size:13px;"><strong>Inactive Devices:</strong> Select to activate and connect to this network:</p>
+          ${availableIotDevices.filter(d => !d.currentSsid).map(device => `
+            <div class="iot-device-card available" data-device-id="${device.id}" style="display:flex;align-items:center;justify-content:space-between;padding:15px;background:#f8f9fa;border-radius:10px;margin-bottom:10px;border:2px solid #e9ecef;cursor:pointer;transition:all 0.3s;" onclick="toggleIotDeviceSelection('${device.id}')">
+              <div style="display:flex;align-items:center;gap:12px;">
+                <input type="checkbox" class="iot-checkbox" data-device-id="${device.id}" style="width:20px;height:20px;cursor:pointer;" onclick="event.stopPropagation()">
+                <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);display:flex;align-items:center;justify-content:center;color:white;font-size:18px;">
+                  🛜
+                </div>
+                <div>
+                  <div style="font-weight:600;color:#333;">${device.name}</div>
+                  <div style="font-size:12px;color:#6c757d;">Sensor: ${device.sensorType} • <strong>Inactive</strong></div>
+                </div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+        ` : ''}
+        
+        ${availableIotDevices.filter(d => d.currentSsid && d.currentSsid !== '${wifi.ssid}').length > 0 ? `
+        <div class="available-iot-list" style="margin-bottom:25px;">
+          <p style="color:#6c757d;margin-bottom:15px;font-size:13px;"><strong>On Other Networks:</strong> Select to switch to this network:</p>
+          ${availableIotDevices.filter(d => d.currentSsid && d.currentSsid !== '${wifi.ssid}').map(device => `
+            <div class="iot-device-card available" data-device-id="${device.id}" style="display:flex;align-items:center;justify-content:space-between;padding:15px;background:#f8f9fa;border-radius:10px;margin-bottom:10px;border:2px solid #e9ecef;cursor:pointer;transition:all 0.3s;" onclick="toggleIotDeviceSelection('${device.id}')">
+              <div style="display:flex;align-items:center;gap:12px;">
+                <input type="checkbox" class="iot-checkbox" data-device-id="${device.id}" style="width:20px;height:20px;cursor:pointer;" onclick="event.stopPropagation()">
+                <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg, #f59e0b 0%, #d97706 100%);display:flex;align-items:center;justify-content:center;color:white;font-size:18px;">
+                  🛜
+                </div>
+                <div>
+                  <div style="font-weight:600;color:#333;">${device.name}</div>
+                  <div style="font-size:12px;color:#6c757d;">Sensor: ${device.sensorType} • On: ${device.currentSsid}</div>
+                </div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+        ` : ''}
+        
+        ${(availableIotDevices.filter(d => !d.currentSsid).length > 0 || availableIotDevices.filter(d => d.currentSsid && d.currentSsid !== '${wifi.ssid}').length > 0) ? `
+        <div class="actions" style="margin-top:20px;">
+          <button type="button" class="btn btn-primary" onclick="saveSelectedIotDevices()" id="save-iot-btn">
+            💾 Connect Selected Devices
+          </button>
+          <button type="button" class="btn btn-secondary" onclick="clearIotSelection()">
+            ↺ Clear Selection
+          </button>
+        </div>
+        ` : `
+        <div style="text-align:center;padding:30px;color:#6c757d;background:#f8f9fa;border-radius:10px;margin-bottom:20px;">
+          <div style="font-size:48px;margin-bottom:15px;">📡</div>
+          <p>No available IoT devices in topology</p>
+          <p style="font-size:12px;">Add IoT devices to the topology first, then connect them here</p>
+        </div>
+        `}
+      </div>
+      
+      <!-- Status Tab -->
+      <div id="status-tab" class="content" style="display:none;">
+        <h2 class="panel-title">Network Status</h2>
+        <div class="grid-2" style="margin-bottom:20px;">
+          <div class="status-card">
+            <div class="status-info">
+              <h3>WiFi Status</h3>
+              <p>${wifi.enabled ? 'Active and Broadcasting' : 'Disabled'}</p>
+            </div>
+            <span class="status-badge">${wifi.enabled ? '● Online' : '○ Offline'}</span>
+          </div>
+          <div class="status-card">
+            <div class="status-info">
+              <h3>Connected Clients</h3>
+              <p>${connectedIotDevices.filter(d => d.connected).length} IoT device(s)</p>
+            </div>
+            <span class="status-badge">${connectedIotDevices.length} Total</span>
+          </div>
+        </div>
+        <div style="background:#f8f9fa;padding:20px;border-radius:10px;">
+          <h3 style="margin-bottom:15px;font-size:16px;color:#333;">Network Information</h3>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
+            <div><strong>SSID:</strong> ${wifi.ssid || 'Not configured'}</div>
+            <div><strong>Security:</strong> ${wifi.security.toUpperCase()}</div>
+            <div><strong>Channel:</strong> ${wifi.channel}</div>
+            <div><strong>Mode:</strong> ${wifi.mode.toUpperCase()}</div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Advanced Tab -->
+      <div id="advanced-tab" class="content" style="display:none;">
+        <h2 class="panel-title">Advanced Settings</h2>
+        <p style="color:#6c757d;margin-bottom:20px;">Advanced configuration options for power users.</p>
+        <div style="background:#fff3cd;padding:15px;border-radius:10px;border:1px solid #ffc107;">
+          <strong>⚠️ Warning</strong>
+          <p style="margin:10px 0 0 0;font-size:13px;">Changing advanced settings may affect network stability. Proceed with caution.</p>
+        </div>
+      </div>
     
     <div class="footer">
       © Network Simulator Router Administration | Model: ${deviceName} | Firmware: v1.0.0
@@ -628,6 +800,191 @@ export function generateWifiControlPanelHTML(config: RouterWebConfig): string {
       }
       console.log('Security type changed to:', this.value);
     });
+    
+    // Tab switching
+    function showTab(tabName) {
+      const tabs = ['wireless', 'iot', 'status', 'advanced'];
+      tabs.forEach(tab => {
+        const tabEl = document.getElementById(tab + '-tab');
+        if (tabEl) tabEl.style.display = tab === tabName ? 'block' : 'none';
+      });
+      // Update nav-tab active state
+      document.querySelectorAll('.nav-tab').forEach((el, idx) => {
+        const tabIds = ['wireless', 'iot', 'status', 'advanced'];
+        if (tabIds[idx] === tabName) {
+          el.classList.add('active');
+        } else {
+          el.classList.remove('active');
+        }
+      });
+    }
+    window.showTab = showTab;
+    
+    // IoT device multi-selection tracking
+    let selectedIotDevices = new Set();
+    
+    window.toggleIotDeviceSelection = function(deviceId) {
+      const checkbox = document.querySelector('.iot-checkbox[data-device-id="' + deviceId + '"]');
+      const card = document.querySelector('.iot-device-card[data-device-id="' + deviceId + '"]');
+      
+      if (selectedIotDevices.has(deviceId)) {
+        selectedIotDevices.delete(deviceId);
+        if (checkbox) checkbox.checked = false;
+        if (card) {
+          card.style.borderColor = '#e9ecef';
+          card.style.background = '#f8f9fa';
+        }
+      } else {
+        selectedIotDevices.add(deviceId);
+        if (checkbox) checkbox.checked = true;
+        if (card) {
+          card.style.borderColor = '#2a5298';
+          card.style.background = '#e8f0fe';
+        }
+      }
+      
+      // Update button text
+      const saveBtn = document.getElementById('save-iot-btn');
+      if (saveBtn) {
+        const count = selectedIotDevices.size;
+        saveBtn.innerHTML = count > 0 ? '💾 Connect ' + count + ' Device' + (count > 1 ? 's' : '') : '💾 Connect Selected Devices';
+      }
+    };
+    
+    // Connected devices selection for disconnect
+    let selectedConnectedDevices = new Set();
+    
+    window.toggleConnectedDeviceSelection = function(deviceId) {
+      const checkbox = document.querySelector('.iot-disconnect-checkbox[data-device-id="' + deviceId + '"]');
+      const card = document.querySelector('.iot-device-card.connected[data-device-id="' + deviceId + '"]');
+      
+      if (selectedConnectedDevices.has(deviceId)) {
+        selectedConnectedDevices.delete(deviceId);
+        if (checkbox) checkbox.checked = false;
+        if (card) card.style.background = '#f8f9fa';
+      } else {
+        selectedConnectedDevices.add(deviceId);
+        if (checkbox) checkbox.checked = true;
+        if (card) card.style.background = '#fee2e2';
+      }
+      
+      // Update disconnect button
+      const disconnectBtn = document.getElementById('disconnect-selected-btn');
+      if (disconnectBtn) {
+        const count = selectedConnectedDevices.size;
+        disconnectBtn.innerHTML = count > 0 ? '✕ Disconnect ' + count : '✕ Disconnect Selected';
+      }
+    };
+    
+    window.disconnectIotDevice = function(deviceId) {
+      if (!confirm('Disconnect this IoT device from the network?')) return;
+      
+      try {
+        window.parent.postMessage({
+          type: 'router-admin-disconnect-iot',
+          deviceId: '${deviceId || ''}',
+          payload: {
+            iotDeviceId: deviceId
+          }
+        }, '*');
+        
+        alert('✅ IoT device disconnected from the network');
+      } catch (err) {
+        console.warn('Could not disconnect IoT device:', err);
+        alert('❌ Failed to disconnect IoT device');
+      }
+    };
+    
+    window.disconnectSelectedDevices = function() {
+      const deviceIds = Array.from(selectedConnectedDevices);
+      if (deviceIds.length === 0) {
+        alert('❌ Please select at least one device to disconnect');
+        return;
+      }
+      
+      if (!confirm('Disconnect ' + deviceIds.length + ' device(s) from the network?')) return;
+      
+      deviceIds.forEach((deviceId, index) => {
+        setTimeout(() => {
+          try {
+            window.parent.postMessage({
+              type: 'router-admin-disconnect-iot',
+              deviceId: '${deviceId || ''}',
+              payload: { iotDeviceId: deviceId }
+            }, '*');
+          } catch (err) {
+            console.warn('Could not disconnect IoT device:', err);
+          }
+        }, index * 100);
+      });
+      
+      setTimeout(() => {
+        selectedConnectedDevices.clear();
+        alert('✅ ' + deviceIds.length + ' device(s) disconnected from the network');
+      }, deviceIds.length * 100 + 200);
+    };
+    
+    window.clearIotSelection = function() {
+      selectedIotDevices.clear();
+      document.querySelectorAll('.iot-checkbox').forEach(cb => cb.checked = false);
+      document.querySelectorAll('.iot-device-card.available').forEach(card => {
+        card.style.borderColor = '#e9ecef';
+        card.style.background = '#f8f9fa';
+      });
+      const saveBtn = document.getElementById('save-iot-btn');
+      if (saveBtn) saveBtn.innerHTML = '💾 Connect Selected Devices';
+    };
+    
+    window.saveSelectedIotDevices = function() {
+      const deviceIds = Array.from(selectedIotDevices);
+      if (deviceIds.length === 0) {
+        alert('❌ Please select at least one IoT device');
+        return;
+      }
+      
+      const btn = document.getElementById('save-iot-btn');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = '💾 Connecting...';
+      btn.disabled = true;
+      
+      // Connect all selected devices
+      let successCount = 0;
+      let failCount = 0;
+      
+      deviceIds.forEach((deviceId, index) => {
+        setTimeout(() => {
+          try {
+            window.parent.postMessage({
+              type: 'router-admin-connect-iot',
+              deviceId: '${deviceId || ''}',
+              payload: {
+                iotDeviceId: deviceId,
+                ssid: '${wifi.ssid || ''}',
+                security: '${wifi.security}',
+                password: '${wifi.password || ''}',
+                channel: '${wifi.channel}'
+              }
+            }, '*');
+            successCount++;
+          } catch (err) {
+            console.warn('Could not connect IoT device ' + deviceId + ':', err);
+            failCount++;
+          }
+        }, index * 100); // 100ms delay between each
+      });
+      
+      setTimeout(() => {
+        btn.innerHTML = '✓ Connected ' + successCount + '!';
+        btn.style.background = 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)';
+        setTimeout(() => {
+          btn.innerHTML = '💾 Connect Selected Devices';
+          btn.style.background = '';
+          btn.disabled = false;
+          clearIotSelection();
+          alert('✅ ' + successCount + ' IoT device' + (successCount > 1 ? 's' : '') + ' connected to the network!' + (failCount > 0 ? ' (' + failCount + ' failed)' : ''));
+        }, 1500);
+      }, deviceIds.length * 100 + 500);
+    };
   </script>
 </body>
 </html>
@@ -679,13 +1036,15 @@ export function getRouterWifiConfig(device: CanvasDevice, state?: SwitchState): 
 /**
  * Generate router admin page content for HTTP access
  */
-export function generateRouterAdminPage(device: CanvasDevice, state?: SwitchState): string {
+export function generateRouterAdminPage(device: CanvasDevice, state?: SwitchState, connectedIotDevices?: ConnectedIoTDevice[], availableIotDevices?: AvailableIoTDevice[]): string {
   const config: RouterWebConfig = {
     wifi: getRouterWifiConfig(device, state),
     deviceName: device.name,
     deviceIp: device.ip || '192.168.1.1',
     deviceId: device.id,
     adminPassword: 'admin',
+    connectedIotDevices: connectedIotDevices || [],
+    availableIotDevices: availableIotDevices || [],
   };
 
   return generateWifiControlPanelHTML(config);

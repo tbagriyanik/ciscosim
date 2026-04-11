@@ -542,7 +542,7 @@ export function PCPanel({
     }
   }, [internalPcHostname, ipConfigMode, pcIP, pcMAC, pcSubnet, pcGateway, pcDNS, pcIPv6, pcIPv6Prefix, serviceDnsEnabled, serviceDnsRecords, serviceHttpEnabled, serviceHttpContent, serviceDhcpEnabled, serviceDhcpPools, wifiEnabled, wifiSSID, wifiBSSID, wifiSecurity, wifiPassword, wifiChannel, deviceId, topologyDevices]);
 
-  const saveIotConfig = useCallback(() => {
+  const saveIotConfig = useCallback((showToast: boolean = true) => {
     if (!selectedIotDeviceId) return;
     window.dispatchEvent(new CustomEvent('update-topology-device-config', {
       detail: {
@@ -556,11 +556,22 @@ export function PCPanel({
         }
       }
     }));
-    toast({
-      title: language === 'tr' ? 'IoT kaydedildi' : 'IoT saved',
-      description: language === 'tr' ? 'Secili IoT nesnesi guncellendi.' : 'Selected IoT object updated.',
-    });
+    if (showToast) {
+      toast({
+        title: language === 'tr' ? 'IoT kaydedildi' : 'IoT saved',
+        description: language === 'tr' ? 'Secili IoT nesnesi guncellendi.' : 'Selected IoT object updated.',
+      });
+    }
   }, [selectedIotDeviceId, iotSensorType, iotCollaborationEnabled, iotDataStore, language]);
+
+  // Auto-save IoT config on change (debounced)
+  useEffect(() => {
+    if (!selectedIotDeviceId) return;
+    const handler = setTimeout(() => {
+      saveIotConfig(false);
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [selectedIotDeviceId, iotSensorType, iotCollaborationEnabled, iotDataStore, saveIotConfig]);
 
   // Trigger sync on change (debounced)
   useEffect(() => {
@@ -1022,38 +1033,170 @@ export function PCPanel({
 
     const handleRouterAdminMessage = (event: MessageEvent) => {
       const data = event.data;
-      if (!data || data.type !== 'router-admin-save-wifi') return;
-      if (data.deviceId !== httpAppDeviceId) return;
+      if (!data || data.deviceId !== httpAppDeviceId) return;
 
-      const device = topologyDevices.find((d) => d.id === httpAppDeviceId);
-      const payload = data.payload || {};
-      const nextWifi = {
-        enabled: Boolean(payload.enabled),
-        ssid: String(payload.ssid || ''),
-        security: payload.security || 'open',
-        password: String(payload.password || ''),
-        channel: payload.channel || '2.4GHz',
-        mode: payload.mode || 'ap',
-        hidden: Boolean(payload.hidden),
-        maxClients: Number(payload.maxClients || 32),
-        bssid: device?.wifi?.bssid || '',
-      };
+      // Handle WiFi settings save
+      if (data.type === 'router-admin-save-wifi') {
+        const device = topologyDevices.find((d) => d.id === httpAppDeviceId);
+        const payload = data.payload || {};
+        const nextWifi = {
+          enabled: Boolean(payload.enabled),
+          ssid: String(payload.ssid || ''),
+          security: payload.security || 'open',
+          password: String(payload.password || ''),
+          channel: payload.channel || '2.4GHz',
+          mode: payload.mode || 'ap',
+          hidden: Boolean(payload.hidden),
+          maxClients: Number(payload.maxClients || 32),
+          bssid: device?.wifi?.bssid || '',
+        };
 
-      window.dispatchEvent(new CustomEvent('update-topology-device-config', {
-        detail: {
-          deviceId: httpAppDeviceId,
-          config: {
-            wifi: nextWifi,
+        window.dispatchEvent(new CustomEvent('update-topology-device-config', {
+          detail: {
+            deviceId: httpAppDeviceId,
+            config: {
+              wifi: nextWifi,
+            },
           },
-        },
-      }));
+        }));
 
-      addLocalOutput(
-        'success',
-        language === 'tr'
-          ? `${device?.name || 'Cihaz'} WiFi ayarlari uygulandi.`
-          : `${device?.name || 'Device'} WiFi settings applied.`
-      );
+        addLocalOutput(
+          'success',
+          language === 'tr'
+            ? `${device?.name || 'Cihaz'} WiFi ayarlari uygulandi.`
+            : `${device?.name || 'Device'} WiFi settings applied.`
+        );
+      }
+
+      // Handle IoT device connect (existing device)
+      if (data.type === 'router-admin-connect-iot') {
+        const payload = data.payload || {};
+        const iotDeviceId = payload.iotDeviceId;
+        
+        if (!iotDeviceId) return;
+        
+        // Find the existing IoT device in topology
+        const iotDevice = topologyDevices.find((d) => d.id === iotDeviceId);
+        if (!iotDevice || iotDevice.type !== 'iot') return;
+
+        // Find router/AP to get network info
+        const routerDevice = topologyDevices.find((d) => d.id === httpAppDeviceId);
+        const routerIp = routerDevice?.ip || '192.168.1.1';
+        const routerSubnet = routerDevice?.subnet || '255.255.255.0';
+        
+        // Generate IP from same subnet as router
+        const baseIpParts = routerIp.split('.');
+        const subnetParts = routerSubnet.split('.');
+        let newIp = '';
+        
+        // Get all used IPs in topology
+        const usedIps = new Set<string>();
+        topologyDevices.forEach(d => {
+          if (d.ip && d.ip.startsWith(baseIpParts[0] + '.' + baseIpParts[1] + '.' + baseIpParts[2])) {
+            usedIps.add(d.ip);
+          }
+        });
+        
+        // Find available IP in subnet (.100-.254 range for clients)
+        for (let i = 100; i <= 254; i++) {
+          const testIp = `${baseIpParts[0]}.${baseIpParts[1]}.${baseIpParts[2]}.${i}`;
+          if (!usedIps.has(testIp)) {
+            newIp = testIp;
+            break;
+          }
+        }
+        
+        // If no IP found in client range, try .2-.99
+        if (!newIp) {
+          for (let i = 2; i < 100; i++) {
+            const testIp = `${baseIpParts[0]}.${baseIpParts[1]}.${baseIpParts[2]}.${i}`;
+            if (!usedIps.has(testIp) && testIp !== routerIp) {
+              newIp = testIp;
+              break;
+            }
+          }
+        }
+        
+        // Default fallback
+        if (!newIp) {
+          newIp = `${baseIpParts[0]}.${baseIpParts[1]}.${baseIpParts[2]}.150`;
+        }
+
+        // Update the IoT device's WiFi config to connect to this AP
+        const updatedWifi = {
+          enabled: true,
+          ssid: payload.ssid || '',
+          security: payload.security || 'open',
+          password: payload.password || '',
+          channel: payload.channel || '2.4GHz',
+          mode: 'client' as const,
+          bssid: httpAppDeviceId,
+        };
+
+        // Dispatch event to update the IoT device with IP
+        window.dispatchEvent(new CustomEvent('update-topology-device-config', {
+          detail: {
+            deviceId: iotDeviceId,
+            config: {
+              wifi: updatedWifi,
+              status: 'online',
+              ip: newIp,
+              ipConfigMode: 'dhcp' as const,
+              gateway: routerIp,
+              subnet: routerSubnet,
+              dns: routerIp,
+            },
+          },
+        }));
+
+        addLocalOutput(
+          'success',
+          language === 'tr'
+            ? `IoT cihaz "${iotDevice.name}" aga baglandi. IP: ${newIp}`
+            : `IoT device "${iotDevice.name}" connected to the network. IP: ${newIp}`
+        );
+      }
+
+      // Handle IoT device disconnect
+      if (data.type === 'router-admin-disconnect-iot') {
+        const payload = data.payload || {};
+        const iotDeviceId = payload.iotDeviceId;
+        
+        if (!iotDeviceId) return;
+        
+        // Find the existing IoT device in topology
+        const iotDevice = topologyDevices.find((d) => d.id === iotDeviceId);
+        if (!iotDevice || iotDevice.type !== 'iot') return;
+
+        // Update the IoT device's WiFi config to disconnect (disable WiFi)
+        const updatedWifi = {
+          enabled: false,
+          ssid: '',
+          security: 'open' as const,
+          password: '',
+          channel: '2.4GHz' as const,
+          mode: 'client' as const,
+          bssid: undefined,
+        };
+
+        // Dispatch event to update the IoT device
+        window.dispatchEvent(new CustomEvent('update-topology-device-config', {
+          detail: {
+            deviceId: iotDeviceId,
+            config: {
+              wifi: updatedWifi,
+              status: 'offline',
+            },
+          },
+        }));
+
+        addLocalOutput(
+          'success',
+          language === 'tr'
+            ? `IoT cihaz "${iotDevice.name}" agdan cikarildi.`
+            : `IoT device "${iotDevice.name}" disconnected from the network.`
+        );
+      }
     };
 
     window.addEventListener('message', handleRouterAdminMessage);
@@ -1070,15 +1213,58 @@ export function PCPanel({
     }));
   }, [httpAppContent, isMobile]);
 
+  // Get connected IoT devices for a router/AP
+  const getConnectedIotDevices = useCallback((routerId: string) => {
+    const routerDevice = topologyDevices.find(d => d.id === routerId);
+    if (!routerDevice?.wifi?.ssid) return [];
+    
+    const routerSsid = routerDevice.wifi.ssid;
+    const routerSecurity = routerDevice.wifi.security || 'open';
+    
+    return topologyDevices
+      .filter(d => d.type === 'iot' && d.wifi?.ssid === routerSsid && d.wifi?.security === routerSecurity)
+      .map(d => ({
+        id: d.id,
+        name: d.name,
+        sensorType: d.iot?.sensorType || 'temperature',
+        connected: !!(d.status === 'online' && d.wifi?.enabled),
+        ip: d.ip,
+      }));
+  }, [topologyDevices]);
+
+  // Get available IoT devices that can be connected (not connected to this AP)
+  const getAvailableIotDevices = useCallback((routerId: string) => {
+    const routerDevice = topologyDevices.find(d => d.id === routerId);
+    if (!routerDevice) return [];
+    
+    const routerSsid = routerDevice.wifi?.ssid || '';
+    
+    return topologyDevices
+      .filter(d => {
+        if (d.type !== 'iot') return false;
+        // Include IoT devices that are not connected to this AP
+        const isConnectedToThisAp = d.wifi?.ssid === routerSsid && d.wifi?.enabled;
+        return !isConnectedToThisAp;
+      })
+      .map(d => ({
+        id: d.id,
+        name: d.name,
+        sensorType: d.iot?.sensorType || 'temperature',
+        currentSsid: d.wifi?.ssid || undefined,
+      }));
+  }, [topologyDevices]);
+
   useEffect(() => {
     if (!httpAppDeviceId) return;
     const targetDevice = topologyDevices.find((d) => d.id === httpAppDeviceId);
     if (!targetDevice || !isRouterDevice(targetDevice)) return;
 
     const runtimeState = deviceStates?.get(httpAppDeviceId);
-    const refreshed = generateRouterAdminPage(targetDevice, runtimeState);
+    const connectedIot = getConnectedIotDevices(httpAppDeviceId);
+    const availableIot = getAvailableIotDevices(httpAppDeviceId);
+    const refreshed = generateRouterAdminPage(targetDevice, runtimeState, connectedIot, availableIot);
     setHttpAppContent(refreshed);
-  }, [httpAppDeviceId, topologyDevices, deviceStates]);
+  }, [httpAppDeviceId, topologyDevices, deviceStates, getConnectedIotDevices, getAvailableIotDevices]);
 
   useEffect(() => {
     const handlePointerMove = (event: PointerEvent) => {
@@ -1452,7 +1638,9 @@ export function PCPanel({
       addLocalOutput('error', `404 Not Found: ${target}`);
     } else if (isRouterDevice(httpServer)) {
       const runtimeState = deviceStates?.get(httpServer.id);
-      const adminPage = generateRouterAdminPage(httpServer, runtimeState);
+      const connectedIot = getConnectedIotDevices(httpServer.id);
+      const availableIot = getAvailableIotDevices(httpServer.id);
+      const adminPage = generateRouterAdminPage(httpServer, runtimeState, connectedIot, availableIot);
       setHttpAppDeviceId(httpServer.id);
       setHttpAppContent(adminPage);
       setHttpAppTitle(language === 'tr' ? 'Yönlendirici Yönetimi' : 'Router Management');
@@ -1463,7 +1651,7 @@ export function PCPanel({
       setHttpAppDeviceId(null);
       addLocalOutput('html', httpServer.services?.http?.content || 'Merhaba Dünya!');
     }
-  }, [addLocalOutput, deviceStates, findHttpServerByTarget, hasGatewayForTarget, isLoopbackTarget, isValidIpv4, language, normalizeLookupTarget, pcDNS, resolveDeviceNameTarget, t]);
+  }, [addLocalOutput, deviceStates, findHttpServerByTarget, getAvailableIotDevices, getConnectedIotDevices, hasGatewayForTarget, isLoopbackTarget, isValidIpv4, language, normalizeLookupTarget, pcDNS, resolveDeviceNameTarget, t]);
 
   const formatMacForArp = useCallback((mac?: string) => {
     if (!mac) return '';
@@ -3636,6 +3824,136 @@ export function PCPanel({
                               </Select>
                             </div>
 
+                            <div className="space-y-2">
+                              <label className="text-xs font-bold text-slate-500">{language === 'tr' ? 'Cihaz Adı' : 'Device Name'}</label>
+                              <Input
+                                value={selectedIotDevice?.name || ''}
+                                onChange={(e) => {
+                                  const newName = e.target.value;
+                                  window.dispatchEvent(new CustomEvent('update-topology-device-config', {
+                                    detail: {
+                                      deviceId: selectedIotDeviceId,
+                                      config: { name: newName }
+                                    }
+                                  }));
+                                }}
+                                placeholder={language === 'tr' ? 'Cihaz adı...' : 'Device name...'}
+                              />
+                            </div>
+
+                            {/* IP Address Info */}
+                            <div className={`p-3 rounded-lg ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`}>
+                              <div className="grid grid-cols-2 gap-2 text-xs">
+                                <div>
+                                  <span className="text-slate-500">IP:</span>
+                                  <span className={`ml-1 font-mono ${selectedIotDevice?.ip ? 'text-cyan-500' : 'text-slate-400'}`}>
+                                    {selectedIotDevice?.ip || 'Not assigned'}
+                                  </span>
+                                </div>
+                                <div>
+                                  <span className="text-slate-500">Gateway:</span>
+                                  <span className="ml-1 font-mono text-slate-400">{selectedIotDevice?.gateway || '-'}</span>
+                                </div>
+                                <div>
+                                  <span className="text-slate-500">Subnet:</span>
+                                  <span className="ml-1 font-mono text-slate-400">{selectedIotDevice?.subnet || '-'}</span>
+                                </div>
+                                <div>
+                                  <span className="text-slate-500">Status:</span>
+                                  <span className={`ml-1 ${selectedIotDevice?.status === 'online' ? 'text-green-500' : 'text-red-500'}`}>
+                                    {selectedIotDevice?.status === 'online' ? '● Online' : '○ Offline'}
+                                  </span>
+                                </div>
+                              </div>
+                              {selectedIotDevice?.ip && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="mt-2 w-full"
+                                  onClick={() => {
+                                    const targetIp = selectedIotDevice?.ip;
+                                    if (targetIp) {
+                                      addLocalOutput('command', `ping ${targetIp}`);
+                                      // Simulate ping
+                                      setTimeout(() => {
+                                        addLocalOutput('output', `Pinging ${targetIp} with 32 bytes of data:`);
+                                      }, 100);
+                                      setTimeout(() => {
+                                        addLocalOutput('success', `Reply from ${targetIp}: bytes=32 time=1ms TTL=64`);
+                                      }, 300);
+                                      setTimeout(() => {
+                                        addLocalOutput('success', `Reply from ${targetIp}: bytes=32 time<1ms TTL=64`);
+                                      }, 500);
+                                      setTimeout(() => {
+                                        addLocalOutput('success', `Reply from ${targetIp}: bytes=32 time=1ms TTL=64`);
+                                      }, 700);
+                                      setTimeout(() => {
+                                        addLocalOutput('success', `Reply from ${targetIp}: bytes=32 time<1ms TTL=64`);
+                                      }, 900);
+                                      setTimeout(() => {
+                                        addLocalOutput('output', `Ping statistics for ${targetIp}:`);
+                                        addLocalOutput('output', `    Packets: Sent = 4, Received = 4, Lost = 0 (0% loss),`);
+                                        addLocalOutput('output', `Approximate round trip times in milli-seconds:`);
+                                        addLocalOutput('output', `    Minimum = 0ms, Maximum = 1ms, Average = 0ms`);
+                                      }, 1100);
+                                    }
+                                  }}
+                                >
+                                  <Globe className="w-4 h-4 mr-2" />
+                                  Ping {selectedIotDevice?.ip}
+                                </Button>
+                              )}
+                            </div>
+
+                            {/* Sensor Value Display */}
+                            {selectedIotDevice?.iot?.sensorType && (
+                              <div className={`p-4 rounded-lg border-l-4 ${isDark ? 'bg-slate-800 border-cyan-500' : 'bg-cyan-50 border-cyan-500'}`}>
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <div className="text-xs text-slate-500 mb-1">
+                                      {language === 'tr' ? 'Sensör Değeri' : 'Sensor Value'}
+                                    </div>
+                                    <div className="text-2xl font-bold text-cyan-500">
+                                      {(() => {
+                                        const sensorType = selectedIotDevice?.iot?.sensorType || 'temperature';
+                                        // Simulated sensor values
+                                        const baseTemp = 22;
+                                        const baseHumidity = 50;
+                                        const baseLight = 70;
+                                        const variations = [0, 1, -1, 2, -2];
+                                        const variation = variations[Math.floor(Math.random() * variations.length)];
+                                        
+                                        switch (sensorType) {
+                                          case 'temperature':
+                                            return `${baseTemp + variation}°C`;
+                                          case 'humidity':
+                                            return `${baseHumidity + variation}%`;
+                                          case 'light':
+                                            return `${baseLight + variation * 2}%`;
+                                          case 'motion':
+                                            return Math.random() > 0.7 ? '🔴 Detected' : '🟢 None';
+                                          case 'sound':
+                                            return `${(30 + Math.random() * 20).toFixed(1)} dB`;
+                                          default:
+                                            return '-';
+                                        }
+                                      })()}
+                                    </div>
+                                  </div>
+                                  <div className={`p-3 rounded-full ${isDark ? 'bg-slate-700' : 'bg-white'}`}>
+                                    {selectedIotDevice?.iot?.sensorType === 'temperature' && <span className="text-2xl">🌡️</span>}
+                                    {selectedIotDevice?.iot?.sensorType === 'humidity' && <span className="text-2xl">💧</span>}
+                                    {selectedIotDevice?.iot?.sensorType === 'motion' && <span className="text-2xl">🏃</span>}
+                                    {selectedIotDevice?.iot?.sensorType === 'light' && <span className="text-2xl">💡</span>}
+                                    {selectedIotDevice?.iot?.sensorType === 'sound' && <span className="text-2xl">🔊</span>}
+                                  </div>
+                                </div>
+                                <div className="text-xs text-slate-400 mt-2">
+                                  {language === 'tr' ? 'Son güncelleme: Az önce' : 'Last updated: Just now'}
+                                </div>
+                              </div>
+                            )}
+
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                               <div className="space-y-2">
                                 <label className="text-xs font-bold text-slate-500">{language === 'tr' ? 'Sensör Tipi' : 'Sensor Type'}</label>
@@ -3650,14 +3968,14 @@ export function PCPanel({
                                   </SelectContent>
                                 </Select>
                               </div>
-                              <div className="space-y-2">
-                                <label className="text-xs font-bold text-slate-500">{language === 'tr' ? 'Birlikte Çalışma' : 'Collaboration'}</label>
+                              <div className="flex items-center gap-3">
+                                <label className="text-xs font-bold text-slate-500 shrink-0">{language === 'tr' ? 'Birlikte Çalışma' : 'Collaboration'}</label>
                                 <button
                                   type="button"
                                   role="switch"
                                   aria-checked={iotCollaborationEnabled}
                                   onClick={() => setIotCollaborationEnabled((prev) => !prev)}
-                                  className={`relative inline-flex h-7 w-14 items-center rounded-full border transition-colors ${iotCollaborationEnabled ? 'bg-cyan-500 border-cyan-400' : (isDark ? 'bg-slate-800 border-slate-700' : 'bg-slate-200 border-slate-300')}`}
+                                  className={`relative inline-flex h-7 w-14 items-center rounded-full border transition-colors shrink-0 ${iotCollaborationEnabled ? 'bg-cyan-500 border-cyan-400' : (isDark ? 'bg-slate-800 border-slate-700' : 'bg-slate-200 border-slate-300')}`}
                                 >
                                   <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${iotCollaborationEnabled ? 'translate-x-8' : 'translate-x-1'}`} />
                                 </button>
@@ -3675,9 +3993,10 @@ export function PCPanel({
                               />
                             </div>
 
-                            <Button onClick={saveIotConfig} className="bg-cyan-600 hover:bg-cyan-700 text-white">
-                              {language === 'tr' ? 'Kaydet' : 'Save'}
-                            </Button>
+                            <div className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'} flex items-center gap-1`}>
+                              <Save className="w-3 h-3" />
+                              {language === 'tr' ? 'Değişiklikler otomatik kaydediliyor' : 'Changes are auto-saved'}
+                            </div>
                           </>
                         )}
                       </div>
