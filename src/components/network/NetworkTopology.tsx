@@ -5562,7 +5562,7 @@ export function NetworkTopology({
                         onClick={(e, device) => handleDeviceClick(e as unknown as ReactMouseEvent, device)}
                         onDoubleClick={() => handleDeviceDoubleClick(device)}
                         onContextMenu={(e, id) => handleContextMenu(e as unknown as ReactMouseEvent, id)}
-                        onMouseLeave={(e, id) => handleDeviceMouseLeave(e as unknown as ReactMouseEvent, id)}
+                        onMouseLeave={() => handleDeviceMouseLeave()}
                         onTouchStart={(e, id) => handleDeviceTouchStart(e as unknown as ReactTouchEvent, id)}
                         onTouchMove={handleDeviceTouchMove}
                         onTouchEnd={handleDeviceTouchEnd}
