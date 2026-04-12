@@ -3794,6 +3794,24 @@ export function NetworkTopology({
               opacity="0.4"
               className="animate-pulse"
             />
+          ) : device.type === 'iot' ? (
+            <path
+              d={`M -4 -4 L ${deviceWidth + 4 - 10} -4 Q ${deviceWidth + 4} -4 ${deviceWidth + 4} 6 L ${deviceWidth + 4} ${deviceHeight + 4} L 6 ${deviceHeight + 4} Q -4 ${deviceHeight + 4} -4 ${deviceHeight + 4 - 10} L -4 -4 Z`}
+              fill="none"
+              stroke="#06b6d4"
+              strokeWidth="3"
+              opacity="0.4"
+              className="animate-pulse"
+            />
+          ) : isSwitchDeviceType(device.type) ? (
+            <path
+              d={`M -4 -4 L ${deviceWidth + 4} -4 L ${deviceWidth + 4} ${deviceHeight + 4 - 10} Q ${deviceWidth + 4} ${deviceHeight + 4} ${deviceWidth + 4 - 10} ${deviceHeight + 4} L 6 ${deviceHeight + 4} Q -4 ${deviceHeight + 4} -4 ${deviceHeight + 4 - 10} L -4 -4 Z`}
+              fill="none"
+              stroke="#06b6d4"
+              strokeWidth="3"
+              opacity="0.4"
+              className="animate-pulse"
+            />
           ) : (
             <rect
               x="-4"
@@ -3820,6 +3838,24 @@ export function NetworkTopology({
             className={isDragging ? '' : 'transition-all duration-150'}
             filter="url(#deviceShadow)"
           />
+        ) : device.type === 'iot' ? (
+          <path
+            d={`M 0 0 L ${deviceWidth - 8} 0 Q ${deviceWidth} 0 ${deviceWidth} 8 L ${deviceWidth} ${deviceHeight} L 8 ${deviceHeight} Q 0 ${deviceHeight} 0 ${deviceHeight - 8} L 0 0 Z`}
+            fill={deviceFill}
+            stroke={isSelected ? '#06b6d4' : isDark ? '#f97316' : '#cbd5e1'}
+            strokeWidth={isSelected ? 2.5 : 1.5}
+            className={isDragging ? '' : 'transition-all duration-150'}
+            filter="url(#deviceShadow)"
+          />
+        ) : isSwitchDeviceType(device.type) ? (
+          <path
+            d={`M 0 0 L ${deviceWidth} 0 L ${deviceWidth} ${deviceHeight - 8} Q ${deviceWidth} ${deviceHeight} ${deviceWidth - 8} ${deviceHeight} L 8 ${deviceHeight} Q 0 ${deviceHeight} 0 ${deviceHeight - 8} L 0 0 Z`}
+            fill={deviceFill}
+            stroke={isSelected ? '#06b6d4' : isDark ? '#22c55e' : '#cbd5e1'}
+            strokeWidth={isSelected ? 2.5 : 1.5}
+            className={isDragging ? '' : 'transition-all duration-150'}
+            filter="url(#deviceShadow)"
+          />
         ) : (
           <rect
             width={deviceWidth}
@@ -3839,6 +3875,18 @@ export function NetworkTopology({
           device.type === 'router' ? (
             <path
               d={`M ${22} 2 L ${deviceWidth - 22} 2 Q ${deviceWidth - 2} 2 ${deviceWidth - 2} 20 L ${deviceWidth - 2} ${deviceHeight / 3} L 2 ${deviceHeight / 3} L 2 20 Q 2 2 22 2`}
+              fill="white"
+              opacity="0.08"
+            />
+          ) : device.type === 'iot' ? (
+            <path
+              d={`M 2 2 L ${deviceWidth - 2 - 6} 2 Q ${deviceWidth - 2} 2 ${deviceWidth - 2} 8 L ${deviceWidth - 2} ${deviceHeight / 3} L 8 ${deviceHeight / 3} Q 2 ${deviceHeight / 3} 2 ${deviceHeight / 3 - 6} L 2 2 Z`}
+              fill="white"
+              opacity="0.08"
+            />
+          ) : isSwitchDeviceType(device.type) ? (
+            <path
+              d={`M 2 2 L ${deviceWidth - 2} 2 L ${deviceWidth - 2} ${deviceHeight / 3} L 2 ${deviceHeight / 3} L 2 2 Z`}
               fill="white"
               opacity="0.08"
             />
@@ -3996,7 +4044,7 @@ export function NetworkTopology({
                 <TooltipTrigger asChild>
                   <g
                     transform="translate(2, 0) scale(0.9)"
-                    filter="url(#deviceShadow)"
+                    filter="url(#wifiIconShadow)"
                     style={{ cursor: 'pointer' }}
                   >
                     {/* Invisible rect for easier hover */}
@@ -4130,7 +4178,7 @@ export function NetworkTopology({
           if (connectedCount === 0) return null;
           
           return (
-            <g transform={`translate(14, 26)`}>
+            <g transform={`translate(14, 32)`}>
               <circle r="10" fill={isDark ? '#0ea5e9' : '#0284c7'} stroke={isDark ? '#1e293b' : '#fff'} strokeWidth="1" />
               <text x="0" y="1" fill="#fff" fontSize="9" textAnchor="middle" dominantBaseline="middle" fontWeight="bold" style={{ userSelect: 'none' }}>
                 {connectedCount}
@@ -4181,7 +4229,7 @@ export function NetworkTopology({
               />
             )}
             {device.type === 'iot' && (
-              <g transform="translate(1, 1)" stroke="#14b8a6" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round">
+              <g transform="translate(1, 1)" stroke="#14b8a6" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" filter="url(#wifiIconShadow)">
                 <path d="M16.247 7.761a6 6 0 0 1 0 8.478" />
                 <path d="M19.075 4.933a10 10 0 0 1 0 14.134" />
                 <path d="M4.925 19.067a10 10 0 0 1 0-14.134" />
@@ -5413,9 +5461,9 @@ export function NetworkTopology({
                   <filter id="deviceShadow" x="-50%" y="-50%" width="200%" height="200%">
                     <feDropShadow dx="2" dy="3" stdDeviation="3" floodOpacity={isDark ? "0.3" : "0.2"} />
                   </filter>
-                  {/* WiFi Icon Shadow Filter */}
+                  {/* WiFi Icon Shadow Filter - More pronounced for visibility */}
                   <filter id="wifiIconShadow" x="-50%" y="-50%" width="200%" height="200%">
-                    <feDropShadow dx="0" dy="0.5" stdDeviation="0.6" floodOpacity={isDark ? "0.8" : "0.4"} />
+                    <feDropShadow dx="0.5" dy="1" stdDeviation="1.5" floodOpacity={isDark ? "0.9" : "0.5"} />
                   </filter>
                   {/* Canvas background gradient */}
                   <radialGradient id="canvasBgGradient" cx="46%" cy="30%" r="88%">

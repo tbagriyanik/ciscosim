@@ -608,7 +608,7 @@ export function generateWifiControlPanelHTML(config: RouterWebConfig): string {
         
         ${availableIotDevices.filter(d => !d.currentSsid).length > 0 ? `
         <div class="available-iot-list" style="margin-bottom:25px;">
-          <p style="color:#6c757d;margin-bottom:15px;font-size:13px;"><strong>Inactive Devices:</strong> Select to activate and connect to this network:</p>
+          <p style="color:#6c757d;margin-bottom:15px;font-size:13px;"><strong>Unconnected Devices:</strong> Select to connect to this network:</p>
           ${availableIotDevices.filter(d => !d.currentSsid).map(device => `
             <div class="iot-device-card available" data-device-id="${device.id}" style="display:flex;align-items:center;justify-content:space-between;padding:15px;background:#f8f9fa;border-radius:10px;margin-bottom:10px;border:2px solid #e9ecef;cursor:pointer;transition:all 0.3s;" onclick="toggleIotDeviceSelection('${device.id}')">
               <div style="display:flex;align-items:center;gap:12px;">
@@ -618,7 +618,7 @@ export function generateWifiControlPanelHTML(config: RouterWebConfig): string {
                 </div>
                 <div>
                   <div style="font-weight:600;color:#333;">${device.name}</div>
-                  <div style="font-size:12px;color:#6c757d;">Sensor: ${device.sensorType} • <strong>Inactive</strong></div>
+                  <div style="font-size:12px;color:#6c757d;">Sensor: ${device.sensorType} • <strong>Unconnected</strong></div>
                 </div>
               </div>
             </div>

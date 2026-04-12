@@ -4273,52 +4273,65 @@ export function PCPanel({
                               />
                             </div>
 
-                            {/* IP Address Info */}
-                            <div className={`p-3 rounded-lg ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`}>
-                              <div className="grid grid-cols-2 gap-2 text-xs">
-                                <div>
-                                  <span className="text-slate-500">IP:</span>
-                                  <span className={`ml-1 font-mono ${selectedIotDevice?.ip ? 'text-cyan-500' : 'text-slate-400'}`}>
-                                    {selectedIotDevice?.ip || 'Not assigned'}
-                                  </span>
+                            {(() => {
+                              const wifiStrength = selectedIotDevice ? getWirelessSignalStrength(selectedIotDevice, topologyDevices, deviceStates) : 0;
+                              const isWired = topologyConnections.some(c => 
+                                (c.sourceDeviceId === selectedIotDeviceId || c.targetDeviceId === selectedIotDeviceId) && c.active !== false
+                              );
+                              const isIotConnected = wifiStrength > 0 || isWired;
+
+                              return (
+                                <div className={`p-3 rounded-lg ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`}>
+                                  <div className="grid grid-cols-2 gap-2 text-xs">
+                                    <div>
+                                      <span className="text-slate-500">IP:</span>
+                                      <span className={`ml-1 font-mono ${selectedIotDevice?.ip ? 'text-cyan-500' : 'text-slate-400'}`}>
+                                        {selectedIotDevice?.ip || 'Not assigned'}
+                                      </span>
+                                    </div>
+                                    <div>
+                                      <span className="text-slate-500">Gateway:</span>
+                                      <span className="ml-1 font-mono text-slate-400">{selectedIotDevice?.gateway || '-'}</span>
+                                    </div>
+                                    <div>
+                                      <span className="text-slate-500">Subnet:</span>
+                                      <span className="ml-1 font-mono text-slate-400">{selectedIotDevice?.subnet || '-'}</span>
+                                    </div>
+                                    <div>
+                                      <span className="text-slate-500">Status:</span>
+                                      <span className={`ml-1 ${isIotConnected ? 'text-green-500' : 'text-red-500'}`}>
+                                        {isIotConnected ? '● Online' : 'No Connection'}
+                                      </span>
+                                    </div>
+                                  </div>
+                                  {selectedIotDevice?.ip && (
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className={`mt-2 w-fit px-6 shadow-sm hover:shadow-md transition-all active:scale-95 ${
+                                        isDark 
+                                          ? 'border-slate-800 bg-slate-900/50 text-slate-300 hover:text-cyan-400 hover:bg-cyan-500/10 hover:border-cyan-500/30' 
+                                          : 'hover:text-cyan-600 hover:bg-cyan-50 hover:border-cyan-200'
+                                      }`}
+                                      onClick={() => {
+                                        const targetIp = selectedIotDevice?.ip;
+                                        if (targetIp) {
+                                          // Switch to CMD tab
+                                          navigateToProgram('desktop');
+                                          // Execute ping command after a short delay to allow tab transition
+                                          setTimeout(() => {
+                                            executeCommand(`ping ${targetIp}`);
+                                          }, 300);
+                                        }
+                                      }}
+                                    >
+                                      <Globe className="w-4 h-4 mr-2" />
+                                      Ping {selectedIotDevice?.ip}
+                                    </Button>
+                                  )}
                                 </div>
-                                <div>
-                                  <span className="text-slate-500">Gateway:</span>
-                                  <span className="ml-1 font-mono text-slate-400">{selectedIotDevice?.gateway || '-'}</span>
-                                </div>
-                                <div>
-                                  <span className="text-slate-500">Subnet:</span>
-                                  <span className="ml-1 font-mono text-slate-400">{selectedIotDevice?.subnet || '-'}</span>
-                                </div>
-                                <div>
-                                  <span className="text-slate-500">Status:</span>
-                                  <span className={`ml-1 ${selectedIotDevice?.status === 'online' ? 'text-green-500' : 'text-red-500'}`}>
-                                    {selectedIotDevice?.status === 'online' ? '● Online' : '○ Offline'}
-                                  </span>
-                                </div>
-                              </div>
-                              {selectedIotDevice?.ip && (
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="mt-2 w-fit px-6 shadow-sm hover:shadow-md transition-all active:scale-95"
-                                  onClick={() => {
-                                    const targetIp = selectedIotDevice?.ip;
-                                    if (targetIp) {
-                                      // Switch to CMD tab
-                                      navigateToProgram('desktop');
-                                      // Execute ping command after a short delay to allow tab transition
-                                      setTimeout(() => {
-                                        executeCommand(`ping ${targetIp}`);
-                                      }, 300);
-                                    }
-                                  }}
-                                >
-                                  <Globe className="w-4 h-4 mr-2" />
-                                  Ping {selectedIotDevice?.ip}
-                                </Button>
-                              )}
-                            </div>
+                              );
+                            })()}
 
                             {/* Sensor Value & Graph Display */}
                             {selectedIotDevice && (

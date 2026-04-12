@@ -1090,10 +1090,10 @@ export default function Home() {
     } catch (error) {
       console.error("Error loading project data", error);
       toast({
-      variant: 'destructive',
-      title: t.invalidProject,
-      description: t.corruptedProject,
-    });
+        variant: 'destructive',
+        title: t.invalidProject,
+        description: t.corruptedProject,
+      });
       return false;
     }
   }, [setDeviceStates, setDeviceOutputs, setPcOutputs, setPcHistories, setTopologyDevices, setTopologyConnections, setTopologyNotes, setCableInfo, setActiveDeviceId, setActiveDeviceType, setActiveTab, setTopologyKey, setHasUnsavedChanges, resetHistory, toast, setZoom, setPan, language, normalizeDeviceType]);
@@ -2669,7 +2669,7 @@ export default function Home() {
                           {graphicsQuality === 'high' ? <Sparkles className="w-4 h-4" /> : <Cloud className="w-4 h-4" />}
                         </button>
                       </TooltipTrigger>
-                      <TooltipContent>{graphicsQuality === 'high' ? (language === 'tr' ? 'Yüksek Çözünürlük' : 'High Resolution') : (language === 'tr' ? 'Düşük Çözünürlük' : 'Low Resolution')}</TooltipContent>
+                      <TooltipContent>{graphicsQuality !== 'high' ? (language === 'tr' ? 'Yüksek Çözünürlük' : 'High Resolution') : (language === 'tr' ? 'Düşük Çözünürlük' : 'Low Resolution')}</TooltipContent>
                     </Tooltip>
                   </div>
                 </div>
@@ -2883,9 +2883,9 @@ export default function Home() {
                       </TooltipTrigger>
                       <TooltipContent>{language === 'tr' ? 'Cihazları Bagla' : 'Connect Devices'}</TooltipContent>
                     </Tooltip>
-                    
+
                     <div className={`w-px h-4 ${isDark ? 'bg-slate-800' : 'bg-slate-200'} mx-0.5`} />
- 
+
                     {/* Environment Settings Button */}
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -3388,12 +3388,12 @@ export default function Home() {
             <DialogContent className={`${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'} sm:max-w-2xl md:max-w-3xl p-0 overflow-hidden`}>
               {/* Progress Bar */}
               <div className="w-full h-1 bg-slate-200 dark:bg-slate-800">
-                <div 
+                <div
                   className="h-full bg-gradient-to-r from-cyan-500 to-blue-500 transition-all duration-300"
                   style={{ width: `${((onboardingStep + 1) / onboardingSteps.length) * 100}%` }}
                 />
               </div>
-              
+
               <DialogHeader className="px-8 pt-6 pb-2">
                 <div className="flex items-center justify-between gap-4 mb-2">
                   <DialogTitle className={`text-2xl md:text-3xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
