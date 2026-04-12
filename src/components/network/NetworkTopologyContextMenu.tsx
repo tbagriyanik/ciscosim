@@ -304,8 +304,8 @@ export default function NetworkTopologyContextMenu({
                   label: language === 'tr' ? 'Aç' : 'Open',
                   shortcut: 'Enter',
                   icon: 'open',
-                  onClick: () => { if (device) onOpenDevice(device); onClose(); },
-                  disabled: !device
+                  onClick: () => { if (device && device.type !== 'iot') onOpenDevice(device); onClose(); },
+                  disabled: !device || device.type === 'iot'
                 })}
                 {renderMenuItem({
                   label: language === 'tr' ? 'Kes' : 'Cut',

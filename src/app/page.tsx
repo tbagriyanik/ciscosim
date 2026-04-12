@@ -1535,14 +1535,24 @@ export default function Home() {
     const projectData = {
       version: '1.0',
       timestamp: new Date().toISOString(),
-      devices: Array.from(deviceStates.entries()).map(([id, state]) => ({
-        id,
-        state
-      })),
-      deviceOutputs: Array.from(deviceOutputs.entries()).map(([id, outputs]) => ({
-        id,
-        outputs
-      })),
+      devices: Array.from(deviceStates.entries())
+        .filter(([id]) => {
+          const d = topologyDevices.find(td => td.id === id);
+          return d && d.type !== 'pc' && d.type !== 'iot';
+        })
+        .map(([id, state]) => ({
+          id,
+          state
+        })),
+      deviceOutputs: Array.from(deviceOutputs.entries())
+        .filter(([id]) => {
+          const d = topologyDevices.find(td => td.id === id);
+          return d && d.type !== 'pc' && d.type !== 'iot';
+        })
+        .map(([id, outputs]) => ({
+          id,
+          outputs
+        })),
       pcOutputs: Array.from(pcOutputs.entries()).map(([id, outputs]) => ({
         id,
         outputs
