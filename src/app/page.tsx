@@ -444,6 +444,18 @@ export default function Home() {
 
       setTopologyDevices(prev => [...prev, device]);
 
+      setFocusDeviceId(device.id);
+
+      // Focus the newly added device
+      if (activeTab === 'topology' && topologyContainerRef.current) {
+        setZoom(1.0); // Reset zoom to 100%
+        focusDeviceInTopology(device.id, 1.0);
+        pendingFocusDeviceRef.current = null; // Clear pending focus as it's handled
+      } else {
+        // If not in topology tab or container not ready, queue the focus
+        pendingFocusDeviceRef.current = device.id;
+      }
+
       // Also add device state for IoT devices
       if (device.type === 'iot') {
         setDeviceStates(prev => {
@@ -498,6 +510,23 @@ export default function Home() {
     window.addEventListener('add-topology-device', handleAddDevice);
     return () => window.removeEventListener('add-topology-device', handleAddDevice);
   }, []); // Actions from useAppStore are stable, and functional updates avoid stale data issues.
+
+  // Listen for postMessage from WiFi admin panel to focus device in topology
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data && event.data.type === 'router-admin-focus-device') {
+        const deviceId = event.data.deviceId;
+        if (deviceId) {
+          setFocusDeviceId(deviceId);
+          // Clear the focus after a short delay to allow re-focusing
+          setTimeout(() => setFocusDeviceId(null), 500);
+        }
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
 
   // Initialize graphics quality to 'high' for first-time visitors
   useEffect(() => {
@@ -625,6 +654,7 @@ export default function Home() {
   const [showPCPanel, setShowPCPanel] = useState(false);
   const [showPCDeviceId, setShowPCDeviceId] = useState<string>('pc-1');
   const [deviceSearchQuery, setDeviceSearchQuery] = useState('');
+  const [focusDeviceId, setFocusDeviceId] = useState<string | null>(null);
 
   // Get current state helper
   const getCurrentState = useCallback((): ProjectState => ({
@@ -972,28 +1002,91 @@ export default function Home() {
           if (isRouter) {
             const syslog = t.syslogStarted;
             bootMessages = [
-              { id: `boot-1-${suffix}`, type: 'output', content: `\n\nSystem Bootstrap, Version 15.1(4)M4, RELEASE SOFTWARE (fc1)\nTechnical Support: http://yunus.sf.net\nCopyright (c) 1994-2011 by Network Systems, Inc.\n` },
-              { id: `boot-2-${suffix}`, type: 'output', content: `ISR4451/K9 platform with 4096 K bytes of memory\n\n${syslog}\nLoad/bootstrap symbols loaded, GOXR initialization\nReading all bootflash vectors\nPOST: CPU PCIe port Check PASS\nCPU memory test . . . . . . . . . . . . . OK\nBoard initialization completed\nInitializing flash file system\n` },
-              { id: `boot-3-${suffix}`, type: 'output', content: `\nBooting flash:c1900-universalk9-mz.SPA.154-3.M.bin...OK!\nExtracting files from flash:c1900-universalk9-mz.SPA.154-3.M.bin...\n  ########## [OK]\n  0 bytes remaining in flash device\n` },
-              ...(state?.bannerMOTD ? [{ id: `banner-${suffix}`, type: 'output' as const, content: `\n${state.bannerMOTD}\n` }] : []),
+              { id: `boot-1-${suffix}`, type: 'output', content: `
+
+System Bootstrap, Version 15.1(4)M4, RELEASE SOFTWARE (fc1)
+Technical Support: http://yunus.sf.net
+Copyright (c) 1994-2011 by Network Systems, Inc.
+` },
+              { id: `boot-2-${suffix}`, type: 'output', content: `ISR4451/K9 platform with 4096 K bytes of memory
+
+${syslog}
+Load/bootstrap symbols loaded, GOXR initialization
+Reading all bootflash vectors
+POST: CPU PCIe port Check PASS
+CPU memory test . . . . . . . . . . . . . OK
+Board initialization completed
+Initializing flash file system
+` },
+              { id: `boot-3-${suffix}`, type: 'output', content: `
+Booting flash:c1900-universalk9-mz.SPA.154-3.M.bin...OK!
+Extracting files from flash:c1900-universalk9-mz.SPA.154-3.M.bin...
+  ########## [OK]
+  0 bytes remaining in flash device
+` },
+              ...(state?.bannerMOTD ? [{ id: `banner-${suffix}`, type: 'output' as const, content: `
+${state.bannerMOTD}
+` }] : []),
               { id: `boot-ready-${suffix}`, type: 'output', content: BOOT_PROGRESS_MARKER }
             ];
           } else if (isL3Switch) {
             const syslog = t.syslogStarted;
             bootMessages = [
-              { id: `boot-1-${suffix}`, type: 'output', content: `\n\nSystem Bootstrap, Version 12.2(55r)SE, RELEASE SOFTWARE (fc1)\nTechnical Support: http://yunus.sf.net\nCopyright (c) 1994-2011 by Network Systems, Inc.\n` },
-              { id: `boot-2-${suffix}`, type: 'output', content: `C3560 platform with 131072 K bytes of memory\n\n${syslog}\nLoad/bootstrap symbols loaded\nReading all bootflash vectors\nPOST: CPU PCIe port Check PASS\nCPU memory test . . . . . . . . . . . . . OK\nBoard initialization completed\nInitializing flash file system\n` },
-              { id: `boot-3-${suffix}`, type: 'output', content: `\nBooting flash:c3560-ipbase-mz.152-2.SE4.bin...OK!\nExtracting files from flash:c3560-ipbase-mz.152-2.SE4.bin...\n  ########## [OK]\n  0 bytes remaining in flash device\n` },
-              ...(state?.bannerMOTD ? [{ id: `banner-${suffix}`, type: 'output' as const, content: `\n${state.bannerMOTD}\n` }] : []),
+              { id: `boot-1-${suffix}`, type: 'output', content: `
+
+System Bootstrap, Version 12.2(55r)SE, RELEASE SOFTWARE (fc1)
+Technical Support: http://yunus.sf.net
+Copyright (c) 1994-2011 by Network Systems, Inc.
+` },
+              { id: `boot-2-${suffix}`, type: 'output', content: `C3560 platform with 131072 K bytes of memory
+
+${syslog}
+Load/bootstrap symbols loaded
+Reading all bootflash vectors
+POST: CPU PCIe port Check PASS
+CPU memory test . . . . . . . . . . . . . OK
+Board initialization completed
+Initializing flash file system
+` },
+              { id: `boot-3-${suffix}`, type: 'output', content: `
+Booting flash:c3560-ipbase-mz.152-2.SE4.bin...OK!
+Extracting files from flash:c3560-ipbase-mz.152-2.SE4.bin...
+  ########## [OK]
+  0 bytes remaining in flash device
+` },
+              ...(state?.bannerMOTD ? [{ id: `banner-${suffix}`, type: 'output' as const, content: `
+${state.bannerMOTD}
+` }] : []),
               { id: `boot-ready-${suffix}`, type: 'output', content: BOOT_PROGRESS_MARKER }
             ];
           } else {
             const syslog = t.syslogStarted;
             bootMessages = [
-              { id: `boot-1-${suffix}`, type: 'output', content: `\n\nSystem Bootstrap, Version 12.2(11r)EA1, RELEASE SOFTWARE (fc1)\nTechnical Support: http://yunus.sf.net\nCopyright (c) 1994-2010 by Network Systems, Inc.\n` },
-              { id: `boot-2-${suffix}`, type: 'output', content: `C2960 platform with 65536 K bytes of memory\n\n${syslog}\nLoad/bootstrap symbols loaded\nReading all bootflash vectors\nPOST: CPU Ethernet port Check PASS\nCPU memory test . . . . . . . . . . . . . OK\nBoard initialization completed\nInitializing flash file system\n` },
-              { id: `boot-3-${suffix}`, type: 'output', content: `\nBooting flash:c2960-lanbase-mz.152-2.E6.bin...OK!\nExtracting files from flash:c2960-lanbase-mz.152-2.E6.bin...\n  ########## [OK]\n  0 bytes remaining in flash device\n` },
-              ...(state?.bannerMOTD ? [{ id: `banner-${suffix}`, type: 'output' as const, content: `\n${state.bannerMOTD}\n` }] : []),
+              { id: `boot-1-${suffix}`, type: 'output', content: `
+
+System Bootstrap, Version 12.2(11r)EA1, RELEASE SOFTWARE (fc1)
+Technical Support: http://yunus.sf.net
+Copyright (c) 1994-2010 by Network Systems, Inc.
+` },
+              { id: `boot-2-${suffix}`, type: 'output', content: `C2960 platform with 65536 K bytes of memory
+
+${syslog}
+Load/bootstrap symbols loaded
+Reading all bootflash vectors
+POST: CPU Ethernet port Check PASS
+CPU memory test . . . . . . . . . . . . . OK
+Board initialization completed
+Initializing flash file system
+` },
+              { id: `boot-3-${suffix}`, type: 'output', content: `
+Booting flash:c2960-lanbase-mz.152-2.E6.bin...OK!
+Extracting files from flash:c2960-lanbase-mz.152-2.E6.bin...
+  ########## [OK]
+  0 bytes remaining in flash device
+` },
+              ...(state?.bannerMOTD ? [{ id: `banner-${suffix}`, type: 'output' as const, content: `
+${state.bannerMOTD}
+` }] : []),
               { id: `boot-ready-${suffix}`, type: 'output', content: BOOT_PROGRESS_MARKER }
             ];
           }
@@ -1162,7 +1255,7 @@ export default function Home() {
     setShowMobileMenu(nextState);
   }, [showMobileMenu, closeLocalMenus, broadcastCloseMenus]);
 
-  const focusDeviceInTopology = useCallback((deviceId?: string) => {
+  const focusDeviceInTopology = useCallback((deviceId?: string, targetZoom?: number) => {
     if (!deviceId) return;
     // Pan after any programmatic zoom/pan changes so centering uses fresh layout.
     requestAnimationFrame(() => {
@@ -1170,12 +1263,26 @@ export default function Home() {
       if (!rect) return;
       const targetDevice = topologyDevices.find((device) => device.id === deviceId);
       if (!targetDevice) return;
+
+      // Use provided targetZoom or read from store
+      const currentZoom = targetZoom ?? useAppStore.getState().topology.zoom;
+
+      // Calculate device center based on device type
+      const deviceWidth = (targetDevice.type === 'pc' || targetDevice.type === 'iot') ? 90 : targetDevice.type === 'router' ? 90 : 130;
+      const portsPerRow = 8;
+      const numRows = Math.ceil(targetDevice.ports.length / portsPerRow);
+      const deviceHeight = (targetDevice.type === 'pc' || targetDevice.type === 'iot') ? 99 : 80 + numRows * 14 + 5;
+      const deviceCenter = {
+        x: targetDevice.x + deviceWidth / 2,
+        y: targetDevice.y + deviceHeight / 2
+      };
+
       setPan({
-        x: rect.width / 2 - targetDevice.x * zoom,
-        y: rect.height / 2 - targetDevice.y * zoom,
+        x: rect.width / 2 - deviceCenter.x * currentZoom,
+        y: rect.height / 2 - deviceCenter.y * currentZoom,
       });
     });
-  }, [topologyDevices, zoom, setPan]);
+  }, [topologyDevices, setPan]);
 
   const resetTopologyView = useCallback(() => {
     const nextZoom = 1.0;
@@ -1255,22 +1362,23 @@ export default function Home() {
     if (!deviceId) return;
 
     if (activeTab === 'topology' && topologyContainerRef.current) {
-      resetTopologyView();
-      focusDeviceInTopology(deviceId);
+      setZoom(1.0); // Reset zoom to 100%
+      focusDeviceInTopology(deviceId, 1.0); // Center on selected device with zoom 1.0
       pendingFocusDeviceRef.current = null;
-    } else if (activeTab === 'topology') {
+    } else {
+      // If not in topology tab or container not ready, queue the focus
       pendingFocusDeviceRef.current = deviceId;
     }
-  }, [activeTab, applyDeviceSelection, focusDeviceInTopology, resetTopologyView]);
+  }, [activeTab, applyDeviceSelection, focusDeviceInTopology, setZoom]);
 
   useLayoutEffect(() => {
     if (activeTab !== 'topology') return;
     if (!pendingFocusDeviceRef.current) return;
     if (!topologyContainerRef.current) return;
-    resetTopologyView();
-    focusDeviceInTopology(pendingFocusDeviceRef.current);
+    setZoom(1.0); // Reset zoom to 100%
+    focusDeviceInTopology(pendingFocusDeviceRef.current, 1.0); // Center on selected device with zoom 1.0
     pendingFocusDeviceRef.current = null;
-  }, [activeTab, focusDeviceInTopology, resetTopologyView]);
+  }, [activeTab, focusDeviceInTopology, setZoom]);
 
   // Handle command using active device
   const handleCommand = useCallback(async (command: string) => {
@@ -1535,32 +1643,10 @@ export default function Home() {
     const projectData = {
       version: '1.0',
       timestamp: new Date().toISOString(),
-      devices: Array.from(deviceStates.entries())
-        .filter(([id]) => {
-          const d = topologyDevices.find(td => td.id === id);
-          return d && d.type !== 'pc' && d.type !== 'iot';
-        })
-        .map(([id, state]) => ({
-          id,
-          state
-        })),
-      deviceOutputs: Array.from(deviceOutputs.entries())
-        .filter(([id]) => {
-          const d = topologyDevices.find(td => td.id === id);
-          return d && d.type !== 'pc' && d.type !== 'iot';
-        })
-        .map(([id, outputs]) => ({
-          id,
-          outputs
-        })),
-      pcOutputs: Array.from(pcOutputs.entries()).map(([id, outputs]) => ({
-        id,
-        outputs
-      })),
-      pcHistories: Array.from(pcHistories.entries()).map(([id, history]) => ({
-        id,
-        history
-      })),
+      devices: Array.from(deviceStates.entries()).map(([id, state]) => ({ id, state })),
+      deviceOutputs: Array.from(deviceOutputs.entries()).map(([id, outputs]) => ({ id, outputs })),
+      pcOutputs: Array.from(pcOutputs.entries()).map(([id, outputs]) => ({ id, outputs })),
+      pcHistories: Array.from(pcHistories.entries()).map(([id, history]) => ({ id, history })),
       topology: {
         devices: topologyDevices,
         connections: topologyConnections,
@@ -2484,7 +2570,7 @@ export default function Home() {
 
               <div className="flex items-center gap-2 mt-4">
                 <div className="w-1.5 h-1.5 rounded-full bg-cyan-500 animate-pulse" />
-                <span className="text-xs font-bold tracking-[0.3em] text-cyan-500 ">
+                <span className="text-xs font-bold tracking-widest text-cyan-500 ">
                   {t.initializingSystem}
                 </span>
               </div>
@@ -3219,7 +3305,7 @@ export default function Home() {
           </div>
 
           <Dialog open={showProjectPicker} onOpenChange={(open) => { setShowProjectPicker(open); if (!open) setProjectSearchQuery(''); }}>
-            <DialogContent className={`liquid-glass-strong w-[98vw] max-w-[1400px] h-[95vh] max-h-[1000px] p-0 overflow-hidden flex flex-col shadow-2xl rounded-none md:rounded-3xl`}>
+            <DialogContent className={`${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'} sm:max-w-2xl md:max-w-3xl w-[98vw] max-w-[1400px] h-[95vh] max-h-[1000px] p-0 overflow-hidden flex flex-col shadow-2xl rounded-none md:rounded-3xl`}>
               <div className='flex flex-col flex-1 overflow-hidden h-full max-w-full'>
                 <div className='p-4 md:p-8 pb-2 md:pb-4 space-y-4'>
                   <div className='rounded-2xl md:rounded-3xl border border-transparent bg-gradient-to-r  p-4 md:p-6 '>
@@ -3421,7 +3507,7 @@ export default function Home() {
                   >
                     {language === 'tr' ? 'Geri' : 'Back'}
                   </Button>
-                  <Button onClick={nextOnboarding} className="text-xs font-semibold bg-cyan-600 hover:bg-cyan-700 text-white">
+                  <Button onClick={nextOnboarding} className="bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-semibold">
                     {onboardingStep >= onboardingSteps.length - 1
                       ? (language === 'tr' ? 'Bitir' : 'Finish')
                       : (language === 'tr' ? 'İleri' : 'Next')}
@@ -3430,6 +3516,7 @@ export default function Home() {
               </div>
             </DialogContent>
           </Dialog>
+
 
           {/* Global Dialogs (AlertDialog for better z-index and standard behavior) */}
           <AlertDialog open={!!confirmDialog} onOpenChange={(open) => {
@@ -3536,6 +3623,7 @@ export default function Home() {
                     onUndo={handleUndo}
                     onRedo={handleRedo}
                     onRefreshNetwork={handleRefreshNetwork}
+                    focusDeviceId={focusDeviceId}
                   />
 
                   {/* PC Info Popover - Bottom Right Mini Panel */}
@@ -3716,7 +3804,11 @@ export default function Home() {
                         deviceStates={deviceStates}
                         onRequestFocus={() => {
                           requestAnimationFrame(() => {
-                            const el = document.querySelector('input[placeholder="' + t.typeCommand + '"]') as HTMLInputElement | null;
+                            const el = document.querySelector('[data-terminal-input]') as HTMLInputElement | null;
+                            const terminal = document.querySelector('[data-terminal-scroll]') as HTMLDivElement | null;
+                            if (terminal) {
+                              terminal.scrollTop = terminal.scrollHeight;
+                            }
                             el?.focus();
                           });
                         }}

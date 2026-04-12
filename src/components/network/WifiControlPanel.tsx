@@ -572,7 +572,7 @@ export function generateWifiControlPanelHTML(config: RouterWebConfig): string {
         <div class="iot-device-list" style="margin-bottom:25px;">
           <p style="color:#6c757d;margin-bottom:15px;font-size:13px;">Manage connected IoT devices:</p>
           ${connectedIotDevices.map(device => `
-            <div class="iot-device-card connected" data-device-id="${device.id}" style="display:flex;align-items:center;justify-content:space-between;padding:15px;background:#f8f9fa;border-radius:10px;margin-bottom:10px;border:1px solid #e9ecef;">
+            <div class="iot-device-card connected" data-device-id="${device.id}" style="display:flex;align-items:center;justify-content:space-between;padding:15px;background:#f8f9fa;border-radius:10px;margin-bottom:10px;border:1px solid #e9ecef;cursor:pointer;" onclick="focusDeviceInTopology('${device.id}')">
               <div style="display:flex;align-items:center;gap:12px;">               
                 <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg, ${device.isWired ? '#22c55e 0%, #16a34a 100%' : '#16cbf9 0%, #0ea5e9 100%'});display:flex;align-items:center;justify-content:center;color:white;font-size:18px;">
                   ${device.isWired ? '🔌' : '🛜'}
@@ -610,9 +610,9 @@ export function generateWifiControlPanelHTML(config: RouterWebConfig): string {
         <div class="available-iot-list" style="margin-bottom:25px;">
           <p style="color:#6c757d;margin-bottom:15px;font-size:13px;"><strong>Unconnected Devices:</strong> Select to connect to this network:</p>
           ${availableIotDevices.filter(d => !d.currentSsid).map(device => `
-            <div class="iot-device-card available" data-device-id="${device.id}" style="display:flex;align-items:center;justify-content:space-between;padding:15px;background:#f8f9fa;border-radius:10px;margin-bottom:10px;border:2px solid #e9ecef;cursor:pointer;transition:all 0.3s;" onclick="toggleIotDeviceSelection('${device.id}')">
+            <div class="iot-device-card available" data-device-id="${device.id}" style="display:flex;align-items:center;justify-content:space-between;padding:15px;background:#f8f9fa;border-radius:10px;margin-bottom:10px;border:2px solid #e9ecef;cursor:pointer;transition:all 0.3s;" onclick="event.stopPropagation(); focusDeviceInTopology('${device.id}'); toggleIotDeviceSelection('${device.id}')">
               <div style="display:flex;align-items:center;gap:12px;">
-                <input type="checkbox" class="iot-checkbox" data-device-id="${device.id}" style="width:20px;height:20px;cursor:pointer;" onclick="event.stopPropagation(); toggleIotDeviceSelection('${device.id}')">
+                <input type="checkbox" class="iot-checkbox" data-device-id="${device.id}" style="width:20px;height:20px;cursor:pointer;" onclick="event.stopPropagation(); focusDeviceInTopology('${device.id}'); toggleIotDeviceSelection('${device.id}')">
                 <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);display:flex;align-items:center;justify-content:center;color:white;font-size:18px;">
                   🛜
                 </div>
@@ -630,9 +630,9 @@ export function generateWifiControlPanelHTML(config: RouterWebConfig): string {
         <div class="available-iot-list" style="margin-bottom:25px;">
           <p style="color:#6c757d;margin-bottom:15px;font-size:13px;"><strong>On Other Networks:</strong> Select to switch to this network:</p>
           ${availableIotDevices.filter(d => d.currentSsid && d.currentSsid !== '${wifi.ssid}').map(device => `
-            <div class="iot-device-card available" data-device-id="${device.id}" style="display:flex;align-items:center;justify-content:space-between;padding:15px;background:#f8f9fa;border-radius:10px;margin-bottom:10px;border:2px solid #e9ecef;cursor:pointer;transition:all 0.3s;" onclick="toggleIotDeviceSelection('${device.id}')">
+            <div class="iot-device-card available" data-device-id="${device.id}" style="display:flex;align-items:center;justify-content:space-between;padding:15px;background:#f8f9fa;border-radius:10px;margin-bottom:10px;border:2px solid #e9ecef;cursor:pointer;transition:all 0.3s;" onclick="event.stopPropagation(); focusDeviceInTopology('${device.id}'); toggleIotDeviceSelection('${device.id}')">
               <div style="display:flex;align-items:center;gap:12px;">
-                <input type="checkbox" class="iot-checkbox" data-device-id="${device.id}" style="width:20px;height:20px;cursor:pointer;" onclick="event.stopPropagation(); toggleIotDeviceSelection('${device.id}')">
+                <input type="checkbox" class="iot-checkbox" data-device-id="${device.id}" style="width:20px;height:20px;cursor:pointer;" onclick="event.stopPropagation(); focusDeviceInTopology('${device.id}'); toggleIotDeviceSelection('${device.id}')">
                 <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg, #f59e0b 0%, #d97706 100%);display:flex;align-items:center;justify-content:center;color:white;font-size:18px;">
                   🛜
                 </div>
@@ -713,6 +713,18 @@ export function generateWifiControlPanelHTML(config: RouterWebConfig): string {
     console.log('Router WiFi admin panel script loaded');
     console.log('window.parent available:', typeof window.parent !== 'undefined');
     console.log('window.parent === window:', window.parent === window);
+
+    // Hide tooltips on mobile devices
+    function hideTooltipsOnMobile() {
+      if (window.innerWidth <= 600) {
+        document.querySelectorAll('[title]').forEach(el => {
+          el.setAttribute('data-title', el.getAttribute('title'));
+          el.removeAttribute('title');
+        });
+      }
+    }
+    hideTooltipsOnMobile();
+    window.addEventListener('resize', hideTooltipsOnMobile);
     
     // Form handling simulation
     document.getElementById('wifi-form').addEventListener('submit', function(e) {
@@ -885,6 +897,19 @@ export function generateWifiControlPanelHTML(config: RouterWebConfig): string {
       const checkboxes = document.querySelectorAll('.iot-disconnect-checkbox[data-device-id]');
       return Array.from(checkboxes).map(cb => cb.getAttribute('data-device-id')).filter(Boolean);
     }
+
+    // Focus device in topology
+    window.focusDeviceInTopology = function(deviceId) {
+      console.log('Focusing device in topology:', deviceId);
+      try {
+        window.parent.postMessage({
+          type: 'router-admin-focus-device',
+          deviceId: deviceId
+        }, '*');
+      } catch (err) {
+        console.warn('Could not send focus device message:', err);
+      }
+    };
     
     window.disconnectIotDevice = function(deviceId) {
       console.log('disconnectIotDevice called with:', deviceId);

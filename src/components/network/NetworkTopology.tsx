@@ -47,6 +47,7 @@ interface NetworkTopologyProps {
   onRedo?: () => void;
   onDeviceRename?: (deviceId: string, newName: string) => void;
   onRefreshNetwork?: () => void;
+  focusDeviceId?: string | null;
 }
 
 // Drag item from palette
@@ -138,6 +139,11 @@ export function NetworkTopology({
   deviceStates,
   onDeviceRename,
   onRefreshNetwork,
+  focusDeviceId,
+  zoom: zoomProp,
+  onZoomChange,
+  pan: panProp,
+  onPanChange,
 }: NetworkTopologyProps) {
   const { language, t } = useLanguage();
   const { theme } = useTheme();
@@ -264,8 +270,34 @@ export function NetworkTopology({
     return () => clearInterval(interval);
   }, []);
 
-  const [zoom, setZoom] = useState(DEFAULT_ZOOM);
-  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(zoomProp ?? DEFAULT_ZOOM);
+  const [pan, setPan] = useState(panProp ?? { x: 0, y: 0 });
+
+  // Sync zoom and pan state from props (parent controls)
+  useEffect(() => {
+    if (zoomProp !== undefined && zoomProp !== zoom) {
+      setZoom(zoomProp);
+    }
+  }, [zoomProp]);
+
+  useEffect(() => {
+    if (panProp !== undefined && (panProp.x !== pan.x || panProp.y !== pan.y)) {
+      setPan(panProp);
+    }
+  }, [panProp]);
+
+  // Sync zoom and pan state to props (notify parent of internal changes)
+  useEffect(() => {
+    if (onZoomChange && zoom !== zoomProp) {
+      onZoomChange(zoom);
+    }
+  }, [zoom, onZoomChange]);
+
+  useEffect(() => {
+    if (onPanChange && (pan.x !== panProp?.x || pan.y !== panProp?.y)) {
+      onPanChange(pan);
+    }
+  }, [pan, onPanChange]);
   const [isPanning, setIsPanning] = useState(false);
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
   const [selectedDeviceIds, setSelectedDeviceIds] = useState<string[]>(activeDeviceId ? [activeDeviceId] : []);
@@ -380,6 +412,13 @@ export function NetworkTopology({
       setSelectedDeviceIds(activeDeviceId ? [activeDeviceId] : []);
     }
   }, [activeDeviceId, isActive]);
+
+  // Handle external focus device request (e.g., from WiFi admin panel) - selection only
+  useEffect(() => {
+    if (focusDeviceId && devices.find(d => d.id === focusDeviceId)) {
+      setSelectedDeviceIds([focusDeviceId]);
+    }
+  }, [focusDeviceId, devices]);
 
   // Select all state
   const [selectAllMode, setSelectAllMode] = useState(false);
@@ -3525,6 +3564,28 @@ export function NetworkTopology({
     return { x: device.x + deviceWidth / 2, y: device.y + deviceHeight / 2 };
   }, []);
 
+  // Handle external focus device request - pan to center
+  useEffect(() => {
+    if (focusDeviceId && devices.find(d => d.id === focusDeviceId)) {
+      const device = devices.find(d => d.id === focusDeviceId);
+      if (device && canvasRef.current) {
+        const deviceCenter = getDeviceCenter(device);
+        const { width: canvasWidth, height: canvasHeight } = canvasRef.current.getBoundingClientRect();
+        
+        // Calculate pan to center the device
+        const targetPanX = (canvasWidth / 2) - (deviceCenter.x * zoom);
+        const targetPanY = (canvasHeight / 2) - (deviceCenter.y * zoom);
+        
+        setPan({ x: targetPanX, y: targetPanY });
+        
+        // Notify parent of pan change
+        if (onPanChange) {
+          onPanChange({ x: targetPanX, y: targetPanY });
+        }
+      }
+    }
+  }, [focusDeviceId, devices, zoom, getDeviceCenter]);
+
   // Get port position on device
   const getPortPosition = useCallback((device: CanvasDevice, portId: string) => {
     const portIndex = device.ports.findIndex(p => p.id === portId);
@@ -6189,7 +6250,8 @@ export function NetworkTopology({
           </div>
 
 
-          {/* Interaction Shortcuts Legend */}
+          {/* Interaction Shortcuts Legend - Hidden on mobile */}
+          {!isMobile && (
           <div className={`fixed bottom-[60px] right-[210px] flex items-center gap-4 px-3 py-1.5 rounded-lg backdrop-blur-md border shadow-lg z-30 pointer-events-none select-none transition-opacity duration-300 ${isPanning || isSelecting || isDrawingConnection ? 'opacity-20' : 'opacity-100'
             } ${isDark ? 'bg-slate-900/40 border-slate-800 text-slate-400' : 'bg-white/40 border-slate-200 text-slate-500'
             }`}>
@@ -6206,6 +6268,7 @@ export function NetworkTopology({
               <span className="text-[9px] font-medium">{language === 'tr' ? 'Zoom' : 'Zoom'}</span>
             </div>
           </div>
+          )}
 
           {/* Zoom Controls - Mobile Float - Above Footer */}
           <div
