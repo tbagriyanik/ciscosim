@@ -2,11 +2,11 @@
 
 A modern and interactive web-based Network simulator designed for students and networking enthusiasts.
 
-![Version](https://img.shields.io/badge/version-1.4.1-blue)
+![Version](https://img.shields.io/badge/version-1.5.0-blue)
 ![Tech Stack](https://img.shields.io/badge/stack-Next.js%2016.2%20|%20React%2019%20|%20TypeScript%205.9%20|%20Tailwind%204-green)
 ![FOSS](https://img.shields.io/badge/FOSS-Free%20Open%20Source-brightgreen)
 ![Commits](https://img.shields.io/badge/commits-600+-orange)
-![Lines of Code](https://img.shields.io/badge/lines--of--code-53.7k+-blueviolet)
+![Lines of Code](https://img.shields.io/badge/lines--of--code-54.1k+-blueviolet)
 
 Network learing app [Test Address](https://network2026.vercel.app)
 
@@ -15,9 +15,14 @@ Network learing app [Test Address](https://network2026.vercel.app)
 ### 🌐 Interactive Network Topology
 - **Device Management**: Drag and drop PC, Switch, and Router devices to canvas
 - **Zoom & Pan**: Smooth zoom and pan operations with spatial partitioning
+  - **NEW: Advanced Navigation**: Right-click or middle-mouse button to pan the canvas (inertia-free)
+- **Selection System**: Multi-device rubber-band selection with real-time feedback (box intersection detection)
 - **Cable System**: Straight-through, Crossover, and Console cables
 - **Connection Management**: Create and manage connections between devices
 - **Visual Feedback**: Device status indicators and port labels
+  - **UX Optimization**: Tooltips suppressed during active operations (panning, selecting, connecting)
+  - **Interaction Legend**: Visual guide for mouse shortcuts in the footer toolbar
+  - **Task Notifications**: Context-aware success/failure alerts at the footer top-left
 - **Wireless (WiFi) Simulation**: Wireless network simulation with SSID, WPA2 security, and AP/Client modes
 - **WiFi Signal Strength Indicator**: Real-time signal strength display (5-bar meter) in PC and CLI terminals
   - Visual signal bars with color coding (green/yellow/orange/red)
@@ -497,7 +502,7 @@ Theme selection is done from the theme selector in the top right corner.
 
 - Scope: `src/`
 - Source files: `170+`
-- Total lines: `53,700`
+- Total lines: `54,100`
 - TS/TSX files: `160+`
 - Network components: `50+`
 - Custom hooks: `20+`
@@ -525,7 +530,7 @@ Contributions are welcome. Please:
 
 ---
 
-**Sürüm**: 1.4.1
+**Sürüm**: 1.5.0
 **Son Güncelleme**: 2026-04-12
 **Durum**: Production Ready
 

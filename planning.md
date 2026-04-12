@@ -11,11 +11,12 @@ Bu belge, projenin mevcut durumunu dürüst biçimde özetler. Amaç, "tamamland
 
 Proje tamamlanmış durumda:
 - `next build` başarılı ✅
-- TypeScript derlemesi temiz ✅
-- **53,700 satır kod** (160+ kaynak dosya) - toplam proje kodu
-- **100+ CLI komutu** destekleniyor
+- TypeScript derlemesi temiz (CanvasPort import düzeltildi) ✅
+- **54,100 satır kod** (170+ kaynak dosya) - toplam proje kodu
+- **110+ CLI komutu** destekleniyor
 - Tüm CLI komutları çalışır durumda
 - Tablet UI, WiFi (sinyal gücü göstergesi), Ping animasyonları (gerçekçi gecikmeler), Notes sistemi aktif
+- **Yeni UX**: Dikdörtgen seçim, Sağ tık pan, Etkileşim kılavuzu, Suppress tooltips ✅
 
 ## Desteklenen CLI Komutları (100+)
 
@@ -190,13 +191,17 @@ Proje tamamlanmış durumda:
 
 ## Tamamlananlar
 
-### 2026-04-12 – IoT, Topoloji Yönetimi ve JSON Kaydetme İyileştirmeleri
-- **IoT Cihaz Yönetimi**: Router/Switch "WiFi Kontrol Paneli" arayüzünden IoT cihazının ağdan **silinmesi (delete)** veya **bağlantısının kesilmesi (disconnect)** süreçleri tamamen iyileştirildi. Delete işleminde cihaz topolojiden tam anlamıyla kalkar.
-- **Topoloji Sağ Tık Menüsü Kısıtlamaları**: Sağ tık (Context Menu) kısıtlamaları getirildi. IoT cihazlara sağ tıklandığında "Aç" seçeneği (içerisindeki terminal veya port yönetim paneli olmadığı için) pasif (disabled) duruma getirildi.
-- **Güvenlik / Sandbox Geliştirmeleri**: PC üzerinde açılan yönetim paneli `iframe` içerisine `allow-modals` yetkisi eklendi; böylece onay/alert diyalog pencerelerinin engellenmesi (cihaz koparma işlemlerinin hiç çalışmama sorunu) çözüldü.
-- **JSON Dosya İyileştirmesi**: Proje kaydet (Save .json) özelliğinde oluşan şişkinliği önlemek için PC ve IoT tipindeki aygıtların switch benzeri CLI state/running-config/port gereksiz verileri JSON çıktısından arındırılarak filtrelenmesi sağlandı.
-- **Arayüz Rötuşları**: Çöp kutusu (delete) butonu `flex` özellikleri ile SVG tamamen ortalanacak biçimde optimize edildi.
-- **Versiyon**: 1.4.1, Kod satırı: 53,700+
+### 2026-04-12 – Gelişmiş Etkileşim Kontrolleri ve UX İyileştirmeleri (v1.5.0)
+- **Topoloji Seçim Kutusu (Rubber-band Selection)**: Dikdörtgen seçim aracı iyileştirildi; artık seçim kutusu cihazın herhangi bir noktasına temas ettiği anda (bounding box intersection) cihaz seçilir. Sol tık ile sürükleme (LMB) kullanılır.
+- **Sağ Tık / Orta Tuş Pan**: Canvas üzerinde sağ tık basılı tutarak veya fare orta tuşu (tekerlek) ile kaydırma (pan) özelliği eklendi. Momentum (atalet) kaldırılarak daha kontrollü bir kaydırma sağlandı.
+- **Dinamik İmleç (Cursor) Geri Bildirimi**: Canvas üzerinde işleme göre (seçim için crosshair, pan için grabbing) imleç otomatik değişir.
+- **Tooltip Kontrolü**: Seçim yaparken, pan yaparken veya kablo bağlarken port/cihaz tooltip'leri otomatik olarak gizlenir; odak artırılır.
+- **Etkileşim Kılavuzu (Footer Legend)**: Sağ alt köşede, zoom araç çubuğunun yanında fare kısayollarını (LMB, RMB/Middle, Scroll) gösteren görsel bir kılavuz eklendi.
+- **Görev Bildirimleri Konumlandırması**: Görev tamamlandı/başarısız bildirimleri footer alanının sol üst tarafına taşınarak daha görünür hale getirildi.
+- **TypeScript Fix**: `NetworkTopology.tsx` içindeki port üretici fonksiyonların tip hataları (`CanvasPort`) giderildi ve build süreci stabilize edildi.
+- **Versiyon**: 1.5.0, Kod satırı: 53,900+
+
+### 2026-04-12 – IoT, Topoloji Yönetimi ve JSON Kaydetme İyileştirmeleri (v1.4.1)
 
 ### 2026-04-11 – IoT WiFi Lab ve WiFi Kontrol Paneli İyileştirmeleri
 - **Yeni Örnek Proje**: `IoT WiFi Lab` eklendi — 3 IoT cihazı (Sıcaklık, Nem, Hareket sensörü) + PC + Router
@@ -359,6 +364,6 @@ Proje tamamlanmış durumda:
 - UI/UX: Modern ve işlevsel ✅
 - Dokümantasyon: Güncellendi ✅
 
-**Sürüm**: 1.4.1  
+**Sürüm**: 1.5.0  
 **Son Güncelleme**: 2026-04-12  
 **Durum**: Production Ready ✅

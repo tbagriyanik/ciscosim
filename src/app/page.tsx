@@ -3847,9 +3847,9 @@ export default function Home() {
                     </span>
                   </div>
 
-                  {/* Task Event Notification */}
+                  {/* Task Event Notification - Positioned at top-left of footer */}
                   {lastTaskEvent && Date.now() - lastTaskEvent.timestamp < 5000 && (
-                    <div className={`hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg border ${lastTaskEvent.type === 'completed'
+                    <div className={`absolute -top-12 left-4 md:flex items-center gap-2 px-3 py-1.5 rounded-lg border shadow-lg animate-slide-up z-50 ${lastTaskEvent.type === 'completed'
                       ? isDark ? 'bg-green-500/10 border-green-500/30' : 'bg-green-50 border-green-200'
                       : isDark ? 'bg-orange-500/10 border-orange-500/30' : 'bg-orange-50 border-orange-200'
                       }`}>
@@ -3865,7 +3865,7 @@ export default function Home() {
                           ? (language === 'tr' ? '✓ Görev Tamamlandı' : '✓ Task Completed')
                           : (language === 'tr' ? '⚠ Görev Başarısız' : '⚠ Task Failed')}
                       </span>
-                      <span className={`text-[11px] ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+                      <span className={`text-[11px] font-bold ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
                         {lastTaskEvent.taskName}
                       </span>
                     </div>

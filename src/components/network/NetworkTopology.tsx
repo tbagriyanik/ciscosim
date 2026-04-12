@@ -10,7 +10,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useSpatialPartitioning } from '@/lib/performance/spatial';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { CanvasDevice, CanvasConnection, CanvasNote, DeviceType } from './networkTopology.types';
+import { CanvasDevice, CanvasConnection, CanvasNote, DeviceType, CanvasPort } from './networkTopology.types';
 import { DeviceIcon } from './DeviceIcon';
 import { ConnectionLine } from './ConnectionLine';
 import { DeviceNode } from './DeviceNode';
@@ -145,22 +145,23 @@ export function NetworkTopology({
   const isTR = language === 'tr';
 
   // Helper function to generate all switch ports - 24 FastEthernet ports
-  const generateSwitchPorts = () => {
-    const ports = [{ id: 'console', label: 'Console', status: 'disconnected' as const }];
+  const generateSwitchPorts = (): CanvasPort[] => {
+    const ports: CanvasPort[] = [{ id: 'console', label: 'Console', status: 'disconnected' as const }];
     // 24 FastEthernet ports
     for (let i = 1; i <= 24; i++) {
       ports.push({ id: `fa0/${i}`, label: `Fa0/${i}`, status: 'disconnected' as const });
     }
     // 2 GigabitEthernet ports
     ports.push({ id: 'gi0/1', label: 'Gi0/1', status: 'disconnected' as const });
+    // gi0/2
     ports.push({ id: 'gi0/2', label: 'Gi0/2', status: 'disconnected' as const });
-    ports.push({ id: 'wlan0', label: 'WLAN0', status: 'disconnected' as const });
+    ports.push({ id: 'wlan0', label: 'WLAN0', status: 'disconnected' as const, shutdown: true });
     return ports;
   };
 
   // Helper function to generate L3 switch ports - with routing capabilities
-  const generateL3SwitchPorts = () => {
-    const ports = [{ id: 'console', label: 'Console', status: 'disconnected' as const }];
+  const generateL3SwitchPorts = (): CanvasPort[] => {
+    const ports: CanvasPort[] = [{ id: 'console', label: 'Console', status: 'disconnected' as const }];
     // 24 FastEthernet ports
     for (let i = 1; i <= 24; i++) {
       ports.push({ id: `fa0/${i}`, label: `Fa0/${i}`, status: 'disconnected' as const });
@@ -170,19 +171,19 @@ export function NetworkTopology({
     ports.push({ id: 'gi0/2', label: 'Gi0/2', status: 'disconnected' as const });
     ports.push({ id: 'gi0/3', label: 'Gi0/3', status: 'disconnected' as const });
     ports.push({ id: 'gi0/4', label: 'Gi0/4', status: 'disconnected' as const });
-    ports.push({ id: 'wlan0', label: 'WLAN0', status: 'disconnected' as const });
+    ports.push({ id: 'wlan0', label: 'WLAN0', status: 'disconnected' as const, shutdown: true });
     return ports;
   };
 
   // Helper function to generate all router ports - 4 GIGABIT PORTS
-  const generateRouterPorts = () => {
+  const generateRouterPorts = (): CanvasPort[] => {
     return [
       { id: 'console', label: 'Console', status: 'disconnected' as const },
       { id: 'gi0/0', label: 'Gi0/0', status: 'disconnected' as const },
       { id: 'gi0/1', label: 'Gi0/1', status: 'disconnected' as const },
       { id: 'gi0/2', label: 'Gi0/2', status: 'disconnected' as const },
       { id: 'gi0/3', label: 'Gi0/3', status: 'disconnected' as const },
-      { id: 'wlan0', label: 'WLAN0', status: 'disconnected' as const },
+      { id: 'wlan0', label: 'WLAN0', status: 'disconnected' as const, shutdown: true },
     ];
   };
 
@@ -382,6 +383,16 @@ export function NetworkTopology({
 
   // Select all state
   const [selectAllMode, setSelectAllMode] = useState(false);
+
+  // Selection box state
+  const [selectionBox, setSelectionBox] = useState<{ start: { x: number; y: number }; current: { x: number; y: number } } | null>(null);
+  const selectionBoxRef = useRef<{ start: { x: number; y: number }; current: { x: number; y: number } } | null>(null);
+  const [isSelecting, setIsSelecting] = useState(false);
+  const isSelectingRef = useRef(false);
+  
+  // Right-click panning state
+  const rightClickStartRef = useRef<{ x: number, y: number } | null>(null);
+  const wasRightClickDraggingRef = useRef(false);
 
   // Drag state with position tracking
   const [draggedDevice, setDraggedDevice] = useState<string | null>(null);
@@ -974,10 +985,30 @@ export function NetworkTopology({
   // Reads pan via ref to avoid re-creating callback on every pan state change
   const handleCanvasMouseDown = useCallback((e: ReactMouseEvent) => {
     if (e.button === 2) {
-      // Right click on canvas - show context menu
+      // Right click on canvas - START PANNING (instead of immediate context menu)
       e.preventDefault();
-      openContextMenu(e.clientX, e.clientY, null, 'canvas');
+      const currentPan = panRef.current;
+      const ps = { x: e.clientX - currentPan.x, y: e.clientY - currentPan.y };
+      setPanStart(ps);
+      panStartRef.current = ps;
+      setIsPanning(true);
+      isPanningRef.current = true;
+      
+      rightClickStartRef.current = { x: e.clientX, y: e.clientY };
+      wasRightClickDraggingRef.current = false;
+      setContextMenu(null);
+    } else if (e.button === 1) {
+      // Middle click on canvas - PAN (with preventDefault to stop auto-scroll)
+      e.preventDefault();
+      const currentPan = panRef.current;
+      const ps = { x: e.clientX - currentPan.x, y: e.clientY - currentPan.y };
+      setPanStart(ps);
+      panStartRef.current = ps;
+      setIsPanning(true);
+      isPanningRef.current = true;
+      setContextMenu(null);
     } else if (e.button === 0 && !(e.target as HTMLElement).closest('[data-device-id]')) {
+      // Left click on empty canvas - RECTANGLE SELECTION or PAN (if not selecting)
       // Cancel ping mode on empty canvas click
       if (pingMode) {
         setPingMode(false);
@@ -985,12 +1016,20 @@ export function NetworkTopology({
         setPingResult(null);
         return;
       }
-      const currentPan = panRef.current;
-      const ps = { x: e.clientX - currentPan.x, y: e.clientY - currentPan.y };
-      setPanStart(ps);
-      panStartRef.current = ps;
-      setIsPanning(true);
-      isPanningRef.current = true;
+
+      // Start rectangle selection
+      const rect = canvasRef.current?.getBoundingClientRect();
+      if (rect) {
+        const startX = (e.clientX - rect.left - panRef.current.x) / zoomRef.current;
+        const startY = (e.clientY - rect.top - panRef.current.y) / zoomRef.current;
+        
+        const box = { start: { x: startX, y: startY }, current: { x: startX, y: startY } };
+        setSelectionBox(box);
+        selectionBoxRef.current = box;
+        setIsSelecting(true);
+        isSelectingRef.current = true;
+      }
+
       setContextMenu(null);
       setSelectAllMode(false);
     }
@@ -1041,6 +1080,46 @@ export function NetworkTopology({
           setPan({ x: e.clientX - ps.x, y: e.clientY - ps.y });
           panAnimationFrameRef.current = null;
         });
+      } else if (isSelectingRef.current && canvasRef.current) {
+        // Rectangle selection update
+        const rect = canvasRef.current.getBoundingClientRect();
+        const currentX = (e.clientX - rect.left - panRef.current.x) / zoomRef.current;
+        const currentY = (e.clientY - rect.top - panRef.current.y) / zoomRef.current;
+        
+        const currentBox = selectionBoxRef.current;
+        if (currentBox) {
+          const newBox = { ...currentBox, current: { x: currentX, y: currentY } };
+          selectionBoxRef.current = newBox;
+          setSelectionBox(newBox);
+
+          // Real-time selection update
+          const x1 = Math.min(newBox.start.x, newBox.current.x);
+          const y1 = Math.min(newBox.start.y, newBox.current.y);
+          const x2 = Math.max(newBox.start.x, newBox.current.x);
+          const y2 = Math.max(newBox.start.y, newBox.current.y);
+
+          // Detect devices inside selection box (Intersection check)
+          const selectedIds = latestDevicesRef.current.filter(d => {
+            const deviceWidth = (d.type === 'pc' || d.type === 'iot') ? 90 : 130;
+            const deviceHeight = 100;
+            
+            // Device bounds
+            const dX1 = d.x;
+            const dY1 = d.y;
+            const dX2 = d.x + deviceWidth;
+            const dY2 = d.y + deviceHeight;
+
+            // Box bounds (x1, y1, x2, y2 already calculated)
+            // Intersection: rect1.x1 < rect2.x2 && rect1.x2 > rect2.x1 && rect1.y1 < rect2.y2 && rect1.y2 > rect2.y1
+            return x1 < dX2 && x2 > dX1 && y1 < dY2 && y2 > dY1;
+          }).map(d => d.id);
+
+          // Update selection instantly for visual feedback
+          if (JSON.stringify(selectedIds) !== JSON.stringify(selectedDeviceIdsRef.current)) {
+            setSelectedDeviceIds(selectedIds);
+            selectedDeviceIdsRef.current = selectedIds;
+          }
+        }
       } else if (draggedDeviceRef.current && canvasRef.current) {
         // Check if we've moved enough to consider it a drag
         const dsp = dragStartPosRef.current;
@@ -1153,7 +1232,7 @@ export function NetworkTopology({
       }
     };
 
-    const handleMouseUp = () => {
+    const handleMouseUp = (e: globalThis.MouseEvent) => {
       // Cancel any pending animation frames
       if (dragAnimationFrameRef.current) {
         cancelAnimationFrame(dragAnimationFrameRef.current);
@@ -1168,42 +1247,62 @@ export function NetworkTopology({
         mousePosAnimationFrameRef.current = null;
       }
 
-      // Start momentum if panning and velocity is high enough
-      if (isPanningRef.current) {
-        const vx = velocityRef.current.x;
-        const vy = velocityRef.current.y;
-        const speed = Math.sqrt(vx * vx + vy * vy);
-
-        if (speed > 0.1) {
-          let lastTime = Date.now();
-          const friction = 0.95; // Deceleration rate
-
-          const animateMomentum = () => {
-            const now = Date.now();
-            const dt = now - lastTime;
-            lastTime = now;
-
-            if (dt > 0) {
-              const currentVx = velocityRef.current.x * Math.pow(friction, dt / 16);
-              const currentVy = velocityRef.current.y * Math.pow(friction, dt / 16);
-              velocityRef.current = { x: currentVx, y: currentVy };
-
-              const currentSpeed = Math.sqrt(currentVx * currentVx + currentVy * currentVy);
-              if (currentSpeed > 0.01) {
-                setPan(prev => ({
-                  x: prev.x + currentVx * dt,
-                  y: prev.y + currentVy * dt
-                }));
-                momentumAnimationFrameRef.current = requestAnimationFrame(animateMomentum);
-              } else {
-                momentumAnimationFrameRef.current = null;
-              }
-            } else {
-              momentumAnimationFrameRef.current = requestAnimationFrame(animateMomentum);
-            }
-          };
-          momentumAnimationFrameRef.current = requestAnimationFrame(animateMomentum);
+      // Handle Right-Click Context Menu vs Pan logic
+      if (e.button === 2 && rightClickStartRef.current) {
+        const dist = Math.sqrt(
+          Math.pow(e.clientX - rightClickStartRef.current.x, 2) +
+          Math.pow(e.clientY - rightClickStartRef.current.y, 2)
+        );
+        
+        // If it was a short click (not a drag), open the context menu
+        if (dist < 5) {
+          openContextMenu(e.clientX, e.clientY, null, 'canvas');
         }
+        rightClickStartRef.current = null;
+      }
+
+      // Momentum removed as per user request to stop sliding immediately
+
+      if (isSelectingRef.current && selectionBoxRef.current) {
+        const box = selectionBoxRef.current;
+        const x1 = Math.min(box.start.x, box.current.x);
+        const y1 = Math.min(box.start.y, box.current.y);
+        const x2 = Math.max(box.start.x, box.current.x);
+        const y2 = Math.max(box.start.y, box.current.y);
+
+        // Detect devices inside selection box
+        const selectedIds = latestDevicesRef.current.filter(d => {
+          const deviceWidth = (d.type === 'pc' || d.type === 'iot') ? 90 : 130;
+          const deviceHeight = 100;
+          
+          // Check if device center or box is within bounds
+          return (
+            d.x + deviceWidth / 2 >= x1 && 
+            d.x + deviceWidth / 2 <= x2 && 
+            d.y + deviceHeight / 2 >= y1 && 
+            d.y + deviceHeight / 2 <= y2
+          );
+        }).map(d => d.id);
+
+        if (selectedIds.length > 0) {
+          setSelectedDeviceIds(selectedIds);
+          selectedDeviceIdsRef.current = selectedIds;
+          
+          // Select first device of selection to update parent state
+          const firstDevice = latestDevicesRef.current.find(d => d.id === selectedIds[0]);
+          if (firstDevice) {
+            onDeviceSelect(firstDevice.type, firstDevice.id, isSwitchDeviceType(firstDevice.type) ? firstDevice.switchModel : undefined, firstDevice.name);
+          }
+        } else if (Math.abs(box.start.x - box.current.x) > 5) {
+          // Clear selection if mouse was dragged enough but no devices found
+          setSelectedDeviceIds([]);
+          selectedDeviceIdsRef.current = [];
+        }
+
+        setIsSelecting(false);
+        isSelectingRef.current = false;
+        setSelectionBox(null);
+        selectionBoxRef.current = null;
       }
 
       setIsPanning(false);
@@ -2047,7 +2146,9 @@ export function NetworkTopology({
         : undefined,
       wifi: type === 'iot'
         ? { enabled: true, ssid: '', security: 'open', password: '', channel: '2.4GHz', mode: 'client' }
-        : undefined,
+        : (type === 'router' || type === 'switch')
+          ? { enabled: false, ssid: 'Cisco-AP', security: 'open', password: '', channel: '2.4GHz', mode: 'ap' }
+          : undefined,
     };
     setDevices((prev) => [...prev, newDevice]);
     setSelectedDeviceIds([newDevice.id]);
@@ -2564,10 +2665,10 @@ export function NetworkTopology({
   }, [devices, getLivePort]);
 
   const handlePortHover = useCallback((e: ReactMouseEvent, deviceId: string, portId: string) => {
-    // Kablo takarken port ipuçlarını gösterme
-    if (isDrawingConnection) return;
+    // Kablo takarken, ekranı kaydırırken veya seçim yaparken port ipuçlarını gösterme
+    if (isDrawingConnection || isPanning || isSelecting) return;
     showPortTooltip(e, deviceId, portId);
-  }, [showPortTooltip, isDrawingConnection]);
+  }, [showPortTooltip, isDrawingConnection, isPanning, isSelecting]);
 
   const handlePortMouseLeave = useCallback(() => {
     if (portTooltipTimerRef.current) {
@@ -2598,9 +2699,9 @@ export function NetworkTopology({
   }, [devices]);
 
   const handleDeviceHover = useCallback((deviceId: string) => {
-    if (isDrawingConnection || draggedDevice || selectedDeviceIds.length > 1) return;
+    if (isDrawingConnection || draggedDevice || isPanning || isSelecting || selectedDeviceIds.length > 1) return;
     showDeviceTooltip(deviceId);
-  }, [showDeviceTooltip, isDrawingConnection, draggedDevice, selectedDeviceIds]);
+  }, [showDeviceTooltip, isDrawingConnection, draggedDevice, isPanning, isSelecting, selectedDeviceIds]);
 
   const handleDeviceMouseLeave = useCallback(() => {
     if (deviceTooltipTimerRef.current) {
@@ -4074,72 +4175,74 @@ export function NetworkTopology({
                     })()}
                   </g>
                 </TooltipTrigger>
-                <TooltipContent
-                  hideArrow
-                  className="p-0 bg-transparent border-none shadow-none"
-                  sideOffset={8}
-                >
-                  <div
-                    className={`relative px-3 py-2 rounded-xl shadow-2xl border backdrop-blur-md ${isDark
-                      ? 'bg-slate-900/90 border-slate-700 text-white shadow-cyan-500/10'
-                      : 'bg-white/90 border-slate-200 text-slate-900 shadow-slate-200/50'
-                      }`}
+                {!(isPanning || isSelecting || isDrawingConnection) && (
+                  <TooltipContent
+                    hideArrow
+                    className="p-0 bg-transparent border-none shadow-none"
+                    sideOffset={8}
                   >
-                    <div className="flex items-center gap-2 mb-1">
-                      <div className={`w-2 h-2 rounded-full ${device.status === 'offline' || !isEnabled
-                        ? 'bg-red-500'
-                        : isConnected
-                          ? 'bg-green-500'
-                          : 'bg-orange-500'
-                        }`} />
-                      <span className="text-[10px] font-black tracking-widest opacity-30">
-                        WIFI
-                      </span>
-                    </div>
-                    <div className="space-y-0.5">
-                      <div className="text-xs font-bold">
-                        {t.statusLabel}{' '}
-                        <span className={getStatusColor()}>
-                          {getStatusText()}
+                    <div
+                      className={`relative px-3 py-2 rounded-xl shadow-2xl border backdrop-blur-md ${isDark
+                        ? 'bg-slate-900/90 border-slate-700 text-white shadow-cyan-500/10'
+                        : 'bg-white/90 border-slate-200 text-slate-900 shadow-slate-200/50'
+                        }`}
+                    >
+                      <div className="flex items-center gap-2 mb-1">
+                        <div className={`w-2 h-2 rounded-full ${device.status === 'offline' || !isEnabled
+                          ? 'bg-red-500'
+                          : isConnected
+                            ? 'bg-green-500'
+                            : 'bg-orange-500'
+                          }`} />
+                        <span className="text-[10px] font-black tracking-widest opacity-30">
+                          WIFI
                         </span>
                       </div>
-                      {wifiSsid && (
+                      <div className="space-y-0.5">
                         <div className="text-xs font-bold">
-                          SSID:{' '}
-                          <span className="text-cyan-500">{wifiSsid}</span>
+                          {t.statusLabel}{' '}
+                          <span className={getStatusColor()}>
+                            {getStatusText()}
+                          </span>
                         </div>
-                      )}
-                      <div className="text-xs font-bold">
-                        {t.modeLabel}{' '}
-                        <span>{getModeText()}</span>
-                      </div>
-                      {wifiMode !== 'disabled' && (
-                        <>
+                        {wifiSsid && (
                           <div className="text-xs font-bold">
-                            {t.securityLabel}{' '}
-                            <span>{getSecurityText()}</span>
+                            SSID:{' '}
+                            <span className="text-cyan-500">{wifiSsid}</span>
                           </div>
-                          {wifiChannel && (
+                        )}
+                        <div className="text-xs font-bold">
+                          {t.modeLabel}{' '}
+                          <span>{getModeText()}</span>
+                        </div>
+                        {wifiMode !== 'disabled' && (
+                          <>
                             <div className="text-xs font-bold">
-                              {t.channelLabel}{' '}
-                              <span>{wifiChannel}</span>
+                              {t.securityLabel}{' '}
+                              <span>{getSecurityText()}</span>
                             </div>
-                          )}
-                          {wifiMode === 'ap' && (
-                            <div className="text-xs font-bold">
-                              {t.connectedLabel}{' '}
-                              <span className="text-cyan-500">{connectedDevices}</span>
-                            </div>
-                          )}
-                        </>
-                      )}
-                    </div>
+                            {wifiChannel && (
+                              <div className="text-xs font-bold">
+                                {t.channelLabel}{' '}
+                                <span>{wifiChannel}</span>
+                              </div>
+                            )}
+                            {wifiMode === 'ap' && (
+                              <div className="text-xs font-bold">
+                                {t.connectedLabel}{' '}
+                                <span className="text-cyan-500">{connectedDevices}</span>
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </div>
 
-                    {/* Arrow */}
-                    <div className={`absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-full w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] ${isDark ? 'border-t-slate-800' : 'border-t-white'
-                      }`} />
-                  </div>
-                </TooltipContent>
+                      {/* Arrow */}
+                      <div className={`absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-full w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] ${isDark ? 'border-t-slate-800' : 'border-t-white'
+                        }`} />
+                    </div>
+                  </TooltipContent>
+                )}
               </Tooltip>
             );
           }
@@ -4285,9 +4388,11 @@ export function NetworkTopology({
               />
             </g>
           </TooltipTrigger>
-          <TooltipContent>
-            {isPoweredOff ? t.powerOn : t.powerOff}
-          </TooltipContent>
+          {!(isPanning || isSelecting || isDrawingConnection) && (
+            <TooltipContent>
+              {isPoweredOff ? t.powerOn : t.powerOff}
+            </TooltipContent>
+          )}
         </Tooltip>
 
         {/* Device name */}
@@ -5398,7 +5503,7 @@ export function NetworkTopology({
           {/* Canvas */}
           <div
             ref={canvasRef}
-            className={`w-full h-full flex-1 min-h-[500px] overflow-hidden relative touch-none select-none print:overflow-visible print:h-auto print:min-h-full topology-print-area ${pingMode ? 'cursor-crosshair' : 'cursor-grab active:cursor-grabbing'}`}
+            className={`w-full h-full flex-1 min-h-[500px] overflow-hidden relative touch-none select-none print:overflow-visible print:h-auto print:min-h-full topology-print-area ${pingMode || isSelecting ? 'cursor-crosshair' : isPanning ? 'cursor-grabbing' : 'cursor-default'}`}
             role="application"
             aria-label={t.topologyAriaLabel}
             tabIndex={0}
@@ -6039,6 +6144,21 @@ export function NetworkTopology({
                     );
                   })()}
 
+                  {/* Rectangle Selection Box */}
+                  {selectionBox && (
+                    <rect
+                      x={Math.min(selectionBox.start.x, selectionBox.current.x)}
+                      y={Math.min(selectionBox.start.y, selectionBox.current.y)}
+                      width={Math.abs(selectionBox.current.x - selectionBox.start.x)}
+                      height={Math.abs(selectionBox.current.y - selectionBox.start.y)}
+                      fill={isDark ? "rgba(6, 182, 212, 0.1)" : "rgba(6, 182, 212, 0.1)"}
+                      stroke={isDark ? "rgba(6, 182, 212, 0.6)" : "rgba(6, 182, 212, 0.5)"}
+                      strokeWidth={1.5 / zoom}
+                      strokeDasharray={`${4 / zoom}, ${4 / zoom}`}
+                      pointerEvents="none"
+                    />
+                  )}
+
                 </g>
 
                 {/* Canvas Boundary Border */}
@@ -6066,6 +6186,25 @@ export function NetworkTopology({
                 </text>
               </g>
             </svg>
+          </div>
+
+
+          {/* Interaction Shortcuts Legend */}
+          <div className={`fixed bottom-[60px] right-[210px] flex items-center gap-4 px-3 py-1.5 rounded-lg backdrop-blur-md border shadow-lg z-30 pointer-events-none select-none transition-opacity duration-300 ${isPanning || isSelecting || isDrawingConnection ? 'opacity-20' : 'opacity-100'
+            } ${isDark ? 'bg-slate-900/40 border-slate-800 text-slate-400' : 'bg-white/40 border-slate-200 text-slate-500'
+            }`}>
+            <div className="flex items-center gap-1.5">
+              <div className="px-1.5 py-0.5 rounded bg-slate-500/10 border border-slate-500/20 text-[9px] font-bold">LMB</div>
+              <span className="text-[9px] font-medium">{language === 'tr' ? 'Seçim' : 'Select'}</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="px-1.5 py-0.5 rounded bg-slate-500/10 border border-slate-500/20 text-[9px] font-bold">RMB / Middle</div>
+              <span className="text-[9px] font-medium">{language === 'tr' ? 'Kaydır' : 'Pan'}</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="px-1.5 py-0.5 rounded bg-slate-500/10 border border-slate-500/20 text-[9px] font-bold">Scroll</div>
+              <span className="text-[9px] font-medium">{language === 'tr' ? 'Zoom' : 'Zoom'}</span>
+            </div>
           </div>
 
           {/* Zoom Controls - Mobile Float - Above Footer */}
@@ -7031,6 +7170,8 @@ export function NetworkTopology({
             </div>
           </div>
         )}
+
+
 
       {/* Toast Notification */}
       {toast && (
