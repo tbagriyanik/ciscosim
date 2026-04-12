@@ -62,7 +62,7 @@ const DEVICE_ICONS: Record<DeviceType | 'switch', React.ReactNode> = {
     </svg>
   ),
   iot: (
-    <svg className="w-6 h-6 sm:w-8 sm:h-8" fill="none" stroke="#16cbf9" viewBox="0 0 24 24">
+    <svg className="w-6 h-6 sm:w-8 sm:h-8" fill="none" stroke="#16cbf9" viewBox="0 -4 30 30">
       <path d="M16.247 7.761a6 6 0 0 1 0 8.478" />
       <path d="M19.075 4.933a10 10 0 0 1 0 14.134" />
       <path d="M4.925 19.067a10 10 0 0 1 0-14.134" />
@@ -4960,7 +4960,7 @@ export function NetworkTopology({
                     <TooltipTrigger asChild>
                       <button
                         onClick={() => addDevice('iot')}
-                        className={`p-1.5 rounded-lg ui-hover-surface ${isDark ? 'text-cyan-400 hover:text-cyan-300' : 'text-cyan-500 hover:text-cyan-600'}`}
+                        className="p-1.5 rounded-lg ui-hover-surface text-cyan-400 hover:text-cyan-300"
                       >
                         {DEVICE_ICONS['iot']}
                       </button>

@@ -2709,13 +2709,13 @@ export default function Home() {
                                 <Button
                                   key={tab.id}
                                   variant={isActive ? "secondary" : "ghost"}
-                                  className={`w-full justify-start gap-3 h-9 px-3 text-xs font-bold ui-hover-surface ${isActive ? 'bg-cyan-500/10 text-cyan-400' : 'text-slate-400'}`}
+                                  className={`w-full justify-start gap-3 h-9 px-3 text-xs font-bold ui-hover-surface ${isActive ? 'bg-violet-500/10 text-violet-400' : 'text-slate-400'}`}
                                   onClick={() => {
                                     switchTabOrTopology(tab.id);
                                     setShowMobileMenu(false);
                                   }}
                                 >
-                                  <span className={`w-4 h-4 flex items-center justify-center ${isActive ? 'text-cyan-400' : 'text-slate-500'}`}>
+                                  <span className={`w-4 h-4 flex items-center justify-center ${isActive ? 'text-violet-400' : 'text-slate-500'}`}>
                                     {tab.icon}
                                   </span>
                                   {label}
@@ -2939,8 +2939,8 @@ export default function Home() {
                   <Button
                     variant="ghost"
                     className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg border transition-all ${isDark
-                      ? 'bg-slate-900 border-slate-800 text-cyan-400 hover:text-cyan-300'
-                      : 'bg-white border-slate-200 text-cyan-700 hover:text-cyan-800'
+                      ? 'bg-slate-900 border-slate-800 text-slate-300 hover:text-white hover:border-slate-600'
+                      : 'bg-white border-slate-200 text-slate-700 hover:text-slate-900 hover:border-slate-400'
                       }`}
                   >
                     <div className="flex items-center gap-2">
@@ -3050,7 +3050,7 @@ export default function Home() {
                           return (
                             <DropdownMenuItem
                               key={device.id}
-                              className={`flex items-center gap-2 py-1.5 cursor-pointer ${activeDeviceId === device.id ? 'bg-cyan-500/10 text-cyan-400' : ''}`}
+                              className={`flex items-center gap-2 py-1.5 cursor-pointer ${activeDeviceId === device.id ? 'bg-violet-500/10 text-violet-400' : ''}`}
                               onClick={() => { handleDeviceSelectFromMenu(device.type, device.id, device.switchModel, device.name); setDeviceSearchQuery(''); }}
                             >
                               <div className="flex items-center gap-2 cursor-pointer">
@@ -3826,14 +3826,19 @@ export default function Home() {
             </div>
           </footer>
 
-          <LazyAboutModal 
-            isOpen={showAboutModal} 
-            onClose={() => setShowAboutModal(false)} 
+          <LazyAboutModal
+            isOpen={showAboutModal}
+            onClose={() => setShowAboutModal(false)}
             onStartTour={() => {
               setShowAboutModal(false);
               setShowOnboarding(true);
               setOnboardingStep(0);
             }}
+          />
+
+          <EnvironmentSettingsPanel
+            isOpen={isEnvironmentPanelOpen}
+            onOpenChange={setIsEnvironmentPanelOpen}
           />
         </div>
       </div >
