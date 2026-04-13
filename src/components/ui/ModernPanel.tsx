@@ -115,7 +115,7 @@ export function ModernPanel({
     return (
         <div
             className={cn(
-                'flex flex-col bg-background border rounded-lg shadow-lg',
+                'flex flex-col bg-background border rounded-lg shadow-lg overflow-hidden',
                 isOverlay && 'fixed z-40',
                 isStacked && 'relative',
                 className
@@ -179,7 +179,7 @@ export function ModernPanel({
 
             {/* Content */}
             {!isCollapsed && (
-                <div className="p-4">
+                <div className="flex-1 overflow-y-auto p-4">
                     {children}
                     {footer && <div className="mt-4 border-t pt-3">{footer}</div>}
                 </div>

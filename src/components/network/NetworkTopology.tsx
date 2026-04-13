@@ -48,6 +48,7 @@ interface NetworkTopologyProps {
   onDeviceRename?: (deviceId: string, newName: string) => void;
   onRefreshNetwork?: () => void;
   focusDeviceId?: string | null;
+  onOpenTasks?: (deviceId: string) => void;
 }
 
 // Drag item from palette
@@ -4312,45 +4313,9 @@ export function NetworkTopology({
           return null;
         })()}
 
-        {/* Connected Devices Count Badge for AP */}
+        {/* Connected Devices Count Badge - Hidden for now */}
         {(() => {
-          const isSwitch = isSwitchDeviceType(device.type);
-          const isRouter = device.type === 'router';
-          const devState = deviceStates?.get(device.id);
-          const wlanState = devState?.ports['wlan0'];
-          const isApMode = wlanState?.wifi?.mode === 'ap';
-          const isEnabled = wlanState ? !wlanState.shutdown : false;
-          
-          if (!isSwitch && !isRouter) return null;
-          if (!isApMode || !isEnabled) return null;
-          
-          // Count connected devices (PC and IoT)
-          let connectedCount = 0;
-          const apSsid = wlanState?.wifi?.ssid || '';
-          const apSecurity = wlanState?.wifi?.security || 'open';
-          
-          devices.forEach(otherDev => {
-            if (otherDev.id === device.id || (otherDev.type !== 'pc' && otherDev.type !== 'iot')) return;
-            const pcwifi = otherDev.wifi;
-            const otherState = deviceStates?.get(otherDev.id);
-            const otherWlan = otherState?.ports['wlan0'];
-            const clientSsid = pcwifi?.ssid || otherWlan?.wifi?.ssid || '';
-            const clientSecurity = pcwifi?.security || otherWlan?.wifi?.security || 'open';
-            if (clientSsid === apSsid && clientSecurity === apSecurity) {
-              connectedCount++;
-            }
-          });
-          
-          if (connectedCount === 0) return null;
-          
-          return (
-            <g transform={`translate(14, 32)`}>
-              <circle r="10" fill={isDark ? '#0ea5e9' : '#0284c7'} stroke={isDark ? '#1e293b' : '#fff'} strokeWidth="1" />
-              <text x="0" y="1" fill="#fff" fontSize="9" textAnchor="middle" dominantBaseline="middle" fontWeight="bold" style={{ userSelect: 'none' }}>
-                {connectedCount}
-              </text>
-            </g>
-          );
+          return null;
         })()}
 
         {/* PC monitor stand */}

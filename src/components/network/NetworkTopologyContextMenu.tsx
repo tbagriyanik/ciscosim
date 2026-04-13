@@ -4,7 +4,7 @@ import { useState, useEffect, type RefObject } from 'react';
 import {
   Trash2, Undo2, Redo2, Scissors, Copy, ClipboardPaste,
   MousePointer2, ExternalLink, Mail, Shield, Layers,
-  Database, Terminal as TerminalIcon, CheckSquare, Power
+  Database, Terminal as TerminalIcon, CheckSquare, Power, ListTodo
 } from 'lucide-react';
 import { NOTE_COLORS, NOTE_FONT_SIZES, NOTE_OPACITY } from './networkTopology.constants';
 import { CanvasDevice, CanvasNote, ContextMenuState } from './networkTopology.types';
@@ -45,6 +45,7 @@ interface NetworkTopologyContextMenuProps {
   onTogglePowerDevices: (ids: string[]) => void;
   onSaveToHistory: () => void;
   onClearDeviceSelection: () => void;
+  onOpenTasks?: (deviceId: string) => void;
 }
 
 export default function NetworkTopologyContextMenu({
@@ -82,6 +83,7 @@ export default function NetworkTopologyContextMenu({
   onTogglePowerDevices,
   onSaveToHistory,
   onClearDeviceSelection,
+  onOpenTasks,
   note
 }: NetworkTopologyContextMenuProps) {
   const [position, setPosition] = useState({ x: contextMenu?.x || 0, y: contextMenu?.y || 0 });
@@ -99,6 +101,7 @@ export default function NetworkTopologyContextMenu({
       case 'open': return <ExternalLink className="w-4 h-4" />;
       case 'ping': return <Mail className="w-4 h-4" />;
       case 'power': return <Power className="w-4 h-4" />;
+      case 'tasks': return <ListTodo className="w-4 h-4" />;
       default: return null;
     }
   };
@@ -293,11 +296,12 @@ export default function NetworkTopologyContextMenu({
 
       {contextMenu.deviceId && contextMenu.mode === 'device' && (
         <div className="px-2 py-2 space-y-1">
-          {(() => {
+              {(() => {
             const device = devices.find((d) => d.id === contextMenu.deviceId);
             const canPaste = !!onPasteDevice && clipboardLength > 0;
             const hasSelection = selectedDeviceIds.includes(contextMenu.deviceId!);
             const targets = hasSelection ? selectedDeviceIds : [contextMenu.deviceId!];
+            const isRouterOrSwitch = device && (device.type === 'router' || device.type === 'switchL2' || device.type === 'switchL3');
             return (
               <>
                 {renderMenuItem({
@@ -306,6 +310,12 @@ export default function NetworkTopologyContextMenu({
                   icon: 'open',
                   onClick: () => { if (device && device.type !== 'iot') onOpenDevice(device); onClose(); },
                   disabled: !device || device.type === 'iot'
+                })}
+                {isRouterOrSwitch && onOpenTasks && renderMenuItem({
+                  label: language === 'tr' ? 'Görevler' : 'Tasks',
+                  icon: 'tasks',
+                  onClick: () => { onOpenTasks(contextMenu.deviceId!); onClose(); },
+                  disabled: !device
                 })}
                 {renderMenuItem({
                   label: language === 'tr' ? 'Kes' : 'Cut',

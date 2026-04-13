@@ -236,7 +236,7 @@ export function RouterPanel({
         </div>
 
         {/* Content */}
-        <ScrollArea className="flex-1 h-[500px]">
+        <ScrollArea className="flex-1 h-[calc(80vh-140px)]">
           <div className="p-4">
             {activeTab === 'overview' && (
               <div className="space-y-4">

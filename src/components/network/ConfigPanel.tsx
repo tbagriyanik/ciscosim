@@ -265,8 +265,8 @@ export function ConfigPanel({ state, onExecuteCommand, isDevicePoweredOff = fals
         className
       )}
     >
-      <div className="flex flex-col h-full overflow-hidden p-3 sm:p-4 bg-background">
-        <div className="flex-1 overflow-auto rounded-lg border border-slate-800 bg-slate-950 custom-scrollbar">
+      <div className="flex flex-col p-3 sm:p-4 bg-background">
+        <div className="overflow-y-auto rounded-lg border border-slate-800 bg-slate-950 custom-scrollbar h-[calc(80vh-140px)]">
           <pre className="p-3 sm:p-4 text-xs sm:text-sm text-emerald-400 font-mono whitespace-pre-wrap leading-relaxed">
             {configText.replace(/\\n/g, '\n')}
           </pre>
