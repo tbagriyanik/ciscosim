@@ -493,7 +493,11 @@ export function Terminal({
   // Auto-scroll and focus
   useEffect(() => {
     if (terminalRef.current) {
-      terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
+      requestAnimationFrame(() => {
+        if (terminalRef.current) {
+          terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
+        }
+      });
     }
     inputRef.current?.focus();
   }, [output, isLoading, deviceId]);
@@ -505,6 +509,12 @@ export function Terminal({
         terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
       }
     });
+    // Additional scroll to ensure it reaches the end
+    setTimeout(() => {
+      if (terminalRef.current) {
+        terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
+      }
+    }, 50);
   }, [displayedLines]);
 
   useEffect(() => {
@@ -561,6 +571,10 @@ export function Terminal({
     setShowAutocomplete(false);
     setAutocompleteIndex(-1);
     await onCommand(command);
+    // Scroll to input field after command execution
+    setTimeout(() => {
+      inputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 100);
   };
 
   const handleFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -1131,7 +1145,7 @@ export function Terminal({
             ref={terminalRef}
             className={cn(
               "flex-1 scroll-y-sm font-mono leading-relaxed custom-scrollbar mobile-scroll",
-              isMobile ? "p-3" : "p-6",
+              isMobile ? "p-3 pb-32" : "p-6 pb-32",
               isPoweredOff ? "bg-black" : (isDark ? "bg-slate-950" : "bg-slate-50")
             )}
             style={{ fontSize: `${fontSize}px` }}
@@ -1178,7 +1192,7 @@ export function Terminal({
 
           {!isPoweredOff && (
             <div className={cn(
-              "relative z-10 border-t bg-muted/95 backdrop-blur-sm",
+              "shrink-0 z-10 border-t bg-muted/95 backdrop-blur-sm sticky bottom-0",
               isMobile ? "p-2" : "p-3"
             )}>
               <form onSubmit={handleFormSubmit} className="flex items-center gap-3 relative">

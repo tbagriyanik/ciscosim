@@ -144,6 +144,8 @@ export function NetworkTopology({
   onZoomChange,
   pan: panProp,
   onPanChange,
+  isFullscreen = false,
+  onFullscreenChange,
 }: NetworkTopologyProps) {
   const { language, t } = useLanguage();
   const { theme } = useTheme();
@@ -579,7 +581,6 @@ export function NetworkTopology({
 
   // UI state
   const [isPaletteOpen, setIsPaletteOpen] = useState(false);
-  const [isFullscreen, setIsFullscreen] = useState(false);
   const [isEnvironmentPanelOpen, setIsEnvironmentPanelOpen] = useState(false);
 
   // Get environment settings
@@ -966,12 +967,12 @@ export function NetworkTopology({
         setSelectedSourcePort(null);
       }
       if (contextMenu) setContextMenu(null);
-      if (isFullscreen) setIsFullscreen(false);
+      if (isFullscreen && onFullscreenChange) onFullscreenChange(false);
     };
 
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, [isPaletteOpen, configuringDevice, pingSource, showPortSelector, contextMenu, cancelDeviceConfig, isFullscreen]);
+  }, [isPaletteOpen, configuringDevice, pingSource, showPortSelector, contextMenu, cancelDeviceConfig, isFullscreen, onFullscreenChange]);
 
   // Allow page-level header buttons (next to the device selector) to control topology UI on mobile.
   useEffect(() => {
@@ -1303,7 +1304,7 @@ export function NetworkTopology({
           if (firstDevice) {
             onDeviceSelect(firstDevice.type, firstDevice.id, isSwitchDeviceType(firstDevice.type) ? firstDevice.switchModel : undefined, firstDevice.name);
           }
-        } else if (Math.abs(box.start.x - box.current.x) > 5) {
+        } else if (Math.abs(box.start.x - box.current.x) > 5 || Math.abs(box.start.y - box.current.y) > 5) {
           // Clear selection if mouse was dragged enough but no devices found
           setSelectedDeviceIds([]);
           selectedDeviceIdsRef.current = [];
@@ -2214,6 +2215,33 @@ export function NetworkTopology({
     setSelectedNoteIds([newNote.id]);
   }, [saveToHistory, language, getNextNoteId]);
 
+  // Handle toolbar events from page.tsx
+  useEffect(() => {
+    const handleAddDevice = (event: CustomEvent) => {
+      const deviceType = event.detail;
+      if (deviceType === 'pc') addDevice('pc');
+      else if (deviceType === 'switchL2') addDevice('switch', 'L2');
+      else if (deviceType === 'switchL3') addDevice('switch', 'L3');
+      else if (deviceType === 'router') addDevice('router');
+      else if (deviceType === 'iot') addDevice('iot');
+    };
+    const handleTogglePingMode = () => {
+      setPingMode(m => !m);
+      setPingSource(null);
+      setPingResult(null);
+    };
+    const handleAddNote = () => addNote();
+
+    window.addEventListener('add-device', handleAddDevice as EventListener);
+    window.addEventListener('toggle-ping-mode', handleTogglePingMode as EventListener);
+    window.addEventListener('add-note', handleAddNote as EventListener);
+    return () => {
+      window.removeEventListener('add-device', handleAddDevice as EventListener);
+      window.removeEventListener('toggle-ping-mode', handleTogglePingMode as EventListener);
+      window.removeEventListener('add-note', handleAddNote as EventListener);
+    };
+  }, [addDevice, addNote]);
+
   const deleteNote = useCallback((noteId: string) => {
     saveToHistory();
     setNotes((prev) => prev.filter((n) => n.id !== noteId));
@@ -2911,8 +2939,10 @@ export function NetworkTopology({
 
   // Toggle Fullscreen
   const toggleFullscreen = useCallback(() => {
-    setIsFullscreen(prev => !prev);
-  }, []);
+    if (onFullscreenChange) {
+      onFullscreenChange(!isFullscreen);
+    }
+  }, [isFullscreen, onFullscreenChange]);
 
   // Clear canvas
   const clearCanvas = useCallback(() => {
@@ -3062,8 +3092,8 @@ export function NetworkTopology({
           setIsPaletteOpen(false);
         }
         // Exit fullscreen
-        if (isFullscreen) {
-          setIsFullscreen(false);
+        if (isFullscreen && onFullscreenChange) {
+          onFullscreenChange(false);
         }
       }
 
@@ -3144,7 +3174,7 @@ export function NetworkTopology({
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('close-menus-broadcast', handleCloseBroadcast);
     };
-  }, [selectedDeviceIds, selectedNoteIds, deleteDevice, deleteNote, configuringDevice, cancelDeviceConfig, selectAllDevices, saveToHistory, devices, onDeviceDelete, isDrawingConnection, isPaletteOpen, handleUndo, handleRedo, copyDevice, cutDevice, pasteDevice, pingSource, pingMode, showPortSelector, toggleFullscreen, isFullscreen, resetView]);
+  }, [selectedDeviceIds, selectedNoteIds, deleteDevice, deleteNote, configuringDevice, cancelDeviceConfig, selectAllDevices, saveToHistory, devices, onDeviceDelete, isDrawingConnection, isPaletteOpen, handleUndo, handleRedo, copyDevice, cutDevice, pasteDevice, pingSource, pingMode, showPortSelector, toggleFullscreen, isFullscreen, resetView, onFullscreenChange]);
 
   // Find path between devices using BFS
   const findPath = useCallback((sourceId: string, targetId: string): string[] | null => {
@@ -5099,228 +5129,11 @@ export function NetworkTopology({
   return (
     <div
       onContextMenu={(e) => e.preventDefault()}
-      className={`${isFullscreen ? 'fixed inset-[20px] z-[9999] rounded-2xl shadow-2xl overflow-hidden' : 'relative m-2.5 rounded-2xl border overflow-hidden h-full'} flex flex-col transition-all duration-300 ${isDark
+      className={`${isFullscreen ? 'fixed inset-[20px] z-[9999] rounded-2xl shadow-2xl overflow-hidden' : 'relative m-2.5 rounded-2xl border overflow-hidden h-[calc(100%-2rem)]'} flex flex-col transition-all duration-300 ${isDark
         ? 'bg-gradient-to-br from-slate-800/90 via-slate-700/80 to-slate-800/90 border-slate-700/50'
         : 'bg-gradient-to-br from-blue-50/50 via-white to-slate-50/80 border-slate-200'
         }`}
     >
-      {/* Header with Tools */}
-      <div
-        className={`px-4 py-0 border-b shrink-0 ${isDark ? 'border-slate-700/40 bg-slate-900/60' : 'border-slate-200/40 bg-white/60'} liquid-glass sticky top-0 z-40`}
-      >
-        <div className="hidden sm:flex flex items-center justify-between gap-2 overflow-hidden no-scrollbar">
-          <div className="flex items-center gap-2 sm:gap-4 shrink-0">
-
-            {/* MD/LG Screen Quick Tools */}
-            <div className="hidden md:flex items-center ">
-              <div className={`flex items-center gap-2 p-1 rounded-xl border ${isDark ? 'bg-slate-900/40 border-slate-700/30' : 'bg-blue-50/50 border-blue-100/50'}`}>
-                {/* Devices Group */}
-                <div className="flex items-center gap-1">
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button
-                        onClick={() => addDevice('pc')}
-                        className={`p-1.5 rounded-lg ui-hover-surface ${isDark ? 'text-blue-500 hover:text-blue-400' : 'text-blue-600 hover:text-blue-500'}`}
-                      >
-                        <svg className="w-5 h-5" fill="none" stroke="#3b82f6" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 0 0 2-2V5a2 2 0 0 0 -2-2H5a2 2 0 0 0 -2 2v10a2 2 0 0 0 2 2z" />
-                        </svg>
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent>{t.addPc}</TooltipContent>
-                  </Tooltip>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button
-                        onClick={() => addDevice('switch', 'L2')}
-                        className={`p-1.5 rounded-lg ui-hover-surface ${isDark ? 'text-green-500 hover:text-green-400' : 'text-green-600 hover:text-green-500'}`}
-                      >
-                        <svg className="w-5 h-5" fill="none" stroke="#22c55e" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 12h14M5 12a2 2 0 0 1 -2-2V6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1 -2 2M5 12a2 2 0 0 0 -2 2v4a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4a2 2 0 0 0 -2-2m-2-4h.01M17 16h.01" />
-                        </svg>
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent>{isTR ? 'L2 Switch Ekle' : 'Add L2 Switch'}</TooltipContent>
-                  </Tooltip>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button
-                        onClick={() => addDevice('switch', 'L3')}
-                        className={`p-1.5 rounded-lg ui-hover-surface ${isDark ? 'text-purple-500 hover:text-purple-400' : 'text-purple-600 hover:text-purple-500'}`}
-                      >
-                        <svg className="w-5 h-5" fill="none" stroke="#a855f7" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 12h14M5 12a2 2 0 0 1 -2-2V6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1 -2 2M5 12a2 2 0 0 0 -2 2v4a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4a2 2 0 0 0 -2-2m-2-4h.01M17 16h.01" />
-                        </svg>
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent>{isTR ? 'L3 Switch Ekle' : 'Add L3 Switch'}</TooltipContent>
-                  </Tooltip>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button
-                        onClick={() => addDevice('router')}
-                        className={`p-1.5 rounded-lg ui-hover-surface ${isDark ? 'text-purple-500 hover:text-purple-400' : 'text-purple-600 hover:text-purple-700'}`}
-                      >
-                        <svg className="w-5 h-5" fill="none" stroke="#a855f7" viewBox="0 0 24 24">
-                          <circle cx="12" cy="12" r="9" strokeWidth={1.5} />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 5v14M5 12h14M12 5l-2 2m2-2l2 2m-2 12l-2-2m2 2l2-2M5 12l2-2m-2 2l2 2M19 12l-2-2m2 2l-2 2" />
-                        </svg>
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent>{t.addRouter}</TooltipContent>
-                  </Tooltip>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button
-                        onClick={() => addDevice('iot')}
-                        className="p-1.5 rounded-lg ui-hover-surface text-cyan-400 hover:text-cyan-300"
-                      >
-                        {DEVICE_ICONS['iot']}
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent>{isTR ? 'IoT Ekle' : 'Add IoT'}</TooltipContent>
-                  </Tooltip>
-                </div>
-
-                {/* Cable Types Group - Button Group with Color Coding */}
-                <div className={`flex items-center rounded-lg border overflow-hidden ${isDark ? 'bg-slate-800/50 border-slate-800' : 'bg-slate-100 border-slate-200'}`}>
-                  {(['straight', 'crossover', 'console'] as CableType[]).map((type, index) => (
-                    <Tooltip key={type}>
-                      <TooltipTrigger asChild>
-                        <button
-                          onClick={() => onCableChange({ ...cableInfo, cableType: type })}
-                          className={`h-8 px-3 flex items-center gap-1.5 transition-all text-xs font-bold
-                            ${isDark
-                              ? 'hover:bg-slate-700/50'
-                              : 'hover:bg-slate-200/50'
-                            }
-                            ${cableInfo.cableType === type
-                              ? isDark
-                                ? 'bg-slate-700/80'
-                                : 'bg-slate-200/80'
-                              : ''
-                            }
-                            ${type === 'straight'
-                              ? (cableInfo.cableType === type ? 'text-blue-400' : 'text-blue-500 hover:text-blue-400')
-                              : type === 'crossover'
-                                ? (cableInfo.cableType === type ? 'text-orange-400' : 'text-orange-500 hover:text-orange-400')
-                                : (cableInfo.cableType === type ? 'text-cyan-400' : 'text-cyan-500 hover:text-cyan-400')
-                            }`}
-                        >
-                          <div className={`w-2 h-2 rounded-full ${type === 'straight' ? 'bg-blue-500' : type === 'crossover' ? 'bg-orange-500' : 'bg-cyan-500'}`} />
-                          {type === 'straight' ? t.straight : type === 'crossover' ? t.crossover : t.console}
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        {type === 'straight'
-                          ? (isTR ? 'Düz Kablo' : 'Straight Cable')
-                          : type === 'crossover'
-                            ? (isTR ? 'Çapraz Kablo' : 'Crossover Cable')
-                            : (isTR ? 'Konsol Kablosu' : 'Console Cable')}
-                      </TooltipContent>
-                    </Tooltip>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Toolbar Button Group - Unified */}
-          <div className={`hidden md:flex items-center rounded-lg border overflow-hidden ${isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-100 border-slate-200'}`}>
-            {/* Connect Button */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  onClick={() => {
-                    setShowPortSelector(true);
-                    setPortSelectorStep('source');
-                    setSelectedSourcePort(null);
-                  }}
-                  className={`h-8 px-3 flex items-center gap-1.5 transition-all ${isDark ? 'text-slate-300 hover:text-slate-100 hover:bg-slate-700/50' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'}`}
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 0 0 -5.656 0l-4 4a4 4 0 1 0 5.656 5.656l1.102-1.101m-.758-4.899a4 4 0 0 0 5.656 0l4-4a4 4 0 0 0 -5.656-5.656l-1.1 1.1" />
-                  </svg>
-                  <span className="hidden sm:inline text-sm">{t.connect}</span>
-                </button>
-              </TooltipTrigger>
-              <TooltipContent>{t.connect}</TooltipContent>
-            </Tooltip>
-            <div className={`w-px h-4 ${isDark ? 'bg-slate-700' : 'bg-slate-300'}`} />
-            {/* Ping Button */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  onClick={() => {
-                    setPingMode(m => !m);
-                    setPingSource(null);
-                    setPingResult(null);
-                  }}
-                  className={cn(
-                    "h-8 px-3 flex items-center gap-1.5 transition-all",
-                    pingMode
-                      ? (isDark ? "bg-slate-700/50 text-amber-400" : "bg-slate-200/50 text-amber-600")
-                      : (isDark ? "text-slate-300 hover:text-slate-100 hover:bg-slate-700/50" : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/50")
-                  )}
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                  </svg>
-                  <span className="hidden sm:inline text-sm">Ping</span>
-                </button>
-              </TooltipTrigger>
-              <TooltipContent>
-                {pingMode
-                  ? t.exitPingMode
-                  : (isTR ? 'Ping: Kaynak → Hedef seç' : 'Ping: Select source → target')}
-              </TooltipContent>
-            </Tooltip>
-            <div className={`w-px h-4 ${isDark ? 'bg-slate-700' : 'bg-slate-300'}`} />
-            {/* Add Note Button */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  onClick={addNote}
-                  className={`h-8 px-3 flex items-center gap-1.5 transition-all ${isDark ? 'text-slate-300 hover:text-slate-100 hover:bg-slate-700/50' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'}`}
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 0 0 -2 2v11a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-5m-1.414-9.414a2 2 0 1 1 2.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                  </svg>
-                  <span className="hidden sm:inline text-sm">{t.note}</span>
-                </button>
-              </TooltipTrigger>
-              <TooltipContent>{t.note}</TooltipContent>
-            </Tooltip>
-            <div className={`w-px h-4 ${isDark ? 'bg-slate-700' : 'bg-slate-300'}`} />
-            {/* Refresh Network Button */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  onClick={() => {
-                    if (onRefreshNetwork) {
-                      onRefreshNetwork();
-                    }
-                  }}
-                  className={`h-8 px-3 flex items-center gap-1.5 transition-all ${isDark ? 'text-slate-300 hover:text-slate-100 hover:bg-slate-700/50' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'}`}
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                  </svg>
-                  <span className="hidden sm:inline text-sm">{isTR ? 'Yenile' : 'Refresh'}</span>
-                </button>
-              </TooltipTrigger>
-              <TooltipContent>{isTR ? 'Ağı Yenile (F5)' : 'Refresh Network (F5) '}</TooltipContent>
-            </Tooltip>
-            <div className={`w-px h-4 ${isDark ? 'bg-slate-700' : 'bg-slate-300'}`} />
-            {/* Environment Settings Button */}
-            <EnvironmentSettingsPanel
-              isOpen={isEnvironmentPanelOpen}
-              onOpenChange={setIsEnvironmentPanelOpen}
-            />
-          </div>
-        </div>
-      </div>
-
       <div className="flex flex-1 overflow-hidden">
         {/* Canvas Area */}
         <div className={`flex-1 relative flex flex-col`}>

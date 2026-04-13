@@ -2541,7 +2541,7 @@ ${state.bannerMOTD}
 
   return (
     <AppErrorBoundary fallbackTitle={language === 'tr' ? 'Uygulama hatası' : 'Application error'}>
-      <div className={`min-h-screen w-full flex flex-col relative transition-colors duration-700 ${isAppLoading ? 'bg-slate-950 overflow-hidden' : (isDark ? 'bg-slate-950' : 'bg-slate-50')}`}>
+      <div className={`h-screen w-full flex flex-col relative transition-colors duration-700 overflow-hidden ${isAppLoading ? 'bg-slate-950' : (isDark ? 'bg-slate-950' : 'bg-slate-50')}`}>
         {!isAppLoading && (
           <div className="fixed inset-0 pointer-events-none z-0 opacity-40 dark:opacity-20 transition-opacity duration-1000">
             <div className="absolute inset-0 mesh-gradient animate-liquid blur-[100px] scale-150 rotate-12" />
@@ -2649,7 +2649,7 @@ ${state.bannerMOTD}
                 </div>
 
                 {/* Right Controls - Integrated Toolbar */}
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 sticky top-0 z-10">
                   {/* Unified Toolbar */}
                   <div className={`flex items-center gap-1 px-2 py-1.5 rounded-xl border ${isDark ? 'bg-slate-800/40 border-slate-800' : 'bg-slate-100 border-slate-200'}`}>
                     {/* Undo/Redo Group */}
@@ -3591,10 +3591,323 @@ ${state.bannerMOTD}
           </AlertDialog>
 
           {/* Main Content */}
-          <main className="flex-1 overflow-y-auto overflow-x-hidden flex flex-col min-h-0 md:pb-[68px] md:overflow-hidden">
-            <div className={`${activeTab === 'topology' ? 'p-0 pb-0 sm:pb-0' : 'p-0'} w-full flex-1 flex flex-col min-h-0 overflow-y-auto overflow-x-hidden md:overflow-hidden`}>
+          <main className="flex-1 overflow-hidden flex flex-col min-h-0">
+            <div className={`${activeTab === 'topology' ? 'p-0 pb-0 sm:pb-0' : 'p-0'} w-full flex-1 flex flex-col min-h-0 overflow-y-auto overflow-x-hidden`}>
               {/* Tab Content - Always render but hide non-active */}
               <div className={`flex-1 flex flex-col min-h-0 h-full ${activeTab === 'topology' ? 'block' : 'hidden'} print:block`}>
+                {/* Topology Toolbar - Fixed at top */}
+                {activeTab === 'topology' && (
+                  <div className="sticky top-0 z-30 px-4 py-2 border-b backdrop-blur-md bg-background/95 hidden md:flex items-center gap-3">
+                    {/* Device Buttons */}
+                    <div className={`flex items-center gap-1 p-1 rounded-xl border ${isDark ? 'bg-slate-900/40 border-slate-700/30' : 'bg-blue-50/50 border-blue-100/50'}`}>
+                      {/* PC Button */}
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-blue-500 hover:bg-blue-500/10"
+                            onClick={() => {
+                              const event = new CustomEvent('add-device', { detail: 'pc' });
+                              window.dispatchEvent(event);
+                            }}
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 0 0 2-2V5a2 2 0 0 0 -2-2H5a2 2 0 0 0 -2 2v10a2 2 0 0 0 2 2z" />
+                            </svg>
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>{language === 'tr' ? 'PC Ekle' : 'Add PC'}</TooltipContent>
+                      </Tooltip>
+                      {/* L2 Switch Button */}
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-green-500 hover:bg-green-500/10"
+                            onClick={() => {
+                              const event = new CustomEvent('add-device', { detail: 'switchL2' });
+                              window.dispatchEvent(event);
+                            }}
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 12h14M5 12a2 2 0 0 1 -2-2V6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1 -2 2M5 12a2 2 0 0 0 -2 2v4a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4a2 2 0 0 0 -2-2m-2-4h.01M17 16h.01" />
+                            </svg>
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>{language === 'tr' ? 'L2 Switch Ekle' : 'Add L2 Switch'}</TooltipContent>
+                      </Tooltip>
+                      {/* L3 Switch Button */}
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-purple-500 hover:bg-purple-500/10"
+                            onClick={() => {
+                              const event = new CustomEvent('add-device', { detail: 'switchL3' });
+                              window.dispatchEvent(event);
+                            }}
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 12h14M5 12a2 2 0 0 1 -2-2V6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1 -2 2M5 12a2 2 0 0 0 -2 2v4a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4a2 2 0 0 0 -2-2m-2-4h.01M17 16h.01" />
+                            </svg>
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>{language === 'tr' ? 'L3 Switch Ekle' : 'Add L3 Switch'}</TooltipContent>
+                      </Tooltip>
+                      {/* Router Button */}
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-purple-500 hover:bg-purple-500/10"
+                            onClick={() => {
+                              const event = new CustomEvent('add-device', { detail: 'router' });
+                              window.dispatchEvent(event);
+                            }}
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <circle cx="12" cy="12" r="9" strokeWidth={1.5} />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 5v14M5 12h14M12 5l-2 2m2-2l2 2m-2 12l-2-2m2 2l2-2M5 12l2-2m-2 2l2 2M19 12l-2-2m2 2l-2 2" />
+                            </svg>
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>{language === 'tr' ? 'Router Ekle' : 'Add Router'}</TooltipContent>
+                      </Tooltip>
+                      {/* IoT Button */}
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-cyan-500 hover:bg-cyan-500/10"
+                            onClick={() => {
+                              const event = new CustomEvent('add-device', { detail: 'iot' });
+                              window.dispatchEvent(event);
+                            }}
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path d="M16.247 7.761a6 6 0 0 1 0 8.478" />
+                              <path d="M19.075 4.933a10 10 0 0 1 0 14.134" />
+                              <path d="M4.925 19.067a10 10 0 0 1 0-14.134" />
+                              <path d="M7.753 16.239a6 6 0 0 1 0-8.478" />
+                              <circle cx="12" cy="12" r="2" />
+                            </svg>
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>{language === 'tr' ? 'IoT Ekle' : 'Add IoT'}</TooltipContent>
+                      </Tooltip>
+                    </div>
+
+                    {/* Cable Type Buttons */}
+                    <div className={`flex items-center rounded-lg border overflow-hidden ${isDark ? 'bg-slate-800/50 border-slate-800' : 'bg-slate-100 border-slate-200'}`}>
+                      {(['straight', 'crossover', 'console'] as ('straight' | 'crossover' | 'console')[]).map((type) => (
+                        <Tooltip key={type}>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className={`h-8 px-3 flex items-center gap-1.5 text-xs font-bold
+                                ${cableInfo.cableType === type
+                                  ? isDark
+                                    ? 'bg-slate-700/80'
+                                    : 'bg-slate-200/80'
+                                  : ''
+                                }
+                                ${type === 'straight'
+                                  ? (cableInfo.cableType === type ? 'text-blue-400' : 'text-blue-500 hover:text-blue-400')
+                                  : type === 'crossover'
+                                    ? (cableInfo.cableType === type ? 'text-orange-400' : 'text-orange-500 hover:text-orange-400')
+                                    : (cableInfo.cableType === type ? 'text-cyan-400' : 'text-cyan-500 hover:text-cyan-400')
+                                }`}
+                              onClick={() => setCableInfo({ ...cableInfo, cableType: type })}
+                            >
+                              <div className={`w-2 h-2 rounded-full ${type === 'straight' ? 'bg-blue-500' : type === 'crossover' ? 'bg-orange-500' : 'bg-cyan-500'}`} />
+                              {type === 'straight' ? (language === 'tr' ? 'Düz' : 'Straight') : type === 'crossover' ? (language === 'tr' ? 'Çapraz' : 'Crossover') : (language === 'tr' ? 'Konsol' : 'Console')}
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {type === 'straight'
+                              ? (language === 'tr' ? 'Düz Kablo' : 'Straight Cable')
+                              : type === 'crossover'
+                                ? (language === 'tr' ? 'Çapraz Kablo' : 'Crossover Cable')
+                                : (language === 'tr' ? 'Konsol Kablosu' : 'Console Cable')}
+                          </TooltipContent>
+                        </Tooltip>
+                      ))}
+                    </div>
+
+                    <div className={`w-px h-4 ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`} />
+
+                    {/* Connect Button */}
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-cyan-500 hover:bg-cyan-500/10"
+                          onClick={() => {
+                            const event = new CustomEvent('trigger-topology-connect');
+                            window.dispatchEvent(event);
+                          }}
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 0 0 -5.656 0l-4 4a4 4 0 1 0 5.656 5.656l1.102-1.101m-.758-4.899a4 4 0 0 0 5.656 0l4-4a4 4 0 0 0 -5.656-5.656l-1.1 1.1" />
+                          </svg>
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>{language === 'tr' ? 'Cihazları Bagla' : 'Connect Devices'}</TooltipContent>
+                    </Tooltip>
+
+                    {/* Ping Button */}
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-amber-500 hover:bg-amber-500/10"
+                          onClick={() => {
+                            const event = new CustomEvent('toggle-ping-mode');
+                            window.dispatchEvent(event);
+                          }}
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="Turquoise" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                          </svg>
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>{language === 'tr' ? 'Ping' : 'Ping'}</TooltipContent>
+                    </Tooltip>
+
+                    {/* Add Note Button */}
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-slate-500 hover:bg-slate-500/10"
+                          onClick={() => {
+                            const event = new CustomEvent('add-note');
+                            window.dispatchEvent(event);
+                          }}
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="yellow" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 0 0 -2 2v11a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-5m-1.414-9.414a2 2 0 1 1 2.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>{language === 'tr' ? 'Not Ekle' : 'Add Note'}</TooltipContent>
+                    </Tooltip>
+
+                    {/* Refresh Network Button */}
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-emerald-500 hover:bg-emerald-500/10"
+                          onClick={handleRefreshNetwork}
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                          </svg>
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>{language === 'tr' ? 'Ağı Yenile (F5)' : 'Refresh Network (F5)'}</TooltipContent>
+                    </Tooltip>
+
+                    {/* Environment Settings Button */}
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-emerald-500 hover:bg-emerald-500/10"
+                          onClick={() => setIsEnvironmentPanelOpen(true)}
+                        >
+                          <Leaf className="w-4 h-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>{language === 'tr' ? 'Çevresel Ayarlar' : 'Environment Settings'}</TooltipContent>
+                    </Tooltip>
+
+                    <div className={`w-px h-4 ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`} />
+
+                    {/* Undo Button */}
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-slate-500 hover:bg-slate-500/10"
+                          onClick={handleUndo}
+                          disabled={!canUndo}
+                        >
+                          <Undo2 className={`w-4 h-4 ${!canUndo ? 'opacity-30' : ''}`} />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>{t.undo} (Ctrl+Z)</TooltipContent>
+                    </Tooltip>
+
+                    {/* Redo Button */}
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-slate-500 hover:bg-slate-500/10"
+                          onClick={handleRedo}
+                          disabled={!canRedo}
+                        >
+                          <Redo2 className={`w-4 h-4 ${!canRedo ? 'opacity-30' : ''}`} />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>{t.redo} (Ctrl+Y)</TooltipContent>
+                    </Tooltip>
+
+                    <div className={`w-px h-4 ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`} />
+
+                    {/* Reset View Button */}
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-slate-500 hover:bg-slate-500/10"
+                          onClick={() => {
+                            setZoom(1.0);
+                            setPan({ x: 0, y: 0 });
+                          }}
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                          </svg>
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>{language === 'tr' ? 'Görünümü Sıfırla' : 'Reset View'}</TooltipContent>
+                    </Tooltip>
+
+                    {/* Fullscreen Toggle Button */}
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-slate-500 hover:bg-slate-500/10"
+                          onClick={() => setIsTopologyFullscreen(!isTopologyFullscreen)}
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                          </svg>
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>{isTopologyFullscreen ? (language === 'tr' ? 'Küçült' : 'Exit') : (language === 'tr' ? 'Tam Ekran' : 'Full Screen')}</TooltipContent>
+                    </Tooltip>
+                  </div>
+                )}
                 {/* Network Topology fills remaining space */}
                 <div ref={topologyContainerRef} className="flex-1 w-full h-full min-h-0 print:hidden">
                   <NetworkTopology
@@ -3884,7 +4197,7 @@ ${state.bannerMOTD}
 
           {/* Footer - Save Status & Hints */}
           <footer className={`hidden md:block fixed bottom-0 inset-x-0 z-40 border-t backdrop-blur-xl transition-all ${isDark ? 'bg-slate-900/95 border-slate-800' : 'bg-white/95 border-slate-200'
-            } ${showProjectPicker || showOnboarding ? 'hidden' : ''}`}>
+            } ${showProjectPicker || showOnboarding || activeTab === 'terminal' ? 'hidden' : ''}`}>
             <div className="w-full px-5 py-2">
               <div className="flex items-center justify-between gap-4">
                 {/* Save Status */}
