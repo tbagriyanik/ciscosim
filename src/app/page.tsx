@@ -658,30 +658,65 @@ export default function Home() {
   const [showRouterDeviceId, setShowRouterDeviceId] = useState<string>('router-1');
   const [showTasksModal, setShowTasksModal] = useState(false);
   const [showTerminalModal, setShowTerminalModal] = useState(false);
-  const [modalPosition, setModalPosition] = useState({ x: 20, y: 20 });
-  const [modalSize, setModalSize] = useState({ width: 1200, height: 700 });
+  
+  // Tasks modal state
+  const [tasksModalPosition, setTasksModalPosition] = useState({ x: 20, y: 20 });
+  const [tasksModalSize, setTasksModalSize] = useState({ width: 1200, height: 700 });
+  
+  // CLI modal state
+  const [cliModalPosition, setCliModalPosition] = useState({ x: 20, y: 20 });
+  const [cliModalSize, setCliModalSize] = useState({ width: 1200, height: 700 });
 
-  // Load modal position and size from localStorage after hydration
+  // Load tasks modal position and size from localStorage after hydration
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedPosition = localStorage.getItem('tasks-modal-position');
+      const savedSize = localStorage.getItem('tasks-modal-size');
+      
+      if (savedSize) {
+        setTasksModalSize(JSON.parse(savedSize));
+      } else {
+        // Safe initial size: fit within screen width
+        const width = Math.min(window.innerWidth - 40, 1200);
+        const height = Math.min(window.innerHeight - 40, 700);
+        setTasksModalSize({ width, height });
+        
+        // Default position: centered on screen
+        setTasksModalPosition({
+          x: (window.innerWidth - width) / 2,
+          y: (window.innerHeight - height) / 2
+        });
+      }
+      
+      if (savedPosition) {
+        setTasksModalPosition(JSON.parse(savedPosition));
+      }
+    }
+  }, []);
+
+  // Load CLI modal position and size from localStorage after hydration
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const savedPosition = localStorage.getItem('cli-modal-position');
       const savedSize = localStorage.getItem('cli-modal-size');
       
-      if (savedPosition) {
-        setModalPosition(JSON.parse(savedPosition));
-      } else {
-        // Default position: top-left with padding
-        setModalPosition({ x: 20, y: 20 });
-      }
-      
       if (savedSize) {
-        setModalSize(JSON.parse(savedSize));
+        setCliModalSize(JSON.parse(savedSize));
       } else {
         // Safe initial size: fit within screen width
-        setModalSize({
-          width: Math.min(window.innerWidth - 40, 1200),
-          height: Math.min(window.innerHeight - 40, 700)
+        const width = Math.min(window.innerWidth - 40, 1200);
+        const height = Math.min(window.innerHeight - 40, 700);
+        setCliModalSize({ width, height });
+        
+        // Default position: centered on screen
+        setCliModalPosition({
+          x: (window.innerWidth - width) / 2,
+          y: (window.innerHeight - height) / 2
         });
+      }
+      
+      if (savedPosition) {
+        setCliModalPosition(JSON.parse(savedPosition));
       }
     }
   }, []);
@@ -689,69 +724,99 @@ export default function Home() {
   const [isResizing, setIsResizing] = useState(false);
   const [resizeDirection, setResizeDirection] = useState<'n' | 's' | 'e' | 'w' | 'ne' | 'nw' | 'se' | 'sw' | null>(null);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [activeModal, setActiveModal] = useState<'tasks' | 'cli' | null>(null);
   const [deviceSearchQuery, setDeviceSearchQuery] = useState('');
 
   // Handle modal drag
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    if ((e.target as HTMLElement).closest('[data-no-drag]')) return;
+  const handleMouseDown = useCallback((e: React.MouseEvent, modalType: 'tasks' | 'cli') => {
+    // Only allow drag from header
+    const header = (e.target as HTMLElement).closest('[data-modal-header]');
+    if (!header) return;
+    
+    // Don't drag if clicking on interactive elements
+    if ((e.target as HTMLElement).closest('button, input, select, textarea, a')) return;
+    
+    e.preventDefault();
+    e.stopPropagation();
+    setActiveModal(modalType);
     setIsDragging(true);
-    setDragStart({ x: e.clientX - modalPosition.x, y: e.clientY - modalPosition.y });
-  }, [modalPosition]);
+    
+    const position = modalType === 'tasks' ? tasksModalPosition : cliModalPosition;
+    setDragStart({ x: e.clientX - position.x, y: e.clientY - position.y });
+  }, [tasksModalPosition, cliModalPosition]);
 
   // Handle modal resize
-  const handleResizeStart = useCallback((e: React.MouseEvent, direction: 'n' | 's' | 'e' | 'w' | 'ne' | 'nw' | 'se' | 'sw') => {
+  const handleResizeStart = useCallback((e: React.MouseEvent, direction: 'n' | 's' | 'e' | 'w' | 'ne' | 'nw' | 'se' | 'sw', modalType: 'tasks' | 'cli') => {
+    e.preventDefault();
     e.stopPropagation();
+    setActiveModal(modalType);
     setIsResizing(true);
     setResizeDirection(direction);
     setDragStart({ x: e.clientX, y: e.clientY });
   }, []);
 
   useEffect(() => {
+    let animationFrameId: number | null = null;
+
     const handleMouseMove = (e: MouseEvent) => {
-      if (isDragging) {
-        setModalPosition({
-          x: e.clientX - dragStart.x,
-          y: e.clientY - dragStart.y,
+      if (isDragging && activeModal) {
+        if (animationFrameId) cancelAnimationFrame(animationFrameId);
+        animationFrameId = requestAnimationFrame(() => {
+          const position = activeModal === 'tasks' ? tasksModalPosition : cliModalPosition;
+          const setPosition = activeModal === 'tasks' ? setTasksModalPosition : setCliModalPosition;
+          setPosition({
+            x: e.clientX - dragStart.x,
+            y: e.clientY - dragStart.y,
+          });
         });
       }
-      if (isResizing && resizeDirection) {
-        const dx = e.clientX - dragStart.x;
-        const dy = e.clientY - dragStart.y;
-        const newSize = { ...modalSize };
-        const newPos = { ...modalPosition };
+      if (isResizing && resizeDirection && activeModal) {
+        if (animationFrameId) cancelAnimationFrame(animationFrameId);
+        animationFrameId = requestAnimationFrame(() => {
+          const dx = e.clientX - dragStart.x;
+          const dy = e.clientY - dragStart.y;
+          const size = activeModal === 'tasks' ? tasksModalSize : cliModalSize;
+          const position = activeModal === 'tasks' ? tasksModalPosition : cliModalPosition;
+          const setSize = activeModal === 'tasks' ? setTasksModalSize : setCliModalSize;
+          const setPosition = activeModal === 'tasks' ? setTasksModalPosition : setCliModalPosition;
+          const newSize = { ...size };
+          const newPos = { ...position };
 
-        // Handle each resize direction
-        if (resizeDirection.includes('e')) {
-          newSize.width = Math.max(400, modalSize.width + dx);
-        }
-        if (resizeDirection.includes('w')) {
-          const newWidth = Math.max(400, modalSize.width - dx);
-          if (newWidth !== modalSize.width) {
-            newPos.x = modalPosition.x + (modalSize.width - newWidth);
-            newSize.width = newWidth;
+          // Handle each resize direction
+          if (resizeDirection.includes('e')) {
+            newSize.width = Math.max(400, size.width + dx);
           }
-        }
-        if (resizeDirection.includes('s')) {
-          newSize.height = Math.max(300, modalSize.height + dy);
-        }
-        if (resizeDirection.includes('n')) {
-          const newHeight = Math.max(300, modalSize.height - dy);
-          if (newHeight !== modalSize.height) {
-            newPos.y = modalPosition.y + (modalSize.height - newHeight);
-            newSize.height = newHeight;
+          if (resizeDirection.includes('w')) {
+            const newWidth = Math.max(400, size.width - dx);
+            if (newWidth !== size.width) {
+              newPos.x = position.x + (size.width - newWidth);
+              newSize.width = newWidth;
+            }
           }
-        }
+          if (resizeDirection.includes('s')) {
+            newSize.height = Math.max(300, size.height + dy);
+          }
+          if (resizeDirection.includes('n')) {
+            const newHeight = Math.max(300, size.height - dy);
+            if (newHeight !== size.height) {
+              newPos.y = position.y + (size.height - newHeight);
+              newSize.height = newHeight;
+            }
+          }
 
-        setModalSize(newSize);
-        setModalPosition(newPos);
-        setDragStart({ x: e.clientX, y: e.clientY });
+          setSize(newSize);
+          setPosition(newPos);
+          setDragStart({ x: e.clientX, y: e.clientY });
+        });
       }
     };
 
     const handleMouseUp = () => {
+      if (animationFrameId) cancelAnimationFrame(animationFrameId);
       setIsDragging(false);
       setIsResizing(false);
       setResizeDirection(null);
+      setActiveModal(null);
     };
 
     if (isDragging || isResizing) {
@@ -760,18 +825,27 @@ export default function Home() {
     }
 
     return () => {
+      if (animationFrameId) cancelAnimationFrame(animationFrameId);
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isDragging, isResizing, dragStart, modalSize, modalPosition, resizeDirection]);
+  }, [isDragging, isResizing, dragStart, tasksModalSize, tasksModalPosition, cliModalSize, cliModalPosition, resizeDirection, activeModal]);
 
-  // Save modal position and size to localStorage
+  // Save tasks modal position and size to localStorage
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      localStorage.setItem('cli-modal-position', JSON.stringify(modalPosition));
-      localStorage.setItem('cli-modal-size', JSON.stringify(modalSize));
+      localStorage.setItem('tasks-modal-position', JSON.stringify(tasksModalPosition));
+      localStorage.setItem('tasks-modal-size', JSON.stringify(tasksModalSize));
     }
-  }, [modalPosition, modalSize]);
+  }, [tasksModalPosition, tasksModalSize]);
+
+  // Save CLI modal position and size to localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('cli-modal-position', JSON.stringify(cliModalPosition));
+      localStorage.setItem('cli-modal-size', JSON.stringify(cliModalSize));
+    }
+  }, [cliModalPosition, cliModalSize]);
   const [focusDeviceId, setFocusDeviceId] = useState<string | null>(null);
 
   // Get current state helper
@@ -1580,8 +1654,8 @@ ${state.bannerMOTD}
     } else if (device === 'router' || device === 'switchL2' || device === 'switchL3') {
       // Switch or Router - set as CLI device and open CLI modal
       const deviceObj = topologyDevices?.find(d => d.id === deviceId);
-      getOrCreateDeviceState(deviceId, device, deviceObj?.name, deviceObj?.macAddress, deviceObj?.switchModel);
-      getOrCreateDeviceOutputs(deviceId);
+      const deviceState = getOrCreateDeviceState(deviceId, device, deviceObj?.name, deviceObj?.macAddress, deviceObj?.switchModel);
+      getOrCreateDeviceOutputs(deviceId, deviceState);
 
       setActiveDeviceId(deviceId);
       setActiveDeviceType(device);
@@ -3745,16 +3819,19 @@ ${state.bannerMOTD}
               className={`${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'} p-0 overflow-hidden flex flex-col`}
               style={{
                 position: 'fixed',
-                left: modalPosition.x,
-                top: modalPosition.y,
-                width: `${modalSize.width}px`,
-                height: `${modalSize.height}px`,
+                left: tasksModalPosition.x,
+                top: tasksModalPosition.y,
+                width: `${tasksModalSize.width}px`,
+                height: `${tasksModalSize.height}px`,
                 maxWidth: 'none',
                 maxHeight: 'none',
               }}
-              onMouseDown={handleMouseDown}
             >
-              <DialogHeader className="p-4 border-b cursor-move select-none">
+              <DialogHeader 
+                className="p-4 border-b cursor-move select-none"
+                data-modal-header
+                onMouseDown={(e) => handleMouseDown(e, 'tasks')}
+              >
                 <DialogTitle className={isDark ? 'text-white' : 'text-slate-900'}>
                   {language === 'tr' ? 'Görevler' : 'Tasks'}
                 </DialogTitle>
@@ -3812,7 +3889,7 @@ ${state.bannerMOTD}
               </div>
               <div 
                 className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize bg-slate-400 hover:bg-slate-600"
-                onMouseDown={(e) => handleResizeStart(e, 'se')}
+                onMouseDown={(e) => handleResizeStart(e, 'se', 'tasks')}
               />
             </DialogContent>
           </Dialog>
@@ -3823,17 +3900,20 @@ ${state.bannerMOTD}
               className={`${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'} p-0 overflow-hidden flex flex-col`}
               style={{
                 position: 'fixed',
-                left: typeof window !== 'undefined' && window.innerWidth >= 768 ? modalPosition.x : 0,
-                top: typeof window !== 'undefined' && window.innerWidth >= 768 ? modalPosition.y : 0,
-                width: typeof window !== 'undefined' && window.innerWidth >= 768 ? `${modalSize.width}px` : '100vw',
-                height: typeof window !== 'undefined' && window.innerWidth >= 768 ? `${modalSize.height}px` : '100vh',
+                left: typeof window !== 'undefined' && window.innerWidth >= 768 ? cliModalPosition.x : 0,
+                top: typeof window !== 'undefined' && window.innerWidth >= 768 ? cliModalPosition.y : 0,
+                width: typeof window !== 'undefined' && window.innerWidth >= 768 ? `${cliModalSize.width}px` : '100vw',
+                height: typeof window !== 'undefined' && window.innerWidth >= 768 ? `${cliModalSize.height}px` : '100vh',
                 maxWidth: 'none',
                 maxHeight: 'none',
                 borderRadius: 0,
               }}
-              onMouseDown={handleMouseDown}
             >
-              <DialogHeader className="p-4 border-b cursor-move select-none">
+              <DialogHeader 
+                className="p-4 border-b cursor-move select-none"
+                data-modal-header
+                onMouseDown={(e) => handleMouseDown(e, 'cli')}
+              >
                 <DialogTitle className={isDark ? 'text-white' : 'text-slate-900'}>
                   {language === 'tr' ? 'CLI Terminal' : 'CLI Terminal'}
                 </DialogTitle>
@@ -3888,35 +3968,35 @@ ${state.bannerMOTD}
               <div className="hidden md:block">
                 <div 
                   className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-2 cursor-n-resize hover:bg-slate-400/50"
-                  onMouseDown={(e) => handleResizeStart(e, 'n')}
+                  onMouseDown={(e) => handleResizeStart(e, 'n', 'cli')}
                 />
                 <div 
                   className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-2 cursor-s-resize hover:bg-slate-400/50"
-                  onMouseDown={(e) => handleResizeStart(e, 's')}
+                  onMouseDown={(e) => handleResizeStart(e, 's', 'cli')}
                 />
                 <div 
                   className="absolute left-0 top-1/2 -translate-y-1/2 w-2 h-8 cursor-w-resize hover:bg-slate-400/50"
-                  onMouseDown={(e) => handleResizeStart(e, 'w')}
+                  onMouseDown={(e) => handleResizeStart(e, 'w', 'cli')}
                 />
                 <div 
                   className="absolute right-0 top-1/2 -translate-y-1/2 w-2 h-8 cursor-e-resize hover:bg-slate-400/50"
-                  onMouseDown={(e) => handleResizeStart(e, 'e')}
+                  onMouseDown={(e) => handleResizeStart(e, 'e', 'cli')}
                 />
                 <div 
                   className="absolute top-0 left-0 w-4 h-4 cursor-nw-resize hover:bg-slate-400/50"
-                  onMouseDown={(e) => handleResizeStart(e, 'nw')}
+                  onMouseDown={(e) => handleResizeStart(e, 'nw', 'cli')}
                 />
                 <div 
                   className="absolute top-0 right-0 w-4 h-4 cursor-ne-resize hover:bg-slate-400/50"
-                  onMouseDown={(e) => handleResizeStart(e, 'ne')}
+                  onMouseDown={(e) => handleResizeStart(e, 'ne', 'cli')}
                 />
                 <div 
                   className="absolute bottom-0 left-0 w-4 h-4 cursor-sw-resize hover:bg-slate-400/50"
-                  onMouseDown={(e) => handleResizeStart(e, 'sw')}
+                  onMouseDown={(e) => handleResizeStart(e, 'sw', 'cli')}
                 />
                 <div 
                   className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize bg-slate-400 hover:bg-slate-600 flex items-center justify-center"
-                  onMouseDown={(e) => handleResizeStart(e, 'se')}
+                  onMouseDown={(e) => handleResizeStart(e, 'se', 'cli')}
                 >
                   <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4h16v16H4z" />
@@ -4181,9 +4261,9 @@ ${state.bannerMOTD}
                           size="icon"
                           className="h-8 w-8 text-slate-500 hover:bg-slate-500/10"
                           onClick={handleUndo}
-                          disabled={!canUndo}
+                          disabled={canUndo === false}
                         >
-                          <Undo2 className={`w-4 h-4 ${!canUndo ? 'opacity-30' : ''}`} />
+                          <Undo2 className={`w-4 h-4 ${canUndo === false ? 'opacity-30' : ''}`} />
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>{t.undo} (Ctrl+Z)</TooltipContent>
@@ -4197,9 +4277,9 @@ ${state.bannerMOTD}
                           size="icon"
                           className="h-8 w-8 text-slate-500 hover:bg-slate-500/10"
                           onClick={handleRedo}
-                          disabled={!canRedo}
+                          disabled={canRedo === false}
                         >
-                          <Redo2 className={`w-4 h-4 ${!canRedo ? 'opacity-30' : ''}`} />
+                          <Redo2 className={`w-4 h-4 ${canRedo === false ? 'opacity-30' : ''}`} />
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>{t.redo} (Ctrl+Y)</TooltipContent>
