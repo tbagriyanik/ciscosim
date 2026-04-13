@@ -51,7 +51,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
-import { ChevronDown, Menu, Plus, Save, FolderOpen, Languages, Sun, Moon, Network, ShieldCheck, Database, Info, File, Layers, Terminal as TerminalIcon, Undo2, Redo2, Link2, Pencil, StickyNote, Sparkles, Cloud, Search, Monitor, X, Compass, Leaf } from "lucide-react";
+import { ChevronDown, Menu, Plus, Save, FolderOpen, Languages, Sun, Moon, Network, ShieldCheck, Database, Info, File, Layers, Terminal as TerminalIcon, Undo2, Redo2, Link2, Pencil, StickyNote, Sparkles, Cloud, Search, Monitor, X, Compass, Leaf, Server } from "lucide-react";
 
 import { Button } from '@/components/ui/button';
 import {
@@ -4065,6 +4065,134 @@ ${state.bannerMOTD}
                       </div>
                     );
                   })()}
+
+                  {/* Router Info Popover - Bottom Right Mini Panel */}
+                  {activeDeviceId && activeDeviceId.startsWith('router-') && topologyDevices && (() => {
+                    const router = topologyDevices.find(d => d.id === activeDeviceId);
+                    if (!router) return null;
+                    const routerState = deviceStates.get(router.id);
+                    
+                    // Get port information
+                    const ports = routerState?.ports ? Object.values(routerState.ports) : [];
+                    const connectedPorts = ports.filter((p: any) => !p.shutdown && p.status === 'connected').length;
+                    const totalPorts = ports.length;
+                    
+                    // Get DHCP pools
+                    const dhcpPools = routerState?.dhcpPools ? Object.keys(routerState.dhcpPools).length : 0;
+                    
+                    // Get WiFi status
+                    const wifiEnabled = routerState?.ports?.['wlan0']?.wifi?.mode === 'ap' || router?.wifi?.enabled;
+                    const wifiConfig = routerState?.ports?.['wlan0']?.wifi || router?.wifi;
+                    
+                    // Get IP addresses
+                    const ipAddresses = ports
+                      .filter((p: any) => p.ipAddress && !p.shutdown)
+                      .map((p: any) => `${p.id}: ${p.ipAddress}${p.subnetMask ? `/${p.subnetMask}` : ''}`)
+                      .slice(0, 3);
+                    
+                    return (
+                      <div className="hidden md:block fixed bottom-24 right-4 z-50 animate-scale-in">
+                        <div className={`rounded-2xl border shadow-2xl backdrop-blur-xl min-w-[200px] max-w-[280px] liquid-glass-strong ${isDark ? 'border-slate-700/50 text-white shadow-cyan-500/10' : 'border-slate-200/50 text-slate-900 shadow-slate-200/50'}`}>
+                          <div className={`flex items-center justify-between px-2 py-1.5 border-b ${isDark ? 'border-slate-700/50' : 'border-slate-200/50'}`}>
+                            <div className="flex items-center gap-1.5">
+                              <Server className="w-3.5 h-3.5 text-emerald-500" />
+                              <span className="text-[10px] font-black tracking-wider uppercase opacity-30">{router.name || router.id}</span>
+                            </div>
+                            <button
+                              onClick={() => {
+                                setSelectedDevice(null);
+                                setActiveDeviceId('');
+                              }}
+                              className={`p-0.5 rounded hover:bg-slate-500/20 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                          <div className="p-2 space-y-1 text-[10px]">
+                            <div className="flex justify-between items-center">
+                              <span className="opacity-50">{language === 'tr' ? 'Portlar' : 'Ports'}</span>
+                              <span className="font-mono">
+                                <span className="text-green-500">{connectedPorts}</span>
+                                <span className="opacity-50">/{totalPorts}</span>
+                                <span className="ml-1 opacity-50">{language === 'tr' ? 'bağlı' : 'connected'}</span>
+                              </span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className="opacity-50">{language === 'tr' ? 'Yönlendirme' : 'Routing'}</span>
+                              <span className={`text-[8px] font-bold tracking-wider ${routerState?.ipRouting ? 'text-green-500' : 'text-slate-500'}`}>
+                                {routerState?.ipRouting ? (language === 'tr' ? 'Aktif' : 'Enabled') : (language === 'tr' ? 'Pasif' : 'Disabled')}
+                              </span>
+                            </div>
+                            {wifiEnabled && (
+                              <div className="flex justify-between items-center">
+                                <span className="opacity-50 flex items-center gap-1">
+                                  <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                                    <path d="M5 12.55a11 11 0 0 1 14.08 0" />
+                                    <path d="M1.42 9a16 16 0 0 1 21.16 0" />
+                                    <path d="M8.53 16.11a6 6 0 0 1 6.95 0" />
+                                    <line x1="12" y1="20" x2="12.01" y2="20" />
+                                  </svg>
+                                  WiFi
+                                </span>
+                                <span className="text-cyan-500">{language === 'tr' ? 'Aktif' : 'Active'}</span>
+                              </div>
+                            )}
+                            {wifiEnabled && wifiConfig?.ssid && (
+                              <div className="pt-1 border-t border-slate-500/20 space-y-1">
+                                <div className="flex gap-2 text-[9px]">
+                                  <span className="opacity-50">SSID:</span>
+                                  <span className="font-mono">{wifiConfig.ssid}</span>
+                                </div>
+                                {wifiConfig.channel && (
+                                  <div className="flex gap-2 text-[9px]">
+                                    <span className="opacity-50">{language === 'tr' ? 'Kanal' : 'Ch'}:</span>
+                                    <span className="font-mono">{wifiConfig.channel}</span>
+                                    {wifiConfig.security && (
+                                      <>
+                                        <span className="opacity-50">|</span>
+                                        <span className="font-mono uppercase">{wifiConfig.security}</span>
+                                      </>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                            {dhcpPools > 0 && (
+                              <div className="flex justify-between items-center">
+                                <span className="opacity-50">DHCP</span>
+                                <span className="font-mono">
+                                  <span className="text-orange-500">{dhcpPools}</span>
+                                  <span className="ml-1 opacity-50">{language === 'tr' ? 'havuz' : 'pool(s)'}</span>
+                                </span>
+                              </div>
+                            )}
+                            {ipAddresses.length > 0 && (
+                              <div className="pt-1 border-t border-slate-500/20">
+                                <div className="text-[9px] mb-1 opacity-50">
+                                  {language === 'tr' ? 'IP Adresleri' : 'IP Addresses'}:
+                                </div>
+                                {ipAddresses.map((ip, idx) => (
+                                  <div key={idx} className="font-mono text-[9px] text-blue-500">
+                                    {ip}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                          <div className={`px-2 py-1.5 border-t ${isDark ? 'border-slate-700/50' : 'border-slate-200/50'}`}>
+                            <button
+                              onClick={() => {
+                                handleDeviceDoubleClick(router.type, router.id);
+                              }}
+                              className={`w-full py-1 rounded-lg text-[10px] font-bold transition-colors ${isDark ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : 'bg-green-600 hover:bg-green-700 text-white'}`}
+                            >
+                              {language === 'tr' ? 'CLI Aç' : 'Open CLI'}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
 
@@ -4090,17 +4218,6 @@ ${state.bannerMOTD}
                   onDeleteDevice={handleDeviceDelete}
                 />
               </div>
-
-              {/* Router Panel */}
-              <RouterPanel
-                key={`router-panel-${showRouterDeviceId}`}
-                deviceId={showRouterDeviceId}
-                cableInfo={cableInfo}
-                isVisible={showRouterPanel}
-                onClose={() => setShowRouterPanel(false)}
-                topologyDevices={topologyDevices || undefined}
-                deviceStates={deviceStates}
-              />
 
               {/* Terminal Sekmesi - Always mounted, hidden via CSS */}
               <div className={`flex-1 min-h-0 flex flex-col gap-4 overflow-y-auto custom-scrollbar animate-fade-in ${activeTab === 'terminal' ? 'flex' : 'hidden'}`}>
