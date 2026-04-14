@@ -748,6 +748,8 @@ export const exampleProjects = (language: 'tr' | 'en'): ExampleProject[] => {
   };
   routerDhcpR1.ports['gi0/1'] = {
     ...routerDhcpR1.ports['gi0/1'],
+    ipAddress: '192.168.10.1',
+    subnetMask: '255.255.255.0',
     status: 'connected',
     shutdown: false
   };
@@ -1288,7 +1290,10 @@ export const exampleProjects = (language: 'tr' | 'en'): ExampleProject[] => {
   };
   routerSshR1.security = {
     ...routerSshR1.security,
-    users: [{ username: 'user', password: '1234', privilege: 15 }],
+    users: [
+      { username: 'admin', password: '1234', privilege: 15 },
+      { username: 'user', password: '1234', privilege: 15 }
+    ],
     enableSecret: '123',
     vtyLines: {
       ...routerSshR1.security.vtyLines,
@@ -1302,9 +1307,11 @@ export const exampleProjects = (language: 'tr' | 'en'): ExampleProject[] => {
     'hostname R1',
     '!',
     'ip domain-name lab.local',
+    'crypto key generate rsa modulus 1024',
     'ip ssh version 2',
     '!',
-    'username admin privilege 15 secret 123',
+    'username admin privilege 15 secret 1234',
+    'username user privilege 15 secret 1234',
     'enable secret 123',
     '!',
     'interface GigabitEthernet0/0',

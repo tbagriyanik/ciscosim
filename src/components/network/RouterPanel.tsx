@@ -8,13 +8,13 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { 
-  X, 
-  Wifi, 
-  WifiOff, 
-  Network, 
-  Settings, 
-  Server, 
+import {
+  X,
+  Wifi,
+  WifiOff,
+  Network,
+  Settings,
+  Server,
   ShieldCheck,
   Activity,
   Globe,
@@ -61,13 +61,13 @@ export function RouterPanel({
   const [activeTab, setActiveTab] = useState<'overview' | 'ports' | 'wifi' | 'dhcp'>('overview');
 
   // Get router device from topology
-  const routerDevice = useMemo(() => 
+  const routerDevice = useMemo(() =>
     topologyDevices.find(d => d.id === deviceId && d.type === 'router'),
     [deviceId, topologyDevices]
   );
 
   // Get router state from deviceStates
-  const routerState = useMemo(() => 
+  const routerState = useMemo(() =>
     deviceStates?.get(deviceId),
     [deviceId, deviceStates]
   );
@@ -107,7 +107,7 @@ export function RouterPanel({
   // Get interfaces with IP addresses
   const interfacesWithIP = useMemo(() => {
     const result: Array<{ id: string; ip: string; subnet: string; status: string }> = [];
-    
+
     if (routerState?.ports) {
       Object.entries(routerState.ports).forEach(([id, port]) => {
         if (port.ipAddress && !port.shutdown) {
@@ -120,7 +120,7 @@ export function RouterPanel({
         }
       });
     }
-    
+
     return result;
   }, [routerState]);
 
@@ -143,7 +143,7 @@ export function RouterPanel({
     // Handle both Port (from routerState) and CanvasPort (from topology)
     const isShutdown = port.shutdown ?? false;
     const status = port.status ?? 'notconnect';
-    
+
     if (isShutdown) return 'bg-gray-500';
     if (status === 'blocked') return 'bg-orange-500';
     if (status === 'connected') return 'bg-green-500';
@@ -185,8 +185,8 @@ export function RouterPanel({
             variant="ghost"
             className={cn(
               "flex-1 rounded-none border-b-2",
-              activeTab === 'overview' 
-                ? "border-purple-500 text-purple-600 dark:text-purple-400" 
+              activeTab === 'overview'
+                ? "border-purple-500 text-purple-600 dark:text-purple-400"
                 : "border-transparent text-muted-foreground"
             )}
             onClick={() => setActiveTab('overview')}
@@ -198,8 +198,8 @@ export function RouterPanel({
             variant="ghost"
             className={cn(
               "flex-1 rounded-none border-b-2",
-              activeTab === 'ports' 
-                ? "border-purple-500 text-purple-600 dark:text-purple-400" 
+              activeTab === 'ports'
+                ? "border-purple-500 text-purple-600 dark:text-purple-400"
                 : "border-transparent text-muted-foreground"
             )}
             onClick={() => setActiveTab('ports')}
@@ -211,8 +211,8 @@ export function RouterPanel({
             variant="ghost"
             className={cn(
               "flex-1 rounded-none border-b-2",
-              activeTab === 'wifi' 
-                ? "border-purple-500 text-purple-600 dark:text-purple-400" 
+              activeTab === 'wifi'
+                ? "border-purple-500 text-purple-600 dark:text-purple-400"
                 : "border-transparent text-muted-foreground"
             )}
             onClick={() => setActiveTab('wifi')}
@@ -224,8 +224,8 @@ export function RouterPanel({
             variant="ghost"
             className={cn(
               "flex-1 rounded-none border-b-2",
-              activeTab === 'dhcp' 
-                ? "border-purple-500 text-purple-600 dark:text-purple-400" 
+              activeTab === 'dhcp'
+                ? "border-purple-500 text-purple-600 dark:text-purple-400"
                 : "border-transparent text-muted-foreground"
             )}
             onClick={() => setActiveTab('dhcp')}
@@ -329,13 +329,13 @@ export function RouterPanel({
                   <div className="grid grid-cols-3 gap-3 text-sm">
                     <div className="text-center p-3 rounded bg-green-100 dark:bg-green-900/30">
                       <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-                        {ports.filter(p => !p.shutdown && p.status === 'connected').length}
+                        {ports.filter(p => p.id !== 'wlan0' && !p.shutdown && p.status === 'connected').length}
                       </p>
                       <p className="text-muted-foreground">{language === 'tr' ? 'Bağlı' : 'Connected'}</p>
                     </div>
                     <div className="text-center p-3 rounded bg-gray-100 dark:bg-gray-900/30">
                       <p className="text-2xl font-bold text-gray-600 dark:text-gray-400">
-                        {ports.filter(p => !p.shutdown && p.status === 'notconnect').length}
+                        {ports.filter(p => p.id !== 'wlan0' && !p.shutdown && p.status === 'notconnect').length}
                       </p>
                       <p className="text-muted-foreground">{language === 'tr' ? 'Bağlı Değil' : 'Not Connected'}</p>
                     </div>
@@ -423,7 +423,7 @@ export function RouterPanel({
                           }
                         </span>
                       </div>
-                      
+
                       <div className="grid grid-cols-2 gap-3 text-sm">
                         <div>
                           <span className="text-muted-foreground">{language === 'tr' ? 'SSID:' : 'SSID:'}</span>
