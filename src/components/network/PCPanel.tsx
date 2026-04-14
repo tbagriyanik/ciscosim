@@ -1292,23 +1292,24 @@ export function PCPanel({
     return;
   }
 
-  // Handle special IoT Device URL
-  if (rawTarget?.startsWith('iot://iot-device/')) {
-    const targetDeviceId = rawTarget.split('iot://iot-device/')[1];
-    const targetDevice = topologyDevices.find(d => d.id === targetDeviceId);
-    if (targetDevice && targetDevice.type === 'iot') {
-      const isActive = targetDevice.iot?.collaborationEnabled ?? true;
-      const iotDevicePage = generateIotDevicePageContent(targetDevice.id, targetDevice.name || targetDevice.id, language, isActive);
-      setHttpAppContent(iotDevicePage);
-      setHttpAppTitle(`${targetDevice.name || targetDevice.id} ${language === 'tr' ? 'Yönetimi' : 'Management'}`);
-      setHttpAppDeviceId(targetDevice.id);
-      addLocalOutput('success', language === 'tr' ? `IoT cihazı '${targetDevice.name}' yönetim sayfası açıldı.` : `IoT device '${targetDevice.name}' management page opened.`);
-      return;
-    } else {
-      addLocalOutput('error', language === 'tr' ? 'Geçersiz IoT cihazı.' : 'Invalid IoT device.');
-      return;
+    // Handle special IoT Device URL
+    if (rawTarget?.startsWith('iot://iot-device/')) {
+      const targetDeviceId = rawTarget.split('iot://iot-device/')[1];
+      const targetDevice = topologyDevices.find(d => d.id === targetDeviceId);
+      if (targetDevice && targetDevice.type === 'iot') {
+        const isActive = targetDevice.iot?.collaborationEnabled ?? true;
+        const isPoweredOff = targetDevice.status === 'offline';
+        const iotDevicePage = generateIotDevicePageContent(targetDevice.id, targetDevice.name || targetDevice.id, language, isActive, isPoweredOff);
+        setHttpAppContent(iotDevicePage);
+        setHttpAppTitle(`${targetDevice.name || targetDevice.id} ${language === 'tr' ? 'Yönetimi' : 'Management'}`);
+        setHttpAppDeviceId(targetDevice.id);
+        addLocalOutput('success', language === 'tr' ? `IoT cihazı '${targetDevice.name}' yönetim sayfası açıldı.` : `IoT device '${targetDevice.name}' management page opened.`);
+        return;
+      } else {
+        addLocalOutput('error', language === 'tr' ? 'Geçersiz IoT cihazı.' : 'Invalid IoT device.');
+        return;
+      }
     }
-  }
 
     // Browser-style inputs can include protocol/path/query. We only resolve host/IP.
     try {
@@ -1643,6 +1644,7 @@ export function PCPanel({
 
       // Handle back to IoT list message
       if (data.type === 'back-to-iot-list') {
+        setHttpAppDeviceId(null);
         openHttpTarget('http://iot-panel');
       }
 
@@ -1719,12 +1721,13 @@ export function PCPanel({
   useEffect(() => {
     const handlePointerMove = (event: PointerEvent) => {
       if (dragStateRef.current) {
-        const dx = event.clientX - dragStateRef.current.startX;
-        const dy = event.clientY - dragStateRef.current.startY;
+        const dragState = dragStateRef.current;
+        const dx = event.clientX - dragState.startX;
+        const dy = event.clientY - dragState.startY;
         setBrowserWindow((prev) => ({
           ...prev,
-          x: Math.max(0, dragStateRef.current!.originX + dx),
-          y: Math.max(0, dragStateRef.current!.originY + dy),
+          x: Math.max(0, dragState.originX + dx),
+          y: Math.max(0, dragState.originY + dy),
         }));
       } else if (resizeStateRef.current) {
         const state = resizeStateRef.current;

@@ -13,10 +13,6 @@ export const generateIotWebPanelContent = (
   // Filter IoT devices based on router if routerId is provided
   const filteredIotDevices = routerId
     ? iotDevices.filter(device => {
-        // Check if device is connected via WiFi to this router's SSID
-        if (routerSsid && device.wifi?.ssid === routerSsid && device.wifi?.enabled) {
-          return true;
-        }
         // Check if device is connected via wired connection to this router
         if (topologyConnections) {
           const isWiredConnected = topologyConnections.some(c =>
@@ -27,20 +23,39 @@ export const generateIotWebPanelContent = (
             return true;
           }
         }
+        // Check if device is connected via WiFi to this router's SSID
+        if (routerSsid && device.wifi?.ssid === routerSsid && device.wifi?.enabled) {
+          return true;
+        }
         // If no router-specific connection found, don't include this device
         return false;
       })
     : iotDevices;
 
   const iotDeviceListHtml = filteredIotDevices.length > 0
-    ? filteredIotDevices.map(device => `
-      <div class="iot-device-card">
-        <span class="device-name">${device.name || device.id}</span>
+    ? filteredIotDevices.map(device => {
+        const isPoweredOff = device.status === 'offline';
+        const isWifiDisabled = !device.wifi?.enabled;
+        const cardClass = isPoweredOff ? 'powered-off' : isWifiDisabled ? 'wifi-disabled' : '';
+        const statusText = isPoweredOff
+          ? (isTurkish ? 'Kapalı' : 'Offline')
+          : isWifiDisabled
+            ? (isTurkish ? 'WiFi kapalı' : 'WiFi disabled')
+            : (isTurkish ? 'Çevrimiçi' : 'Online');
+        const statusClass = isPoweredOff ? 'offline' : isWifiDisabled ? 'disabled' : '';
+
+        return `
+      <div class="iot-device-card ${cardClass}">
+        <div class="device-info">
+          <span class="device-name">${device.name || device.id}</span>
+          <div class="device-status ${statusClass}">${statusText}</div>
+        </div>
         <button onclick="window.parent.postMessage({ type: 'open-iot-device', deviceId: '${device.id}' }, '*')" class="connect-button">
           ${isTurkish ? 'Bağlan' : 'Connect'}
         </button>
       </div>
-    `).join('')
+    `;
+      }).join('')
     : `<p class="no-devices">${isTurkish ? 'Hiç IoT cihazı bulunamadı.' : 'No IoT devices found.'}</p>`;
 
   return `
@@ -131,6 +146,40 @@ export const generateIotWebPanelContent = (
             padding: 15px 20px;
             margin-bottom: 15px;
             transition: all 0.2s ease-in-out;
+          }
+          .iot-device-card.powered-off {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+            opacity: 0.7;
+          }
+          .iot-device-card.wifi-disabled {
+            background-color: #fff3cd;
+            border-color: #ffeaa7;
+          }
+          .iot-device-card.powered-off.wifi-disabled {
+            background-color: #e2e3e5;
+            border-color: #d6d8db;
+          }
+          .device-info {
+            flex: 1;
+          }
+          .device-name {
+            font-weight: 600;
+            font-size: 16px;
+            color: #333;
+          }
+          .device-status {
+            font-size: 13px;
+            margin-top: 4px;
+            color: #666;
+          }
+          .device-status.offline {
+            color: #dc3545;
+            font-weight: 500;
+          }
+          .device-status.disabled {
+            color: #856404;
+            font-weight: 500;
           }
           .iot-device-card:hover {
             background-color: #e2e6ea;
@@ -444,6 +493,7 @@ export const generateIotDevicePageContent = (
   deviceName: string,
   language: string,
   isActive: boolean = true,
+  isPoweredOff: boolean = false,
 ): string => {
   const isTurkish = language === 'tr';
   return `
@@ -555,6 +605,21 @@ export const generateIotDevicePageContent = (
           .status-inactive {
             color: #dc3545;
           }
+          .toggle-disabled {
+            opacity: 0.5;
+            pointer-events: none;
+          }
+          .power-off-message {
+            background-color: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 25px;
+            text-align: center;
+            color: #856404;
+            font-size: 14px;
+            font-weight: 500;
+          }
           .back-button {
             background-color: #6c757d;
             color: white;
@@ -579,13 +644,20 @@ export const generateIotDevicePageContent = (
           <div class="device-info">
             <p><strong>${isTurkish ? 'Cihaz ID' : 'Device ID'}:</strong> ${deviceId}</p>
             <p><strong>${isTurkish ? 'Cihaz Adı' : 'Device Name'}:</strong> ${deviceName}</p>
+            <p><strong>${isTurkish ? 'Güç Durumu' : 'Power Status'}:</strong> ${isPoweredOff ? (isTurkish ? 'Kapalı' : 'Off') : (isTurkish ? 'Açık' : 'On')}</p>
             <p><strong>${isTurkish ? 'Durum' : 'Status'}:</strong> <span id="statusText" class="${isActive ? 'status-active' : 'status-inactive'}">${isActive ? (isTurkish ? 'Aktif' : 'Active') : (isTurkish ? 'Pasif' : 'Inactive')}</span></p>
           </div>
 
-          <div class="toggle-section">
+          ${isPoweredOff ? `
+          <div class="power-off-message">
+            ${isTurkish ? '⚠️ Cihaz kapalı. Ayarları değiştirmek için önce cihazı açın.' : '⚠️ Device is powered off. Turn on the device to change settings.'}
+          </div>
+          ` : ''}
+
+          <div class="toggle-section ${isPoweredOff ? 'toggle-disabled' : ''}">
             <label class="toggle-label">${isTurkish ? 'Cihaz Durumu' : 'Device Status'}</label>
             <label class="toggle-switch">
-              <input type="checkbox" id="deviceToggle" ${isActive ? 'checked' : ''} onchange="toggleDevice()">
+              <input type="checkbox" id="deviceToggle" ${isActive ? 'checked' : ''} ${isPoweredOff ? 'disabled' : ''} onchange="toggleDevice()">
               <span class="slider"></span>
             </label>
             <div id="statusMessage" class="status-text ${isActive ? 'status-active' : 'status-inactive'}">
@@ -599,11 +671,17 @@ export const generateIotDevicePageContent = (
         </div>
 
         <script>
+          const isPoweredOff = ${isPoweredOff};
           function toggleDevice() {
+            // Prevent toggling if device is powered off
+            if (isPoweredOff) {
+              return;
+            }
+
             const toggle = document.getElementById('deviceToggle');
             const statusText = document.getElementById('statusText');
             const statusMessage = document.getElementById('statusMessage');
-            
+
             if (toggle.checked) {
               statusText.textContent = '${isTurkish ? 'Aktif' : 'Active'}';
               statusText.className = 'status-text status-active';

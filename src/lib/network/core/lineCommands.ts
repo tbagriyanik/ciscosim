@@ -182,8 +182,7 @@ function cmdTransportInput(state: any, input: string, ctx: any): any {
     return { success: false, error: '% Invalid transport input protocol' };
   }
 
-  // If 'all' or 'none' is present, it usually takes precedence or clears others in real IOS, 
-  // but we'll just store the list for simplicity.
+  // If 'all' or 'none' is present, it usually takes precedence or clears others but we'll just store the list for simplicity.
   const finalProtocols = protocols.includes('all') ? ['all'] : protocols.includes('none') ? ['none'] : protocols;
 
   const newSecurity = { ...state.security };
