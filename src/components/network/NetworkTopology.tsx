@@ -1048,7 +1048,7 @@ export function NetworkTopology({
       if (rect) {
         const startX = (e.clientX - rect.left - panRef.current.x) / zoomRef.current;
         const startY = (e.clientY - rect.top - panRef.current.y) / zoomRef.current;
-        
+
         const box = { start: { x: startX, y: startY }, current: { x: startX, y: startY } };
         setSelectionBox(box);
         selectionBoxRef.current = box;
@@ -1112,7 +1112,7 @@ export function NetworkTopology({
         const rect = canvasRef.current.getBoundingClientRect();
         const currentX = (e.clientX - rect.left - panRef.current.x) / zoomRef.current;
         const currentY = (e.clientY - rect.top - panRef.current.y) / zoomRef.current;
-        
+
         const currentBox = selectionBoxRef.current;
         if (currentBox) {
           const newBox = { ...currentBox, current: { x: currentX, y: currentY } };
@@ -1129,7 +1129,7 @@ export function NetworkTopology({
           const selectedIds = latestDevicesRef.current.filter(d => {
             const deviceWidth = (d.type === 'pc' || d.type === 'iot') ? 90 : 130;
             const deviceHeight = 100;
-            
+
             // Device bounds
             const dX1 = d.x;
             const dY1 = d.y;
@@ -1301,7 +1301,7 @@ export function NetworkTopology({
         if (selectedIds.length > 0) {
           setSelectedDeviceIds(selectedIds);
           selectedDeviceIdsRef.current = selectedIds;
-          
+
           // Select first device of selection to update parent state
           const firstDevice = latestDevicesRef.current.find(d => d.id === selectedIds[0]);
           if (firstDevice) {
@@ -3540,7 +3540,7 @@ export function NetworkTopology({
 
     window.addEventListener('update-topology-device-config', handleUpdateDeviceConfig as EventListener);
     window.addEventListener('delete-topology-connection', handleDeleteConnection as EventListener);
-    
+
     return () => {
       window.removeEventListener('update-topology-device-config', handleUpdateDeviceConfig as EventListener);
       window.removeEventListener('delete-topology-connection', handleDeleteConnection as EventListener);
@@ -3575,13 +3575,13 @@ export function NetworkTopology({
       if (device && canvasRef.current) {
         const deviceCenter = getDeviceCenter(device);
         const { width: canvasWidth, height: canvasHeight } = canvasRef.current.getBoundingClientRect();
-        
+
         // Calculate pan to center the device
         const targetPanX = (canvasWidth / 2) - (deviceCenter.x * zoom);
         const targetPanY = (canvasHeight / 2) - (deviceCenter.y * zoom);
-        
+
         setPan({ x: targetPanX, y: targetPanY });
-        
+
         // Notify parent of pan change
         if (onPanChange) {
           onPanChange({ x: targetPanX, y: targetPanY });
@@ -4165,7 +4165,7 @@ export function NetworkTopology({
               wifiChannel = wlanState?.wifi?.channel?.toString() || '';
 
               // Count connected devices (PC and IoT)
-              if (wifiMode === 'ap' && deviceStates) {
+              if (wifiMode === 'ap' && deviceStates && wifiSsid) {
                 devices.forEach(otherDev => {
                   if (otherDev.id === device.id || (otherDev.type !== 'pc' && otherDev.type !== 'iot')) return;
                   const pcwifi = otherDev.wifi;
@@ -4402,11 +4402,11 @@ export function NetworkTopology({
               }}
             >
               {/* Background circle - adjusted Y for routers */}
-              <circle 
-                cx={deviceWidth - 12} 
-                cy={device.type === 'router' ? 14 : 10} 
-                r={8} 
-                className={isPoweredOff ? 'fill-red-500' : (isDark ? 'fill-slate-700' : 'fill-slate-100')} 
+              <circle
+                cx={deviceWidth - 12}
+                cy={device.type === 'router' ? 14 : 10}
+                r={8}
+                className={isPoweredOff ? 'fill-red-500' : (isDark ? 'fill-slate-700' : 'fill-slate-100')}
               />
               {/* Lightning bolt - centered in circle */}
               <path

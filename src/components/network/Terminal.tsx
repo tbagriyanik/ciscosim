@@ -291,12 +291,14 @@ export function Terminal({
 
   // Process output lines — show all at once, no artificial delays
   const prevFirstOutputIdRef = useRef<string | null>(null);
+  const prevOutputLengthRef = useRef(0);
 
   useEffect(() => {
     if (output.length === 0) {
       setDisplayedLines([]);
       processedOutputIdsRef.current.clear();
       prevFirstOutputIdRef.current = null;
+      prevOutputLengthRef.current = 0;
       return;
     }
 
@@ -343,7 +345,18 @@ export function Terminal({
         return toAdd.length > 0 ? [...prev, ...toAdd] : prev;
       });
     }
+
+    prevOutputLengthRef.current = output.length;
   }, [output]);
+
+  // Reset processed output IDs when modal opens (to re-render all output)
+  useEffect(() => {
+    // If displayedLines is empty but output has content, reset tracking to re-render
+    if (displayedLines.length === 0 && output.length > 0) {
+      processedOutputIdsRef.current.clear();
+      prevFirstOutputIdRef.current = null;
+    }
+  }, [output.length, displayedLines.length]);
 
   // Clear displayed lines when switching devices
   useEffect(() => {

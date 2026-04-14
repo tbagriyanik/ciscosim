@@ -3951,7 +3951,7 @@ ${state.bannerMOTD}
               </DialogHeader>
               <div className="flex-1 overflow-hidden">
                 <Terminal
-                  key={`terminal-${activeDeviceId}`}
+                  key="cli-terminal"
                   className="h-full"
                   deviceId={activeDeviceId}
                   deviceName={
