@@ -47,7 +47,7 @@ function createInitialPorts(gigabitPortCount: number = 2): Record<string, Port> 
       name: '',
       status: 'notconnect',
       vlan: 1,
-      mode: 'access',
+      mode: 'dynamic-auto', // VARSAYILAN: switchport mode dynamic auto
       voiceVlan: 'none',
       duplex: 'auto',
       speed: 'auto',
@@ -68,7 +68,7 @@ function createInitialPorts(gigabitPortCount: number = 2): Record<string, Port> 
       name: '',
       status: 'notconnect',
       vlan: 1,
-      mode: 'access',
+      mode: 'dynamic-auto', // VARSAYILAN: switchport mode dynamic auto
       voiceVlan: 'none',
       duplex: 'auto',
       speed: 'auto',

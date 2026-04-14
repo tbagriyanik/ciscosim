@@ -130,10 +130,8 @@ export function Terminal({
     try { return parseInt(localStorage.getItem('terminal-font-size') || '13', 10); } catch { return 13; }
   });
 
-  // State for displaying multiline output with delays
+  // State for displaying output
   const [displayedLines, setDisplayedLines] = useState<Array<{ id: string, type: string, content: string, prompt?: string }>>([]);
-  const [isProcessingMultiline, setIsProcessingMultiline] = useState(false);
-  const pendingLinesRef = useRef<Array<{ id: string, type: string, content: string, prompt?: string }>>([]);
   const processedOutputIdsRef = useRef<Set<string>>(new Set());
   const cancelOutputRef = useRef(false);
 
@@ -217,9 +215,7 @@ export function Terminal({
 
   const clearTerminalView = useCallback(() => {
     cancelOutputRef.current = true;
-    pendingLinesRef.current = [];
     processedOutputIdsRef.current.clear();
-    setIsProcessingMultiline(false);
     setDisplayedLines([]);
     onClear();
   }, [onClear]);
@@ -293,14 +289,12 @@ export function Terminal({
     };
   }, [showAutocomplete]);
 
-  // Process output lines with delays for multiline content
+  // Process output lines — show all at once, no artificial delays
   const prevFirstOutputIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (output.length === 0) {
       setDisplayedLines([]);
-      setIsProcessingMultiline(false);
-      pendingLinesRef.current = [];
       processedOutputIdsRef.current.clear();
       prevFirstOutputIdRef.current = null;
       return;
@@ -312,94 +306,42 @@ export function Terminal({
       prevFirstOutputIdRef.current = firstId;
       setDisplayedLines([]);
       processedOutputIdsRef.current.clear();
-      setIsProcessingMultiline(false);
-      pendingLinesRef.current = [];
       cancelOutputRef.current = false;
     }
 
-    // Process all unprocessed outputs in order
+    const newLines: Array<{ id: string; type: string; content: string; prompt?: string }> = [];
+
     for (const outputItem of output) {
-      // Guard against malformed output
-      if (!outputItem || !outputItem.id) {
-        continue;
-      }
+      if (!outputItem || !outputItem.id) continue;
+      if (processedOutputIdsRef.current.has(outputItem.id)) continue;
+      processedOutputIdsRef.current.add(outputItem.id);
 
-      // Skip if already processed this output
-      if (processedOutputIdsRef.current.has(outputItem.id)) {
-        continue;
-      }
-
-      // If already processing multiline, wait until done before processing next item
-      if (isProcessingMultiline) {
-        break;
-      }
-
-      const hasNewlines = outputItem.content && outputItem.content.includes('\n');
-
-      if (hasNewlines) {
-        // Mark as processed
-        processedOutputIdsRef.current.add(outputItem.id);
-
-        // Split multiline content into individual lines
+      if (outputItem.content && outputItem.content.includes('\n')) {
         const lines = outputItem.content.split('\n');
-        const newLines = lines.map((line, index) => ({
-          id: `${outputItem.id}-line-${index}`,
-          type: outputItem.type,
-          content: line,
-          prompt: index === 0 ? outputItem.prompt : ''
-        }));
-
-        // Remove any existing lines with this output ID (in case of re-render)
-        const otherLines = displayedLines.filter(l => !l.id.startsWith(`${outputItem.id}`));
-
-        setDisplayedLines(prev => {
-          const base = prev.length > 0 ? prev : otherLines;
-          if (base.some(line => line.id === newLines[0].id)) return base;
-          return [...base, newLines[0]];
-        });
-        pendingLinesRef.current = newLines.slice(1);
-
-        setIsProcessingMultiline(true);
-
-        // Display remaining lines with delay
-        const displayRemainingLines = async () => {
-          for (let i = 0; i < pendingLinesRef.current.length; i++) {
-            if (cancelOutputRef.current) {
-              pendingLinesRef.current = [];
-              setIsProcessingMultiline(false);
-              cancelOutputRef.current = false;
-              return;
-            }
-            await new Promise(resolve => setTimeout(resolve, 50));
-            setDisplayedLines(prev => {
-              const nextLine = pendingLinesRef.current[i];
-              if (!nextLine || prev.some(line => line.id === nextLine.id)) return prev;
-              return [...prev, nextLine];
-            });
-
-            // Auto-scroll
-            if (terminalRef.current) {
-              terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
-            }
-          }
-          setIsProcessingMultiline(false);
-          pendingLinesRef.current = [];
-        };
-
-        displayRemainingLines();
-      } else if (!hasNewlines) {
-        // Single line output - only add if not already displayed
-        processedOutputIdsRef.current.add(outputItem.id);
-        setDisplayedLines(prev => {
-          if (prev.some(line => line.id === outputItem.id)) return prev;
-          return [...prev, {
-            id: outputItem.id,
+        lines.forEach((line, index) => {
+          newLines.push({
+            id: `${outputItem.id}-line-${index}`,
             type: outputItem.type,
-            content: outputItem.content,
-            prompt: outputItem.prompt
-          }];
+            content: line,
+            prompt: index === 0 ? outputItem.prompt : ''
+          });
+        });
+      } else {
+        newLines.push({
+          id: outputItem.id,
+          type: outputItem.type,
+          content: outputItem.content,
+          prompt: outputItem.prompt
         });
       }
+    }
+
+    if (newLines.length > 0) {
+      setDisplayedLines(prev => {
+        const existingIds = new Set(prev.map(l => l.id));
+        const toAdd = newLines.filter(l => !existingIds.has(l.id));
+        return toAdd.length > 0 ? [...prev, ...toAdd] : prev;
+      });
     }
   }, [output]);
 
@@ -408,8 +350,6 @@ export function Terminal({
     setDisplayedLines([]);
     processedOutputIdsRef.current.clear();
     prevFirstOutputIdRef.current = null;
-    setIsProcessingMultiline(false);
-    pendingLinesRef.current = [];
     commandQueueRef.current = [];
     isProcessingQueueRef.current = false;
   }, [deviceId]);
@@ -813,11 +753,6 @@ export function Terminal({
     }
     // Escape cancels password/confirm and returns to normal input
     if (e.key === 'Escape') {
-      if (isProcessingMultiline) {
-        e.preventDefault();
-        cancelOutputRef.current = true;
-        return;
-      }
       if (state.awaitingPassword || confirmDialog?.show || isReloadConfirmationPending) {
         e.preventDefault();
         if (onCommand) {
@@ -1337,8 +1272,8 @@ export function Terminal({
           <DialogHeader>
             <DialogTitle>{t.search}</DialogTitle>
             <DialogDescription>
-                {t.searchTerminal}
-              </DialogDescription>
+              {t.searchTerminal}
+            </DialogDescription>
           </DialogHeader>
           <div className="relative">
             <Input

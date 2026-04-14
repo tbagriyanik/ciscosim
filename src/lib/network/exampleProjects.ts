@@ -945,7 +945,7 @@ export const exampleProjects = (language: 'tr' | 'en'): ExampleProject[] => {
   roasSw.ports['gi0/1'] = { ...roasSw.ports['gi0/1'], mode: 'trunk', allowedVlans: 'all', status: 'connected' };
   const roasRouter = createInitialRouterState();
   roasRouter.hostname = 'R1';
-  roasRouter.ports['gi0/0'] = { ...roasRouter.ports['gi0/0'], status: 'connected' };
+  roasRouter.ports['gi0/0'] = { ...roasRouter.ports['gi0/0'], status: 'connected', shutdown: false };
   roasRouter.ports['gi0/0.10'] = {
     ...roasRouter.ports['gi0/0'],
     id: 'gi0/0.10',
@@ -1095,16 +1095,16 @@ export const exampleProjects = (language: 'tr' | 'en'): ExampleProject[] => {
 
   const staticR1 = createInitialRouterState();
   staticR1.hostname = 'R1';
-  staticR1.ports['gi0/0'] = { ...staticR1.ports['gi0/0'], ipAddress: '192.168.1.1', subnetMask: '255.255.255.0', status: 'connected' };
-  staticR1.ports['gi0/1'] = { ...staticR1.ports['gi0/1'], ipAddress: '192.168.2.1', subnetMask: '255.255.255.0', status: 'connected' };
+  staticR1.ports['gi0/0'] = { ...staticR1.ports['gi0/0'], ipAddress: '192.168.1.1', subnetMask: '255.255.255.0', status: 'connected', shutdown: false };
+  staticR1.ports['gi0/1'] = { ...staticR1.ports['gi0/1'], ipAddress: '192.168.2.1', subnetMask: '255.255.255.0', status: 'connected', shutdown: false };
   staticR1.staticRoutes = [
     { destination: '192.168.20.0', subnetMask: '255.255.255.0', nextHop: '192.168.2.2', metric: 1, type: 'static' }
   ];
 
   const staticR2 = createInitialRouterState();
   staticR2.hostname = 'R2';
-  staticR2.ports['gi0/0'] = { ...staticR2.ports['gi0/0'], ipAddress: '192.168.2.2', subnetMask: '255.255.255.0', status: 'connected' };
-  staticR2.ports['gi0/1'] = { ...staticR2.ports['gi0/1'], ipAddress: '192.168.3.1', subnetMask: '255.255.255.0', status: 'connected' };
+  staticR2.ports['gi0/0'] = { ...staticR2.ports['gi0/0'], ipAddress: '192.168.2.2', subnetMask: '255.255.255.0', status: 'connected', shutdown: false };
+  staticR2.ports['gi0/1'] = { ...staticR2.ports['gi0/1'], ipAddress: '192.168.3.1', subnetMask: '255.255.255.0', status: 'connected', shutdown: false };
   staticR2.staticRoutes = [
     { destination: '192.168.10.0', subnetMask: '255.255.255.0', nextHop: '192.168.2.1', metric: 1, type: 'static' }
   ];
@@ -1239,8 +1239,8 @@ export const exampleProjects = (language: 'tr' | 'en'): ExampleProject[] => {
   const campusCore = createInitialRouterState();
   campusCore.hostname = 'CORE-R1';
   campusCore.ipRouting = true;
-  campusCore.ports['gi0/0'] = { ...campusCore.ports['gi0/0'], ipAddress: '192.168.1.1', subnetMask: '255.255.255.0', status: 'connected' };
-  campusCore.ports['gi0/1'] = { ...campusCore.ports['gi0/1'], ipAddress: '192.168.2.1', subnetMask: '255.255.255.0', status: 'connected' };
+  campusCore.ports['gi0/0'] = { ...campusCore.ports['gi0/0'], ipAddress: '192.168.1.1', subnetMask: '255.255.255.0', status: 'connected', shutdown: false };
+  campusCore.ports['gi0/1'] = { ...campusCore.ports['gi0/1'], ipAddress: '192.168.2.1', subnetMask: '255.255.255.0', status: 'connected', shutdown: false };
   campusCore.staticRoutes = [
     { destination: '192.168.10.0', subnetMask: '255.255.255.0', nextHop: '192.168.1.2', metric: 1, type: 'static' },
     { destination: '192.168.20.0', subnetMask: '255.255.255.0', nextHop: '192.168.2.2', metric: 1, type: 'static' }
@@ -1283,7 +1283,8 @@ export const exampleProjects = (language: 'tr' | 'en'): ExampleProject[] => {
     ...routerSshR1.ports['gi0/0'],
     ipAddress: '192.168.1.150',
     subnetMask: '255.255.255.0',
-    status: 'connected'
+    status: 'connected',
+    shutdown: false
   };
   routerSshR1.security = {
     ...routerSshR1.security,

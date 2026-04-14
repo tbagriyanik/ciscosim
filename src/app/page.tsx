@@ -658,11 +658,11 @@ export default function Home() {
   const [showRouterDeviceId, setShowRouterDeviceId] = useState<string>('router-1');
   const [showTasksModal, setShowTasksModal] = useState(false);
   const [showTerminalModal, setShowTerminalModal] = useState(false);
-  
+
   // Tasks modal state
   const [tasksModalPosition, setTasksModalPosition] = useState({ x: 20, y: 20 });
   const [tasksModalSize, setTasksModalSize] = useState({ width: 1200, height: 700 });
-  
+
   // CLI modal state
   const [cliModalPosition, setCliModalPosition] = useState({ x: 20, y: 20 });
   const [cliModalSize, setCliModalSize] = useState({ width: 1200, height: 700 });
@@ -672,12 +672,12 @@ export default function Home() {
     if (typeof window !== 'undefined') {
       const savedPosition = localStorage.getItem('tasks-modal-position');
       const savedSize = localStorage.getItem('tasks-modal-size');
-      
+
       const maxWidth = window.innerWidth - 40;
       const maxHeight = window.innerHeight - 40;
-      
+
       let size = { width: 1200, height: 700 };
-      
+
       if (savedSize) {
         const parsedSize = JSON.parse(savedSize);
         // Ensure saved size doesn't exceed screen
@@ -688,9 +688,9 @@ export default function Home() {
         size.width = Math.min(maxWidth, 1200);
         size.height = Math.min(maxHeight, 700);
       }
-      
+
       setTasksModalSize(size);
-      
+
       if (savedPosition) {
         const position = JSON.parse(savedPosition);
         // Ensure saved position is within bounds and modal stays fully visible
@@ -712,12 +712,12 @@ export default function Home() {
     if (typeof window !== 'undefined') {
       const savedPosition = localStorage.getItem('cli-modal-position');
       const savedSize = localStorage.getItem('cli-modal-size');
-      
+
       const maxWidth = window.innerWidth - 40;
       const maxHeight = window.innerHeight - 40;
-      
+
       let size = { width: 1200, height: 700 };
-      
+
       if (savedSize) {
         const parsedSize = JSON.parse(savedSize);
         // Ensure saved size doesn't exceed screen
@@ -728,9 +728,9 @@ export default function Home() {
         size.width = Math.min(maxWidth, 1200);
         size.height = Math.min(maxHeight, 700);
       }
-      
+
       setCliModalSize(size);
-      
+
       if (savedPosition) {
         const position = JSON.parse(savedPosition);
         // Ensure saved position is within bounds and modal stays fully visible
@@ -746,116 +746,106 @@ export default function Home() {
       }
     }
   }, []);
-  const [isDragging, setIsDragging] = useState(false);
-  const [isResizing, setIsResizing] = useState(false);
-  const [resizeDirection, setResizeDirection] = useState<'n' | 's' | 'e' | 'w' | 'ne' | 'nw' | 'se' | 'sw' | null>(null);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const [activeModal, setActiveModal] = useState<'tasks' | 'cli' | null>(null);
   const [deviceSearchQuery, setDeviceSearchQuery] = useState('');
+
+  // Drag/resize — ref-based for zero-lag performance (no re-renders during move)
+  const dragStateRef = useRef<{
+    active: boolean;
+    type: 'drag' | 'resize';
+    modal: 'tasks' | 'cli';
+    direction?: string;
+    startX: number;
+    startY: number;
+    startPosX: number;
+    startPosY: number;
+    startW: number;
+    startH: number;
+    raf: number | null;
+  } | null>(null);
+
+  // Keep refs in sync with state so drag handlers always read latest values
+  const tasksModalPositionRef = useRef(tasksModalPosition);
+  const tasksModalSizeRef = useRef(tasksModalSize);
+  const cliModalPositionRef = useRef(cliModalPosition);
+  const cliModalSizeRef = useRef(cliModalSize);
+  useEffect(() => { tasksModalPositionRef.current = tasksModalPosition; }, [tasksModalPosition]);
+  useEffect(() => { tasksModalSizeRef.current = tasksModalSize; }, [tasksModalSize]);
+  useEffect(() => { cliModalPositionRef.current = cliModalPosition; }, [cliModalPosition]);
+  useEffect(() => { cliModalSizeRef.current = cliModalSize; }, [cliModalSize]);
 
   // Handle modal drag
   const handleMouseDown = useCallback((e: React.MouseEvent, modalType: 'tasks' | 'cli') => {
-    // Only allow drag from header
     const header = (e.target as HTMLElement).closest('[data-modal-header]');
     if (!header) return;
-    
-    // Don't drag if clicking on interactive elements
     if ((e.target as HTMLElement).closest('button, input, select, textarea, a')) return;
-    
     e.preventDefault();
     e.stopPropagation();
-    setActiveModal(modalType);
-    setIsDragging(true);
-    
-    const position = modalType === 'tasks' ? tasksModalPosition : cliModalPosition;
-    setDragStart({ x: e.clientX - position.x, y: e.clientY - position.y });
-  }, [tasksModalPosition, cliModalPosition]);
+    const pos = modalType === 'tasks' ? tasksModalPositionRef.current : cliModalPositionRef.current;
+    const size = modalType === 'tasks' ? tasksModalSizeRef.current : cliModalSizeRef.current;
+    dragStateRef.current = {
+      active: true, type: 'drag', modal: modalType,
+      startX: e.clientX, startY: e.clientY,
+      startPosX: pos.x, startPosY: pos.y,
+      startW: size.width, startH: size.height, raf: null
+    };
+  }, []);
 
   // Handle modal resize
   const handleResizeStart = useCallback((e: React.MouseEvent, direction: 'n' | 's' | 'e' | 'w' | 'ne' | 'nw' | 'se' | 'sw', modalType: 'tasks' | 'cli') => {
     e.preventDefault();
     e.stopPropagation();
-    setActiveModal(modalType);
-    setIsResizing(true);
-    setResizeDirection(direction);
-    setDragStart({ x: e.clientX, y: e.clientY });
+    const pos = modalType === 'tasks' ? tasksModalPositionRef.current : cliModalPositionRef.current;
+    const size = modalType === 'tasks' ? tasksModalSizeRef.current : cliModalSizeRef.current;
+    dragStateRef.current = {
+      active: true, type: 'resize', modal: modalType, direction,
+      startX: e.clientX, startY: e.clientY,
+      startPosX: pos.x, startPosY: pos.y,
+      startW: size.width, startH: size.height, raf: null
+    };
   }, []);
 
   useEffect(() => {
-    let animationFrameId: number | null = null;
-
     const handleMouseMove = (e: MouseEvent) => {
-      if (isDragging && activeModal) {
-        if (animationFrameId) cancelAnimationFrame(animationFrameId);
-        animationFrameId = requestAnimationFrame(() => {
-          const position = activeModal === 'tasks' ? tasksModalPosition : cliModalPosition;
-          const setPosition = activeModal === 'tasks' ? setTasksModalPosition : setCliModalPosition;
+      const ds = dragStateRef.current;
+      if (!ds?.active) return;
+      if (ds.raf) cancelAnimationFrame(ds.raf);
+      ds.raf = requestAnimationFrame(() => {
+        const ds2 = dragStateRef.current;
+        if (!ds2?.active) return;
+        const setPosition = ds2.modal === 'tasks' ? setTasksModalPosition : setCliModalPosition;
+        const setSize = ds2.modal === 'tasks' ? setTasksModalSize : setCliModalSize;
+
+        if (ds2.type === 'drag') {
           setPosition({
-            x: e.clientX - dragStart.x,
-            y: e.clientY - dragStart.y,
+            x: ds2.startPosX + (e.clientX - ds2.startX),
+            y: ds2.startPosY + (e.clientY - ds2.startY),
           });
-        });
-      }
-      if (isResizing && resizeDirection && activeModal) {
-        if (animationFrameId) cancelAnimationFrame(animationFrameId);
-        animationFrameId = requestAnimationFrame(() => {
-          const dx = e.clientX - dragStart.x;
-          const dy = e.clientY - dragStart.y;
-          const size = activeModal === 'tasks' ? tasksModalSize : cliModalSize;
-          const position = activeModal === 'tasks' ? tasksModalPosition : cliModalPosition;
-          const setSize = activeModal === 'tasks' ? setTasksModalSize : setCliModalSize;
-          const setPosition = activeModal === 'tasks' ? setTasksModalPosition : setCliModalPosition;
-          const newSize = { ...size };
-          const newPos = { ...position };
-
-          // Handle each resize direction
-          if (resizeDirection.includes('e')) {
-            newSize.width = Math.max(400, size.width + dx);
-          }
-          if (resizeDirection.includes('w')) {
-            const newWidth = Math.max(400, size.width - dx);
-            if (newWidth !== size.width) {
-              newPos.x = position.x + (size.width - newWidth);
-              newSize.width = newWidth;
-            }
-          }
-          if (resizeDirection.includes('s')) {
-            newSize.height = Math.max(300, size.height + dy);
-          }
-          if (resizeDirection.includes('n')) {
-            const newHeight = Math.max(300, size.height - dy);
-            if (newHeight !== size.height) {
-              newPos.y = position.y + (size.height - newHeight);
-              newSize.height = newHeight;
-            }
-          }
-
-          setSize(newSize);
-          setPosition(newPos);
-          setDragStart({ x: e.clientX, y: e.clientY });
-        });
-      }
+        } else if (ds2.type === 'resize' && ds2.direction) {
+          const dx = e.clientX - ds2.startX;
+          const dy = e.clientY - ds2.startY;
+          let newW = ds2.startW, newH = ds2.startH, newX = ds2.startPosX, newY = ds2.startPosY;
+          if (ds2.direction.includes('e')) newW = Math.max(400, ds2.startW + dx);
+          if (ds2.direction.includes('s')) newH = Math.max(300, ds2.startH + dy);
+          if (ds2.direction.includes('w')) { newW = Math.max(400, ds2.startW - dx); newX = ds2.startPosX + (ds2.startW - newW); }
+          if (ds2.direction.includes('n')) { newH = Math.max(300, ds2.startH - dy); newY = ds2.startPosY + (ds2.startH - newH); }
+          setSize({ width: newW, height: newH });
+          setPosition({ x: newX, y: newY });
+        }
+      });
     };
 
     const handleMouseUp = () => {
-      if (animationFrameId) cancelAnimationFrame(animationFrameId);
-      setIsDragging(false);
-      setIsResizing(false);
-      setResizeDirection(null);
-      setActiveModal(null);
+      if (dragStateRef.current?.raf) cancelAnimationFrame(dragStateRef.current.raf);
+      dragStateRef.current = null;
     };
 
-    if (isDragging || isResizing) {
-      window.addEventListener('mousemove', handleMouseMove);
-      window.addEventListener('mouseup', handleMouseUp);
-    }
-
+    window.addEventListener('mousemove', handleMouseMove, { passive: true });
+    window.addEventListener('mouseup', handleMouseUp);
     return () => {
-      if (animationFrameId) cancelAnimationFrame(animationFrameId);
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isDragging, isResizing, dragStart, tasksModalSize, tasksModalPosition, cliModalSize, cliModalPosition, resizeDirection, activeModal]);
+  }, []);
 
   // Save tasks modal position and size to localStorage
   useEffect(() => {
@@ -1221,13 +1211,15 @@ export default function Home() {
           if (isRouter) {
             const syslog = t.syslogStarted;
             bootMessages = [
-              { id: `boot-1-${suffix}`, type: 'output', content: `
+              {
+                id: `boot-1-${suffix}`, type: 'output', content: `
 
 System Bootstrap, Version 15.1(4)M4, RELEASE SOFTWARE (fc1)
 Technical Support: http://yunus.sf.net
 Copyright (c) 1994-2011 by Network Systems, Inc.
 ` },
-              { id: `boot-2-${suffix}`, type: 'output', content: `ISR4451/K9 platform with 4096 K bytes of memory
+              {
+                id: `boot-2-${suffix}`, type: 'output', content: `ISR4451/K9 platform with 4096 K bytes of memory
 
 ${syslog}
 Load/bootstrap symbols loaded, GOXR initialization
@@ -1237,13 +1229,15 @@ CPU memory test . . . . . . . . . . . . . OK
 Board initialization completed
 Initializing flash file system
 ` },
-              { id: `boot-3-${suffix}`, type: 'output', content: `
+              {
+                id: `boot-3-${suffix}`, type: 'output', content: `
 Booting flash:c1900-universalk9-mz.SPA.154-3.M.bin...OK!
 Extracting files from flash:c1900-universalk9-mz.SPA.154-3.M.bin...
   ########## [OK]
   0 bytes remaining in flash device
 ` },
-              ...(state?.bannerMOTD ? [{ id: `banner-${suffix}`, type: 'output' as const, content: `
+              ...(state?.bannerMOTD ? [{
+                id: `banner-${suffix}`, type: 'output' as const, content: `
 ${state.bannerMOTD}
 ` }] : []),
               { id: `boot-ready-${suffix}`, type: 'output', content: BOOT_PROGRESS_MARKER }
@@ -1251,13 +1245,15 @@ ${state.bannerMOTD}
           } else if (isL3Switch) {
             const syslog = t.syslogStarted;
             bootMessages = [
-              { id: `boot-1-${suffix}`, type: 'output', content: `
+              {
+                id: `boot-1-${suffix}`, type: 'output', content: `
 
 System Bootstrap, Version 12.2(55r)SE, RELEASE SOFTWARE (fc1)
 Technical Support: http://yunus.sf.net
 Copyright (c) 1994-2011 by Network Systems, Inc.
 ` },
-              { id: `boot-2-${suffix}`, type: 'output', content: `C3560 platform with 131072 K bytes of memory
+              {
+                id: `boot-2-${suffix}`, type: 'output', content: `C3560 platform with 131072 K bytes of memory
 
 ${syslog}
 Load/bootstrap symbols loaded
@@ -1267,13 +1263,15 @@ CPU memory test . . . . . . . . . . . . . OK
 Board initialization completed
 Initializing flash file system
 ` },
-              { id: `boot-3-${suffix}`, type: 'output', content: `
+              {
+                id: `boot-3-${suffix}`, type: 'output', content: `
 Booting flash:c3560-ipbase-mz.152-2.SE4.bin...OK!
 Extracting files from flash:c3560-ipbase-mz.152-2.SE4.bin...
   ########## [OK]
   0 bytes remaining in flash device
 ` },
-              ...(state?.bannerMOTD ? [{ id: `banner-${suffix}`, type: 'output' as const, content: `
+              ...(state?.bannerMOTD ? [{
+                id: `banner-${suffix}`, type: 'output' as const, content: `
 ${state.bannerMOTD}
 ` }] : []),
               { id: `boot-ready-${suffix}`, type: 'output', content: BOOT_PROGRESS_MARKER }
@@ -1281,13 +1279,15 @@ ${state.bannerMOTD}
           } else {
             const syslog = t.syslogStarted;
             bootMessages = [
-              { id: `boot-1-${suffix}`, type: 'output', content: `
+              {
+                id: `boot-1-${suffix}`, type: 'output', content: `
 
 System Bootstrap, Version 12.2(11r)EA1, RELEASE SOFTWARE (fc1)
 Technical Support: http://yunus.sf.net
 Copyright (c) 1994-2010 by Network Systems, Inc.
 ` },
-              { id: `boot-2-${suffix}`, type: 'output', content: `C2960 platform with 65536 K bytes of memory
+              {
+                id: `boot-2-${suffix}`, type: 'output', content: `C2960 platform with 65536 K bytes of memory
 
 ${syslog}
 Load/bootstrap symbols loaded
@@ -1297,13 +1297,15 @@ CPU memory test . . . . . . . . . . . . . OK
 Board initialization completed
 Initializing flash file system
 ` },
-              { id: `boot-3-${suffix}`, type: 'output', content: `
+              {
+                id: `boot-3-${suffix}`, type: 'output', content: `
 Booting flash:c2960-lanbase-mz.152-2.E6.bin...OK!
 Extracting files from flash:c2960-lanbase-mz.152-2.E6.bin...
   ########## [OK]
   0 bytes remaining in flash device
 ` },
-              ...(state?.bannerMOTD ? [{ id: `banner-${suffix}`, type: 'output' as const, content: `
+              ...(state?.bannerMOTD ? [{
+                id: `banner-${suffix}`, type: 'output' as const, content: `
 ${state.bannerMOTD}
 ` }] : []),
               { id: `boot-ready-${suffix}`, type: 'output', content: BOOT_PROGRESS_MARKER }
@@ -3841,7 +3843,7 @@ ${state.bannerMOTD}
 
           {/* Tasks Modal */}
           <Dialog open={showTasksModal} onOpenChange={setShowTasksModal}>
-            <DialogContent 
+            <DialogContent
               className={`${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'} p-0 overflow-hidden flex flex-col top-auto left-auto translate-x-0 translate-y-0`}
               style={{
                 position: 'fixed',
@@ -3853,7 +3855,7 @@ ${state.bannerMOTD}
                 maxHeight: 'none',
               }}
             >
-              <DialogHeader 
+              <DialogHeader
                 className="p-4 border-b cursor-move select-none"
                 data-modal-header
                 onMouseDown={(e) => handleMouseDown(e, 'tasks')}
@@ -3913,7 +3915,7 @@ ${state.bannerMOTD}
                   </div>
                 </div>
               </div>
-              <div 
+              <div
                 className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize bg-slate-400 hover:bg-slate-600"
                 onMouseDown={(e) => handleResizeStart(e, 'se', 'tasks')}
               />
@@ -3922,7 +3924,7 @@ ${state.bannerMOTD}
 
           {/* Terminal Full-Screen Modal */}
           <Dialog open={showTerminalModal} onOpenChange={setShowTerminalModal}>
-            <DialogContent 
+            <DialogContent
               className={`${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'} p-0 overflow-hidden flex flex-col top-auto left-auto translate-x-0 translate-y-0`}
               style={{
                 position: 'fixed',
@@ -3935,7 +3937,7 @@ ${state.bannerMOTD}
                 borderRadius: 0,
               }}
             >
-              <DialogHeader 
+              <DialogHeader
                 className="p-4 border-b cursor-move select-none"
                 data-modal-header
                 onMouseDown={(e) => handleMouseDown(e, 'cli')}
@@ -3992,35 +3994,35 @@ ${state.bannerMOTD}
               </div>
               {/* Resize handles - hidden on mobile */}
               <div className="hidden md:block">
-                <div 
+                <div
                   className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-2 cursor-n-resize hover:bg-slate-400/50"
                   onMouseDown={(e) => handleResizeStart(e, 'n', 'cli')}
                 />
-                <div 
+                <div
                   className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-2 cursor-s-resize hover:bg-slate-400/50"
                   onMouseDown={(e) => handleResizeStart(e, 's', 'cli')}
                 />
-                <div 
+                <div
                   className="absolute left-0 top-1/2 -translate-y-1/2 w-2 h-8 cursor-w-resize hover:bg-slate-400/50"
                   onMouseDown={(e) => handleResizeStart(e, 'w', 'cli')}
                 />
-                <div 
+                <div
                   className="absolute right-0 top-1/2 -translate-y-1/2 w-2 h-8 cursor-e-resize hover:bg-slate-400/50"
                   onMouseDown={(e) => handleResizeStart(e, 'e', 'cli')}
                 />
-                <div 
+                <div
                   className="absolute top-0 left-0 w-4 h-4 cursor-nw-resize hover:bg-slate-400/50"
                   onMouseDown={(e) => handleResizeStart(e, 'nw', 'cli')}
                 />
-                <div 
+                <div
                   className="absolute top-0 right-0 w-4 h-4 cursor-ne-resize hover:bg-slate-400/50"
                   onMouseDown={(e) => handleResizeStart(e, 'ne', 'cli')}
                 />
-                <div 
+                <div
                   className="absolute bottom-0 left-0 w-4 h-4 cursor-sw-resize hover:bg-slate-400/50"
                   onMouseDown={(e) => handleResizeStart(e, 'sw', 'cli')}
                 />
-                <div 
+                <div
                   className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize bg-slate-400 hover:bg-slate-600 flex items-center justify-center"
                   onMouseDown={(e) => handleResizeStart(e, 'se', 'cli')}
                 >
@@ -4509,25 +4511,25 @@ ${state.bannerMOTD}
                     const router = topologyDevices.find(d => d.id === activeDeviceId);
                     if (!router) return null;
                     const routerState = deviceStates.get(router.id);
-                    
+
                     // Get port information
                     const ports = routerState?.ports ? Object.values(routerState.ports) : [];
                     const connectedPorts = ports.filter((p: any) => !p.shutdown && p.status === 'connected').length;
                     const totalPorts = ports.length;
-                    
+
                     // Get DHCP pools
                     const dhcpPools = routerState?.dhcpPools ? Object.keys(routerState.dhcpPools).length : 0;
-                    
+
                     // Get WiFi status
                     const wifiEnabled = routerState?.ports?.['wlan0']?.wifi?.mode === 'ap' || router?.wifi?.enabled;
                     const wifiConfig = routerState?.ports?.['wlan0']?.wifi || router?.wifi;
-                    
+
                     // Get IP addresses
                     const ipAddresses = ports
                       .filter((p: any) => p.ipAddress && !p.shutdown)
                       .map((p: any) => `${p.id}: ${p.ipAddress}${p.subnetMask ? `/${p.subnetMask}` : ''}`)
                       .slice(0, 3);
-                    
+
                     return (
                       <div className="hidden md:block fixed bottom-24 right-4 z-50 animate-scale-in">
                         <div className={`rounded-2xl border shadow-2xl backdrop-blur-xl min-w-[200px] max-w-[280px] liquid-glass-strong ${isDark ? 'border-slate-700/50 text-white shadow-cyan-500/10' : 'border-slate-200/50 text-slate-900 shadow-slate-200/50'}`}>
