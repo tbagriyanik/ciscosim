@@ -81,7 +81,7 @@ function checkL3Routing(
 
   // Build routing table for source device
   const routingTable = buildRoutingTable(sourceId, devices, connections, deviceStates);
-  
+
   // Find route to target
   const route = findRoute(targetIp, routingTable);
   if (!route) {
@@ -107,7 +107,7 @@ function checkL3Routing(
 function hasRoutingCapability(device: CanvasDevice, state: SwitchState): boolean {
   const isSwitchDeviceType = (type: DeviceType) => type === 'switchL2' || type === 'switchL3';
   if (device.type === 'router') return true;
-  if (isSwitchDeviceType(device.type) && state.isLayer3Switch) return true;
+  if (isSwitchDeviceType(device.type) && state.switchLayer === 'L3') return true;
   return false;
 }
 
@@ -176,7 +176,7 @@ function isIpInNetwork(ip: string, network: string, subnetMask: string): boolean
   const ipNum = ipToNumber(ip);
   const networkNum = ipToNumber(network);
   const maskNum = ipToNumber(subnetMask);
-  
+
   return (ipNum & maskNum) === (networkNum & maskNum);
 }
 
@@ -194,7 +194,7 @@ function getNetworkAddress(ip: string, subnetMask: string): string {
   const ipNum = ipToNumber(ip);
   const maskNum = ipToNumber(subnetMask);
   const networkNum = ipNum & maskNum;
-  
+
   return numberToIp(networkNum);
 }
 
@@ -217,12 +217,12 @@ function getPrefixLength(subnetMask: string): number {
   const maskNum = ipToNumber(subnetMask);
   let count = 0;
   let temp = maskNum;
-  
+
   while (temp) {
     count += temp & 1;
     temp >>>= 1;
   }
-  
+
   return count;
 }
 
@@ -238,15 +238,15 @@ function findPathToNextHop(
 ): { success: boolean; hops: string[] } {
   // Simplified path finding - in reality, this would be more complex
   // For now, assume we can reach the next hop if it's directly connected
-  
-  const sourceConnections = connections.filter(c => 
+
+  const sourceConnections = connections.filter(c =>
     (c.sourceDeviceId === sourceId || c.targetDeviceId === sourceId) && c.active !== false
   );
 
   for (const conn of sourceConnections) {
     const neighborId = conn.sourceDeviceId === sourceId ? conn.targetDeviceId : conn.sourceDeviceId;
     const neighborDevice = devices.find(d => d.id === neighborId);
-    
+
     if (neighborDevice && (neighborDevice.ip === nextHop || neighborDevice.name === nextHop)) {
       return { success: true, hops: [neighborDevice.name] };
     }

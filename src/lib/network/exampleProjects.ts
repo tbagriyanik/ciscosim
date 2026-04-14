@@ -1040,10 +1040,9 @@ export const exampleProjects = (language: 'tr' | 'en'): ExampleProject[] => {
       opacity: 0.75
     }
   ];
-  const l3RoutingState = createInitialState();
+  const l3RoutingState = createInitialState(undefined, 'WS-C3560-24PS');
   l3RoutingState.hostname = 'L3SW1';
   l3RoutingState.ipRouting = true;
-  l3RoutingState.isLayer3Switch = true;
   l3RoutingState.vlans[10] = { id: 10, name: 'VLAN10', status: 'active', ports: [] };
   l3RoutingState.vlans[20] = { id: 20, name: 'VLAN20', status: 'active', ports: [] };
   l3RoutingState.vlans[30] = { id: 30, name: 'VLAN30', status: 'active', ports: [] };
@@ -1089,7 +1088,7 @@ export const exampleProjects = (language: 'tr' | 'en'): ExampleProject[] => {
       opacity: 0.75
     }
   ];
-  const staticSw1 = createInitialState();
+  const staticSw1 = createInitialState(undefined, 'WS-C3560-24PS');
   staticSw1.hostname = 'SW1';
   staticSw1.ports['vlan1'] = { ...staticSw1.ports['vlan1'], ipAddress: '192.168.1.2', subnetMask: '255.255.255.0' };
   staticSw1.ports['gi0/1'] = { ...staticSw1.ports['gi0/1'], mode: 'routed', ipAddress: '192.168.1.2', subnetMask: '255.255.255.0', status: 'connected' };
@@ -1111,7 +1110,7 @@ export const exampleProjects = (language: 'tr' | 'en'): ExampleProject[] => {
     { destination: '192.168.10.0', subnetMask: '255.255.255.0', nextHop: '192.168.2.1', metric: 1, type: 'static' }
   ];
 
-  const staticSw2 = createInitialState();
+  const staticSw2 = createInitialState(undefined, 'WS-C3560-24PS');
   staticSw2.hostname = 'SW2';
   staticSw2.ports['vlan1'] = { ...staticSw2.ports['vlan1'], ipAddress: '192.168.3.2', subnetMask: '255.255.255.0' };
   staticSw2.ports['gi0/1'] = { ...staticSw2.ports['gi0/1'], mode: 'routed', ipAddress: '192.168.3.2', subnetMask: '255.255.255.0', status: 'connected' };

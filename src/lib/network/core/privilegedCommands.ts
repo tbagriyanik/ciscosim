@@ -430,8 +430,7 @@ function cmdIpRoute(state: any, input: string, ctx: any): any {
         success: true,
         newState: {
             staticRoutes: newStaticRoutes,
-            ipRouting: true,
-            isLayer3Switch: true
+            ipRouting: true
         }
     };
 }

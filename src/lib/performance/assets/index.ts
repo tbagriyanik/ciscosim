@@ -1,22 +1,5 @@
 // Image optimization components and utilities
 
-// Optimized Device Icon
-export {
-    OptimizedDeviceIcon,
-    LazyOptimizedDeviceIcon,
-    EagerOptimizedDeviceIcon,
-    type OptimizedDeviceIconProps,
-} from './OptimizedDeviceIcon';
-
-// Responsive Image
-export {
-    ResponsiveImage,
-    LazyResponsiveImage,
-    EagerResponsiveImage,
-    ResponsiveImageWithBreakpoints,
-    type ResponsiveImageProps,
-} from './ResponsiveImage';
-
 // SVG Inlining Utilities
 export {
     fetchSVG,

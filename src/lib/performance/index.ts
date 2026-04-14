@@ -23,46 +23,5 @@ export {
 
 export { initializePerformanceConsoleAPI } from './monitoring/ConsoleAPI';
 
-// Memory Optimization
-export {
-    NodePool,
-    createNodePool,
-    createDefaultNodeFactory,
-    type PooledNode,
-    type NodePoolConfig,
-} from './memory/NodePool';
-
-// Connection Rendering
-export {
-    ConnectionRenderer,
-    createConnectionRenderer,
-    type Connection,
-    type ConnectionRenderBatch,
-    type ConnectionRendererConfig,
-} from './rendering/ConnectionRenderer';
-
-// State Management
-export {
-    useTopologyStore,
-    selectNodes,
-    selectNodeCount,
-    selectSelectedNodeId,
-    selectSelectedNode,
-    selectNodeById,
-    selectConnections,
-    selectConnectionCount,
-    selectConnectionById,
-    selectViewport,
-    selectZoomLevel,
-    selectViewportBounds,
-    selectNodesByViewport,
-    selectConnectionsByViewport,
-    useTopologySelector,
-    type TopologyNode,
-    type TopologyConnection,
-    type ViewportState,
-    type TopologyState,
-} from './state/topologyStore';
-
 // Types
 export * from './types';
