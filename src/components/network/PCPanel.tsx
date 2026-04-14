@@ -4036,11 +4036,26 @@ export function PCPanel({
                   {activeTab === 'iot' && (
                     <div className="flex-1 min-h-0 p-3 overflow-y-auto" style={mobileVerticalScrollStyle}>
                       <div className={`rounded-2xl border p-4 space-y-4 ${isDark ? 'border-slate-800 bg-slate-900/40' : 'border-slate-200 bg-white'}`}>
-                        <div className="flex items-center gap-2 text-cyan-500">
-                          <Radio className="w-5 h-5" />
-                          <h3 className="text-sm font-black tracking-widest">
-                            {language === 'tr' ? 'IoT Yönetimi' : 'IoT Management'}
-                          </h3>
+                        <div className="flex items-center justify-between gap-2 text-cyan-500">
+                          <div className="flex items-center gap-2">
+                            <Radio className="w-5 h-5" />
+                            <h3 className="text-sm font-black tracking-widest">
+                              {language === 'tr' ? 'IoT Yönetimi' : 'IoT Management'}
+                            </h3>
+                          </div>
+                          <Button
+                            size="sm"
+                            className="h-7 px-3 text-xs font-semibold bg-cyan-600 hover:bg-cyan-700 text-white"
+                            onClick={() => {
+                              navigateToProgram('desktop');
+                              setTimeout(() => {
+                                setInput('http http://iot-panel');
+                                void executeCommand('http http://iot-panel');
+                              }, 300);
+                            }}
+                          >
+                            {language === 'tr' ? 'Web Paneli Aç' : 'Open Web Panel'}
+                          </Button>
                         </div>
 
                         {iotDevices.length === 0 ? (

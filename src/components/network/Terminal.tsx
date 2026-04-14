@@ -586,6 +586,25 @@ export function Terminal({
       }
     }
 
+    // Special case for http command - allow iot-panel completions
+    const httpMatch = trimmed.match(/^http\s+(\S*)$/i);
+    if (httpMatch) {
+      const arg = httpMatch[1].toLowerCase();
+      if (!hasTrailingSpace) {
+        // Auto-complete based on argument
+        if (arg.startsWith('i')) {
+          setInput('http iot-panel ');
+          setTabCycleIndex(-1);
+          return;
+        } else if (arg.startsWith('h')) {
+          setInput('http http://iot-panel ');
+          setTabCycleIndex(-1);
+          return;
+        }
+      }
+      // If trailing space or no match, fall through to normal completion
+    }
+
     const singleIpArgMatch = trimmed.match(/^(?:ip\s+default-gateway|ping|http|telnet|ssh)\s+(\S+)$/i);
     if (singleIpArgMatch && isIpv4(singleIpArgMatch[1]) && !hasTrailingSpace) {
       setInput(`${trimmed} `);
