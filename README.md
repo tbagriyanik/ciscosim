@@ -6,7 +6,7 @@ A modern and interactive web-based Network simulator designed for students and n
 ![Tech Stack](https://img.shields.io/badge/stack-Next.js%2016.2%20|%20React%2019%20|%20TypeScript%205.9%20|%20Tailwind%204-green)
 ![FOSS](https://img.shields.io/badge/FOSS-Free%20Open%20Source-brightgreen)
 ![Commits](https://img.shields.io/badge/commits-600+-orange)
-![Lines of Code](https://img.shields.io/badge/lines--of--code-54937-blueviolet)
+![Lines of Code](https://img.shields.io/badge/lines--of--code-52991-blueviolet)
 
 Network learing app [Test Address](https://network2026.vercel.app)
 
@@ -58,6 +58,47 @@ Network learing app [Test Address](https://network2026.vercel.app)
 - **Skeleton Screens**: Progressive loading with skeleton components for smoother transitions
 - **Asset Loading Strategy**: Next.js 16 optimized image and icon loading
 - **Node Pooling**: Efficient memory management for network elements
+
+## 🗺️ Development Roadmap
+
+### ✅ Completed (v1.5.0)
+- Interactive network topology with drag-and-drop
+- WiFi simulation with signal strength indicators
+- IoT device management and web panel
+- Layer 3 switching and routing (RIP/OSPF)
+- Note system with undo/redo support
+- Ping diagnostics with visual animation
+- Multi-selection and bulk operations
+- Performance optimization (spatial partitioning, viewport culling)
+- Accessibility (WCAG 2.1 AA compliance)
+- Turkish/English localization
+
+### 🚧 In Progress (v1.6.0)
+- Advanced routing protocols (BGP, EIGRP)
+- Network security simulation (ACLs, NAT, Firewall)
+- VLAN trunking and inter-VLAN routing
+- DHCP server simulation
+- Enhanced IoT protocols (MQTT, CoAP)
+
+### 📋 Planned (v1.7.0 - v2.0.0)
+- Packet capture and analysis (Wireshark-like)
+- Network monitoring dashboard
+- Automated lab grading system
+- Cloud-based lab sharing
+- Mobile app (React Native)
+- VR/AR network visualization
+- AI-powered network troubleshooting
+- Multi-user collaborative labs
+- Advanced QoS and traffic shaping
+- IPv6 support throughout
+
+### 🎯 Long-term Vision
+- Enterprise network simulation
+- SDN (Software-Defined Networking) support
+- Network automation with Ansible/Puppet
+- Integration with real network equipment
+- Certification exam preparation (CCNA/CCNP)
+- University curriculum integration
 
 ### 🛣️ Layer 3 Switching & Routing
 - **L3 Switch Support**: Implementation of WS-C3560-24PS with 4 GigabitEthernet ports
@@ -269,13 +310,13 @@ Theme selection is done from the theme selector in the top right corner.
 
 - Scope: `src/`
 - Source files: `170+`
-- Total lines: `54,785`
+- Total lines: `52,991`
 - TS/TSX files: `160+`
 - Network components: `50+`
 - Custom hooks: `20+`
 - Example projects: `8`
 - CLI commands: `110+`
-- Last updated: `2026-04-12`
+- Last updated: `2026-04-14`
 
 ## 🐛 Troubleshooting
 

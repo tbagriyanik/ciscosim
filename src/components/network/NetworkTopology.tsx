@@ -11,6 +11,8 @@ import { useSpatialPartitioning } from '@/lib/performance/spatial';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { CanvasDevice, CanvasConnection, CanvasNote, DeviceType, CanvasPort } from './networkTopology.types';
+import { generateSwitchPorts, generateL3SwitchPorts, generateRouterPorts } from './networkTopology.portGenerators';
+import { useCanvasHistory } from '@/hooks/useCanvasHistory';
 import { DeviceIcon } from './DeviceIcon';
 import { ConnectionLine } from './ConnectionLine';
 import { DeviceNode } from './DeviceNode';
@@ -153,49 +155,6 @@ export function NetworkTopology({
   const { theme } = useTheme();
   const isDark = theme === 'dark';
   const isTR = language === 'tr';
-
-  // Helper function to generate all switch ports - 24 FastEthernet ports
-  const generateSwitchPorts = (): CanvasPort[] => {
-    const ports: CanvasPort[] = [{ id: 'console', label: 'Console', status: 'disconnected' as const }];
-    // 24 FastEthernet ports
-    for (let i = 1; i <= 24; i++) {
-      ports.push({ id: `fa0/${i}`, label: `Fa0/${i}`, status: 'disconnected' as const });
-    }
-    // 2 GigabitEthernet ports
-    ports.push({ id: 'gi0/1', label: 'Gi0/1', status: 'disconnected' as const });
-    // gi0/2
-    ports.push({ id: 'gi0/2', label: 'Gi0/2', status: 'disconnected' as const });
-    ports.push({ id: 'wlan0', label: 'WLAN0', status: 'disconnected' as const, shutdown: true });
-    return ports;
-  };
-
-  // Helper function to generate L3 switch ports - with routing capabilities
-  const generateL3SwitchPorts = (): CanvasPort[] => {
-    const ports: CanvasPort[] = [{ id: 'console', label: 'Console', status: 'disconnected' as const }];
-    // 24 FastEthernet ports
-    for (let i = 1; i <= 24; i++) {
-      ports.push({ id: `fa0/${i}`, label: `Fa0/${i}`, status: 'disconnected' as const });
-    }
-    // 4 GigabitEthernet ports (L3 switches have more)
-    ports.push({ id: 'gi0/1', label: 'Gi0/1', status: 'disconnected' as const });
-    ports.push({ id: 'gi0/2', label: 'Gi0/2', status: 'disconnected' as const });
-    ports.push({ id: 'gi0/3', label: 'Gi0/3', status: 'disconnected' as const });
-    ports.push({ id: 'gi0/4', label: 'Gi0/4', status: 'disconnected' as const });
-    ports.push({ id: 'wlan0', label: 'WLAN0', status: 'disconnected' as const, shutdown: true });
-    return ports;
-  };
-
-  // Helper function to generate all router ports - 4 GIGABIT PORTS
-  const generateRouterPorts = (): CanvasPort[] => {
-    return [
-      { id: 'console', label: 'Console', status: 'disconnected' as const },
-      { id: 'gi0/0', label: 'Gi0/0', status: 'disconnected' as const },
-      { id: 'gi0/1', label: 'Gi0/1', status: 'disconnected' as const },
-      { id: 'gi0/2', label: 'Gi0/2', status: 'disconnected' as const },
-      { id: 'gi0/3', label: 'Gi0/3', status: 'disconnected' as const },
-      { id: 'wlan0', label: 'WLAN0', status: 'disconnected' as const, shutdown: true },
-    ];
-  };
 
   // Helper to generate a random unique Dot-formatted MAC address (xxxx.xxxx.xxxx)
   const allocatedMacAddressesRef = useRef<Set<string>>(new Set());
@@ -505,68 +464,34 @@ export function NetworkTopology({
   const [clipboard, setClipboard] = useState<CanvasDevice[]>([]);
   const [notesClipboard, setNotesClipboard] = useState<CanvasNote[]>([]);
 
-  // Undo/Redo history - ref-based, no stale closure
-  const historyRef = useRef<{ devices: CanvasDevice[]; connections: CanvasConnection[]; notes: CanvasNote[] }[]>([]);
-  const historyIndexRef = useRef<number>(-1);
-  const [historyIndex, setHistoryIndex] = useState(-1);
-  const [historyLength, setHistoryLength] = useState(0);
-
   // Always-fresh refs: updated on every render so event handlers never get stale values
   const latestDevicesRef = useRef<CanvasDevice[]>([]);
   const latestConnectionsRef = useRef<CanvasConnection[]>([]);
+  const latestNotesRef = useRef<CanvasNote[]>([]);
 
-  // Save CURRENT state to history (call BEFORE making changes)
-  const saveToHistory = useCallback(() => {
-    const snapshot = {
-      devices: JSON.parse(JSON.stringify(latestDevicesRef.current)),
-      connections: JSON.parse(JSON.stringify(latestConnectionsRef.current)),
-      notes: JSON.parse(JSON.stringify(latestNotesRef.current)),
-    };
-    // Truncate redo stack
-    const truncated = historyRef.current.slice(0, historyIndexRef.current + 1);
-    // Deduplicate: skip if identical to last entry
-    const last = truncated[truncated.length - 1];
-    if (last &&
-      JSON.stringify(last.devices) === JSON.stringify(snapshot.devices) &&
-      JSON.stringify(last.connections) === JSON.stringify(snapshot.connections) &&
-      JSON.stringify(last.notes) === JSON.stringify(snapshot.notes)) {
-      return;
-    }
-    truncated.push(snapshot);
-    if (truncated.length > 100) truncated.shift();
-    historyRef.current = truncated;
-    historyIndexRef.current = truncated.length - 1;
-    setHistoryIndex(historyIndexRef.current);
-    setHistoryLength(truncated.length);
-  }, []);
+  // Refs for note dragging/resizing to avoid stale closures
+  const draggedNoteIdRef = useRef<string | null>(null);
+  const resizingNoteIdRef = useRef<string | null>(null);
+  const noteDragStartRef = useRef<{ x: number; y: number } | null>(null);
+  const noteResizeStartRef = useRef<{ x: number; y: number; width: number; height: number } | null>(null);
 
-  // Undo
-  const handleUndo = useCallback(() => {
-    if (historyIndexRef.current > 0) {
-      historyIndexRef.current -= 1;
-      const state = historyRef.current[historyIndexRef.current];
-      if (state) {
-        setDevices(JSON.parse(JSON.stringify(state.devices)));
-        setConnections(JSON.parse(JSON.stringify(state.connections)));
-        setNotes(JSON.parse(JSON.stringify(state.notes)));
-        setHistoryIndex(historyIndexRef.current);
-      }
-    }
-  }, []);
-
-  // Redo
-  const handleRedo = useCallback(() => {
-    if (historyIndexRef.current < historyRef.current.length - 1) {
-      historyIndexRef.current += 1;
-      const state = historyRef.current[historyIndexRef.current];
-      if (state) {
-        setDevices(JSON.parse(JSON.stringify(state.devices)));
-        setConnections(JSON.parse(JSON.stringify(state.connections)));
-        setNotes(JSON.parse(JSON.stringify(state.notes)));
-        setHistoryIndex(historyIndexRef.current);
-      }
-    }
-  }, []);
+  // Undo/Redo — managed by useCanvasHistory hook
+  const {
+    saveToHistory,
+    handleUndo,
+    handleRedo,
+    canUndo: localCanUndo,
+    canRedo: localCanRedo,
+    historyIndex,
+    historyLength,
+  } = useCanvasHistory({
+    setDevices: setDevicesState,
+    setConnections: setConnectionsState,
+    setNotes: setNotesState,
+    latestDevicesRef,
+    latestConnectionsRef,
+    latestNotesRef,
+  });
 
   // Configuration state (Name, IP, etc.)
   const [configuringDevice, setConfiguringDevice] = useState<string | null>(null);
@@ -599,26 +524,6 @@ export function NetworkTopology({
   const [longPressTimer, setLongPressTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
   const [lastTapTime, setLastTapTime] = useState(0);
   const [lastTappedDevice, setLastTappedDevice] = useState<string | null>(null);
-
-  // Sync all refs on every render BEFORE they are used in handlers
-  latestDevicesRef.current = devices;
-  latestConnectionsRef.current = connections;
-  isPanningRef.current = isPanning;
-  panStartRef.current = panStart;
-  zoomRef.current = zoom;
-  panRef.current = pan;
-  draggedDeviceRef.current = draggedDevice;
-  dragStartPosRef.current = dragStartPos;
-  dragStartDevicePositionsRef.current = dragStartDevicePositions;
-  isActuallyDraggingRef.current = isActuallyDragging;
-  selectedDeviceIdsRef.current = selectedDeviceIds;
-  snapToGridRef.current = snapToGrid;
-  isDrawingConnectionRef.current = isDrawingConnection;
-
-  isTouchDraggingRef.current = isTouchDragging;
-  touchDraggedDeviceRef.current = touchDraggedDevice;
-  touchDragStartPosRef.current = touchDragStartPos;
-  touchDragOffsetRef.current = touchDragOffset;
 
   // Advanced Canvas Pan/Zoom Touch state
   const [lastTouchCenter, setLastTouchCenter] = useState<{ x: number; y: number } | null>(null);
@@ -2184,12 +2089,31 @@ export function NetworkTopology({
   const [noteDragStart, setNoteDragStart] = useState<{ x: number; y: number } | null>(null);
   const [noteResizeStart, setNoteResizeStart] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
 
-  // Refs for note dragging/resizing to avoid stale closures
-  const draggedNoteIdRef = useRef<string | null>(null);
-  const resizingNoteIdRef = useRef<string | null>(null);
-  const noteDragStartRef = useRef<{ x: number; y: number } | null>(null);
-  const noteResizeStartRef = useRef<{ x: number; y: number; width: number; height: number } | null>(null);
-  const latestNotesRef = useRef<CanvasNote[]>([]);
+  // Sync all refs on every render BEFORE they are used in handlers
+  latestDevicesRef.current = devices;
+  latestConnectionsRef.current = connections;
+  latestNotesRef.current = notes;
+  draggedNoteIdRef.current = draggedNoteId;
+  resizingNoteIdRef.current = resizingNoteId;
+  noteDragStartRef.current = noteDragStart;
+  noteResizeStartRef.current = noteResizeStart;
+  isPanningRef.current = isPanning;
+  panStartRef.current = panStart;
+  zoomRef.current = zoom;
+  panRef.current = pan;
+  draggedDeviceRef.current = draggedDevice;
+  dragStartPosRef.current = dragStartPos;
+  dragStartDevicePositionsRef.current = dragStartDevicePositions;
+  isActuallyDraggingRef.current = isActuallyDragging;
+  selectedDeviceIdsRef.current = selectedDeviceIds;
+  snapToGridRef.current = snapToGrid;
+  isDrawingConnectionRef.current = isDrawingConnection;
+
+  isTouchDraggingRef.current = isTouchDragging;
+  touchDraggedDeviceRef.current = touchDraggedDevice;
+  touchDragStartPosRef.current = touchDragStartPos;
+  touchDragOffsetRef.current = touchDragOffset;
+
   const getNextNoteId = useCallback(() => {
     const existingIds = new Set(latestNotesRef.current.map((n) => n.id));
     let next = noteCounterRef.current + 1;
@@ -2466,13 +2390,6 @@ export function NetworkTopology({
       end: note.text.length,
     });
   }, []);
-
-  // Sync notes ref on every render
-  latestNotesRef.current = notes;
-  draggedNoteIdRef.current = draggedNoteId;
-  resizingNoteIdRef.current = resizingNoteId;
-  noteDragStartRef.current = noteDragStart;
-  noteResizeStartRef.current = noteResizeStart;
 
   // Handle note header drag start
   const handleNoteHeaderMouseDown = useCallback((e: ReactMouseEvent, noteId: string) => {

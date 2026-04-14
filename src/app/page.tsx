@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 
 import { SwitchState, CableInfo } from '@/lib/network/types';
 import { useDeviceManager } from '@/hooks/useDeviceManager';
+import { useModalDragResize } from '@/hooks/useModalDragResize';
 import useAppStore, { useTopologyDevices, useTopologyConnections, useTopologyNotes, useZoom, usePan, useActiveTab } from '@/lib/store/appStore';
 // Duplicate removed
 import { NetworkTopology } from '@/components/network/NetworkTopology';
@@ -660,208 +661,17 @@ export default function Home() {
   const [showTerminalModal, setShowTerminalModal] = useState(false);
 
   // Tasks modal state
-  const [tasksModalPosition, setTasksModalPosition] = useState({ x: 20, y: 20 });
-  const [tasksModalSize, setTasksModalSize] = useState({ width: 1200, height: 700 });
-
   // CLI modal state
-  const [cliModalPosition, setCliModalPosition] = useState({ x: 20, y: 20 });
-  const [cliModalSize, setCliModalSize] = useState({ width: 1200, height: 700 });
-
-  // Load tasks modal position and size from localStorage after hydration
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const savedPosition = localStorage.getItem('tasks-modal-position');
-      const savedSize = localStorage.getItem('tasks-modal-size');
-
-      const maxWidth = window.innerWidth - 40;
-      const maxHeight = window.innerHeight - 40;
-
-      let size = { width: 1200, height: 700 };
-
-      if (savedSize) {
-        const parsedSize = JSON.parse(savedSize);
-        // Ensure saved size doesn't exceed screen
-        size.width = Math.min(parsedSize.width, maxWidth);
-        size.height = Math.min(parsedSize.height, maxHeight);
-      } else {
-        // Safe initial size: fit within screen width
-        size.width = Math.min(maxWidth, 1200);
-        size.height = Math.min(maxHeight, 700);
-      }
-
-      setTasksModalSize(size);
-
-      if (savedPosition) {
-        const position = JSON.parse(savedPosition);
-        // Ensure saved position is within bounds and modal stays fully visible
-        const x = Math.max(0, Math.min(position.x, window.innerWidth - size.width));
-        const y = Math.max(0, Math.min(position.y, window.innerHeight - size.height));
-        setTasksModalPosition({ x, y });
-      } else {
-        // Default position: centered on screen
-        setTasksModalPosition({
-          x: Math.max(0, (window.innerWidth - size.width) / 2),
-          y: Math.max(0, (window.innerHeight - size.height) / 2)
-        });
-      }
-    }
-  }, []);
-
-  // Load CLI modal position and size from localStorage after hydration
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const savedPosition = localStorage.getItem('cli-modal-position');
-      const savedSize = localStorage.getItem('cli-modal-size');
-
-      const maxWidth = window.innerWidth - 40;
-      const maxHeight = window.innerHeight - 40;
-
-      let size = { width: 1200, height: 700 };
-
-      if (savedSize) {
-        const parsedSize = JSON.parse(savedSize);
-        // Ensure saved size doesn't exceed screen
-        size.width = Math.min(parsedSize.width, maxWidth);
-        size.height = Math.min(parsedSize.height, maxHeight);
-      } else {
-        // Safe initial size: fit within screen width
-        size.width = Math.min(maxWidth, 1200);
-        size.height = Math.min(maxHeight, 700);
-      }
-
-      setCliModalSize(size);
-
-      if (savedPosition) {
-        const position = JSON.parse(savedPosition);
-        // Ensure saved position is within bounds and modal stays fully visible
-        const x = Math.max(0, Math.min(position.x, window.innerWidth - size.width));
-        const y = Math.max(0, Math.min(position.y, window.innerHeight - size.height));
-        setCliModalPosition({ x, y });
-      } else {
-        // Default position: centered on screen
-        setCliModalPosition({
-          x: Math.max(0, (window.innerWidth - size.width) / 2),
-          y: Math.max(0, (window.innerHeight - size.height) / 2)
-        });
-      }
-    }
-  }, []);
+  // Modal drag/resize — managed by useModalDragResize hook
+  const {
+    tasksModalPosition,
+    tasksModalSize,
+    cliModalPosition,
+    cliModalSize,
+    handleMouseDown,
+    handleResizeStart,
+  } = useModalDragResize();
   const [deviceSearchQuery, setDeviceSearchQuery] = useState('');
-
-  // Drag/resize — ref-based for zero-lag performance (no re-renders during move)
-  const dragStateRef = useRef<{
-    active: boolean;
-    type: 'drag' | 'resize';
-    modal: 'tasks' | 'cli';
-    direction?: string;
-    startX: number;
-    startY: number;
-    startPosX: number;
-    startPosY: number;
-    startW: number;
-    startH: number;
-    raf: number | null;
-  } | null>(null);
-
-  // Keep refs in sync with state so drag handlers always read latest values
-  const tasksModalPositionRef = useRef(tasksModalPosition);
-  const tasksModalSizeRef = useRef(tasksModalSize);
-  const cliModalPositionRef = useRef(cliModalPosition);
-  const cliModalSizeRef = useRef(cliModalSize);
-  useEffect(() => { tasksModalPositionRef.current = tasksModalPosition; }, [tasksModalPosition]);
-  useEffect(() => { tasksModalSizeRef.current = tasksModalSize; }, [tasksModalSize]);
-  useEffect(() => { cliModalPositionRef.current = cliModalPosition; }, [cliModalPosition]);
-  useEffect(() => { cliModalSizeRef.current = cliModalSize; }, [cliModalSize]);
-
-  // Handle modal drag
-  const handleMouseDown = useCallback((e: React.MouseEvent, modalType: 'tasks' | 'cli') => {
-    const header = (e.target as HTMLElement).closest('[data-modal-header]');
-    if (!header) return;
-    if ((e.target as HTMLElement).closest('button, input, select, textarea, a')) return;
-    e.preventDefault();
-    e.stopPropagation();
-    const pos = modalType === 'tasks' ? tasksModalPositionRef.current : cliModalPositionRef.current;
-    const size = modalType === 'tasks' ? tasksModalSizeRef.current : cliModalSizeRef.current;
-    dragStateRef.current = {
-      active: true, type: 'drag', modal: modalType,
-      startX: e.clientX, startY: e.clientY,
-      startPosX: pos.x, startPosY: pos.y,
-      startW: size.width, startH: size.height, raf: null
-    };
-  }, []);
-
-  // Handle modal resize
-  const handleResizeStart = useCallback((e: React.MouseEvent, direction: 'n' | 's' | 'e' | 'w' | 'ne' | 'nw' | 'se' | 'sw', modalType: 'tasks' | 'cli') => {
-    e.preventDefault();
-    e.stopPropagation();
-    const pos = modalType === 'tasks' ? tasksModalPositionRef.current : cliModalPositionRef.current;
-    const size = modalType === 'tasks' ? tasksModalSizeRef.current : cliModalSizeRef.current;
-    dragStateRef.current = {
-      active: true, type: 'resize', modal: modalType, direction,
-      startX: e.clientX, startY: e.clientY,
-      startPosX: pos.x, startPosY: pos.y,
-      startW: size.width, startH: size.height, raf: null
-    };
-  }, []);
-
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      const ds = dragStateRef.current;
-      if (!ds?.active) return;
-      if (ds.raf) cancelAnimationFrame(ds.raf);
-      ds.raf = requestAnimationFrame(() => {
-        const ds2 = dragStateRef.current;
-        if (!ds2?.active) return;
-        const setPosition = ds2.modal === 'tasks' ? setTasksModalPosition : setCliModalPosition;
-        const setSize = ds2.modal === 'tasks' ? setTasksModalSize : setCliModalSize;
-
-        if (ds2.type === 'drag') {
-          setPosition({
-            x: ds2.startPosX + (e.clientX - ds2.startX),
-            y: ds2.startPosY + (e.clientY - ds2.startY),
-          });
-        } else if (ds2.type === 'resize' && ds2.direction) {
-          const dx = e.clientX - ds2.startX;
-          const dy = e.clientY - ds2.startY;
-          let newW = ds2.startW, newH = ds2.startH, newX = ds2.startPosX, newY = ds2.startPosY;
-          if (ds2.direction.includes('e')) newW = Math.max(400, ds2.startW + dx);
-          if (ds2.direction.includes('s')) newH = Math.max(300, ds2.startH + dy);
-          if (ds2.direction.includes('w')) { newW = Math.max(400, ds2.startW - dx); newX = ds2.startPosX + (ds2.startW - newW); }
-          if (ds2.direction.includes('n')) { newH = Math.max(300, ds2.startH - dy); newY = ds2.startPosY + (ds2.startH - newH); }
-          setSize({ width: newW, height: newH });
-          setPosition({ x: newX, y: newY });
-        }
-      });
-    };
-
-    const handleMouseUp = () => {
-      if (dragStateRef.current?.raf) cancelAnimationFrame(dragStateRef.current.raf);
-      dragStateRef.current = null;
-    };
-
-    window.addEventListener('mousemove', handleMouseMove, { passive: true });
-    window.addEventListener('mouseup', handleMouseUp);
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, []);
-
-  // Save tasks modal position and size to localStorage
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('tasks-modal-position', JSON.stringify(tasksModalPosition));
-      localStorage.setItem('tasks-modal-size', JSON.stringify(tasksModalSize));
-    }
-  }, [tasksModalPosition, tasksModalSize]);
-
-  // Save CLI modal position and size to localStorage
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('cli-modal-position', JSON.stringify(cliModalPosition));
-      localStorage.setItem('cli-modal-size', JSON.stringify(cliModalSize));
-    }
-  }, [cliModalPosition, cliModalSize]);
   const [focusDeviceId, setFocusDeviceId] = useState<string | null>(null);
 
   // Get current state helper
@@ -3855,8 +3665,9 @@ ${state.bannerMOTD}
                 maxHeight: 'none',
               }}
             >
+              <div className="relative flex flex-col h-full">
               <DialogHeader
-                className="p-4 border-b cursor-move select-none"
+                className={`p-4 border-b cursor-move select-none sticky top-0 z-10 ${isDark ? 'bg-slate-900' : 'bg-white'}`}
                 data-modal-header
                 onMouseDown={(e) => handleMouseDown(e, 'tasks')}
               >
@@ -3915,10 +3726,47 @@ ${state.bannerMOTD}
                   </div>
                 </div>
               </div>
-              <div
-                className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize bg-slate-400 hover:bg-slate-600"
-                onMouseDown={(e) => handleResizeStart(e, 'se', 'tasks')}
-              />
+              {/* Resize handles - hidden on mobile */}
+              <div className="hidden md:block">
+                <div
+                  className="absolute top-0 left-0 right-0 h-1 cursor-n-resize bg-slate-400/20 hover:bg-slate-400/40 transition-colors"
+                  onMouseDown={(e) => handleResizeStart(e, 'n', 'tasks')}
+                />
+                <div
+                  className="absolute bottom-0 left-0 right-0 h-1 cursor-s-resize bg-slate-400/20 hover:bg-slate-400/40 transition-colors"
+                  onMouseDown={(e) => handleResizeStart(e, 's', 'tasks')}
+                />
+                <div
+                  className="absolute left-0 top-0 bottom-0 w-1 cursor-w-resize bg-slate-400/20 hover:bg-slate-400/40 transition-colors"
+                  onMouseDown={(e) => handleResizeStart(e, 'w', 'tasks')}
+                />
+                <div
+                  className="absolute right-0 top-0 bottom-0 w-1 cursor-e-resize bg-slate-400/20 hover:bg-slate-400/40 transition-colors"
+                  onMouseDown={(e) => handleResizeStart(e, 'e', 'tasks')}
+                />
+                <div
+                  className="absolute top-0 left-0 w-3 h-3 cursor-nw-resize bg-slate-400/20 hover:bg-slate-400/40 transition-colors"
+                  onMouseDown={(e) => handleResizeStart(e, 'nw', 'tasks')}
+                />
+                <div
+                  className="absolute top-0 right-0 w-3 h-3 cursor-ne-resize bg-slate-400/20 hover:bg-slate-400/40 transition-colors"
+                  onMouseDown={(e) => handleResizeStart(e, 'ne', 'tasks')}
+                />
+                <div
+                  className="absolute bottom-0 left-0 w-3 h-3 cursor-sw-resize bg-slate-400/20 hover:bg-slate-400/40 transition-colors"
+                  onMouseDown={(e) => handleResizeStart(e, 'sw', 'tasks')}
+                />
+                <div
+                  className="absolute bottom-0 right-0 w-3 h-3 cursor-se-resize bg-slate-400/30 hover:bg-slate-400/50 flex items-center justify-center transition-colors"
+                  onMouseDown={(e) => handleResizeStart(e, 'se', 'tasks')}
+                >
+                  <svg className="w-2 h-2 text-white/60 hover:text-white/80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4h16v16H4z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 12h16M12 4v16" />
+                  </svg>
+                </div>
+              </div>
+              </div>
             </DialogContent>
           </Dialog>
 
@@ -3938,7 +3786,7 @@ ${state.bannerMOTD}
               }}
             >
               <DialogHeader
-                className="p-4 border-b cursor-move select-none"
+                className={`p-4 border-b cursor-move select-none sticky top-0 z-10 ${isDark ? 'bg-slate-900' : 'bg-white'}`}
                 data-modal-header
                 onMouseDown={(e) => handleMouseDown(e, 'cli')}
               >
@@ -3995,38 +3843,38 @@ ${state.bannerMOTD}
               {/* Resize handles - hidden on mobile */}
               <div className="hidden md:block">
                 <div
-                  className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-2 cursor-n-resize hover:bg-slate-400/50"
+                  className="absolute top-0 left-0 right-0 h-1 cursor-n-resize bg-slate-400/20 hover:bg-slate-400/40 transition-colors"
                   onMouseDown={(e) => handleResizeStart(e, 'n', 'cli')}
                 />
                 <div
-                  className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-2 cursor-s-resize hover:bg-slate-400/50"
+                  className="absolute bottom-0 left-0 right-0 h-1 cursor-s-resize bg-slate-400/20 hover:bg-slate-400/40 transition-colors"
                   onMouseDown={(e) => handleResizeStart(e, 's', 'cli')}
                 />
                 <div
-                  className="absolute left-0 top-1/2 -translate-y-1/2 w-2 h-8 cursor-w-resize hover:bg-slate-400/50"
+                  className="absolute left-0 top-0 bottom-0 w-1 cursor-w-resize bg-slate-400/20 hover:bg-slate-400/40 transition-colors"
                   onMouseDown={(e) => handleResizeStart(e, 'w', 'cli')}
                 />
                 <div
-                  className="absolute right-0 top-1/2 -translate-y-1/2 w-2 h-8 cursor-e-resize hover:bg-slate-400/50"
+                  className="absolute right-0 top-0 bottom-0 w-1 cursor-e-resize bg-slate-400/20 hover:bg-slate-400/40 transition-colors"
                   onMouseDown={(e) => handleResizeStart(e, 'e', 'cli')}
                 />
                 <div
-                  className="absolute top-0 left-0 w-4 h-4 cursor-nw-resize hover:bg-slate-400/50"
+                  className="absolute top-0 left-0 w-3 h-3 cursor-nw-resize bg-slate-400/20 hover:bg-slate-400/40 transition-colors"
                   onMouseDown={(e) => handleResizeStart(e, 'nw', 'cli')}
                 />
                 <div
-                  className="absolute top-0 right-0 w-4 h-4 cursor-ne-resize hover:bg-slate-400/50"
+                  className="absolute top-0 right-0 w-3 h-3 cursor-ne-resize bg-slate-400/20 hover:bg-slate-400/40 transition-colors"
                   onMouseDown={(e) => handleResizeStart(e, 'ne', 'cli')}
                 />
                 <div
-                  className="absolute bottom-0 left-0 w-4 h-4 cursor-sw-resize hover:bg-slate-400/50"
+                  className="absolute bottom-0 left-0 w-3 h-3 cursor-sw-resize bg-slate-400/20 hover:bg-slate-400/40 transition-colors"
                   onMouseDown={(e) => handleResizeStart(e, 'sw', 'cli')}
                 />
                 <div
-                  className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize bg-slate-400 hover:bg-slate-600 flex items-center justify-center"
+                  className="absolute bottom-0 right-0 w-3 h-3 cursor-se-resize bg-slate-400/30 hover:bg-slate-400/50 flex items-center justify-center transition-colors"
                   onMouseDown={(e) => handleResizeStart(e, 'se', 'cli')}
                 >
-                  <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-2 h-2 text-white/60 hover:text-white/80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4h16v16H4z" />
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 12h16M12 4v16" />
                   </svg>
