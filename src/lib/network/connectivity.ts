@@ -414,7 +414,8 @@ export function checkConnectivity(
     // Check if source device has domain lookup disabled
     const sourceState = deviceStates?.get(sourceId);
     if (sourceState?.domainLookup === false) {
-      return { success: false, hops: [], hopIds: [], error: `% Unknown command or domain lookup disabled.\nTranslating "${targetIp}"...domain server (255.255.255.255)\n% Unrecognized host or address, or protocol not running.` };
+      const dnsServer = sourceState?.dnsServer || '255.255.255.255';
+      return { success: false, hops: [], hopIds: [], error: `% Unknown command or domain lookup disabled.\nTranslating "${targetIp}"...domain server (${dnsServer})\n% Unrecognized host or address, or protocol not running.` };
     }
 
     // Check if this is an external domain

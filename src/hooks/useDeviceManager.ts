@@ -635,6 +635,35 @@ export function useDeviceManager() {
 
           setDeviceOutputs(prev => new Map(prev).set(deviceId, []));
         }
+        if ((result as any).deleteVlanDat) {
+          setDeviceStates(prev => {
+            const next = new Map(prev);
+            const current = next.get(deviceId);
+            if (current) {
+              next.set(deviceId, {
+                ...current,
+                vlans: { '1': { id: 1, name: 'default', status: 'active', ports: [] } },
+                ports: Object.fromEntries(
+                  Object.entries(current.ports || {}).map(([key, port]: [string, any]) => [
+                    key,
+                    { ...port, vlan: port.vlan !== undefined ? 1 : undefined }
+                  ])
+                )
+              });
+            }
+            return next;
+          });
+
+          const device = topologyDevices?.find(d => d.id === deviceId);
+          const deviceName = device?.name || deviceId;
+
+          toast({
+            title: language === 'tr' ? 'VLAN Veritabanı Silindi' : 'VLAN Database Deleted',
+            description: language === 'tr'
+              ? `${deviceName} - vlan.dat silindi`
+              : `${deviceName} - vlan.dat deleted`,
+          });
+        }
         if (result.reloadDevice) {
           const baseState = deviceId.includes('router') ? createInitialRouterState() : createInitialState();
           const startupConfig = deviceState.startupConfig;

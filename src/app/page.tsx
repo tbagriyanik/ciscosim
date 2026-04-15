@@ -2247,6 +2247,48 @@ ${state.bannerMOTD}
       };
     };
 
+    const propagateVtpVlans = (devices: CanvasDevice[], states: Map<string, SwitchState>, connections: CanvasConnection[]) => {
+      const byId = new Map(devices.map((d) => [d.id, d]));
+      const nextStates = new Map(states);
+
+      for (const conn of connections) {
+        if (!conn.active) continue;
+        const a = byId.get(conn.sourceDeviceId);
+        const b = byId.get(conn.targetDeviceId);
+        if (!a || !b) continue;
+        if (!isSwitchDeviceType(a.type) || !isSwitchDeviceType(b.type)) continue;
+
+        const aState = nextStates.get(a.id);
+        const bState = nextStates.get(b.id);
+        if (!aState || !bState) continue;
+
+        const aPort = aState.ports?.[conn.sourcePort];
+        const bPort = bState.ports?.[conn.targetPort];
+        const aIsTrunk = !!aPort && !aPort.shutdown && aPort.mode === 'trunk';
+        const bIsTrunk = !!bPort && !bPort.shutdown && bPort.mode === 'trunk';
+        if (!aIsTrunk || !bIsTrunk) continue;
+
+        const aMode = aState.vtpMode || 'server';
+        const bMode = bState.vtpMode || 'server';
+        const aDomain = (aState.vtpDomain || '').trim();
+        const bDomain = (bState.vtpDomain || '').trim();
+        if (!aDomain || !bDomain) continue;
+        if (aDomain !== bDomain) continue;
+
+        const aRev = aState.vtpRevision || 0;
+        const bRev = bState.vtpRevision || 0;
+
+        // Minimal VTP: server pushes VLAN database to client if revision is newer.
+        if (aMode === 'server' && bMode === 'client' && aRev > bRev) {
+          nextStates.set(b.id, { ...bState, vlans: { ...(aState.vlans || {}) }, vtpRevision: aRev });
+        } else if (bMode === 'server' && aMode === 'client' && bRev > aRev) {
+          nextStates.set(a.id, { ...aState, vlans: { ...(bState.vlans || {}) }, vtpRevision: bRev });
+        }
+      }
+
+      return nextStates;
+    };
+
     let refreshCount = 0;
     let disconnectedPCs: string[] = [];
     let disconnectedAPs: string[] = [];
@@ -2367,8 +2409,11 @@ ${state.bannerMOTD}
         }
       });
 
-      // 5. Force update deviceStates to trigger re-render of all terminals and WiFi indicators
-      const updatedDeviceStates = new Map(deviceStates);
+      // 5. VTP propagation (server -> client over trunk)
+      const vtpUpdatedStates = propagateVtpVlans(refreshedDevices, deviceStates, topologyConnections);
+
+      // 6. Force update deviceStates to trigger re-render of all terminals and WiFi indicators
+      const updatedDeviceStates = new Map(vtpUpdatedStates);
       refreshedDevices.forEach(device => {
         const deviceState = updatedDeviceStates.get(device.id);
         if (deviceState) {
@@ -2377,11 +2422,11 @@ ${state.bannerMOTD}
       });
       setDeviceStates(updatedDeviceStates);
 
-      // 6. Force update topology devices — each device gets a new object reference
+      // 7. Force update topology devices — each device gets a new object reference
       //    so NetworkTopology's WiFi signal useMemo re-evaluates for every device
       setTopologyDevices(refreshedDevices);
 
-      // 7. Show detailed notification
+      // 8. Show detailed notification
       const totalDevices = connectedPCs.length + activeAPs.length + disconnectedPCs.length + disconnectedAPs.length;
       if (totalDevices > 0) {
         const wifiMessages = [];
@@ -2450,7 +2495,7 @@ ${state.bannerMOTD}
         });
       }
     }
-  }, [topologyDevices, deviceStates, setDeviceStates, setTopologyDevices, toast, language]);
+  }, [topologyDevices, deviceStates, setDeviceStates, setTopologyDevices, toast, language, topologyConnections]);
 
   // Handle key events: ESC to close, ENTER to confirm
   useEffect(() => {
@@ -4205,9 +4250,9 @@ ${state.bannerMOTD}
                           size="icon"
                           className="h-8 w-8 text-slate-500 hover:bg-slate-500/10"
                           onClick={handleUndo}
-                          disabled={canUndo === false}
+                          disabled={!canUndo}
                         >
-                          <Undo2 className={`w-4 h-4 ${canUndo === false ? 'opacity-30' : ''}`} />
+                          <Undo2 className={`w-4 h-4 ${!canUndo ? 'opacity-30' : ''}`} />
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>{t.undo} (Ctrl+Z)</TooltipContent>
@@ -4221,9 +4266,9 @@ ${state.bannerMOTD}
                           size="icon"
                           className="h-8 w-8 text-slate-500 hover:bg-slate-500/10"
                           onClick={handleRedo}
-                          disabled={canRedo === false}
+                          disabled={!canRedo}
                         >
-                          <Redo2 className={`w-4 h-4 ${canRedo === false ? 'opacity-30' : ''}`} />
+                          <Redo2 className={`w-4 h-4 ${!canRedo ? 'opacity-30' : ''}`} />
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>{t.redo} (Ctrl+Y)</TooltipContent>

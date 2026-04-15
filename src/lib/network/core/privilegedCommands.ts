@@ -23,6 +23,7 @@ export const privilegedHandlers: Record<string, CommandHandler> = {
     'undebug all': cmdUndebugAll,
     'do write': cmdDoWrite,
     'do ping': cmdDoPing,
+    'delete vlan.dat': cmdDeleteVlanDat,
 };
 
 /**
@@ -775,6 +776,24 @@ function cmdHelp(state: any, input: string, ctx: any): any {
         ? '\nYardım sistemi:\n  Komut tamamlama için TAB tuşunu kullanın\n  Komut yardımı için ? kullanın\n  Örnek: show ?\n'
         : '\nHelp system:\n  Use TAB for command completion\n  Use ? for command help\n  Example: show ?\n';
     return { success: true, output };
+}
+
+/**
+ * Delete VLAN database file
+ */
+function cmdDeleteVlanDat(state: any, input: string, ctx: any): any {
+    if (state.currentMode !== 'privileged') {
+        return { success: false, error: '% Invalid command at this mode' };
+    }
+
+    return {
+        success: true,
+        output: 'Delete filename [vlan.dat]?',
+        requiresConfirmation: true,
+        confirmationMessage: 'Delete vlan.dat? This will remove all VLAN database information.',
+        confirmationAction: 'delete-vlan',
+        deleteVlanDat: true
+    };
 }
 
 // Register new privileged handlers

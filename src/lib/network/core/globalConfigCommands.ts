@@ -301,10 +301,14 @@ function cmdVlan(state: any, input: string, ctx: any): any {
     };
   }
 
+  const shouldBumpVtp = (state.vtpMode === 'server') && !!state.vtpDomain;
+  const nextVtpRevision = shouldBumpVtp ? ((state.vtpRevision || 0) + 1) : state.vtpRevision;
+
   return {
     success: true,
     newState: {
       vlans: newVlans,
+      vtpRevision: nextVtpRevision,
       currentMode: 'vlan',
       currentVlan: vlanId
     }
@@ -333,10 +337,14 @@ function cmdNoVlan(state: any, input: string, ctx: any): any {
 
   delete newVlans[vlanId];
 
+  const shouldBumpVtp = (state.vtpMode === 'server') && !!state.vtpDomain;
+  const nextVtpRevision = shouldBumpVtp ? ((state.vtpRevision || 0) + 1) : state.vtpRevision;
+
   return {
     success: true,
     newState: {
-      vlans: newVlans
+      vlans: newVlans,
+      vtpRevision: nextVtpRevision,
     }
   };
 }
@@ -360,6 +368,9 @@ function cmdVlanName(state: any, input: string, ctx: any): any {
     return { success: false, error: '% VLAN not found' };
   }
 
+  const shouldBumpVtp = (state.vtpMode === 'server') && !!state.vtpDomain;
+  const nextVtpRevision = shouldBumpVtp ? ((state.vtpRevision || 0) + 1) : state.vtpRevision;
+
   return {
     success: true,
     newState: {
@@ -369,7 +380,8 @@ function cmdVlanName(state: any, input: string, ctx: any): any {
           ...vlan,
           name: match[1]
         }
-      }
+      },
+      vtpRevision: nextVtpRevision,
     }
   };
 }
@@ -393,6 +405,9 @@ function cmdVlanState(state: any, input: string, ctx: any): any {
     return { success: false, error: '% VLAN not found' };
   }
 
+  const shouldBumpVtp = (state.vtpMode === 'server') && !!state.vtpDomain;
+  const nextVtpRevision = shouldBumpVtp ? ((state.vtpRevision || 0) + 1) : state.vtpRevision;
+
   return {
     success: true,
     newState: {
@@ -402,7 +417,8 @@ function cmdVlanState(state: any, input: string, ctx: any): any {
           ...vlan,
           status: match[1].toLowerCase()
         }
-      }
+      },
+      vtpRevision: nextVtpRevision,
     }
   };
 }
