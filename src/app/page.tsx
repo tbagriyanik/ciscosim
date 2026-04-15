@@ -14,6 +14,7 @@ import { CanvasDevice, CanvasConnection, CanvasNote, DeviceType } from '@/compon
 import { getPrompt } from '@/lib/network/executor';
 import { formatErrorForUser } from '@/lib/errors/errorHandler';
 import { checkDeviceConnectivity, getWirelessSignalStrength } from '@/lib/network/connectivity';
+import { generateRandomLinkLocalIpv4 } from '@/lib/network/linkLocal';
 import type { TerminalOutput } from '@/components/network/Terminal';
 import { BOOT_PROGRESS_MARKER } from '@/components/network/Terminal';
 import {
@@ -929,6 +930,38 @@ export default function Home() {
     return 'pc';
   }, []);
 
+  const isValidIpv4 = useCallback((value?: string) => {
+    if (!value) return false;
+    const parts = value.split('.');
+    if (parts.length !== 4) return false;
+    return parts.every((part) => {
+      const n = Number(part);
+      return Number.isInteger(n) && n >= 0 && n <= 255;
+    });
+  }, []);
+
+  const applyLinkLocalToUnconfiguredHosts = useCallback((devices: CanvasDevice[]) => {
+    const usedIps = new Set<string>();
+    devices.forEach((device) => {
+      if (isValidIpv4(device.ip) && device.ip !== '0.0.0.0') usedIps.add(device.ip);
+    });
+
+    return devices.map((device) => {
+      if (device.type !== 'pc' && device.type !== 'iot') return device;
+      if (isValidIpv4(device.ip) && device.ip !== '0.0.0.0') return device;
+
+      const linkLocalIp = generateRandomLinkLocalIpv4(usedIps);
+      usedIps.add(linkLocalIp);
+      return {
+        ...device,
+        ip: linkLocalIp,
+        subnet: device.subnet || '255.255.0.0',
+        gateway: device.gateway || '0.0.0.0',
+        dns: device.dns || '0.0.0.0',
+      };
+    });
+  }, [isValidIpv4]);
+
   // Persistence: Save to localStorage
   useEffect(() => {
     if (isAppLoading) return;
@@ -1147,10 +1180,10 @@ ${state.bannerMOTD}
 
       // Load topology
       if (projectData.topology) {
-        const normalizedDevices = (projectData.topology.devices || []).map((device: CanvasDevice) => ({
+        const normalizedDevices = applyLinkLocalToUnconfiguredHosts((projectData.topology.devices || []).map((device: CanvasDevice) => ({
           ...device,
           type: normalizeDeviceType(device.type),
-        }));
+        })));
         setTopologyDevices(normalizedDevices);
         setTopologyConnections(projectData.topology.connections || []);
         setTopologyNotes(projectData.topology.notes || []);
@@ -1186,10 +1219,10 @@ ${state.bannerMOTD}
 
       // Reset history with the loaded state
       resetHistory({
-        topologyDevices: (projectData.topology?.devices || []).map((device: CanvasDevice) => ({
+        topologyDevices: applyLinkLocalToUnconfiguredHosts((projectData.topology?.devices || []).map((device: CanvasDevice) => ({
           ...device,
           type: normalizeDeviceType(device.type),
-        })),
+        }))),
         topologyConnections: projectData.topology?.connections || [],
         topologyNotes: projectData.topology?.notes || [],
         deviceStates: new Map(projectData.devices?.map((item: any) => [item.id, item.state]) || []),
@@ -1220,7 +1253,7 @@ ${state.bannerMOTD}
       });
       return false;
     }
-  }, [setDeviceStates, setDeviceOutputs, setPcOutputs, setPcHistories, setTopologyDevices, setTopologyConnections, setTopologyNotes, setCableInfo, setActiveDeviceId, setActiveDeviceType, setActiveTab, setTopologyKey, setHasUnsavedChanges, resetHistory, toast, setZoom, setPan, language, normalizeDeviceType]);
+  }, [setDeviceStates, setDeviceOutputs, setPcOutputs, setPcHistories, setTopologyDevices, setTopologyConnections, setTopologyNotes, setCableInfo, setActiveDeviceId, setActiveDeviceType, setActiveTab, setTopologyKey, setHasUnsavedChanges, resetHistory, toast, setZoom, setPan, language, normalizeDeviceType, applyLinkLocalToUnconfiguredHosts]);
 
   // Persistence: Load from localStorage on mount
   useEffect(() => {
@@ -1732,6 +1765,12 @@ ${state.bannerMOTD}
 
   // New project - reset everything
   const resetToEmptyProject = useCallback(() => {
+    const usedIps = new Set<string>();
+    const pc1LinkLocal = generateRandomLinkLocalIpv4(usedIps);
+    usedIps.add(pc1LinkLocal);
+    const pc2LinkLocal = generateRandomLinkLocalIpv4(usedIps);
+    usedIps.add(pc2LinkLocal);
+
     // Clear all states and set defaults
     setDeviceStates(new Map());
     setDeviceOutputs(new Map());
@@ -1743,7 +1782,10 @@ ${state.bannerMOTD}
         name: 'PC-1',
         x: 50,
         y: 50,
-        ip: '192.168.1.10',
+        ip: pc1LinkLocal,
+        subnet: '255.255.0.0',
+        gateway: '0.0.0.0',
+        dns: '0.0.0.0',
         macAddress: '00E0.F701.A1B1',
         status: 'online',
         ports: [
@@ -1757,7 +1799,10 @@ ${state.bannerMOTD}
         name: 'PC-2',
         x: 50,
         y: 150,
-        ip: '192.168.1.20',
+        ip: pc2LinkLocal,
+        subnet: '255.255.0.0',
+        gateway: '0.0.0.0',
+        dns: '0.0.0.0',
         macAddress: '00E0.F701.A1B2',
         status: 'online',
         ports: [
@@ -1820,7 +1865,10 @@ ${state.bannerMOTD}
           name: 'PC-1',
           x: 50,
           y: 50,
-          ip: '192.168.1.10',
+          ip: pc1LinkLocal,
+          subnet: '255.255.0.0',
+          gateway: '0.0.0.0',
+          dns: '0.0.0.0',
           macAddress: '00E0.F701.A1B1',
           status: 'online',
           ports: [

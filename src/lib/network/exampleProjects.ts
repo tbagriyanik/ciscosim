@@ -1,6 +1,7 @@
 import { createInitialState, createInitialRouterState } from './initialState';
 import type { SwitchState, CableInfo } from './types';
 import type { CanvasDevice, CanvasConnection, CanvasNote, DeviceType } from '@/components/network/networkTopology.types';
+import { generateRandomLinkLocalIpv4 } from './linkLocal';
 import macExampleA from './examples/40-sayfa2-mac-tablosu.json';
 import dnsHttpExample from './examples/59-sayfa3-dns-http.json';
 import macExampleB from './examples/69-sayfa4-mac-tablosu.json';
@@ -41,6 +42,41 @@ const normalizeDeviceType = (type: string): CanvasDevice['type'] => {
   return 'pc';
 };
 
+const isValidIpv4 = (value?: string) => {
+  if (!value) return false;
+  const parts = value.split('.');
+  if (parts.length !== 4) return false;
+  return parts.every((part) => {
+    const n = Number(part);
+    return Number.isInteger(n) && n >= 0 && n <= 255;
+  });
+};
+
+const applyLinkLocalToUnconfiguredHosts = (devices: CanvasDevice[]): CanvasDevice[] => {
+  const usedIps = new Set<string>();
+  devices.forEach((device) => {
+    if (isValidIpv4(device.ip) && device.ip !== '0.0.0.0') {
+      usedIps.add(device.ip);
+    }
+  });
+
+  return devices.map((device) => {
+    if (device.type !== 'pc' && device.type !== 'iot') return device;
+    if (isValidIpv4(device.ip) && device.ip !== '0.0.0.0') return device;
+
+    const linkLocalIp = generateRandomLinkLocalIpv4(usedIps);
+    usedIps.add(linkLocalIp);
+    return {
+      ...device,
+      ip: linkLocalIp,
+      subnet: device.subnet || '255.255.0.0',
+      gateway: device.gateway || '0.0.0.0',
+      dns: device.dns || '0.0.0.0',
+      ipConfigMode: device.type === 'iot' ? (device.ipConfigMode || 'dhcp') : device.ipConfigMode
+    };
+  });
+};
+
 const ensureProjectData = (source: any): ProjectData => {
   const partial = source || {};
   return {
@@ -51,10 +87,10 @@ const ensureProjectData = (source: any): ProjectData => {
     pcOutputs: partial.pcOutputs ?? [],
     pcHistories: partial.pcHistories ?? [],
     topology: {
-      devices: (partial.topology?.devices ?? []).map((device: CanvasDevice) => ({
+      devices: applyLinkLocalToUnconfiguredHosts((partial.topology?.devices ?? []).map((device: CanvasDevice) => ({
         ...device,
         type: normalizeDeviceType(device.type),
-      })),
+      }))),
       connections: partial.topology?.connections ?? [],
       notes: partial.topology?.notes ?? []
     },
@@ -215,7 +251,7 @@ const baseProjectData = (devices: CanvasDevice[], connections: CanvasConnection[
   pcOutputs: [],
   pcHistories: [],
   topology: {
-    devices,
+    devices: applyLinkLocalToUnconfiguredHosts(devices),
     connections,
     notes
   },

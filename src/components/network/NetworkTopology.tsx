@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback, useMemo, MouseEvent as ReactM
 import useAppStore, { useTopologyDevices, useTopologyConnections, useTopologyNotes } from '@/lib/store/appStore';
 import { SwitchState, CableType, CableInfo, isCableCompatible } from '@/lib/network/types';
 import { checkDeviceConnectivity, getPingDiagnostics, getWirelessSignalStrength, getWirelessDistance } from '@/lib/network/connectivity';
+import { generateRandomLinkLocalIpv4 } from '@/lib/network/linkLocal';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -927,8 +928,14 @@ export function NetworkTopology({
   // Handle canvas pan start
   // Reads pan via ref to avoid re-creating callback on every pan state change
   const handleCanvasMouseDown = useCallback((e: ReactMouseEvent) => {
-    if (e.button === 0 && !(e.target as HTMLElement).closest('[data-device-id]')) {
+    const targetEl = e.target as HTMLElement;
+    const isOnDevice = !!targetEl.closest('[data-device-id]');
+    const isOnNote = !!targetEl.closest('[data-note-id]');
+    const isOnEditable = targetEl.tagName === 'TEXTAREA' || targetEl.tagName === 'INPUT' || (targetEl as any).isContentEditable;
+
+    if ((e.button === 0 || (e.button === 1 && !e.shiftKey)) && !isOnDevice && !isOnEditable) {
       // Left click on empty canvas - PAN
+      // Middle click also pans (common UX). Hold Shift + middle click for rectangle selection.
       e.preventDefault();
       const currentPan = panRef.current;
       const ps = { x: e.clientX - currentPan.x, y: e.clientY - currentPan.y };
@@ -937,7 +944,10 @@ export function NetworkTopology({
       setIsPanning(true);
       isPanningRef.current = true;
       setContextMenu(null);
-    } else if (e.button === 1) {
+      // Clicking on a note (but not editing text) should still allow canvas panning.
+      // Note content stops propagation when actively editing.
+      return;
+    } else if (e.button === 1 && e.shiftKey && !isOnNote) {
       // Middle click on canvas - RECTANGLE SELECTION
       e.preventDefault();
       // Cancel ping mode on middle click
@@ -1752,6 +1762,17 @@ export function NetworkTopology({
     if (!canvas) return;
 
     const handleWheel = (e: WheelEvent) => {
+      // In SVG <foreignObject> the wheel event target can be the SVG element,
+      // so inspect the composed path to find note/text surfaces and let them scroll.
+      const path = (typeof e.composedPath === 'function' ? e.composedPath() : []) as EventTarget[];
+      for (const entry of path) {
+        if (!(entry instanceof HTMLElement)) continue;
+        const tag = entry.tagName;
+        const isEditable = tag === 'TEXTAREA' || tag === 'INPUT' || entry.isContentEditable;
+        const isNoteScrollHost = entry.hasAttribute('data-note-scroll') || !!entry.closest?.('[data-note-scroll]');
+        if (isEditable || isNoteScrollHost) return;
+      }
+
       const target = e.target as HTMLElement | null;
       if (target) {
         const isEditable = target.tagName === 'TEXTAREA' || target.tagName === 'INPUT' || target.isContentEditable;
@@ -1982,17 +2003,12 @@ export function NetworkTopology({
     }
   }, [devices, isDrawingConnection, connectionStart, cableInfo, onCableChange, saveToHistory]);
 
-  // generate an unused IP within 192.168.1.x (skip existing addresses)
-  const generateUniqueIp = useCallback((reservedIps: string[] = []) => {
+  const generateUniqueLinkLocalIp = useCallback((reservedIps: string[] = []) => {
     const usedIps = new Set([
       ...devices.map((d) => d.ip).filter(Boolean),
       ...reservedIps.filter(Boolean),
     ]);
-    let suffix = 100;
-    while (usedIps.has(`192.168.1.${suffix}`) || suffix === 1 || suffix === 10) {
-      suffix++;
-    }
-    return `192.168.1.${suffix}`;
+    return generateRandomLinkLocalIpv4(usedIps);
   }, [devices]);
 
   const generateUniqueHostname = useCallback((baseName: string, reservedNames: string[] = []) => {
@@ -2040,12 +2056,16 @@ export function NetworkTopology({
         ? `Switch-${deviceCounterRef.current[type]}`
         : `${type.toUpperCase()}-${deviceCounterRef.current[type]}`;
 
+    const initialLinkLocalIp = (type === 'pc' || type === 'iot') ? generateUniqueLinkLocalIp() : '';
     const newDevice: CanvasDevice = {
       id: `${type}-${deviceCounterRef.current[type]}`,
       type: resolvedType,
       name: generateUniqueHostname(baseName),
       macAddress: generateMacAddress(),
-      ip: type === 'pc' ? generateUniqueIp() : (type === 'iot' ? '0.0.0.0' : ''),
+      ip: initialLinkLocalIp,
+      subnet: (type === 'pc' || type === 'iot') ? '255.255.0.0' : undefined,
+      gateway: (type === 'pc' || type === 'iot') ? '0.0.0.0' : undefined,
+      dns: (type === 'pc' || type === 'iot') ? '0.0.0.0' : undefined,
       ipConfigMode: type === 'iot' ? 'dhcp' : undefined,
       // Position near top-left with staggered layout
       x: 100 + offsetX + Math.random() * 30,
@@ -2075,7 +2095,7 @@ export function NetworkTopology({
     // Pass the switchModel directly to avoid race condition
     onDeviceSelect(resolvedType, newDevice.id, newDevice.switchModel, newDevice.name);
 
-  }, [devices.length, saveToHistory, generateUniqueHostname, generateUniqueIp, onDeviceSelect]);
+  }, [devices.length, saveToHistory, generateUniqueHostname, generateUniqueLinkLocalIp, onDeviceSelect]);
 
   // Note management functions
   const [selectedNoteIds, setSelectedNoteIds] = useState<string[]>([]);
@@ -2923,7 +2943,7 @@ export function NetworkTopology({
 
       const baseName = `${type.toUpperCase()}-${deviceCounterRef.current[counterKey]}`;
       const hostname = generateUniqueHostname(baseName, reservedHostnames);
-      const generatedIp = type === 'pc' || type === 'iot' ? generateUniqueIp(reservedIps) : '';
+      const generatedIp = type === 'pc' || type === 'iot' ? generateUniqueLinkLocalIp(reservedIps) : '';
       if (generatedIp) {
         reservedIps.push(generatedIp);
       }
@@ -2934,6 +2954,9 @@ export function NetworkTopology({
         id: newId,
         name: hostname,
         ip: generatedIp,
+        subnet: (type === 'pc' || type === 'iot') ? '255.255.0.0' : device.subnet,
+        gateway: (type === 'pc' || type === 'iot') ? '0.0.0.0' : device.gateway,
+        dns: (type === 'pc' || type === 'iot') ? '0.0.0.0' : device.dns,
         x: device.x + 30,
         y: device.y + 30,
         ports: device.ports.map(p => ({ ...p, status: 'disconnected' as const })),
@@ -2942,7 +2965,7 @@ export function NetworkTopology({
 
     setDevices(prev => [...prev, ...newDevices]);
     setContextMenu(null);
-  }, [clipboard, saveToHistory, generateUniqueHostname, generateUniqueIp, getCounterKey]);
+  }, [clipboard, saveToHistory, generateUniqueHostname, generateUniqueLinkLocalIp, getCounterKey]);
 
   // Paste notes
   const pasteNotes = useCallback((x: number, y: number) => {
