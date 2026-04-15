@@ -2278,10 +2278,10 @@ ${state.bannerMOTD}
         const aRev = aState.vtpRevision || 0;
         const bRev = bState.vtpRevision || 0;
 
-        // Minimal VTP: server pushes VLAN database to client if revision is newer.
-        if (aMode === 'server' && bMode === 'client' && aRev > bRev) {
+        // VTP: server pushes VLAN database to client if revision is newer or equal
+        if (aMode === 'server' && bMode === 'client' && aRev >= bRev) {
           nextStates.set(b.id, { ...bState, vlans: { ...(aState.vlans || {}) }, vtpRevision: aRev });
-        } else if (bMode === 'server' && aMode === 'client' && bRev > aRev) {
+        } else if (bMode === 'server' && aMode === 'client' && bRev >= aRev) {
           nextStates.set(a.id, { ...aState, vlans: { ...(bState.vlans || {}) }, vtpRevision: bRev });
         }
       }
@@ -2644,6 +2644,62 @@ ${state.bannerMOTD}
     };
     window.addEventListener('keydown', handleKeyDown);
 
+    // Handle VTP propagation event
+    const handleVtpPropagation = (e: Event) => {
+      const customEvent = e as CustomEvent<{
+        deviceId: string;
+        topologyDevices: CanvasDevice[];
+        topologyConnections: CanvasConnection[];
+        deviceStates: Map<string, SwitchState>;
+      }>;
+      const { topologyDevices: eventDevices, topologyConnections: eventConnections, deviceStates: eventStates } = customEvent.detail;
+      
+      if (!eventDevices || !eventConnections || !eventStates) return;
+      
+      // Run VTP propagation logic
+      const isSwitchDeviceType = (type: string) => type === 'switchL2' || type === 'switchL3';
+      const byId = new Map(eventDevices.map((d: CanvasDevice) => [d.id, d]));
+      const nextStates = new Map(eventStates);
+
+      for (const conn of eventConnections) {
+        if (!conn.active) continue;
+        const a = byId.get(conn.sourceDeviceId);
+        const b = byId.get(conn.targetDeviceId);
+        if (!a || !b) continue;
+        if (!isSwitchDeviceType(a.type) || !isSwitchDeviceType(b.type)) continue;
+
+        const aState = nextStates.get(a.id);
+        const bState = nextStates.get(b.id);
+        if (!aState || !bState) continue;
+
+        const aPort = aState.ports?.[conn.sourcePort];
+        const bPort = bState.ports?.[conn.targetPort];
+        const aIsTrunk = !!aPort && !aPort.shutdown && aPort.mode === 'trunk';
+        const bIsTrunk = !!bPort && !bPort.shutdown && bPort.mode === 'trunk';
+        if (!aIsTrunk || !bIsTrunk) continue;
+
+        const aMode = aState.vtpMode || 'server';
+        const bMode = bState.vtpMode || 'server';
+        const aDomain = (aState.vtpDomain || '').trim();
+        const bDomain = (bState.vtpDomain || '').trim();
+        if (!aDomain || !bDomain) continue;
+        if (aDomain !== bDomain) continue;
+
+        const aRev = aState.vtpRevision || 0;
+        const bRev = bState.vtpRevision || 0;
+
+        // VTP: server pushes VLAN database to client if revision is newer or equal
+        if (aMode === 'server' && bMode === 'client' && aRev >= bRev) {
+          nextStates.set(b.id, { ...bState, vlans: { ...(aState.vlans || {}) }, vtpRevision: aRev });
+        } else if (bMode === 'server' && aMode === 'client' && bRev >= aRev) {
+          nextStates.set(a.id, { ...aState, vlans: { ...(bState.vlans || {}) }, vtpRevision: bRev });
+        }
+      }
+
+      setDeviceStates(nextStates);
+    };
+    window.addEventListener('vtp-propagation-needed', handleVtpPropagation);
+
     // Handle print dialog (from browser menu or Ctrl+P)
     const handleBeforePrint = () => {
       if (activeTabRef.current !== 'topology') {
@@ -2654,6 +2710,7 @@ ${state.bannerMOTD}
 
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('vtp-propagation-needed', handleVtpPropagation);
       window.removeEventListener('beforeprint', handleBeforePrint);
     };
   }, [showMobileMenu, confirmDialog, saveDialog, showPCPanel, showRouterPanel, showProjectPicker, handleSaveProject, handleNewProject, handleUndo, handleRedo, tabs, setShowMobileMenu, setConfirmDialog, setSaveDialog, setShowPCPanel, setShowRouterPanel, setShowProjectPicker, isTopologyFullscreen, setActiveTab, activeTab, topologyDevices, topologyConnections, deviceStates, setDeviceStates, handleDeviceDoubleClick, handleRefreshNetwork]);

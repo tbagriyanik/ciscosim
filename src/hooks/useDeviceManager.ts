@@ -412,6 +412,15 @@ export function useDeviceManager() {
         return result;
       }
 
+      // Trigger VTP propagation after VLAN-related commands
+      const isVlanCommand = /^vlan\s+\d+$|^no\s+vlan\s+\d+$|^name\s+.+$|^state\s+(active|suspend)$/i.test(trimmedCommand);
+      if (success && newState && isVlanCommand) {
+        // Trigger VTP propagation by dispatching a custom event
+        window.dispatchEvent(new CustomEvent('vtp-propagation-needed', {
+          detail: { deviceId, topologyDevices, topologyConnections, deviceStates }
+        }));
+      }
+
       const newOutputs: TerminalOutput[] = [];
       const now = Date.now();
       if (!isInternalCommand && !deviceState.awaitingPassword) {

@@ -23,7 +23,7 @@ export const privilegedHandlers: Record<string, CommandHandler> = {
     'undebug all': cmdUndebugAll,
     'do write': cmdDoWrite,
     'do ping': cmdDoPing,
-    'delete vlan.dat': cmdDeleteVlanDat,
+    'delete flash:vlan.dat': cmdDeleteVlanDat,
 };
 
 /**
