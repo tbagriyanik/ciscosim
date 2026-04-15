@@ -623,12 +623,47 @@ export function checkConnectivity(
     if (!isInSameSubnet) {
       // Different subnets - check if there's a Layer-3 routing device in path
       let hasL3Gateway = false;
+      let routerDeviceId: string | null = null;
+
       for (const deviceId of path) {
         const device = devices.find(d => d.id === deviceId);
         const state = deviceStates?.get(deviceId);
+        // Debug: log path device info
+        console.log('[DEBUG] Path device:', deviceId, 'Type:', device?.type, 'Has state:', !!state, 'ipRouting:', state?.ipRouting);
         if ((device?.type === 'router' || device?.type === 'switchL3') && state?.ipRouting) {
           hasL3Gateway = true;
+          routerDeviceId = deviceId;
           break;
+        }
+      }
+
+      // If no router in path, try to find a connected router and add it to path
+      if (!hasL3Gateway) {
+        // Find all routers in the topology
+        const routers = devices.filter(d => (d.type === 'router' || d.type === 'switchL3'));
+        for (const router of routers) {
+          const routerState = deviceStates?.get(router.id);
+          if (routerState?.ipRouting) {
+            // Check if router is connected to any device in the path
+            for (const pathDeviceId of path) {
+              const conn = connections.find(c =>
+                (c.sourceDeviceId === router.id && c.targetDeviceId === pathDeviceId) ||
+                (c.targetDeviceId === router.id && c.sourceDeviceId === pathDeviceId)
+              );
+              if (conn) {
+                hasL3Gateway = true;
+                routerDeviceId = router.id;
+                // Add router to path (insert before the connected device)
+                const pathIndex = path.indexOf(pathDeviceId);
+                if (pathIndex !== -1) {
+                  path.splice(pathIndex, 0, router.id);
+                  hopNames.splice(pathIndex, 0, router.name);
+                }
+                break;
+              }
+            }
+            if (hasL3Gateway) break;
+          }
         }
       }
 
@@ -717,13 +752,27 @@ export function checkConnectivity(
           if (ingressVlan !== egressVlan) {
             // Allow if one or both ports are trunks
             if (ingressPort?.mode !== 'trunk' && egressPort?.mode !== 'trunk') {
-              return {
-                success: false,
-                hops: hopNames.slice(0, i + 1),
-                hopIds: path.slice(0, i + 1),
-                targetId: targetDevice.id,
-                error: `VLAN mismatch on ${device.name}. Port ${ingressPortId} is in VLAN ${ingressVlan}, but port ${egressPortId} is in VLAN ${egressVlan}.`
-              };
+              // Check if there's a router with ipRouting in the path (L3 routing scenario)
+              let hasL3RouterInPath = false;
+              for (const pathDeviceId of path) {
+                const pathDevice = devices.find(d => d.id === pathDeviceId);
+                const pathState = deviceStates?.get(pathDeviceId);
+                if ((pathDevice?.type === 'router' || pathDevice?.type === 'switchL3') && pathState?.ipRouting) {
+                  hasL3RouterInPath = true;
+                  break;
+                }
+              }
+
+              // If router with routing is in path, allow different VLANs (router handles inter-VLAN routing)
+              if (!hasL3RouterInPath) {
+                return {
+                  success: false,
+                  hops: hopNames.slice(0, i + 1),
+                  hopIds: path.slice(0, i + 1),
+                  targetId: targetDevice.id,
+                  error: `VLAN mismatch on ${device.name}. Port ${ingressPortId} is in VLAN ${ingressVlan}, but port ${egressPortId} is in VLAN ${egressVlan}.`
+                };
+              }
             }
           }
         }
@@ -780,14 +829,29 @@ export function checkConnectivity(
           targetId: targetDevice.id
         };
       }
-      // Different VLANs: block (unless L3 routing handles it)
-      return {
-        success: false,
-        hops: hopNames,
-        hopIds: path,
-        targetId: targetDevice.id,
-        error: `VLAN mismatch: source VLAN ${sourceVlan}, target VLAN ${targetVlan}.`
-      };
+      // Different VLANs: check if router with ipRouting is in path
+      let hasL3RouterInPath = false;
+      for (const pathDeviceId of path) {
+        const pathDevice = devices.find(d => d.id === pathDeviceId);
+        const pathState = deviceStates?.get(pathDeviceId);
+        if ((pathDevice?.type === 'router' || pathDevice?.type === 'switchL3') && pathState?.ipRouting) {
+          hasL3RouterInPath = true;
+          break;
+        }
+      }
+
+      // If router with routing is in path, allow different VLANs (router handles inter-VLAN routing)
+      if (hasL3RouterInPath) {
+        // Continue to section 6 for routing logic
+      } else {
+        return {
+          success: false,
+          hops: hopNames,
+          hopIds: path,
+          targetId: targetDevice.id,
+          error: `VLAN mismatch: source VLAN ${sourceVlan}, target VLAN ${targetVlan}.`
+        };
+      }
     }
   }
 

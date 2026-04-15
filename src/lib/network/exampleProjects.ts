@@ -153,7 +153,7 @@ const createSwitchDevice = (id: string, name: string, x: number, y: number): Can
   ]
 });
 
-const createPcDevice = (id: string, name: string, x: number, y: number, ip: string, vlan: number): CanvasDevice => ({
+const createPcDevice = (id: string, name: string, x: number, y: number, ip: string, vlan: number, gateway?: string): CanvasDevice => ({
   id,
   type: 'pc',
   name,
@@ -161,6 +161,7 @@ const createPcDevice = (id: string, name: string, x: number, y: number, ip: stri
   y,
   ip,
   vlan,
+  gateway,
   macAddress: nextExampleMac(),
   status: 'online',
   ports: [
@@ -1016,7 +1017,49 @@ export const exampleProjects = (language: 'tr' | 'en'): ExampleProject[] => {
     }
   ];
 
-  // Example 5: Port-security
+  // Example 5: Legacy Inter-VLAN Routing (2 separate router interfaces, not trunk)
+  const legacyRoutingDevices = [
+    createPcDevice('pc-1', 'PC-1', 40, 120, '192.168.0.2', 10, '192.168.0.1'),
+    createPcDevice('pc-2', 'PC-2', 40, 260, '192.168.1.2', 20, '192.168.1.1'),
+    createSwitchDevice('switch-1', 'SW1', 260, 190),
+    createRouterDevice('router-1', 'R1', 520, 190)
+  ];
+  const legacyRoutingConnections: CanvasConnection[] = [];
+  connectPorts(legacyRoutingDevices, legacyRoutingConnections, 'pc-1', 'eth0', 'switch-1', 'fa0/2');
+  connectPorts(legacyRoutingDevices, legacyRoutingConnections, 'pc-2', 'eth0', 'switch-1', 'fa0/12');
+  connectPorts(legacyRoutingDevices, legacyRoutingConnections, 'router-1', 'gi0/1', 'switch-1', 'fa0/11', 'crossover');
+  connectPorts(legacyRoutingDevices, legacyRoutingConnections, 'router-1', 'gi0/0', 'switch-1', 'fa0/1', 'crossover');
+  const legacyRoutingSw = createInitialState();
+  legacyRoutingSw.hostname = 'SW1';
+  legacyRoutingSw.vlans[10] = { id: 10, name: 'VLAN10', status: 'active', ports: [] };
+  legacyRoutingSw.vlans[20] = { id: 20, name: 'VLAN20', status: 'active', ports: [] };
+  legacyRoutingSw.ports['fa0/2'] = { ...legacyRoutingSw.ports['fa0/2'], vlan: 10, mode: 'access', status: 'connected' };
+  legacyRoutingSw.ports['fa0/12'] = { ...legacyRoutingSw.ports['fa0/12'], vlan: 20, mode: 'access', status: 'connected' };
+  legacyRoutingSw.ports['fa0/11'] = { ...legacyRoutingSw.ports['fa0/11'], vlan: 10, mode: 'access', status: 'connected' };
+  legacyRoutingSw.ports['fa0/1'] = { ...legacyRoutingSw.ports['fa0/1'], vlan: 20, mode: 'access', status: 'connected' };
+  const legacyRoutingRouter = createInitialRouterState();
+  legacyRoutingRouter.hostname = 'R1';
+  legacyRoutingRouter.ipRouting = true;
+  legacyRoutingRouter.ports['gi0/1'] = { ...legacyRoutingRouter.ports['gi0/1'], ipAddress: '192.168.0.1', subnetMask: '255.255.255.0', status: 'connected', shutdown: false };
+  legacyRoutingRouter.ports['gi0/0'] = { ...legacyRoutingRouter.ports['gi0/0'], ipAddress: '192.168.1.1', subnetMask: '255.255.255.0', status: 'connected', shutdown: false };
+  const legacyRoutingNotes: CanvasNote[] = [
+    {
+      id: 'legacy-routing-note',
+      text: isTr
+        ? 'Legacy Inter-VLAN Routing:\nRouter 2 ayrı fiziksel interface ile VLAN\'lara bağlanır.\nSW1: int fa0/11 -> access vlan 10\nSW1: int fa0/1 -> access vlan 20\nR1: int gi0/1 -> ip address 192.168.0.1/24 (VLAN 10 gateway)\nR1: int gi0/0 -> ip address 192.168.1.1/24 (VLAN 20 gateway)\nPC-1 gateway: 192.168.0.1, PC-2 gateway: 192.168.1.1\nFarklı VLAN\'lar arası ping başarılı (ip routing otomatik).'
+        : 'Legacy Inter-VLAN Routing:\nRouter connects to VLANs with 2 separate physical interfaces.\nSW1: int fa0/11 -> access vlan 10\nSW1: int fa0/1 -> access vlan 20\nR1: int gi0/1 -> ip address 192.168.0.1/24 (VLAN 10 gateway)\nR1: int gi0/0 -> ip address 192.168.1.1/24 (VLAN 20 gateway)\nPC-1 gateway: 192.168.0.1, PC-2 gateway: 192.168.1.1\nDifferent VLAN ping succeeds (ip routing auto-enabled).',
+      x: 600,
+      y: 40,
+      width: 440,
+      height: 210,
+      color: '#a855f7',
+      font: 'verdana',
+      fontSize: 16,
+      opacity: 0.75
+    }
+  ];
+
+  // Example 6: Port-security
   const psDevices = [
     createPcDevice('pc-1', 'PC-1', 40, 180, '192.168.1.10', 1),
     createSwitchDevice('switch-1', 'SW1', 240, 180)
@@ -1413,6 +1456,18 @@ export const exampleProjects = (language: 'tr' | 'en'): ExampleProject[] => {
       data: baseProjectData(roasDevices, roasConnections, roasNotes, [
         { id: 'switch-1', state: roasSw },
         { id: 'router-1', state: roasRouter }
+      ])
+    },
+    {
+      id: 'legacy-routing',
+      tag: isTr ? 'LEGACY ROUTING' : 'LEGACY ROUTING',
+      title: isTr ? 'Legacy Inter-VLAN Routing' : 'Legacy Inter-VLAN Routing',
+      description: isTr ? 'Router 2 ayrı fiziksel interface ile VLAN\'lara bağlanır (trunk yok).' : 'Router connects to VLANs with 2 separate physical interfaces (no trunk).',
+      detail: isTr ? '2 router interface, access portlar, ip routing otomatik' : '2 router interfaces, access ports, ip routing auto-enabled',
+      level: 'intermediate',
+      data: baseProjectData(legacyRoutingDevices, legacyRoutingConnections, legacyRoutingNotes, [
+        { id: 'switch-1', state: legacyRoutingSw },
+        { id: 'router-1', state: legacyRoutingRouter }
       ])
     },
     {

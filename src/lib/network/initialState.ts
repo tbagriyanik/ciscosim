@@ -276,6 +276,7 @@ export function createInitialRouterState(mac?: string): SwitchState {
     switchLayer: 'L3',
     currentMode: 'user',
     consoleAuthenticated: false,
+    ipRouting: true,
     ports,
     vlans,
     security: createInitialSecurity(),
@@ -309,8 +310,7 @@ export function createInitialRouterState(mac?: string): SwitchState {
       uptime: '1 week, 2 days, 4 hours'
     },
     macAddressTable: [],
-    vtpRevision: 0,
-    ipRouting: false
+    vtpRevision: 0
   };
 }
 
