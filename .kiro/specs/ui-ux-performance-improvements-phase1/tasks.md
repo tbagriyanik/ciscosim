@@ -6,7 +6,7 @@ This implementation plan addresses critical performance issues in the Network Si
 
 ## Tasks
 
-- [-] 1. Implement Zustand Selectors
+- [x] 1. Implement Zustand Selectors
   - [x] 1.1 Add selector functions to appStore.ts
     - Create selectors for topology state (devices, connections, notes, selectedDeviceId, zoom, pan)
     - Create selectors for device states (switchStates, pcOutputs)
@@ -30,7 +30,7 @@ This implementation plan addresses critical performance issues in the Network Si
     - **Validates: Requirements 1.2**
     - Test that components only re-render when their selected state changes
 
-- [-] 2. Memoize NetworkTopologyView Component
+- [x] 2. Memoize NetworkTopologyView Component
   - [x] 2.1 Add React.memo to NetworkTopologyView
     - Implement custom comparison function
     - Compare only props that affect rendering (topology data, selected nodes, viewport)

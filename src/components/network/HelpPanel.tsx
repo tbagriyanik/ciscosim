@@ -24,6 +24,8 @@ export function HelpPanel({ t, theme, initialOpen = false, onClose }: HelpPanelP
     interface: false,
     wireless: false,
     line: false,
+    router: false,
+    dhcp: false,
     show: false,
   });
 
@@ -99,7 +101,7 @@ export function HelpPanel({ t, theme, initialOpen = false, onClose }: HelpPanelP
                 {isTR ? 'CLI Komut Referansı' : 'CLI Command Reference'}
               </h2>
               <p className={cn('text-xs', isDark ? 'text-slate-400' : 'text-slate-500')}>
-                {isTR ? '120+ komut' : '120+ commands'}
+                {isTR ? '130+ komut' : '130+ commands'}
               </p>
             </div>
           </div>
@@ -215,7 +217,7 @@ export function HelpPanel({ t, theme, initialOpen = false, onClose }: HelpPanelP
         <div className={cn('p-4 border-t shrink-0', isDark ? 'bg-slate-950 border-slate-800' : 'bg-white border-slate-200')}>
           <div className={cn('flex items-center justify-between p-3 rounded-lg text-xs', isDark ? 'bg-slate-900/50 border border-slate-700 text-slate-400' : 'bg-slate-50 border border-slate-200 text-slate-600')}>
             <span>{isTR ? 'Toplam komut:' : 'Total commands:'}</span>
-            <span className={cn('font-semibold', isDark ? 'text-emerald-400' : 'text-emerald-600')}>120+</span>
+            <span className={cn('font-semibold', isDark ? 'text-emerald-400' : 'text-emerald-600')}>130+</span>
           </div>
         </div>
       </div>

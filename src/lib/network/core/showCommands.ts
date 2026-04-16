@@ -418,7 +418,7 @@ function cmdShowVersion(
 
   let output = `\nNetwork NOS Software, ${softwareImage}\n`;
   output += 'Technical Support: http://yunus.sf.net\n';
-  output += 'Copyright (c) 1986-2024 by Network Systems, Inc.\n\n';
+  output += 'Copyright (c) 1986-2026 by Network Systems, Inc.\n\n';
   output += `ROM: Bootstrap program is ${rom}\n`;
   output += `BOOTLDR: ${bootldr}\n\n`;
   output += `Switch uptime is ${state.uptime || '1 day, 2 hours, 3 minutes'}\n`;

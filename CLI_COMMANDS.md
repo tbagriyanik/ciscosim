@@ -107,6 +107,17 @@ The simulator supports **100+ commands** across multiple configuration modes.
 | `ip name-server <ip>` | Configure DNS server |
 | `system mtu <size>` | Set system MTU |
 | `errdisable recovery` | Configure errdisable recovery |
+| `ipv6 unicast-routing` | Enable IPv6 routing |
+| `crypto key generate rsa` | Generate RSA keys for SSH |
+| `ip ssh authentication-retries <n>` | Set SSH retry limit |
+| `snmp-server community <str> {RO\|RW}` | Set SNMP community |
+| `snmp-server contact <text>` | Set SNMP contact |
+| `snmp-server location <text>` | Set SNMP location |
+| `archive` | Enter archive config mode |
+| `alias <mode> <name> <cmd>` | Create command alias |
+| `macro name <name>` | Define command macro |
+| `sdm prefer <template>` | Set SDM template |
+| `ip arp inspection vlan <id>` | Enable DAI on VLAN |
 
 ### Interface Configuration Commands
 | Command | Description |
@@ -161,6 +172,18 @@ The simulator supports **100+ commands** across multiple configuration modes.
 | `no ip proxy-arp` | Disable proxy ARP |
 | `no keepalive` | Disable keepalive |
 | `no name` | Remove interface name (VLAN) |
+| `ipv6 address <ip>/<prefix>` | Assign IPv6 address |
+| `ip verify source` | Enable IP Source Guard |
+| `ip dhcp snooping trust` | Set interface as trusted for DHCP |
+| `ip arp inspection trust` | Set interface as trusted for DAI |
+| `storm-control {broadcast\|multicast\|unicast} level <%>` | Set storm control |
+| `power inline {auto\|static\|never}` | Configure PoE |
+| `bandwidth <kbps>` | Set interface bandwidth |
+| `delay <tens-of-ms>` | Set interface delay |
+| `carrier-delay <ms>` | Set carrier delay |
+| `load-interval <sec>` | Set load statistics interval |
+| `mls qos trust {cos\|dscp}` | Set QoS trust state |
+| `mls qos cos <val>` | Set default CoS value |
 
 ### Wireless (WiFi) Commands
 | Command | Description |
@@ -192,6 +215,11 @@ The simulator supports **100+ commands** across multiple configuration modes.
 | `autocommand <cmd>` | Set auto-command |
 | `no autocommand` | Remove auto-command |
 | `privilege level <0-15>` | Set privilege level |
+| `transport output {ssh\|telnet\|all\|none}` | Set outbound protocols |
+| `transport preferred {ssh\|telnet\|none}` | Set preferred protocol |
+| `session-limit <n>` | Set max sessions |
+| `access-class <n> {in\|out}` | Apply ACL to line |
+| `lockable` | Enable line locking |
 
 ### Router Configuration Commands (RIP/OSPF)
 | Command | Description |
@@ -227,6 +255,7 @@ The simulator supports **100+ commands** across multiple configuration modes.
 | `show mac address-table` | Display MAC address table |
 | `show cdp neighbors` | Display CDP neighbors |
 | `show ip route` | Display routing table |
+| `show ipv6 interface brief` | Display IPv6 interface summary |
 | `show clock` | Display system clock |
 | `show flash` | Display flash contents |
 | `show boot` | Display boot information |
@@ -247,6 +276,7 @@ The simulator supports **100+ commands** across multiple configuration modes.
 | `show mls qos` | Display QoS status |
 | `show ip arp inspection` | Display ARP inspection |
 | `show access-lists` | Display access lists |
+| `show mac access-lists` | Display MAC access lists |
 | `show history` | Display command history |
 | `show users` | Display logged in users |
 | `show environment` | Display hardware status |
@@ -261,6 +291,22 @@ The simulator supports **100+ commands** across multiple configuration modes.
 | `show memory` | Display memory usage |
 | `show sdm prefer` | Display SDM template |
 | `show system mtu` | Display MTU settings |
+| `show ntp status` | Display NTP status |
+| `show snmp` | Display SNMP info |
+| `show archive` | Display archive status |
+| `show alias` | Display command aliases |
+| `show diagnostic` | Display diagnostic results |
+| `show lldp` | Display LLDP neighbors |
+| `show authentication` | Display auth sessions |
+
+### IoT Configuration Commands (Global Config)
+| Command | Description |
+|---------|-------------|
+| `iot sensor <type>` | Set sensor type (temp, humidity, etc.) |
+| `iot name <text>` | Set IoT device display name |
+| `iot wifi ssid <name>` | Set WiFi SSID for IoT |
+| `iot wifi password <pass>` | Set WiFi password for IoT |
+| `iot wifi security <type>` | Set WiFi security (WPA2, etc.) |
 
 ## Command Modes
 - **User Mode** (`>`) - Basic monitoring commands
