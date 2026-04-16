@@ -35,14 +35,35 @@ export const generateIotWebPanelContent = (
   const iotDeviceListHtml = filteredIotDevices.length > 0
     ? filteredIotDevices.map(device => {
         const isPoweredOff = device.status === 'offline';
-        const isWifiDisabled = !device.wifi?.enabled;
-        const cardClass = isPoweredOff ? 'powered-off' : isWifiDisabled ? 'wifi-disabled' : '';
+        const isActive = device.iot?.collaborationEnabled ?? true;
+        
+        // Check if device is actually connected to the network
+        // If viewing from a specific router (routerSsid provided), check connection to that router
+        // If viewing global IoT panel (no routerSsid), check if device has any connection
+        const isConnectedToNetwork = topologyConnections?.some(conn => {
+          const isWiredConnected = conn.sourceDeviceId === device.id || conn.targetDeviceId === device.id;
+          if (isWiredConnected) return true;
+          
+          // WiFi connection check
+          if (device.wifi?.enabled) {
+            // If routerSsid is provided, check connection to that specific router
+            if (routerSsid) {
+              return device.wifi.ssid === routerSsid;
+            }
+            // If no routerSsid (global panel), check if device has any WiFi connection
+            return !!device.wifi.ssid;
+          }
+          
+          return false;
+        });
+
+        const cardClass = isPoweredOff ? 'powered-off' : isConnectedToNetwork ? (isActive ? 'connected' : 'connected-inactive') : (isActive ? 'active' : 'inactive');
         const statusText = isPoweredOff
           ? (isTurkish ? 'Kapalı' : 'Offline')
-          : isWifiDisabled
-            ? (isTurkish ? 'WiFi kapalı' : 'WiFi disabled')
-            : (isTurkish ? 'Çevrimiçi' : 'Online');
-        const statusClass = isPoweredOff ? 'offline' : isWifiDisabled ? 'disabled' : '';
+          : isConnectedToNetwork
+            ? (isActive ? (isTurkish ? 'Çevrimiçi' : 'Online') : (isTurkish ? 'Çevrimiçi (Pasif)' : 'Online (Inactive)'))
+            : (isActive ? (isTurkish ? 'Aktif' : 'Active') : (isTurkish ? 'Pasif' : 'Inactive'));
+        const statusClass = isPoweredOff ? 'offline' : isConnectedToNetwork ? (isActive ? 'online' : 'online-inactive') : (isActive ? 'active' : 'inactive');
 
         return `
       <div class="iot-device-card ${cardClass}">
@@ -156,6 +177,28 @@ export const generateIotWebPanelContent = (
             border-color: #f5c6cb;
             opacity: 0.7;
           }
+          .iot-device-card.connected {
+            background-color: #dcfce7;
+            border-color: #86efac;
+          }
+          .iot-device-card.connected-inactive {
+            background-color: #fef3c7;
+            border-color: #fde68a;
+          }
+          .iot-device-card.active {
+            background-color: #e0f2fe;
+            border-color: #7dd3fc;
+          }
+          .iot-device-card.inactive {
+            background-color: #f3f4f6;
+            border-color: #d1d5db;
+            opacity: 0.7;
+          }
+          .iot-device-card.offline {
+            background-color: #e2e3e5;
+            border-color: #d6d8db;
+            opacity: 0.6;
+          }
           .iot-device-card.wifi-disabled {
             background-color: #fff3cd;
             border-color: #ffeaa7;
@@ -191,6 +234,22 @@ export const generateIotWebPanelContent = (
           }
           .device-status.offline {
             color: #dc3545;
+            font-weight: 500;
+          }
+          .device-status.online {
+            color: #166534;
+            font-weight: 500;
+          }
+          .device-status.online-inactive {
+            color: #92400e;
+            font-weight: 500;
+          }
+          .device-status.active {
+            color: #0369a1;
+            font-weight: 500;
+          }
+          .device-status.inactive {
+            color: #6c757d;
             font-weight: 500;
           }
           .device-status.disabled {

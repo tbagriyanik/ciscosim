@@ -627,6 +627,43 @@ export function PCPanel({
   const [httpAppUrl, setHttpAppUrl] = useState<string>('');
   const [httpAppTitle, setHttpAppTitle] = useState<string>('HTTP Page');
   const [httpAppDeviceId, setHttpAppDeviceId] = useState<string | null>(null);
+  const [showUrlSuggestions, setShowUrlSuggestions] = useState<boolean>(false);
+  const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState<number>(-1);
+
+  // Collect URL suggestions from existing IPs and predefined links
+  const urlSuggestions = useMemo(() => {
+    const suggestions: string[] = [];
+    
+    // Add predefined links with http:// prefix
+    suggestions.push('http://iot-panel');
+    
+    // Add IPs from all devices in topology with http:// prefix
+    topologyDevices.forEach(device => {
+      if (device.ip && device.ip !== '0.0.0.0') {
+        suggestions.push(`http://${device.ip}`);
+      }
+    });
+    
+    // Remove duplicates
+    return [...new Set(suggestions)];
+  }, [topologyDevices]);
+
+  // Filter suggestions based on current input
+  const filteredSuggestions = useMemo(() => {
+    if (!httpAppUrl) return urlSuggestions;
+    const lowerInput = httpAppUrl.toLowerCase();
+    return urlSuggestions.filter(s => 
+      s.toLowerCase().includes(lowerInput)
+    );
+  }, [httpAppUrl, urlSuggestions]);
+
+  // Regenerate IoT panel content when dependencies change
+  useEffect(() => {
+    if (httpAppUrl === 'iot-panel' || httpAppUrl === 'http://iot-panel') {
+      const iotPanelContent = generateIotWebPanelContent(iotDevices, language, undefined, undefined, topologyConnections);
+      setHttpAppContent(iotPanelContent);
+    }
+  }, [iotDevices, topologyConnections, language, httpAppUrl]);
   const [browserWindow, setBrowserWindow] = useState(() => {
     const saved = typeof window !== 'undefined' ? localStorage.getItem('pc-browser-window-state') : null;
     if (saved) {
@@ -658,6 +695,7 @@ export function PCPanel({
     originW: number;
     originH: number;
   } | null>(null);
+  const urlInputRef = useRef<HTMLInputElement>(null);
 
   // Sync pcOutput when deviceId changes or pcOutputs prop updates
   useEffect(() => {
@@ -1800,7 +1838,10 @@ export function PCPanel({
       // Handle back to IoT list message
       if (data.type === 'back-to-iot-list') {
         setHttpAppDeviceId(null);
-        openHttpTarget('http://iot-panel');
+        setHttpAppContent(null); // Clear content to force regeneration
+        setTimeout(() => {
+          openHttpTarget('http://iot-panel');
+        }, 50); // Small delay to ensure state updates
       }
 
       // Handle toggle IoT device status message
@@ -4393,21 +4434,6 @@ export function PCPanel({
                                           {selectedIotDevice?.ip || 'Not assigned'}
                                         </div>
                                       </div>
-                                      <Button
-                                        size="sm"
-                                        variant="outline"
-                                        className="h-8 px-3 text-xs font-medium text-cyan-600 border-cyan-200 hover:bg-cyan-50 dark:text-cyan-400 dark:border-cyan-800 dark:hover:bg-cyan-950"
-                                        onClick={() => {
-                                          window.dispatchEvent(new CustomEvent('update-topology-device-config', {
-                                            detail: {
-                                              deviceId: selectedIotDeviceId,
-                                              config: { ip: '' }
-                                            }
-                                          }));
-                                        }}
-                                      >
-                                        {language === 'tr' ? 'Yenile' : 'Renew'}
-                                      </Button>
                                     </div>
                                     <div className="grid grid-cols-2 gap-3">
                                       <div>
@@ -4440,30 +4466,46 @@ export function PCPanel({
                                       </div>
                                     </div>
                                   </div>
-                                  {selectedIotDevice?.ip && (
+                                  <div className="flex gap-2 mt-2">
+                                    {selectedIotDevice?.ip && (
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="hover:text-blue-500"
+                                        onClick={() => {
+                                          const targetIp = selectedIotDevice?.ip;
+                                          if (targetIp) {
+                                            navigateToProgram('desktop');
+                                            setTimeout(() => {
+                                              executeCommand(`ping ${targetIp}`);
+                                            }, 300);
+                                          }
+                                        }}
+                                      >
+                                        <Globe className="w-4 h-4 mr-2" />
+                                        Ping
+                                      </Button>
+                                    )}
                                     <Button
                                       size="sm"
                                       variant="outline"
-                                      className={`mt-2 w-fit px-6 shadow-sm hover:shadow-md transition-all active:scale-95 ${isDark
-                                        ? 'border-slate-800 bg-slate-900/50 text-slate-300 hover:text-cyan-400 hover:bg-cyan-500/10 hover:border-cyan-500/30'
-                                        : 'hover:text-cyan-600 hover:bg-cyan-50 hover:border-cyan-200'
-                                        }`}
+                                      className="hover:text-blue-500"
                                       onClick={() => {
-                                        const targetIp = selectedIotDevice?.ip;
-                                        if (targetIp) {
-                                          // Switch to CMD tab
-                                          navigateToProgram('desktop');
-                                          // Execute ping command after a short delay to allow tab transition
-                                          setTimeout(() => {
-                                            executeCommand(`ping ${targetIp}`);
-                                          }, 300);
+                                        if (selectedIotDeviceId) {
+                                          window.parent.postMessage({
+                                            type: 'router-admin-renew-iot',
+                                            deviceId: selectedIotDeviceId,
+                                            payload: {
+                                              iotDeviceId: selectedIotDeviceId
+                                            }
+                                          }, '*');
                                         }
                                       }}
                                     >
-                                      <Globe className="w-4 h-4 mr-2" />
-                                      Ping {selectedIotDevice?.ip}
+                                      <Radio className="w-4 h-4 mr-2" />
+                                      {language === 'tr' ? 'IP Yenile' : 'IP Renew'}
                                     </Button>
-                                  )}
+                                  </div>
                                 </div>
                               );
                             })()}
@@ -5109,21 +5151,67 @@ export function PCPanel({
                     }}
                     className="flex items-center gap-2 flex-1 min-w-0"
                   >
-                    <div className="flex flex-col flex-1 min-w-0">
+                    <div className="flex flex-col flex-1 min-w-0 relative">
                       <span className="text-sm font-semibold truncate">{httpAppTitle}</span>
                       <input
+                        ref={urlInputRef}
                         value={httpAppUrl || ''}
-                        onChange={(e) => setHttpAppUrl(e.target.value)}
+                        onChange={(e) => {
+                          setHttpAppUrl(e.target.value);
+                          setSelectedSuggestionIndex(-1);
+                        }}
+                        onFocus={() => {
+                          setShowUrlSuggestions(true);
+                          setSelectedSuggestionIndex(-1);
+                        }}
+                        onBlur={() => setTimeout(() => setShowUrlSuggestions(false), 200)}
                         onKeyDown={(e) => {
                           e.stopPropagation();
-                          if (e.key === 'Enter') {
+                          const suggestions = filteredSuggestions.slice(0, 10);
+                          
+                          if (e.key === 'ArrowDown') {
                             e.preventDefault();
-                            openHttpTarget(httpAppUrl);
+                            setSelectedSuggestionIndex(prev => 
+                              prev < suggestions.length - 1 ? prev + 1 : prev
+                            );
+                          } else if (e.key === 'ArrowUp') {
+                            e.preventDefault();
+                            setSelectedSuggestionIndex(prev => 
+                              prev > 0 ? prev - 1 : -1
+                            );
+                          } else if (e.key === 'Enter') {
+                            e.preventDefault();
+                            if (selectedSuggestionIndex >= 0 && suggestions[selectedSuggestionIndex]) {
+                              setHttpAppUrl(suggestions[selectedSuggestionIndex]);
+                              setShowUrlSuggestions(false);
+                              openHttpTarget(suggestions[selectedSuggestionIndex]);
+                            } else {
+                              setShowUrlSuggestions(false);
+                              openHttpTarget(httpAppUrl);
+                            }
                           }
                         }}
                         placeholder="http://"
                         className={`mt-1 w-full text-xs rounded-md px-2 py-1 border ${isDark ? 'bg-slate-900 border-slate-700 text-slate-200' : 'bg-white border-slate-300 text-slate-700'}`}
                       />
+                      {showUrlSuggestions && filteredSuggestions.length > 0 && (
+                        <div className={`absolute top-full left-0 right-0 mt-1 rounded-md border shadow-lg max-h-48 overflow-y-auto z-50 ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-300'}`}>
+                          {filteredSuggestions.slice(0, 10).map((suggestion, index) => (
+                            <div
+                              key={index}
+                              onMouseDown={(e) => {
+                                e.preventDefault();
+                                setHttpAppUrl(suggestion);
+                                setShowUrlSuggestions(false);
+                                openHttpTarget(suggestion);
+                              }}
+                              className={`px-2 py-1.5 text-xs cursor-pointer ${index === selectedSuggestionIndex ? (isDark ? 'bg-slate-700' : 'bg-slate-200') : 'hover:bg-slate-100 dark:hover:bg-slate-800'} ${isDark ? 'text-slate-200' : 'text-slate-700'}`}
+                            >
+                              {suggestion}
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                     <Button size="sm" type="submit" className="shrink-0">
                       {language === 'tr' ? 'Git' : 'Go'}
