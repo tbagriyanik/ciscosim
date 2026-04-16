@@ -1937,6 +1937,38 @@ export const commandPatterns: Record<string, CommandPattern> = {
     modes: ['dhcp-config'],
     minArgs: 1,
     maxArgs: 1
+  },
+
+  // ── IoT Device Configuration ──────────────────────────────────────────────
+  'iot sensor': {
+    pattern: /^iot\s+sensor\s+(temperature|humidity|motion|light|sound)$/i,
+    modes: ['config'],
+    minArgs: 1,
+    maxArgs: 1
+  },
+  'iot name': {
+    pattern: /^iot\s+name\s+(.+)$/i,
+    modes: ['config'],
+    minArgs: 1,
+    maxArgs: 1
+  },
+  'iot wifi ssid': {
+    pattern: /^iot\s+wifi\s+ssid\s+(.+)$/i,
+    modes: ['config'],
+    minArgs: 1,
+    maxArgs: 1
+  },
+  'iot wifi password': {
+    pattern: /^iot\s+wifi\s+password\s+(.+)$/i,
+    modes: ['config'],
+    minArgs: 1,
+    maxArgs: 1
+  },
+  'iot wifi security': {
+    pattern: /^iot\s+wifi\s+security\s+(open|wpa|wpa2|wpa3)$/i,
+    modes: ['config'],
+    minArgs: 1,
+    maxArgs: 1
   }
 };
 

@@ -950,7 +950,7 @@ export function PCPanel({
     const mode = getCommandMode();
     const { candidates, currentWord: ctxCurrentWord } = expandCommandContext(mode as any, value);
     const suggestions = candidates.filter(
-      opt => opt !== '?' && opt.toLowerCase().startsWith(ctxCurrentWord)
+      (opt: string) => opt !== '?' && opt.toLowerCase().startsWith(ctxCurrentWord)
     );
     if (!expectsIpArg) return suggestions.slice(0, 8);
     const ipSuggestions = collectKnownIps().filter((ip) => ip.toLowerCase().startsWith(ctxCurrentWord || currentWord));
@@ -2037,14 +2037,29 @@ export function PCPanel({
   }, []);
 
   const buildArpTableOutput = useCallback(() => {
-    const reachableHosts = topologyDevices
-      .filter((d) => d.id !== deviceId && !!d.ip && !!d.macAddress)
-      .filter((d) => canReachTargetIp(d.ip))
-      .map((d) => ({
-        ip: d.ip,
-        mac: formatMacForArp(d.macAddress),
-        type: 'dynamic',
-      }));
+    // Get all devices including IoT that have IP and MAC
+    const allDevices = topologyDevices.filter((d) => 
+      d.id !== deviceId && !!d.ip && !!d.macAddress && canReachTargetIp(d.ip)
+    );
+    
+    // Also include IoT devices that are connected to the same network
+    const connectedIoTDevices = topologyDevices.filter((d) => {
+      if (d.type !== 'iot') return false;
+      if (!d.ip || !d.macAddress) return false;
+      if (d.id === deviceId) return false;
+      // Check if IoT is reachable (same subnet or through gateway)
+      return canReachTargetIp(d.ip);
+    });
+    
+    // Combine and deduplicate
+    const combinedDevices = [...allDevices, ...connectedIoTDevices];
+    const uniqueDevices = Array.from(new Map(combinedDevices.map(d => [d.id, d])).values());
+    
+    const reachableHosts = uniqueDevices.map((d) => ({
+      ip: d.ip,
+      mac: formatMacForArp(d.macAddress),
+      type: d.type === 'iot' ? 'dynamic (IoT)' : 'dynamic',
+    }));
 
     if (reachableHosts.length === 0) {
       return `Interface: ${pcIP} --- 0x3\n  Internet Address      Physical Address      Type`;
@@ -4295,6 +4310,13 @@ export function PCPanel({
                                   <SelectItem value="light">{language === 'tr' ? 'Işık' : 'Light'}</SelectItem>
                                 </SelectContent>
                               </Select>
+                            </div>
+
+                            <div className="space-y-2">
+                              <label className="text-xs font-bold text-slate-500">MAC Address</label>
+                              <div className="text-sm font-mono bg-slate-100 px-3 py-2 rounded border">
+                                {selectedIotDevice?.macAddress || 'N/A'}
+                              </div>
                             </div>
 
                             <div className="flex items-center gap-4">

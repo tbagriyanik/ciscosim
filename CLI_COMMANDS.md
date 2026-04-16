@@ -24,18 +24,24 @@ The simulator supports **100+ commands** across multiple configuration modes.
 | `ssh [-l username] <host>` | Connect via SSH |
 | `write memory` | Save running configuration to NVRAM |
 | `copy running-config startup-config` | Save configuration |
+| `copy running-config flash:[:filename]` | Save configuration to flash |
+| `copy flash:[:filename] startup-config` | Restore configuration from flash |
 | `erase startup-config` | Erase startup configuration |
 | `erase nvram` | Erase NVRAM filesystem |
+| `delete flash:vlan.dat` | Delete VLAN database file |
 | `reload` | Reload the device |
 | `ip route <network> <mask> <next-hop>` | Add static route |
 | `no ip route <network> <mask> <next-hop>` | Remove static route |
 | `debug <type>` | Enable debugging |
 | `undebug all` | Disable all debugging |
+| `undebug` | Disable all debugging (alias) |
 | `terminal [length\|width\|monitor]` | Set terminal parameters |
+| `terminal no monitor` | Disable terminal monitoring |
 | `clear arp-cache` | Clear ARP cache |
 | `clear mac address-table` | Clear MAC address table |
 | `clear counters` | Clear interface counters |
 | `do <command>` | Execute privileged command from config mode |
+| `help` | Display help system information |
 
 ### Global Configuration Commands
 | Command | Description |
@@ -51,17 +57,24 @@ The simulator supports **100+ commands** across multiple configuration modes.
 | `ip routing` | Enable IP routing (L3 switches) |
 | `no ip routing` | Disable IP routing |
 | `ip default-gateway <ip>` | Set default gateway |
+| `no ip default-gateway` | Remove default gateway |
 | `ip domain-name <name>` | Set domain name |
 | `no ip domain lookup` | Disable DNS lookup |
 | `ip http server` | Enable HTTP server |
 | `no ip http server` | Disable HTTP server |
 | `ip ssh version {1\|2}` | Set SSH version |
 | `ip ssh time-out <seconds>` | Set SSH timeout |
+| `no ip ssh time-out` | Remove SSH timeout |
 | `ip dhcp snooping` | Enable DHCP snooping |
 | `ip dhcp snooping vlan <list>` | Enable DHCP snooping on VLANs |
+| `no ip dhcp snooping` | Disable DHCP snooping |
+| `ip arp inspection` | Enable ARP inspection |
 | `service password-encryption` | Encrypt passwords |
+| `no service password-encryption` | Disable password encryption |
 | `enable secret <password>` | Set enable secret |
+| `no enable secret` | Remove enable secret |
 | `enable password <password>` | Set enable password |
+| `no enable password` | Remove enable password |
 | `banner motd #<message>#` | Set MOTD banner |
 | `banner login #<message>#` | Set login banner |
 | `banner exec #<message>#` | Set exec banner |
@@ -70,15 +83,18 @@ The simulator supports **100+ commands** across multiple configuration modes.
 | `no banner exec` | Remove exec banner |
 | `vtp mode {server\|client\|transparent}` | Set VTP mode |
 | `vtp domain <name>` | Set VTP domain |
+| `vtp password <password>` | Set VTP password |
 | `spanning-tree mode {pvst\|rapid-pvst\|mst}` | Set STP mode |
 | `no spanning-tree` | Disable spanning-tree |
 | `spanning-tree vlan <id> priority <val>` | Set VLAN STP priority |
+| `spanning-tree vlan <id> root` | Set VLAN STP root |
 | `spanning-tree portfast default` | Enable PortFast globally |
 | `username <name> [privilege <lvl>] [password\|secret] <pass>` | Create user |
 | `no username <name>` | Remove user |
 | `cdp run` | Enable CDP globally |
 | `no cdp run` | Disable CDP |
 | `mls qos` | Enable MLS QoS |
+| `no mls qos` | Disable MLS QoS |
 | `router rip` | Enable RIP routing |
 | `router ospf [<id>]` | Enable OSPF routing |
 | `no router rip` | Disable RIP |
@@ -105,6 +121,7 @@ The simulator supports **100+ commands** across multiple configuration modes.
 | `switchport mode trunk` | Set trunk mode |
 | `switchport mode dynamic auto` | Set DTP dynamic auto mode |
 | `switchport mode dynamic desirable` | Set DTP dynamic desirable mode |
+| `switchport mode dot1q-tunnel` | Set dot1q tunnel mode |
 | `no switchport mode` | Reset switchport mode |
 | `switchport access vlan <id>` | Assign VLAN |
 | `no switchport access vlan` | Remove VLAN assignment |
@@ -123,9 +140,12 @@ The simulator supports **100+ commands** across multiple configuration modes.
 | `spanning-tree bpduguard disable` | Disable BPDU Guard |
 | `spanning-tree cost <cost>` | Set STP cost |
 | `spanning-tree priority <prio>` | Set STP priority |
+| `no spanning-tree` | Disable spanning-tree on interface |
 | `ip address <ip> <mask>` | Assign IP address |
+| `ip address <ip>/<prefix>` | Assign IP with CIDR notation |
 | `no ip address` | Remove IP address |
 | `ip default-gateway <ip>` | Set default gateway (interface) |
+| `no ip default-gateway` | Remove default gateway (interface) |
 | `ip helper-address <ip>` | Set DHCP relay |
 | `no ip helper-address` | Remove DHCP relay |
 | `cdp enable` | Enable CDP on interface |
@@ -137,6 +157,10 @@ The simulator supports **100+ commands** across multiple configuration modes.
 | `debug` / `no debug` | Interface debugging |
 | `monitor session <n>` | Configure SPAN/RSPAN |
 | `no monitor session` | Remove monitoring |
+| `no udld` | Disable UDLD on interface |
+| `no ip proxy-arp` | Disable proxy ARP |
+| `no keepalive` | Disable keepalive |
+| `no name` | Remove interface name (VLAN) |
 
 ### Wireless (WiFi) Commands
 | Command | Description |
@@ -198,6 +222,7 @@ The simulator supports **100+ commands** across multiple configuration modes.
 | `show interfaces trunk` | Display trunk interface information |
 | `show interface <name>` | Display specific interface |
 | `show ip interface brief` | Display IP interface summary |
+| `show ip interface` | Display IP interface summary (alias) |
 | `show vlan [brief]` | Display VLAN information |
 | `show mac address-table` | Display MAC address table |
 | `show cdp neighbors` | Display CDP neighbors |
@@ -208,12 +233,15 @@ The simulator supports **100+ commands** across multiple configuration modes.
 | `show spanning-tree` | Display STP information |
 | `show port-security` | Display port security status |
 | `show wireless` | Display wireless status |
+| `show ssh` | Display SSH status |
+| `do show <command>` | Execute show command from config mode |
 | `show ip dhcp snooping` | Display DHCP snooping |
 | `show ip dhcp pool` | Display DHCP pool configuration |
 | `show ip dhcp binding` | Display DHCP bindings |
 | `show interfaces status` | Display interface status |
 | `show cdp` | Display CDP information |
 | `show vtp status` | Display VTP status |
+| `show vtp` | Display VTP status (alias) |
 | `show etherchannel` | Display EtherChannel |
 | `show arp` / `show ip arp` | Display ARP table |
 | `show mls qos` | Display QoS status |
@@ -224,6 +252,7 @@ The simulator supports **100+ commands** across multiple configuration modes.
 | `show environment` | Display hardware status |
 | `show inventory` | Display hardware inventory |
 | `show errdisable recovery` | Display errdisable status |
+| `show errdisable detect` | Display errdisable detection |
 | `show storm-control` | Display storm control |
 | `show udld` | Display UDLD status |
 | `show monitor` | Display SPAN sessions |

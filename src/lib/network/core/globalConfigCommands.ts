@@ -1366,4 +1366,190 @@ Object.assign(globalConfigHandlers, {
   'no ip dhcp pool': cmdNoIpDhcpPool,
   'ip dhcp excluded-address': cmdIpDhcpExcludedAddress,
   'no ip dhcp excluded-address': cmdNoIpDhcpExcludedAddress,
+  // IoT device configuration
+  'iot sensor': cmdIotSensor,
+  'iot name': cmdIotName,
+  'iot wifi ssid': cmdIotWifiSsid,
+  'iot wifi password': cmdIotWifiPassword,
+  'iot wifi security': cmdIotWifiSecurity,
 });
+
+// ── IoT Device Configuration Handlers ─────────────────────────────────────────
+
+/**
+ * IoT Sensor - Set IoT device sensor type
+ */
+function cmdIotSensor(state: any, input: string, ctx: any): any {
+  if (state.currentMode !== 'config') {
+    return { success: false, error: '% Invalid command at this mode' };
+  }
+  
+  const match = input.match(/^iot\s+sensor\s+(\w+)/i);
+  if (!match) {
+    return { success: false, error: '% Invalid sensor type' };
+  }
+  
+  const sensorType = match[1].toLowerCase();
+  const validSensors = ['temperature', 'humidity', 'motion', 'light', 'sound'];
+  
+  if (!validSensors.includes(sensorType)) {
+    return { success: false, error: `% Invalid sensor type. Valid types: ${validSensors.join(', ')}` };
+  }
+  
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('update-topology-device-config', {
+      detail: {
+        deviceId: state.deviceId,
+        config: {
+          iot: {
+            sensorType: sensorType as any
+          }
+        }
+      }
+    }));
+  }
+  
+  return { 
+    success: true, 
+    output: `% IoT sensor type set to ${sensorType}` 
+  };
+}
+
+/**
+ * IoT Name - Set IoT device name
+ */
+function cmdIotName(state: any, input: string, ctx: any): any {
+  if (state.currentMode !== 'config') {
+    return { success: false, error: '% Invalid command at this mode' };
+  }
+  
+  const match = input.match(/^iot\s+name\s+(.+)/i);
+  if (!match) {
+    return { success: false, error: '% Please specify a name' };
+  }
+  
+  const name = match[1].trim();
+  
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('update-topology-device-config', {
+      detail: {
+        deviceId: state.deviceId,
+        config: {
+          name: name
+        }
+      }
+    }));
+  }
+  
+  return { 
+    success: true, 
+    output: `% IoT device name set to "${name}"` 
+  };
+}
+
+/**
+ * IoT WiFi SSID - Set IoT device WiFi SSID
+ */
+function cmdIotWifiSsid(state: any, input: string, ctx: any): any {
+  if (state.currentMode !== 'config') {
+    return { success: false, error: '% Invalid command at this mode' };
+  }
+  
+  const match = input.match(/^iot\s+wifi\s+ssid\s+(.+)/i);
+  if (!match) {
+    return { success: false, error: '% Please specify SSID' };
+  }
+  
+  const ssid = match[1].trim();
+  
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('update-topology-device-config', {
+      detail: {
+        deviceId: state.deviceId,
+        config: {
+          wifi: {
+            ssid: ssid
+          }
+        }
+      }
+    }));
+  }
+  
+  return { 
+    success: true, 
+    output: `% IoT WiFi SSID set to "${ssid}"` 
+  };
+}
+
+/**
+ * IoT WiFi Password - Set IoT device WiFi password
+ */
+function cmdIotWifiPassword(state: any, input: string, ctx: any): any {
+  if (state.currentMode !== 'config') {
+    return { success: false, error: '% Invalid command at this mode' };
+  }
+  
+  const match = input.match(/^iot\s+wifi\s+password\s+(.+)/i);
+  if (!match) {
+    return { success: false, error: '% Please specify password' };
+  }
+  
+  const password = match[1].trim();
+  
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('update-topology-device-config', {
+      detail: {
+        deviceId: state.deviceId,
+        config: {
+          wifi: {
+            password: password
+          }
+        }
+      }
+    }));
+  }
+  
+  return { 
+    success: true, 
+    output: `% IoT WiFi password updated` 
+  };
+}
+
+/**
+ * IoT WiFi Security - Set IoT device WiFi security mode
+ */
+function cmdIotWifiSecurity(state: any, input: string, ctx: any): any {
+  if (state.currentMode !== 'config') {
+    return { success: false, error: '% Invalid command at this mode' };
+  }
+  
+  const match = input.match(/^iot\s+wifi\s+security\s+(\w+)/i);
+  if (!match) {
+    return { success: false, error: '% Please specify security mode' };
+  }
+  
+  const security = match[1].toLowerCase();
+  const validModes = ['open', 'wpa', 'wpa2', 'wpa3'];
+  
+  if (!validModes.includes(security)) {
+    return { success: false, error: `% Invalid security mode. Valid modes: ${validModes.join(', ')}` };
+  }
+  
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('update-topology-device-config', {
+      detail: {
+        deviceId: state.deviceId,
+        config: {
+          wifi: {
+            security: security as any
+          }
+        }
+      }
+    }));
+  }
+  
+  return { 
+    success: true, 
+    output: `% IoT WiFi security set to ${security.toUpperCase()}` 
+  };
+}
