@@ -4370,7 +4370,7 @@ ${state.bannerMOTD}
                           size="icon"
                           className="h-8 w-8 text-slate-500 hover:bg-slate-500/10"
                           onClick={handleUndo}
-                          disabled={!canUndo}
+                          disabled={hasHydrated && !canUndo}
                         >
                           <Undo2 className={`w-4 h-4 ${!canUndo ? 'opacity-30' : ''}`} />
                         </Button>
@@ -4386,7 +4386,7 @@ ${state.bannerMOTD}
                           size="icon"
                           className="h-8 w-8 text-slate-500 hover:bg-slate-500/10"
                           onClick={handleRedo}
-                          disabled={!canRedo}
+                          disabled={hasHydrated && !canRedo}
                         >
                           <Redo2 className={`w-4 h-4 ${!canRedo ? 'opacity-30' : ''}`} />
                         </Button>
