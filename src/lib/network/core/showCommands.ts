@@ -713,7 +713,7 @@ function cmdShowMacAddressTable(
   input: string,
   ctx: any
 ): any {
-  let output = '\n\nMac Address Table\n';
+  let output = '\nMac Address Table\n';
   output += '-------------------------------------------\n\n';
   output += 'Vlan    Mac Address       Type        Ports\n';
   output += '----    -----------       --------    -----\n';
@@ -800,6 +800,7 @@ function cmdShowMacAddressTable(
     output += 'All    0000.0000.0000    STATIC      CPU\n';
   }
 
+  output += '\nTotal Mac Addresses for this criterion: ' + uniqueMacTable.length + '\n';
   output += '!\n';
   return { success: true, output };
 }
@@ -827,15 +828,52 @@ function cmdShowCdpNeighbors(
   output += '                  S - Switch, H - Host, I - IGMP, r - Repeater, P - Phone\n\n';
   output += 'Device ID        Local Intrfce     Holdtme    Capability  Platform  Port ID\n';
 
-  // Show CDP neighbors if available
-  if (state.cdpNeighbors && state.cdpNeighbors.length > 0) {
-    state.cdpNeighbors.forEach((neighbor: any) => {
-      output += `${neighbor.deviceId.padEnd(16)}${neighbor.localInterface.padEnd(18)}${String(neighbor.holdTime).padEnd(12)}${neighbor.capability.padEnd(12)}${neighbor.platform.padEnd(11)}${neighbor.remoteInterface}\n`;
-    });
+  // Get real neighbors from topology
+  const connections = ctx.connections || [];
+  const sourceDeviceId = ctx.sourceDeviceId;
+  const devices = ctx.devices || [];
+  const cdpEnabled = state.cdpEnabled !== false;
+
+  if (!cdpEnabled) {
+    output += 'CDP is not enabled\n';
   } else {
-    output += 'No CDP neighbors found\n';
+    // Find connections to this device
+    const deviceConnections = connections.filter(
+      (conn: any) => conn.sourceDeviceId === sourceDeviceId || conn.targetDeviceId === sourceDeviceId
+    );
+
+    if (deviceConnections.length === 0) {
+      output += 'No CDP neighbors found\n';
+    } else {
+      deviceConnections.forEach((conn: any) => {
+        const isSource = conn.sourceDeviceId === sourceDeviceId;
+        const localPort = isSource ? conn.sourcePort : conn.targetPort;
+        const connectedDeviceId = isSource ? conn.targetDeviceId : conn.sourceDeviceId;
+        const remotePort = isSource ? conn.targetPort : conn.sourcePort;
+
+        const connectedDevice = devices.find((d: any) => d.id === connectedDeviceId);
+
+        if (connectedDevice) {
+          // Determine capability based on device type
+          const deviceType = connectedDevice.type;
+          let capability = 'S'; // Switch
+          if (deviceType === 'router') capability = 'R';
+          else if (deviceType === 'pc') capability = 'H';
+          else if (deviceType === 'iot') capability = 'H';
+
+          // Platform based on device type
+          let platform = 'WS-C2960-24TT-L';
+          if (deviceType === 'router') platform = 'C2911';
+          else if (deviceType === 'pc') platform = 'PC';
+          else if (deviceType === 'iot') platform = 'IoT';
+
+          output += `${connectedDevice.name.padEnd(16)}${localPort.padEnd(18)}${'140'.padEnd(12)}${capability.padEnd(12)}${platform.padEnd(11)}${remotePort}\n`;
+        }
+      });
+    }
   }
 
+  output += '\nTotal entries displayed: ' + (cdpEnabled ? connections.filter((c: any) => c.sourceDeviceId === sourceDeviceId || c.targetDeviceId === sourceDeviceId).length : 0) + '\n';
   output += '!\n';
   return { success: true, output };
 }
@@ -861,13 +899,37 @@ function cmdShowIpRoute(
   output += 'Gateway of last resort is not set\n\n';
 
   // Connected routes
-  const hasConnectedRoutes = false;
+  let hasConnectedRoutes = false;
   Object.keys(state.ports || {}).forEach(portName => {
     const port = state.ports[portName];
-    if (port.ipAddress && port.subnetMask) {
+    if (port.ipAddress && port.subnetMask && !port.shutdown) {
+      hasConnectedRoutes = true;
       output += `C     ${port.ipAddress}/${getPrefixLength(port.subnetMask)} is directly connected, ${portName}\n`;
     }
   });
+
+  // Add routes to connected networks via topology
+  const connections = ctx.connections || [];
+  const sourceDeviceId = ctx.sourceDeviceId;
+  const devices = ctx.devices || [];
+
+  if (connections && connections.length > 0) {
+    connections.forEach((conn: any) => {
+      if (conn.sourceDeviceId === sourceDeviceId || conn.targetDeviceId === sourceDeviceId) {
+        const isSource = conn.sourceDeviceId === sourceDeviceId;
+        const localPort = isSource ? conn.sourcePort : conn.targetPort;
+        const connectedDeviceId = isSource ? conn.targetDeviceId : conn.sourceDeviceId;
+
+        const connectedDevice = devices.find((d: any) => d.id === connectedDeviceId);
+
+        if (connectedDevice?.ip && connectedDevice?.subnet) {
+          const prefixLength = getPrefixLength(connectedDevice.subnet);
+          output += `C     ${connectedDevice.ip}/${prefixLength} is directly connected, ${localPort}\n`;
+          hasConnectedRoutes = true;
+        }
+      }
+    });
+  }
 
   // Static routes
   if (state.staticRoutes && state.staticRoutes.length > 0) {
@@ -1274,7 +1336,7 @@ function cmdShowVtpStatus(state: any, input: string, ctx: any): any {
   output += `VTP Domain Name                 : ${state.vtpDomain || ''}\n`;
   output += `VTP Pruning Mode                : Disabled\n`;
   output += `VTP Traps Generation            : Disabled\n`;
-  output += `Device ID                       : ${state.macAddress || ''}\n`;
+  output += `MD5 digest                      : 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00\n`;
   output += `Configuration last modified by  : 0.0.0.0 at 0-0-00 00:00:00\n`;
   output += `Local updater ID is 0.0.0.0 (no valid interface found)\n\n`;
   output += `Feature VLAN:\n`;
@@ -1283,6 +1345,7 @@ function cmdShowVtpStatus(state: any, input: string, ctx: any): any {
   output += `Maximum VLANs supported locally   : 1005\n`;
   output += `Number of existing VLANs          : ${Object.keys(state.vlans || {}).length}\n`;
   output += `Configuration Revision            : ${state.vtpRevision || 0}\n`;
+  output += `MD5 digest                       : 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00\n`;
   return { success: true, output };
 }
 
@@ -1321,12 +1384,56 @@ function cmdShowEtherchannel(state: any, input: string, ctx: any): any {
  */
 function cmdShowArp(state: any, input: string, ctx: any): any {
   let output = '\nProtocol  Address          Age (min)  Hardware Addr   Type   Interface\n';
-  // Show static ARP entries from MAC table
+
+  // Use real ARP cache from state
+  const arpCache = state.arpCache || [];
+  const now = Date.now();
+  const ARP_TIMEOUT = 14400000; // 4 hours in milliseconds
+
+  const arpEntries: { protocol: string; address: string; age: string; mac: string; type: string; interface: string }[] = [];
+
+  // Add entries from ARP cache
+  arpCache.forEach((entry: any) => {
+    // Calculate age in minutes
+    const ageMs = now - entry.timestamp;
+    const ageMin = Math.floor(ageMs / 60000); // Convert to minutes
+
+    // Format MAC address
+    const mac = formatMacAddressSimple(entry.mac);
+
+    arpEntries.push({
+      protocol: 'Internet',
+      address: entry.ip,
+      age: ageMin.toString(),
+      mac: mac,
+      type: 'ARPA',
+      interface: entry.interface
+    });
+  });
+
+  // Add static ARP entries from MAC table
   (state.macAddressTable || []).forEach((entry: any) => {
     if (entry.type === 'STATIC') {
-      output += `Internet  ${(entry.ip || '').padEnd(17)}  -          ${entry.mac.padEnd(16)}ARPA   Vlan${entry.vlan}\n`;
+      arpEntries.push({
+        protocol: 'Internet',
+        address: entry.ip || '',
+        age: '-',
+        mac: entry.mac,
+        type: 'ARPA',
+        interface: `Vlan${entry.vlan}`
+      });
     }
   });
+
+  // Display ARP entries
+  if (arpEntries.length > 0) {
+    arpEntries.forEach((entry) => {
+      output += `${entry.protocol.padEnd(9)}${entry.address.padEnd(18)}${entry.age.padEnd(11)}${entry.mac.padEnd(17)}${entry.type.padEnd(7)}${entry.interface}\n`;
+    });
+  } else {
+    output += 'No ARP entries found\n';
+  }
+
   return { success: true, output };
 }
 

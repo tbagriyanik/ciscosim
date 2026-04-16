@@ -18,6 +18,7 @@ export interface CanvasPort {
   duplex?: 'half' | 'full' | 'auto';
   ipAddress?: string;
   subnetMask?: string;
+  macAddress?: string; // Per-port MAC address (for router ports)
   wifi?: {
     ssid: string;
     security: 'open' | 'wpa' | 'wpa2' | 'wpa3';

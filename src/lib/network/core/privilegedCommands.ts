@@ -1,6 +1,9 @@
 import type { CommandHandler } from './commandTypes';
 import { checkConnectivity, getWirelessSignalStrength, getWirelessDistance } from '../connectivity';
 import type { CanvasDevice } from '@/components/network/networkTopology.types';
+import { SwitchState } from '../types';
+import { clearArpCache } from '../arp';
+import { clearMacTable, clearDynamicMacEntries } from '../macLearning';
 
 // Privileged EXEC komutları (ping, telnet, write, copy, erase, reload, debug, vs.)
 
@@ -735,6 +738,13 @@ function cmdTerminal(state: any, input: string, ctx: any): any {
  * Clear ARP Cache
  */
 function cmdClearArpCache(state: any, input: string, ctx: any): any {
+    const deviceId = ctx.sourceDeviceId;
+    const deviceStates = ctx.deviceStates;
+    
+    if (deviceId && deviceStates) {
+        clearArpCache(deviceId, deviceStates);
+    }
+    
     return { success: true, output: '' };
 }
 
@@ -742,11 +752,22 @@ function cmdClearArpCache(state: any, input: string, ctx: any): any {
  * Clear MAC Address-Table
  */
 function cmdClearMacAddressTable(state: any, input: string, ctx: any): any {
-    return {
-        success: true,
-        output: '',
-        newState: { macAddressTable: [] }
-    };
+    const deviceId = ctx.sourceDeviceId;
+    const deviceStates = ctx.deviceStates;
+    const args = input.trim().split(/\s+/).slice(2); // Skip "clear mac address-table"
+    
+    if (deviceId && deviceStates) {
+        if (args.length === 0 || args[0] === '') {
+            // Clear all entries
+            clearMacTable(deviceId, deviceStates);
+        } else if (args[0] === 'dynamic') {
+            // Clear only dynamic entries
+            clearDynamicMacEntries(deviceId, deviceStates);
+        }
+        // Note: 'static' clearing is not implemented in this version
+    }
+    
+    return { success: true, output: '' };
 }
 
 /**

@@ -2120,8 +2120,10 @@ Mevcut komutlar:
     show port-security    - Port güvenlik durumunu göster
     show ssh              - SSH durumunu göster
     show ip interface brief - IP arayüz özetini göster
+    show arp              - ARP tablosunu göster
   write memory       - Konfigürasyonu kaydet
   copy run start     - Konfigürasyonu kaydet (alternatif)
+  delete flash:      - Flash bellekten dosya sil
   ping <ip>          - Ping at
   traceroute <ip>    - Trace route
   telnet <ip>        - Telnet bağlantısı
@@ -2137,6 +2139,7 @@ Hızlı yazım:
   sh mac      = show mac address-table
   sh cdp ne   = show cdp neighbors
   sh ssh      = show ssh
+  sh arp      = show arp
   wr          = write memory
   cop run sta = copy running-config startup-config
 `,
@@ -2166,6 +2169,11 @@ Mevcut komutlar:
   vtp domain <name>         - VTP domain ayarla
   cdp run                   - CDP'yi etkinleştir
   no cdp run                - CDP'yi devre dışı bırak
+  iot sensor <tip>          - IoT sensör tipi (temperature|humidity|motion|light|sound)
+  iot name <isim>           - IoT cihaz adı
+  iot wifi ssid <ssid>      - IoT WiFi SSID
+  iot wifi password <şifre> - IoT WiFi şifresi
+  iot wifi security <tip>   - IoT WiFi güvenliği (open|wpa|wpa2|wpa3)
   router rip                - RIP yönlendirme etkinleştir
   router ospf <id>          - OSPF yönlendirme etkinleştir
   no router rip             - RIP yönlendirme devre dışı
@@ -2336,8 +2344,10 @@ Available commands:
     show port-security    - Show port security status
     show ssh              - Show SSH status
     show ip interface brief - Show IP interface summary
+    show arp              - Show ARP table
   write memory       - Save configuration
   copy run start     - Save configuration (alternative)
+  delete flash:      - Delete files from flash memory
   ping <ip>          - Ping
   traceroute <ip>    - Trace route
   telnet <ip>        - Telnet connection
@@ -2353,6 +2363,7 @@ Shortcuts:
   sh mac      = show mac address-table
   sh cdp ne   = show cdp neighbors
   sh ssh      = show ssh
+  sh arp      = show arp
   wr          = write memory
   cop run sta = copy running-config startup-config
 `,
@@ -2382,6 +2393,11 @@ Shortcuts:
     vtp domain <name>         - Set VTP domain
     cdp run                   - Enable CDP
     no cdp run                - Disable CDP
+    iot sensor <type>         - Set IoT sensor type (temperature|humidity|motion|light|sound)
+    iot name <name>           - Set IoT device name
+    iot wifi ssid <ssid>      - Set IoT WiFi SSID
+    iot wifi password <pass>  - Set IoT WiFi password
+    iot wifi security <type>   - Set IoT WiFi security (open|wpa|wpa2|wpa3)
     exit                      - Return to privileged mode
     end                       - Return to privileged mode
     do <command>              - Run privileged commands

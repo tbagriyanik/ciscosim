@@ -170,23 +170,33 @@ const createPcDevice = (id: string, name: string, x: number, y: number, ip: stri
   ]
 });
 
-const createRouterDevice = (id: string, name: string, x: number, y: number): CanvasDevice => ({
-  id,
-  type: 'router',
-  name,
-  x,
-  y,
-  ip: '',
-  macAddress: nextExampleMac(),
-  status: 'online',
-  ports: [
-    { id: 'console', label: 'Console', status: 'disconnected' as const },
-    { id: 'gi0/0', label: 'Gi0/0', status: 'disconnected' as const },
-    { id: 'gi0/1', label: 'Gi0/1', status: 'disconnected' as const },
-    { id: 'gi0/2', label: 'Gi0/2', status: 'disconnected' as const },
-    { id: 'gi0/3', label: 'Gi0/3', status: 'disconnected' as const }
-  ]
-});
+const createRouterDevice = (id: string, name: string, x: number, y: number): CanvasDevice => {
+  const baseMac = nextExampleMac();
+  const macNumber = parseInt(baseMac.replace(/\./g, ''), 16);
+
+  const formatMacFromNumber = (value: number): string => {
+    const base = value.toString(16).padStart(12, '0').toUpperCase();
+    return `${base.slice(0, 4)}.${base.slice(4, 8)}.${base.slice(8, 12)}`;
+  };
+
+  return {
+    id,
+    type: 'router',
+    name,
+    x,
+    y,
+    ip: '',
+    macAddress: baseMac, // Base MAC for router
+    status: 'online',
+    ports: [
+      { id: 'console', label: 'Console', status: 'disconnected' as const },
+      { id: 'gi0/0', label: 'Gi0/0', status: 'disconnected' as const, macAddress: formatMacFromNumber(macNumber) },
+      { id: 'gi0/1', label: 'Gi0/1', status: 'disconnected' as const, macAddress: formatMacFromNumber(macNumber + 1) },
+      { id: 'gi0/2', label: 'Gi0/2', status: 'disconnected' as const, macAddress: formatMacFromNumber(macNumber + 2) },
+      { id: 'gi0/3', label: 'Gi0/3', status: 'disconnected' as const, macAddress: formatMacFromNumber(macNumber + 3) }
+    ]
+  };
+};
 
 const createIotDevice = (id: string, name: string, x: number, y: number, sensorType: 'temperature' | 'humidity' | 'motion' | 'light' | 'sound'): CanvasDevice => ({
   id,
@@ -400,6 +410,7 @@ export const exampleProjects = (language: 'tr' | 'en'): ExampleProject[] => {
 
   const iotWifiR1State = createInitialRouterState();
   iotWifiR1State.hostname = 'R1';
+  // Update router port MAC addresses (already set by createInitialRouterPorts)
   iotWifiR1State.ports['wlan0'] = {
     ...iotWifiR1State.ports['wlan0'],
     status: 'connected',
@@ -491,7 +502,35 @@ export const exampleProjects = (language: 'tr' | 'en'): ExampleProject[] => {
         mode: 'ap'
       }
     },
-    ...greenhouseDevices[1].ports
+    {
+      id: 'console',
+      label: 'Console',
+      status: 'disconnected'
+    },
+    {
+      id: 'gi0/0',
+      label: 'Gi0/0',
+      status: 'disconnected',
+      macAddress: greenhouseDevices[1].ports.find(p => p.id === 'gi0/0')?.macAddress
+    },
+    {
+      id: 'gi0/1',
+      label: 'Gi0/1',
+      status: 'disconnected',
+      macAddress: greenhouseDevices[1].ports.find(p => p.id === 'gi0/1')?.macAddress
+    },
+    {
+      id: 'gi0/2',
+      label: 'Gi0/2',
+      status: 'disconnected',
+      macAddress: greenhouseDevices[1].ports.find(p => p.id === 'gi0/2')?.macAddress
+    },
+    {
+      id: 'gi0/3',
+      label: 'Gi0/3',
+      status: 'disconnected',
+      macAddress: greenhouseDevices[1].ports.find(p => p.id === 'gi0/3')?.macAddress
+    }
   ];
 
   // Configure PC-1 for Greenhouse WiFi

@@ -1,6 +1,8 @@
 import { CanvasDevice, CanvasConnection, DeviceType } from '@/components/network/networkTopology.types';
 import { CableInfo, SwitchState, isCableCompatible } from './types';
 import { findRoute, ipToNumber, getRoutingTable } from './routing';
+import { performArpResolution, getMacFromArpCache } from './arp';
+import { processFrameMacLearning } from './macLearning';
 
 export type WifiMode = 'ap' | 'client' | 'disabled' | 'sta';
 
@@ -473,6 +475,36 @@ export function checkConnectivity(
     return { success: false, hops: [], hopIds: [], error: 'Request timed out.' };
   }
 
+  // 1.5. Perform ARP resolution if target is in same subnet
+  // ARP is needed for L2 communication to resolve IP to MAC
+  const sourceDeviceForArp = devices.find(d => d.id === sourceId);
+  if (sourceDeviceForArp && deviceStates && targetDevice.macAddress) {
+    const sourceState = deviceStates.get(sourceId);
+    if (sourceState) {
+      // Check if source and target are in same subnet
+      const sourceIp = getPrimaryDeviceIp(sourceId, devices, deviceStates);
+      const sourceSubnet = getSubnetForDeviceIp(sourceId, sourceIp, devices, deviceStates) || '255.255.255.0';
+      const targetSubnet = targetDevice.subnet || '255.255.255.0';
+
+      if (isIpInSubnet(sourceIp, resolvedTargetIp, sourceSubnet)) {
+        // Same subnet - perform ARP resolution
+        // Find the interface through which we'll send the ARP
+        const sourceConn = connections.find(c => c.sourceDeviceId === sourceId || c.targetDeviceId === sourceId);
+        const interfaceName = sourceConn ? (sourceConn.sourceDeviceId === sourceId ? sourceConn.sourcePort : sourceConn.targetPort) : 'unknown';
+
+        // Perform ARP resolution (simulated)
+        performArpResolution(
+          sourceId,
+          resolvedTargetIp,
+          targetDevice.id,
+          targetDevice.macAddress,
+          interfaceName,
+          deviceStates
+        );
+      }
+    }
+  }
+
   const getPortVlan = (port: any): number => {
     return Number(port?.accessVlan || port?.vlan || 1);
   };
@@ -628,8 +660,6 @@ export function checkConnectivity(
       for (const deviceId of path) {
         const device = devices.find(d => d.id === deviceId);
         const state = deviceStates?.get(deviceId);
-        // Debug: log path device info
-        console.log('[DEBUG] Path device:', deviceId, 'Type:', device?.type, 'Has state:', !!state, 'ipRouting:', state?.ipRouting);
         if ((device?.type === 'router' || device?.type === 'switchL3') && state?.ipRouting) {
           hasL3Gateway = true;
           routerDeviceId = deviceId;

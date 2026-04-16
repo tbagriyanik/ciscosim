@@ -35,6 +35,7 @@ export interface Port {
   previousStatus?: PortStatus;  // shutdown öncesi durum (no shutdown için)
   ipAddress?: string;           // For L3 ports or SVI
   subnetMask?: string;
+  macAddress?: string;         // Per-port MAC address (for router ports)
   allowedVlans?: number[] | 'all'; // For trunk ports
   channelGroup?: number; // Port-channel group id
   channelMode?: EtherChannelMode;
@@ -113,7 +114,8 @@ export interface SwitchState {
     serialNumber: string;
     uptime: string;
   };
-  macAddressTable: { mac: string; vlan: number; port: string; type: string }[];
+  macAddressTable: { mac: string; vlan: number; port: string; type: string; timestamp?: number }[];
+  arpCache: { ip: string; mac: string; interface: string; timestamp: number }[];
   // Password prompt state
   awaitingPassword?: boolean;
   passwordContext?: 'enable' | 'console' | 'vty';

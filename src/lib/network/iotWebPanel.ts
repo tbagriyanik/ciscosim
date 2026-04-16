@@ -48,6 +48,10 @@ export const generateIotWebPanelContent = (
       <div class="iot-device-card ${cardClass}">
         <div class="device-info">
           <span class="device-name">${device.name || device.id}</span>
+          <div class="device-details">
+            <span class="device-ip">${isTurkish ? 'IP' : 'IP'}: ${device.ip || '-'}</span>
+            <span class="device-mac">${isTurkish ? 'MAC' : 'MAC'}: ${device.macAddress || '-'}</span>
+          </div>
           <div class="device-status ${statusClass}">${statusText}</div>
         </div>
         <button onclick="window.parent.postMessage({ type: 'open-iot-device', deviceId: '${device.id}' }, '*')" class="connect-button">
@@ -167,6 +171,18 @@ export const generateIotWebPanelContent = (
             font-weight: 600;
             font-size: 16px;
             color: #333;
+          }
+          .device-details {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            margin: 6px 0;
+          }
+          .device-ip,
+          .device-mac {
+            font-size: 12px;
+            color: #666;
+            font-family: 'Courier New', monospace;
           }
           .device-status {
             font-size: 13px;

@@ -210,6 +210,7 @@ export function createInitialState(mac?: string, switchModel: 'WS-C2960-24TT-L' 
       uptime: '2 weeks, 3 days, 5 hours'
     },
     macAddressTable: createInitialMacTable(),
+    arpCache: [],
     vtpRevision: 0,
     ipRouting: false
   };
@@ -218,10 +219,15 @@ export function createInitialState(mac?: string, switchModel: 'WS-C2960-24TT-L' 
 // Router için başlangıç portları oluştur
 function createInitialRouterPorts(): Record<string, Port> {
   const ports: Record<string, Port> = {};
+  const baseMac = generateUniqueMacAddress(0x005000000000); // Router base MAC range
 
   // GigabitEthernet 0/0 - 0/3 (Router portları)
   for (let i = 0; i <= 3; i++) {
     const portId = `gi0/${i}`;
+    // Generate per-port MAC address by incrementing from base MAC
+    const portMacNumber = parseInt(baseMac.replace(/\./g, ''), 16) + i;
+    const portMac = formatMacFromNumber(portMacNumber);
+
     ports[portId] = {
       id: portId,
       name: i === 0 ? 'WAN' : i === 1 ? 'LAN' : '',
@@ -236,7 +242,8 @@ function createInitialRouterPorts(): Record<string, Port> {
       allowedVlans: 'all',
       channelGroup: undefined,
       channelMode: undefined,
-      channelProtocol: undefined
+      channelProtocol: undefined,
+      macAddress: portMac // Per-port MAC address for router
     };
   }
 
@@ -280,6 +287,7 @@ export function createInitialRouterState(mac?: string): SwitchState {
     ports,
     vlans,
     security: createInitialSecurity(),
+    arpCache: [],
     services: {
       http: {
         enabled: true,
