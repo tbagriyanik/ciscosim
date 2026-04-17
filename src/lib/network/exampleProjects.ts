@@ -1370,14 +1370,14 @@ export const exampleProjects = (language: 'tr' | 'en'): ExampleProject[] => {
   connectPorts(stpTriangleDevices, stpTriangleConnections, 'pc-1', 'eth0', 'switch-1', 'fa0/24');
   connectPorts(stpTriangleDevices, stpTriangleConnections, 'pc-2', 'eth0', 'switch-2', 'fa0/24');
   connectPorts(stpTriangleDevices, stpTriangleConnections, 'switch-1', 'fa0/1', 'switch-3', 'fa0/1', 'crossover');
-  connectPorts(stpTriangleDevices, stpTriangleConnections, 'switch-1', 'fa0/2', 'switch-2', 'fa0/2', 'crossover');
+  connectPorts(stpTriangleDevices, stpTriangleConnections, 'switch-1', 'fa0/2', 'switch-2', 'fa0/1', 'crossover');
   connectPorts(stpTriangleDevices, stpTriangleConnections, 'switch-2', 'fa0/2', 'switch-3', 'fa0/2', 'crossover');
   const stpTriangleNotes: CanvasNote[] = [
     {
       id: 'stp-triangle-note',
       text: isTr
-        ? '🔄 STP Triangle Topology (3 Switch):\n\nSW1, SW2, SW3 üçgen topolojide bağlı.\n\nÜçgen bağlantı:\n- SW1 Fa0/1 ↔ SW3 Fa0/1: Altn BLK\n- SW1 Fa0/2 ↔ SW2 Fa0/2: Desg FWD\n- SW2 Fa0/2 ↔ SW3 Fa0/2: Desg FWD\n\nGörevler:\n1) show spanning-tree ile STP durumunu kontrol et\n2) Bloke port (SW1 Fa0/1) turuncu renkte görünür\n3) Bloke kabloların animasyonu yok (pasif görünür)\n4) SW1 Fa0/1 kablo kesilirse otomatik aktif olur'
-        : '🔄 STP Triangle Topology (3 Switches):\n\nSW1, SW2, SW3 connected in triangle topology.\n\nTriangle connections:\n- SW1 Fa0/1 ↔ SW3 Fa0/1: Altn BLK\n- SW1 Fa0/2 ↔ SW2 Fa0/2: Desg FWD\n- SW2 Fa0/2 ↔ SW3 Fa0/2: Desg FWD\n\nTasks:\n1) Verify STP state with show spanning-tree\n2) Blocked port (SW1 Fa0/1) appears in orange color\n3) Blocked cables have no animation (passive appearance)\n4) If SW1 Fa0/1 fails, it automatically becomes active',
+        ? '🔄 STP Triangle Topology (3 Switch):\n\nSW1, SW2, SW3 üçgen topolojide bağlı.\n\nÜçgen bağlantı:\n- SW1 Fa0/1 ↔ SW3 Fa0/1: Altn BLK\n- SW1 Fa0/2 ↔ SW2 Fa0/1: Desg FWD\n- SW2 Fa0/2 ↔ SW3 Fa0/2: Desg FWD\n\nGörevler:\n1) show spanning-tree ile STP durumunu kontrol et\n2) Bloke port (SW1 Fa0/1) turuncu renkte görünür\n3) Bloke kabloların animasyonu yok (pasif görünür)\n4) SW1 Fa0/1 kablo kesilirse otomatik aktif olur'
+        : '🔄 STP Triangle Topology (3 Switches):\n\nSW1, SW2, SW3 connected in triangle topology.\n\nTriangle connections:\n- SW1 Fa0/1 ↔ SW3 Fa0/1: Altn BLK\n- SW1 Fa0/2 ↔ SW2 Fa0/1: Desg FWD\n- SW2 Fa0/2 ↔ SW3 Fa0/2: Desg FWD\n\nTasks:\n1) Verify STP state with show spanning-tree\n2) Blocked port (SW1 Fa0/1) appears in orange color\n3) Blocked cables have no animation (passive appearance)\n4) If SW1 Fa0/1 fails, it automatically becomes active',
       x: 600,
       y: 40,
       width: 500,
@@ -1396,22 +1396,19 @@ export const exampleProjects = (language: 'tr' | 'en'): ExampleProject[] => {
     ...stpTriangleSw1.ports['fa0/24'],
     vlan: 1,
     mode: 'access',
-    status: 'connected',
-    spanningTree: { role: 'designated', state: 'forwarding' }
+    status: 'connected'
   };
   stpTriangleSw1.ports['fa0/1'] = {
     ...stpTriangleSw1.ports['fa0/1'],
     mode: 'access',
     vlan: 1,
-    status: 'connected',
-    spanningTree: { role: 'alternate', state: 'blocking' } // Blocked port (orange)
+    status: 'connected'
   };
   stpTriangleSw1.ports['fa0/2'] = {
     ...stpTriangleSw1.ports['fa0/2'],
     mode: 'access',
     vlan: 1,
-    status: 'connected',
-    spanningTree: { role: 'designated', state: 'forwarding' }
+    status: 'connected'
   };
 
   const stpTriangleSw2 = createInitialState();
@@ -1422,15 +1419,19 @@ export const exampleProjects = (language: 'tr' | 'en'): ExampleProject[] => {
     ...stpTriangleSw2.ports['fa0/24'],
     vlan: 1,
     mode: 'access',
-    status: 'connected',
-    spanningTree: { role: 'designated', state: 'forwarding' }
+    status: 'connected'
+  };
+  stpTriangleSw2.ports['fa0/1'] = {
+    ...stpTriangleSw2.ports['fa0/1'],
+    mode: 'access',
+    vlan: 1,
+    status: 'connected'
   };
   stpTriangleSw2.ports['fa0/2'] = {
     ...stpTriangleSw2.ports['fa0/2'],
     mode: 'access',
     vlan: 1,
-    status: 'connected',
-    spanningTree: { role: 'designated', state: 'forwarding' }
+    status: 'connected'
   };
 
   const stpTriangleSw3 = createInitialState();
@@ -1441,15 +1442,13 @@ export const exampleProjects = (language: 'tr' | 'en'): ExampleProject[] => {
     ...stpTriangleSw3.ports['fa0/1'],
     mode: 'access',
     vlan: 1,
-    status: 'connected',
-    spanningTree: { role: 'alternate', state: 'blocking' } // Blocked port
+    status: 'connected'
   };
   stpTriangleSw3.ports['fa0/2'] = {
     ...stpTriangleSw3.ports['fa0/2'],
     mode: 'access',
     vlan: 1,
-    status: 'connected',
-    spanningTree: { role: 'designated', state: 'forwarding' }
+    status: 'connected'
   };
 
   // Example 11: Campus Network (Simplified)

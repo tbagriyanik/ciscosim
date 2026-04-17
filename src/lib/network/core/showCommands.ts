@@ -1060,6 +1060,7 @@ export function calculateSTPState(
   );
 
   // Find connected switches and their MAC addresses for root bridge election
+  // Filter out connections to powered-off devices
   const connectedSwitches: { deviceId: string; macAddress: string; portId: string; isSource: boolean }[] = [];
   deviceConnections.forEach((conn: any) => {
     const isSource = conn.sourceDeviceId === sourceDeviceId;
@@ -1067,6 +1068,11 @@ export function calculateSTPState(
     const localPortId = isSource ? conn.sourcePort : conn.targetPort;
     const connectedDevice = devices.find((d: any) => d.id === connectedDeviceId);
     const connectedState = deviceStates.get?.(connectedDeviceId);
+
+    // Skip connections to powered-off devices
+    if (connectedDevice && connectedDevice.status === 'offline') {
+      return;
+    }
 
     if (connectedDevice && (connectedDevice.type === 'switchL2' || connectedDevice.type === 'switchL3')) {
       connectedSwitches.push({
@@ -1078,8 +1084,10 @@ export function calculateSTPState(
     }
   });
 
-  // Determine root bridge: lowest MAC address wins
+  // Determine root bridge: lowest bridge priority > lowest MAC address
   const myMac = state.macAddress || 'FFFF.FFFF.FFFF';
+  const myPriority = state.spanningTreePriority || 32768;
+  let lowestPriority = myPriority;
   let lowestMac = myMac;
   let rootBridgeId = sourceDeviceId;
   let rootPortId: string | null = null;
@@ -1087,8 +1095,15 @@ export function calculateSTPState(
 
   // Compare with connected switches
   connectedSwitches.forEach((sw) => {
-    if (sw.macAddress.localeCompare(lowestMac) < 0) {
-      lowestMac = sw.macAddress;
+    const connectedState = deviceStates.get?.(sw.deviceId);
+    const connectedPriority = connectedState?.spanningTreePriority || 32768;
+    const connectedMac = sw.macAddress;
+
+    // Compare priority first, then MAC address if priorities are equal
+    if (connectedPriority < lowestPriority ||
+        (connectedPriority === lowestPriority && connectedMac.localeCompare(lowestMac) < 0)) {
+      lowestPriority = connectedPriority;
+      lowestMac = connectedMac;
       rootBridgeId = sw.deviceId;
       rootPortId = sw.portId;
       lowestRootPortNum = getPortNumber(sw.portId);
@@ -1096,19 +1111,35 @@ export function calculateSTPState(
   });
 
   // Check if there are multiple paths to the root bridge
+  // Root port selection: Lowest Path Cost > Lowest Neighbor BID
   const connectionsToRoot = connectedSwitches.filter(sw => sw.deviceId === rootBridgeId);
   if (connectionsToRoot.length > 1) {
-    let minPortNum = Infinity;
-    let minPortId = '';
+    let bestPathCost = Infinity;
+    let bestNeighborPriority = Infinity;
+    let bestNeighborMac = '';
+    let bestPortId = '';
+
     connectionsToRoot.forEach(conn => {
-      const portNum = getPortNumber(conn.portId);
-      if (portNum < minPortNum) {
-        minPortNum = portNum;
-        minPortId = conn.portId;
+      const port = state.ports[conn.portId];
+      const portCost = port?.type === 'gigabitethernet' ? 4 : 19;
+      const connectedState = deviceStates.get?.(conn.deviceId);
+      const neighborPriority = connectedState?.spanningTreePriority || 32768;
+      const neighborMac = conn.macAddress;
+
+      // Compare path cost first, then neighbor BID (priority + MAC)
+      if (portCost < bestPathCost ||
+          (portCost === bestPathCost && neighborPriority < bestNeighborPriority) ||
+          (portCost === bestPathCost && neighborPriority === bestNeighborPriority &&
+           neighborMac.localeCompare(bestNeighborMac) < 0)) {
+        bestPathCost = portCost;
+        bestNeighborPriority = neighborPriority;
+        bestNeighborMac = neighborMac;
+        bestPortId = conn.portId;
       }
     });
-    rootPortId = minPortId;
-    lowestRootPortNum = minPortNum;
+
+    rootPortId = bestPortId;
+    lowestRootPortNum = getPortNumber(bestPortId);
   } else if (connectionsToRoot.length === 1) {
     rootPortId = connectionsToRoot[0].portId;
     lowestRootPortNum = getPortNumber(rootPortId);
@@ -1134,19 +1165,26 @@ export function calculateSTPState(
       portState = 'FWD';
     } else {
       const portNum = getPortNumber(portId);
+      const portPriority = port.spanningTree?.portPriority || 128;
       const isConnectedToRoot = connectedSwitches.some(
         sw => sw.deviceId === rootBridgeId && sw.portId === portId
       );
 
       if (isConnectedToRoot) {
-        if (portNum === lowestRootPortNum) {
+        // Root port selection: Lowest Path Cost > Lowest Neighbor BID
+        // Already calculated above, just check if this is the root port
+        if (portId === rootPortId) {
           role = 'Root';
           portState = 'FWD';
         } else {
+          // Alternate/backup ports - could be designated if better path exists
+          // For simplicity, mark as blocking if not root port
           role = 'Altn';
           portState = 'BLK';
         }
       } else {
+        // Designated port selection: Lowest Port Priority > Lowest Port ID
+        // Check if this port should be designated based on comparison with other ports on same segment
         role = 'Desg';
         portState = 'FWD';
       }
@@ -1271,6 +1309,7 @@ function cmdShowSpanningTree(
         const portVlan = port.vlan || port.accessVlan || 1;
         return String(portVlan) === String(vlanId);
       })
+      .filter(([_, port]: [string, any]) => port.status === 'connected')
       .sort(([a], [b]) => getPortNumber(a) - getPortNumber(b));
 
     portEntries.forEach(([portName, port]: [string, any]) => {

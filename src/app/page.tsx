@@ -2541,12 +2541,10 @@ ${state.bannerMOTD}
         const stpState = calculateSTPState(state, ctx);
 
         // Update port spanningTree properties
-        // Preserve manually configured STP states - only calculate for ports without existing spanningTree config
         const updatedPorts = { ...state.ports };
         stpState.forEach((stpInfo, portId) => {
           const port = updatedPorts[portId];
-          if (port && !port.spanningTree) {
-            // Only update if port doesn't have manually configured STP state
+          if (port) {
             const roleMap: Record<string, 'root' | 'designated' | 'alternate' | 'backup' | 'disabled'> = {
               'Root': 'root',
               'Desg': 'designated',
@@ -2565,6 +2563,7 @@ ${state.bannerMOTD}
             updatedPorts[portId] = {
               ...port,
               spanningTree: {
+                ...(port.spanningTree || {}),
                 role: roleMap[stpInfo.role] || 'designated',
                 state: stateMap[stpInfo.state] || 'forwarding'
               }
