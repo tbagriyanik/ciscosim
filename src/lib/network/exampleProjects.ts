@@ -1292,8 +1292,8 @@ export const exampleProjects = (language: 'tr' | 'en'): ExampleProject[] => {
     {
       id: 'stp-note',
       text: isTr
-        ? '🔄 STP Redundant Links (Yedekli Bağlantılar):\n\nSW1: spanning-tree priority 28672 (ROOT BRIDGE)\nSW2: spanning-tree priority 32768\n\nGi0/1 ve Gi0/2 arasındaki redundant link:\n- SW1 Gi0/1: Desg FWD (Aktif)\n- SW1 Gi0/2: Altn BLK (Bloke - Amber renk)\n- SW2 Gi0/1: Root FWD (Aktif)\n- SW2 Gi0/2: Altn BLK (Bloke - Amber renk)\n\nGörevler:\n1) show spanning-tree ile STP durumunu kontrol et\n2) Bloke portlar (Gi0/2) amber renkte görünür\n3) Bloke kabloların animasyonu yok\n4) Gi0/1 kablo kesilirse Gi0/2 otomatik aktif olur'
-        : '🔄 STP Redundant Links:\n\nSW1: spanning-tree priority 28672 (ROOT BRIDGE)\nSW2: spanning-tree priority 32768\n\nRedundant link between Gi0/1 and Gi0/2:\n- SW1 Gi0/1: Desg FWD (Active)\n- SW1 Gi0/2: Altn BLK (Blocked - Amber color)\n- SW2 Gi0/1: Root FWD (Active)\n- SW2 Gi0/2: Altn BLK (Blocked - Amber color)\n\nTasks:\n1) Verify STP state with show spanning-tree\n2) Blocked ports (Gi0/2) appear in amber color\n3) Blocked cables have no animation\n4) If Gi0/1 fails, Gi0/2 automatically becomes active',
+        ? '🔄 STP Redundant Links (Yedekli Bağlantılar):\n\nSW1: spanning-tree priority 28672 (ROOT BRIDGE)\nSW2: spanning-tree priority 32768\n\nGi0/1 ve Gi0/2 arasındaki redundant link:\n- SW1 Gi0/1: Desg FWD (Aktif)\n- SW1 Gi0/2: Altn BLK \n- SW2 Gi0/1: Root FWD (Aktif)\n- SW2 Gi0/2: Altn BLK \n\nGörevler:\n1) show spanning-tree ile STP durumunu kontrol et\n2) Bloke portlar (Gi0/2)\n3) Gi0/1 kablo kesilirse Gi0/2 otomatik aktif olur'
+        : '🔄 STP Redundant Links:\n\nSW1: spanning-tree priority 28672 (ROOT BRIDGE)\nSW2: spanning-tree priority 32768\n\nRedundant link between Gi0/1 and Gi0/2:\n- SW1 Gi0/1: Desg FWD (Active)\n- SW1 Gi0/2: Altn BLK\n- SW2 Gi0/1: Root FWD (Active)\n- SW2 Gi0/2: Altn BLK\n\nTasks:\n1) Verify STP state with show spanning-tree\n2) Blocked ports (Gi0/2)\n 3) If Gi0/1 fails, Gi0/2 automatically becomes active',
       x: 600,
       y: 40,
       width: 480,
@@ -1376,8 +1376,8 @@ export const exampleProjects = (language: 'tr' | 'en'): ExampleProject[] => {
     {
       id: 'stp-triangle-note',
       text: isTr
-        ? '🔄 STP Triangle Topology (3 Switch):\n\nSW1, SW2, SW3 üçgen topolojide bağlı.\n\nÜçgen bağlantı:\n- SW1 Fa0/1 ↔ SW3 Fa0/1: Altn BLK\n- SW1 Fa0/2 ↔ SW2 Fa0/1: Desg FWD\n- SW2 Fa0/2 ↔ SW3 Fa0/2: Desg FWD\n\nGörevler:\n1) show spanning-tree ile STP durumunu kontrol et\n2) Bloke port (SW1 Fa0/1) turuncu renkte görünür\n3) Bloke kabloların animasyonu yok (pasif görünür)\n4) SW1 Fa0/1 kablo kesilirse otomatik aktif olur'
-        : '🔄 STP Triangle Topology (3 Switches):\n\nSW1, SW2, SW3 connected in triangle topology.\n\nTriangle connections:\n- SW1 Fa0/1 ↔ SW3 Fa0/1: Altn BLK\n- SW1 Fa0/2 ↔ SW2 Fa0/1: Desg FWD\n- SW2 Fa0/2 ↔ SW3 Fa0/2: Desg FWD\n\nTasks:\n1) Verify STP state with show spanning-tree\n2) Blocked port (SW1 Fa0/1) appears in orange color\n3) Blocked cables have no animation (passive appearance)\n4) If SW1 Fa0/1 fails, it automatically becomes active',
+        ? '🔄 STP Triangle Topology (3 Switch):\n\nSW1, SW2, SW3 üçgen topolojide bağlı.\n\nÜçgen bağlantı:\n- SW1 Fa0/1 ↔ SW3 Fa0/1: Altn BLK\n- SW1 Fa0/2 ↔ SW2 Fa0/1: Desg FWD\n- SW2 Fa0/2 ↔ SW3 Fa0/2: Desg FWD\n\nGörevler:\n1) show spanning-tree ile STP durumunu kontrol et\n2) Bloke port (SW1 Fa0/1)\n3) SW1 Fa0/1 kablo kesilirse otomatik aktif olur'
+        : '🔄 STP Triangle Topology (3 Switches):\n\nSW1, SW2, SW3 connected in triangle topology.\n\nTriangle connections:\n- SW1 Fa0/1 ↔ SW3 Fa0/1: Altn BLK\n- SW1 Fa0/2 ↔ SW2 Fa0/1: Desg FWD\n- SW2 Fa0/2 ↔ SW3 Fa0/2: Desg FWD\n\nTasks:\n1) Verify STP state with show spanning-tree\n2) Blocked port (SW1 Fa0/1) \n3) If SW1 Fa0/1 fails, it automatically becomes active',
       x: 600,
       y: 40,
       width: 500,
@@ -1391,6 +1391,7 @@ export const exampleProjects = (language: 'tr' | 'en'): ExampleProject[] => {
   const stpTriangleSw1 = createInitialState();
   stpTriangleSw1.hostname = 'SW1';
   stpTriangleSw1.spanningTreeMode = 'rapid-pvst';
+  stpTriangleSw1.spanningTreePriority = 32768; // Default priority
   stpTriangleSw1.vlans[1] = { id: 1, name: 'VLAN1', status: 'active', ports: [] };
   stpTriangleSw1.ports['fa0/24'] = {
     ...stpTriangleSw1.ports['fa0/24'],
@@ -1414,6 +1415,7 @@ export const exampleProjects = (language: 'tr' | 'en'): ExampleProject[] => {
   const stpTriangleSw2 = createInitialState();
   stpTriangleSw2.hostname = 'SW2';
   stpTriangleSw2.spanningTreeMode = 'rapid-pvst';
+  stpTriangleSw2.spanningTreePriority = 28672; // Lower priority = Root Bridge
   stpTriangleSw2.vlans[1] = { id: 1, name: 'VLAN1', status: 'active', ports: [] };
   stpTriangleSw2.ports['fa0/24'] = {
     ...stpTriangleSw2.ports['fa0/24'],
@@ -1437,6 +1439,7 @@ export const exampleProjects = (language: 'tr' | 'en'): ExampleProject[] => {
   const stpTriangleSw3 = createInitialState();
   stpTriangleSw3.hostname = 'SW3';
   stpTriangleSw3.spanningTreeMode = 'rapid-pvst';
+  stpTriangleSw3.spanningTreePriority = 32768; // Default priority
   stpTriangleSw3.vlans[1] = { id: 1, name: 'VLAN1', status: 'active', ports: [] };
   stpTriangleSw3.ports['fa0/1'] = {
     ...stpTriangleSw3.ports['fa0/1'],

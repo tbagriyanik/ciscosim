@@ -1147,6 +1147,86 @@ export function calculateSTPState(
 
   const isRootBridge = rootBridgeId === sourceDeviceId;
 
+  // Build adjacency list for path cost calculation
+  const adjacency = new Map<string, { deviceId: string; portId: string; cost: number }[]>();
+  connections.forEach((conn: any) => {
+    const srcId = conn.sourceDeviceId;
+    const tgtId = conn.targetDeviceId;
+    const srcPort = conn.sourcePort;
+    const tgtPort = conn.targetPort;
+    
+    // Get port cost (FastEthernet = 19, GigabitEthernet = 4)
+    const srcDevice = devices.find((d: any) => d.id === srcId);
+    const srcState = deviceStates.get?.(srcId);
+    const srcPortObj = srcState?.ports?.[srcPort];
+    const portCost = srcPortObj?.type === 'gigabitethernet' ? 4 : 19;
+    
+    if (!adjacency.has(srcId)) adjacency.set(srcId, []);
+    if (!adjacency.has(tgtId)) adjacency.set(tgtId, []);
+    
+    adjacency.get(srcId)!.push({ deviceId: tgtId, portId: srcPort, cost: portCost });
+    adjacency.get(tgtId)!.push({ deviceId: srcId, portId: tgtPort, cost: portCost });
+  });
+
+  // Dijkstra's algorithm to find shortest path to root bridge
+  const shortestPathToRoot = (fromDeviceId: string): { pathCost: number; nextHopPort: string | null } => {
+    if (fromDeviceId === rootBridgeId) return { pathCost: 0, nextHopPort: null };
+    
+    const distances = new Map<string, number>();
+    const previous = new Map<string, { deviceId: string; portId: string }>();
+    const visited = new Set<string>();
+    
+    devices.forEach((d: any) => distances.set(d.id, Infinity));
+    distances.set(fromDeviceId, 0);
+    
+    while (visited.size < distances.size) {
+      // Find unvisited node with minimum distance
+      let current: string | null = null;
+      let minDist = Infinity;
+      distances.forEach((dist, deviceId) => {
+        if (!visited.has(deviceId) && dist < minDist) {
+          minDist = dist;
+          current = deviceId;
+        }
+      });
+      
+      if (current === null || minDist === Infinity) break;
+      visited.add(current);
+      
+      if (current === rootBridgeId) break;
+      
+      const neighbors = adjacency.get(current!) || [];
+      neighbors.forEach(neighbor => {
+        if (!visited.has(neighbor.deviceId)) {
+          const newDist = distances.get(current!)! + neighbor.cost;
+          if (newDist < distances.get(neighbor.deviceId)!) {
+            distances.set(neighbor.deviceId, newDist);
+            previous.set(neighbor.deviceId, { deviceId: current!, portId: neighbor.portId });
+          }
+        }
+      });
+    }
+    
+    // Reconstruct path to find next hop port
+    const pathCost = distances.get(rootBridgeId) ?? Infinity;
+    if (pathCost === Infinity) return { pathCost: Infinity, nextHopPort: null };
+    
+    // Find the first hop from source device
+    let current: string | null = rootBridgeId;
+    let nextHopPort: string | null = null;
+    
+    while (current !== null && current !== fromDeviceId && previous.has(current)) {
+      const prev = previous.get(current)!;
+      if (prev.deviceId === fromDeviceId) {
+        nextHopPort = prev.portId;
+        break;
+      }
+      current = prev.deviceId;
+    }
+    
+    return { pathCost, nextHopPort };
+  };
+
   // Calculate STP state for each port
   Object.keys(state.ports || {}).forEach((portId: string) => {
     const port = state.ports[portId];
@@ -1164,29 +1244,52 @@ export function calculateSTPState(
       role = 'Desg';
       portState = 'FWD';
     } else {
-      const portNum = getPortNumber(portId);
-      const portPriority = port.spanningTree?.portPriority || 128;
-      const isConnectedToRoot = connectedSwitches.some(
-        sw => sw.deviceId === rootBridgeId && sw.portId === portId
-      );
-
-      if (isConnectedToRoot) {
-        // Root port selection: Lowest Path Cost > Lowest Neighbor BID
-        // Already calculated above, just check if this is the root port
-        if (portId === rootPortId) {
-          role = 'Root';
-          portState = 'FWD';
-        } else {
-          // Alternate/backup ports - could be designated if better path exists
-          // For simplicity, mark as blocking if not root port
-          role = 'Altn';
-          portState = 'BLK';
-        }
-      } else {
-        // Designated port selection: Lowest Port Priority > Lowest Port ID
-        // Check if this port should be designated based on comparison with other ports on same segment
-        role = 'Desg';
+      const { pathCost, nextHopPort } = shortestPathToRoot(sourceDeviceId);
+      
+      // Check if this port is the root port (next hop towards root)
+      if (portId === nextHopPort) {
+        // This is the root port - it forwards
+        role = 'Root';
         portState = 'FWD';
+      } else {
+        // For non-root ports, check if they should be designated or alternate
+        const neighbor = connectedSwitches.find(sw => sw.portId === portId);
+        if (neighbor) {
+          // Check if this neighbor is the root bridge
+          if (neighbor.deviceId === rootBridgeId) {
+            // Direct connection to root - if not the root port, it should be alternate
+            role = 'Altn';
+            portState = 'BLK';
+          } else {
+            // Connection to non-root switch
+            // In STP, if this port is not the root port and not connected to root,
+            // it should be designated if it's the best path for the neighbor
+            // For simplicity in triangle topology, block ports that create loops
+            // Check if removing this port still leaves a path to root
+            const originalAdj = adjacency.get(sourceDeviceId);
+            const filteredAdj = originalAdj?.filter(a => a.portId !== portId) || [];
+            adjacency.set(sourceDeviceId, filteredAdj);
+            
+            const altPathCost = shortestPathToRoot(sourceDeviceId).pathCost;
+            
+            // Restore adjacency
+            adjacency.set(sourceDeviceId, originalAdj || []);
+            
+            // If alternative path exists, this port creates a loop - block it
+            if (altPathCost !== Infinity) {
+              role = 'Altn';
+              portState = 'BLK';
+            } else {
+              // No alternative path - this port must be designated
+              role = 'Desg';
+              portState = 'FWD';
+            }
+          }
+        } else {
+          // Port not connected to another switch - assume designated
+          role = 'Desg';
+          portState = 'FWD';
+        }
       }
     }
 
