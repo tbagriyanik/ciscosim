@@ -3769,7 +3769,7 @@ export function PCPanel({
 
                 {/* Content Area */}
                 <div className={`flex-1 min-h-0 h-full max-h-[70vh] sm:max-h-[72vh] lg:max-h-[74vh] flex flex-col ${terminalBg} relative pt-2.5 overflow-hidden overflow-y-auto`}>
-                  {activeTab === 'home' && (
+                  {activeTab === 'home' && !isPcPoweredOff && (
                     <div
                       className="flex-1 min-h-0 flex items-center justify-center p-2.5 pt-0"
                       style={mobileVerticalScrollStyle}

@@ -44,7 +44,7 @@ interface NetworkTopologyProps {
   cableInfo: CableInfo;
   onCableChange: (cableInfo: CableInfo) => void;
   selectedDevice: DeviceType | null;
-  onDeviceSelect: (device: DeviceType, deviceId?: string, switchModel?: string, deviceName?: string) => void;
+  onDeviceSelect: (device: DeviceType, deviceId?: string, switchModel?: string, deviceName?: string, isNew?: boolean, deviceData?: CanvasDevice) => void;
   onDeviceDoubleClick?: (device: DeviceType, deviceId: string) => void;
   onTopologyChange?: (devices: CanvasDevice[], connections: CanvasConnection[], notes: CanvasNote[]) => void;
   onDeviceDelete?: (deviceId: string) => void;
@@ -2063,10 +2063,18 @@ export function NetworkTopology({
     saveToHistory();
     deviceCounterRef.current[type]++;
 
-    // Calculate position near top-left with some random offset
-    const deviceCount = devices.length;
-    const offsetX = (deviceCount % 4) * 100;
-    const offsetY = Math.floor(deviceCount / 4) * 100;
+    // Calculate position at the center of the current viewport
+    let spawnX = 100 + Math.random() * 30;
+    let spawnY = 80 + Math.random() * 30;
+
+    if (canvasDimensions.width > 0 && canvasDimensions.height > 0) {
+      // Adjust for device size roughly (estimate center)
+      const estimatedDeviceWidth = (type === 'pc' || type === 'iot') ? 90 : 130;
+      const estimatedDeviceHeight = (type === 'pc' || type === 'iot') ? 99 : 120;
+
+      spawnX = (canvasDimensions.width / 2 - pan.x) / zoom - estimatedDeviceWidth / 2;
+      spawnY = (canvasDimensions.height / 2 - pan.y) / zoom - estimatedDeviceHeight / 2;
+    }
 
     // Determine switch layer (default L2)
     const switchLayer = layer || 'L2';
@@ -2091,9 +2099,9 @@ export function NetworkTopology({
       gateway: (type === 'pc' || type === 'iot') ? '0.0.0.0' : undefined,
       dns: (type === 'pc' || type === 'iot') ? '0.0.0.0' : undefined,
       ipConfigMode: type === 'iot' ? 'dhcp' : undefined,
-      // Position near top-left with staggered layout
-      x: 100 + offsetX + Math.random() * 30,
-      y: 80 + offsetY + Math.random() * 30,
+      // Positioned at center of viewport
+      x: spawnX,
+      y: spawnY,
       status: 'online',
       switchModel: type === 'switch' ? switchModel : undefined,
       ports:
@@ -2117,9 +2125,9 @@ export function NetworkTopology({
     setDevices((prev) => [...prev, newDevice]);
     setSelectedDeviceIds([newDevice.id]);
     // Pass the switchModel directly to avoid race condition
-    onDeviceSelect(resolvedType, newDevice.id, newDevice.switchModel, newDevice.name);
+    onDeviceSelect(resolvedType, newDevice.id, newDevice.switchModel, newDevice.name, true, newDevice);
 
-  }, [devices.length, saveToHistory, generateUniqueHostname, generateUniqueLinkLocalIp, onDeviceSelect]);
+  }, [devices.length, saveToHistory, generateUniqueHostname, generateUniqueLinkLocalIp, onDeviceSelect, canvasDimensions, pan, zoom]);
 
   // Note management functions
   const [selectedNoteIds, setSelectedNoteIds] = useState<string[]>([]);

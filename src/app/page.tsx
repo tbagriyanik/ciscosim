@@ -275,13 +275,13 @@ export default function Home() {
   const activeTab = useActiveTab();
   const { setDevices, setConnections, setNotes, setZoom, setPan, setActiveTab, graphicsQuality, setGraphicsQuality } = useAppStore();
 
-  const focusDeviceInTopology = useCallback((deviceId?: string, targetZoom?: number) => {
-    if (!deviceId) return;
+  const focusDeviceInTopology = useCallback((deviceId?: string, targetZoom?: number, deviceData?: CanvasDevice) => {
+    if (!deviceId && !deviceData) return;
     // Pan after any programmatic zoom/pan changes so centering uses fresh layout.
     requestAnimationFrame(() => {
       const rect = topologyContainerRef.current?.getBoundingClientRect();
       if (!rect) return;
-      const targetDevice = topologyDevices.find((device) => device.id === deviceId);
+      const targetDevice = deviceData ?? topologyDevices.find((device) => device.id === deviceId);
       if (!targetDevice) return;
 
       // Use provided targetZoom or read from store
@@ -526,7 +526,7 @@ export default function Home() {
       // Focus the newly added device
       if (activeTab === 'topology' && topologyContainerRef.current) {
         setZoom(1.0); // Reset zoom to 100%
-        focusDeviceInTopology(device.id, 1.0);
+        focusDeviceInTopology(device.id, 1.0, device);
         pendingFocusDeviceRef.current = null; // Clear pending focus as it's handled
       } else {
         // If not in topology tab or container not ready, queue the focus
@@ -1421,9 +1421,20 @@ ${state.bannerMOTD}
   }, [topologyDevices, getOrCreateDeviceState, getOrCreateDeviceOutputs, setSelectedDevice, setActiveDeviceId, setActiveDeviceType, setActiveTabWithHistory]);
 
   // Topology canvas click: selects device only (no zoom/pan).
-  const handleDeviceSelectFromCanvas = useCallback((device: DeviceType, deviceId?: string, switchModel?: string, deviceName?: string) => {
+  const handleDeviceSelectFromCanvas = useCallback((device: DeviceType, deviceId?: string, switchModel?: string, deviceName?: string, isNew?: boolean, deviceData?: CanvasDevice) => {
     applyDeviceSelection(device, deviceId, switchModel, deviceName);
-  }, [applyDeviceSelection]);
+    
+    // If it's a newly added device, focus on it
+    if (isNew && deviceId) {
+      if (activeTab === 'topology' && topologyContainerRef.current) {
+        setZoom(1.0); // Reset zoom to 100%
+        focusDeviceInTopology(deviceId, 1.0, deviceData); // Center on new device
+        pendingFocusDeviceRef.current = null;
+      } else {
+        pendingFocusDeviceRef.current = deviceId;
+      }
+    }
+  }, [activeTab, applyDeviceSelection, focusDeviceInTopology, setZoom]);
 
   // Device dropdown/menu click: focus the selected device at 100% zoom.
   const handleDeviceSelectFromMenu = useCallback((device: DeviceType, deviceId?: string, switchModel?: string, deviceName?: string) => {
