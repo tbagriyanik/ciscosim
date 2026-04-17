@@ -1239,6 +1239,50 @@ ${state.bannerMOTD}
         if (projectData.topology.pan) setPan(projectData.topology.pan);
       }
 
+      // Sync STP state from deviceStates to topologyDevices ports
+      if (projectData.devices && Array.isArray(projectData.devices) && projectData.topology?.devices) {
+        const newDeviceStates = new Map<string, SwitchState>();
+        projectData.devices.forEach((item: { id: string; state: SwitchState }) => {
+          if (item.id && item.id.trim() !== '') {
+            newDeviceStates.set(item.id, item.state);
+          }
+        });
+
+        const validDevices = (projectData.topology.devices || []).filter(
+          (device: CanvasDevice) => device.id && device.id.trim() !== ''
+        );
+        const normalizedDevices = applyLinkLocalToUnconfiguredHosts(validDevices.map((device: CanvasDevice) => ({
+          ...device,
+          type: normalizeDeviceType(device.type),
+        })));
+
+
+        // Update ports with spanningTree state from deviceStates
+        const stpSyncedDevices = normalizedDevices.map((device) => {
+          const deviceState = newDeviceStates.get(device.id);
+          if (!deviceState || !deviceState.ports) return device;
+
+          // Update ports with spanningTree state from deviceState
+          const updatedPorts = device.ports.map((port) => {
+            const statePort = deviceState.ports[port.id];
+            if (statePort && statePort.spanningTree) {
+              return {
+                ...port,
+                spanningTree: statePort.spanningTree
+              };
+            }
+            return port;
+          });
+
+          return {
+            ...device,
+            ports: updatedPorts
+          };
+        });
+
+        setTopologyDevices(stpSyncedDevices);
+      }
+
       // Load cable info
       if (projectData.cableInfo) {
         setCableInfo({
@@ -2497,10 +2541,12 @@ ${state.bannerMOTD}
         const stpState = calculateSTPState(state, ctx);
 
         // Update port spanningTree properties
+        // Preserve manually configured STP states - only calculate for ports without existing spanningTree config
         const updatedPorts = { ...state.ports };
         stpState.forEach((stpInfo, portId) => {
           const port = updatedPorts[portId];
-          if (port) {
+          if (port && !port.spanningTree) {
+            // Only update if port doesn't have manually configured STP state
             const roleMap: Record<string, 'root' | 'designated' | 'alternate' | 'backup' | 'disabled'> = {
               'Root': 'root',
               'Desg': 'designated',
@@ -2519,7 +2565,6 @@ ${state.bannerMOTD}
             updatedPorts[portId] = {
               ...port,
               spanningTree: {
-                ...(port.spanningTree || {}),
                 role: roleMap[stpInfo.role] || 'designated',
                 state: stateMap[stpInfo.state] || 'forwarding'
               }

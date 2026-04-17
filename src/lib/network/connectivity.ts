@@ -579,10 +579,18 @@ export function checkConnectivity(
           const isSrcPoweredOff = !isDevicePoweredOn(srcDevice);
           const isDstPoweredOff = !isDevicePoweredOn(dstDevice);
 
+          // Check STP blocking state
+          const srcState = deviceStates?.get(currentId);
+          const dstState = deviceStates?.get(neighborId);
+          const srcPort = srcState?.ports?.[srcPortId];
+          const dstPort = dstState?.ports?.[dstPortId];
+          const isSrcSTPBlocking = srcPort?.spanningTree?.state === 'blocking';
+          const isDstSTPBlocking = dstPort?.spanningTree?.state === 'blocking';
+
           // Validate cable type for this physical link (e.g. console vs ethernet, straight vs crossover).
           const isCableOk = isConnectionCableCompatible(conn, srcDevice, dstDevice);
 
-          if (!isSrcShutdown && !isDstShutdown && !isSrcPoweredOff && !isDstPoweredOff && isCableOk) {
+          if (!isSrcShutdown && !isDstShutdown && !isSrcPoweredOff && !isDstPoweredOff && !isSrcSTPBlocking && !isDstSTPBlocking && isCableOk) {
             visited.add(neighborId);
             parent.set(neighborId, currentId);
             queue.push(neighborId);

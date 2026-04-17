@@ -1358,7 +1358,101 @@ export const exampleProjects = (language: 'tr' | 'en'): ExampleProject[] => {
     spanningTree: { role: 'alternate', state: 'blocking' } // Blocked port
   };
 
-  // Example 10: Campus Network (Simplified)
+  // Example 10: STP Triangle Topology (3 switches)
+  const stpTriangleDevices = [
+    createPcDevice('pc-1', 'PC-1', 40, 120, '192.168.1.10', 1),
+    createPcDevice('pc-2', 'PC-2', 40, 400, '192.168.1.11', 1),
+    createSwitchDevice('switch-1', 'SW1', 240, 190),
+    createSwitchDevice('switch-2', 'SW2', 440, 190),
+    createSwitchDevice('switch-3', 'SW3', 340, 350)
+  ];
+  const stpTriangleConnections: CanvasConnection[] = [];
+  connectPorts(stpTriangleDevices, stpTriangleConnections, 'pc-1', 'eth0', 'switch-1', 'fa0/24');
+  connectPorts(stpTriangleDevices, stpTriangleConnections, 'pc-2', 'eth0', 'switch-2', 'fa0/24');
+  connectPorts(stpTriangleDevices, stpTriangleConnections, 'switch-1', 'fa0/1', 'switch-3', 'fa0/1', 'crossover');
+  connectPorts(stpTriangleDevices, stpTriangleConnections, 'switch-1', 'fa0/2', 'switch-2', 'fa0/2', 'crossover');
+  connectPorts(stpTriangleDevices, stpTriangleConnections, 'switch-2', 'fa0/2', 'switch-3', 'fa0/2', 'crossover');
+  const stpTriangleNotes: CanvasNote[] = [
+    {
+      id: 'stp-triangle-note',
+      text: isTr
+        ? '🔄 STP Triangle Topology (3 Switch):\n\nSW1, SW2, SW3 üçgen topolojide bağlı.\n\nÜçgen bağlantı:\n- SW1 Fa0/1 ↔ SW3 Fa0/1: Altn BLK\n- SW1 Fa0/2 ↔ SW2 Fa0/2: Desg FWD\n- SW2 Fa0/2 ↔ SW3 Fa0/2: Desg FWD\n\nGörevler:\n1) show spanning-tree ile STP durumunu kontrol et\n2) Bloke port (SW1 Fa0/1) turuncu renkte görünür\n3) Bloke kabloların animasyonu yok (pasif görünür)\n4) SW1 Fa0/1 kablo kesilirse otomatik aktif olur'
+        : '🔄 STP Triangle Topology (3 Switches):\n\nSW1, SW2, SW3 connected in triangle topology.\n\nTriangle connections:\n- SW1 Fa0/1 ↔ SW3 Fa0/1: Altn BLK\n- SW1 Fa0/2 ↔ SW2 Fa0/2: Desg FWD\n- SW2 Fa0/2 ↔ SW3 Fa0/2: Desg FWD\n\nTasks:\n1) Verify STP state with show spanning-tree\n2) Blocked port (SW1 Fa0/1) appears in orange color\n3) Blocked cables have no animation (passive appearance)\n4) If SW1 Fa0/1 fails, it automatically becomes active',
+      x: 600,
+      y: 40,
+      width: 500,
+      height: 260,
+      color: '#f97316',
+      font: 'verdana',
+      fontSize: 12,
+      opacity: 0.75
+    }
+  ];
+  const stpTriangleSw1 = createInitialState();
+  stpTriangleSw1.hostname = 'SW1';
+  stpTriangleSw1.spanningTreeMode = 'rapid-pvst';
+  stpTriangleSw1.vlans[1] = { id: 1, name: 'VLAN1', status: 'active', ports: [] };
+  stpTriangleSw1.ports['fa0/24'] = {
+    ...stpTriangleSw1.ports['fa0/24'],
+    vlan: 1,
+    mode: 'access',
+    status: 'connected',
+    spanningTree: { role: 'designated', state: 'forwarding' }
+  };
+  stpTriangleSw1.ports['fa0/1'] = {
+    ...stpTriangleSw1.ports['fa0/1'],
+    mode: 'access',
+    vlan: 1,
+    status: 'connected',
+    spanningTree: { role: 'alternate', state: 'blocking' } // Blocked port (orange)
+  };
+  stpTriangleSw1.ports['fa0/2'] = {
+    ...stpTriangleSw1.ports['fa0/2'],
+    mode: 'access',
+    vlan: 1,
+    status: 'connected',
+    spanningTree: { role: 'designated', state: 'forwarding' }
+  };
+
+  const stpTriangleSw2 = createInitialState();
+  stpTriangleSw2.hostname = 'SW2';
+  stpTriangleSw2.spanningTreeMode = 'rapid-pvst';
+  stpTriangleSw2.vlans[1] = { id: 1, name: 'VLAN1', status: 'active', ports: [] };
+  stpTriangleSw2.ports['fa0/24'] = {
+    ...stpTriangleSw2.ports['fa0/24'],
+    vlan: 1,
+    mode: 'access',
+    status: 'connected',
+    spanningTree: { role: 'designated', state: 'forwarding' }
+  };
+  stpTriangleSw2.ports['fa0/2'] = {
+    ...stpTriangleSw2.ports['fa0/2'],
+    mode: 'access',
+    vlan: 1,
+    status: 'connected',
+    spanningTree: { role: 'designated', state: 'forwarding' }
+  };
+
+  const stpTriangleSw3 = createInitialState();
+  stpTriangleSw3.hostname = 'SW3';
+  stpTriangleSw3.spanningTreeMode = 'rapid-pvst';
+  stpTriangleSw3.vlans[1] = { id: 1, name: 'VLAN1', status: 'active', ports: [] };
+  stpTriangleSw3.ports['fa0/1'] = {
+    ...stpTriangleSw3.ports['fa0/1'],
+    mode: 'access',
+    vlan: 1,
+    status: 'connected',
+    spanningTree: { role: 'alternate', state: 'blocking' } // Blocked port
+  };
+  stpTriangleSw3.ports['fa0/2'] = {
+    ...stpTriangleSw3.ports['fa0/2'],
+    mode: 'access',
+    vlan: 1,
+    status: 'connected',
+    spanningTree: { role: 'designated', state: 'forwarding' }
+  };
+
+  // Example 11: Campus Network (Simplified)
   const campusDevices = [
     createPcDevice('pc-1', 'PC-1', 40, 120, '192.168.10.10', 10),
     createPcDevice('pc-2', 'PC-2', 40, 260, '192.168.20.10', 20),
@@ -1600,6 +1694,19 @@ export const exampleProjects = (language: 'tr' | 'en'): ExampleProject[] => {
       data: baseProjectData(stpDevices, stpConnections, stpNotes, [
         { id: 'switch-1', state: stpSw1 },
         { id: 'switch-2', state: stpSw2 }
+      ])
+    },
+    {
+      id: 'stp-triangle',
+      tag: isTr ? 'STP' : 'STP',
+      title: isTr ? 'STP Triangle Topology' : 'STP Triangle Topology',
+      description: isTr ? '3 switch, triangle topology, STP blocking.' : '3 switches, triangle topology, STP blocking.',
+      detail: isTr ? 'SW1: Fa0/1 bloke (turuncu)' : 'SW1: Fa0/1 blocked (orange)',
+      level: 'advanced',
+      data: baseProjectData(stpTriangleDevices, stpTriangleConnections, stpTriangleNotes, [
+        { id: 'switch-1', state: stpTriangleSw1 },
+        { id: 'switch-2', state: stpTriangleSw2 },
+        { id: 'switch-3', state: stpTriangleSw3 }
       ])
     },
     {
