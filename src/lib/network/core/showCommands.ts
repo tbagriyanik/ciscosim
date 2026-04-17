@@ -1091,6 +1091,7 @@ export function calculateSTPState(
   });
 
   // Determine root bridge: lowest bridge priority > lowest MAC address
+  // Consider ALL switches in topology (not just directly connected) - simulates BPDU propagation
   const myMac = state.macAddress || 'FFFF.FFFF.FFFF';
   const myPriority = state.spanningTreePriority || 32768;
   let lowestPriority = myPriority;
@@ -1099,26 +1100,34 @@ export function calculateSTPState(
   let rootPortId: string | null = null;
   let lowestRootPortNum = Infinity;
 
-  // Compare with connected switches
-  connectedSwitches.forEach((sw) => {
-    const connectedState = deviceStates.get?.(sw.deviceId);
-    const connectedPriority = connectedState?.spanningTreePriority || 32768;
-    const connectedMac = sw.macAddress;
-
-    // Compare priority first, then MAC address if priorities are equal
-    if (connectedPriority < lowestPriority ||
-        (connectedPriority === lowestPriority && connectedMac.localeCompare(lowestMac) < 0)) {
-      lowestPriority = connectedPriority;
-      lowestMac = connectedMac;
-      rootBridgeId = sw.deviceId;
-      rootPortId = sw.portId;
-      lowestRootPortNum = getPortNumber(sw.portId);
+  // First, collect ALL switches in the topology for proper root bridge election
+  const allSwitches: { deviceId: string; macAddress: string; priority: number }[] = [];
+  devices.forEach((d: any) => {
+    if (d.type === 'switchL2' || d.type === 'switchL3') {
+      const swState = deviceStates.get?.(d.id);
+      allSwitches.push({
+        deviceId: d.id,
+        macAddress: swState?.macAddress || d.macAddress || 'FFFF.FFFF.FFFF',
+        priority: swState?.spanningTreePriority || 32768
+      });
     }
   });
 
-  // Check if there are multiple paths to the root bridge
+  // Find root bridge among ALL switches (simulates BPDU learning)
+  allSwitches.forEach((sw) => {
+    if (sw.priority < lowestPriority ||
+        (sw.priority === lowestPriority && sw.macAddress.localeCompare(lowestMac) < 0)) {
+      lowestPriority = sw.priority;
+      lowestMac = sw.macAddress;
+      rootBridgeId = sw.deviceId;
+    }
+  });
+
+  // Now find the path to root bridge among directly connected switches
   // Root port selection: Lowest Path Cost > Lowest Neighbor BID > Lowest Neighbor Port ID
   const connectionsToRoot = connectedSwitches.filter(sw => sw.deviceId === rootBridgeId);
+
+  // Check if there are multiple paths to the root bridge
   if (connectionsToRoot.length > 1) {
     let bestPathCost = Infinity;
     let bestNeighborPriority = Infinity;
@@ -1161,31 +1170,36 @@ export function calculateSTPState(
   // Build adjacency list for path cost calculation
   const adjacency = new Map<string, { deviceId: string; portId: string; cost: number }[]>();
   connections.forEach((conn: any) => {
+    // Skip inactive connections (link failures, disconnected cables)
+    if (conn.active === false) {
+      return;
+    }
+
     const srcId = conn.sourceDeviceId;
     const tgtId = conn.targetDeviceId;
     const srcPort = conn.sourcePort;
     const tgtPort = conn.targetPort;
-    
+
     // Get port cost (FastEthernet = 19, GigabitEthernet = 4)
     const srcDevice = devices.find((d: any) => d.id === srcId);
     const srcState = deviceStates.get?.(srcId);
     const srcPortObj = srcState?.ports?.[srcPort];
     const portCost = srcPortObj?.type === 'gigabitethernet' ? 4 : 19;
-    
+
     // Check if either endpoint port is shutdown
     const tgtState = deviceStates.get?.(tgtId);
     const tgtPortObj = tgtState?.ports?.[tgtPort];
     const srcPortShutdown = srcPortObj?.shutdown || false;
     const tgtPortShutdown = tgtPortObj?.shutdown || false;
-    
+
     // Skip connection if either port is shutdown
     if (srcPortShutdown || tgtPortShutdown) {
       return;
     }
-    
+
     if (!adjacency.has(srcId)) adjacency.set(srcId, []);
     if (!adjacency.has(tgtId)) adjacency.set(tgtId, []);
-    
+
     adjacency.get(srcId)!.push({ deviceId: tgtId, portId: srcPort, cost: portCost });
     adjacency.get(tgtId)!.push({ deviceId: srcId, portId: tgtPort, cost: portCost });
   });
@@ -1249,7 +1263,24 @@ export function calculateSTPState(
     return { pathCost, nextHopPort };
   };
 
-  // Calculate STP state for each port
+  // Pre-calculate root path cost for all switches in topology
+  // This simulates BPDU propagation where each switch learns the best path to root
+  const switchRootPathCosts = new Map<string, { pathCost: number; rootPort: string | null }>();
+  
+  // Root bridge has path cost 0 and no root port
+  switchRootPathCosts.set(rootBridgeId, { pathCost: 0, rootPort: null });
+  
+  // For other switches, calculate shortest path to root
+  devices.forEach((d: any) => {
+    if (d.id === rootBridgeId) return;
+    if (d.type !== 'switchL2' && d.type !== 'switchL3') return;
+    
+    const { pathCost, nextHopPort } = shortestPathToRoot(d.id);
+    switchRootPathCosts.set(d.id, { pathCost, rootPort: nextHopPort });
+  });
+
+  // Calculate STP state for each port using real STP logic
+  // Designated port selection: Compare root path costs on each link segment
   Object.keys(state.ports || {}).forEach((portId: string) => {
     const port = state.ports[portId];
     if (portId.toLowerCase().startsWith('vlan') || portId.toLowerCase().startsWith('console')) {
@@ -1265,71 +1296,106 @@ export function calculateSTPState(
       role = 'Desg';
       portState = 'BLK';
     } else if (isRootBridge) {
+      // Root bridge: All active ports are designated (forwarding)
       role = 'Desg';
-      // Root bridge ports go to forwarding (skip listening/learning if portfast)
       portState = 'FWD';
     } else {
-      const { pathCost, nextHopPort } = shortestPathToRoot(sourceDeviceId);
+      // Get this switch's root path info
+      const myRootInfo = switchRootPathCosts.get(sourceDeviceId);
+      const myPathCost = myRootInfo?.pathCost ?? Infinity;
+      const myRootPort = myRootInfo?.rootPort ?? null;
       
-      // Check if this port is the root port (next hop towards root)
-      if (portId === nextHopPort) {
-        // This is the root port - it should forward
+      // Check if this port is the root port
+      if (portId === myRootPort) {
         role = 'Root';
-        // If portfast or already forwarding, go directly to FWD
-        // Otherwise, show learning state (simplified - in real STP would go listening→learning→forwarding)
         if (isPortfast || previousState === 'forwarding') {
           portState = 'FWD';
         } else if (previousState === 'blocking') {
-          portState = 'LRN'; // Learning state
+          portState = 'LRN';
         } else {
           portState = 'FWD';
         }
       } else {
-        // For non-root ports, check if they should be designated or alternate
+        // Non-root port: Determine designated vs alternate
         const neighbor = connectedSwitches.find(sw => sw.portId === portId);
+        
         if (neighbor) {
-          // Check if this neighbor is the root bridge
-          if (neighbor.deviceId === rootBridgeId) {
-            // Direct connection to root - if not the root port, it should be alternate
-            role = 'Altn';
-            portState = 'BLK';
+          // This port connects to another switch - use STP designated port election
+          // The switch with lower root path cost wins designated role
+          // If equal, lower bridge ID wins
+          const neighborRootInfo = switchRootPathCosts.get(neighbor.deviceId);
+          const neighborPathCost = neighborRootInfo?.pathCost ?? Infinity;
+          
+          // Get port costs
+          const myPortCost = port?.type === 'gigabitethernet' ? 4 : 19;
+          const neighborDevice = devices.find((d: any) => d.id === neighbor.deviceId);
+          const neighborState = deviceStates.get?.(neighbor.deviceId);
+          const neighborPortObj = neighborState?.ports?.[neighbor.portId];
+          const neighborPortCost = neighborPortObj?.type === 'gigabitethernet' ? 4 : 19;
+          
+          // Calculate root path cost if we use this port
+          // My advertised cost = my path cost to root
+          const myAdvertisedCost = myPathCost;
+          
+          // Neighbor's advertised cost = neighbor's path cost to root
+          const neighborAdvertisedCost = neighborPathCost;
+          
+          // STP Designated Port Election Rules:
+          // 1. Lower root path cost wins
+          // 2. If equal, lower sender bridge ID (MAC) wins
+          // 3. If equal, lower sender port ID wins
+          let iAmDesignated: boolean;
+          
+          if (myAdvertisedCost < neighborAdvertisedCost) {
+            // I have better (lower) path to root -> I win designated
+            iAmDesignated = true;
+          } else if (myAdvertisedCost > neighborAdvertisedCost) {
+            // Neighbor has better path -> I lose, become alternate
+            iAmDesignated = false;
           } else {
-            // Connection to non-root switch
-            // In STP, if this port is not the root port and not connected to root,
-            // it should be designated if it's the best path for the neighbor
-            // For simplicity in triangle topology, block ports that create loops
-            // Check if removing this port still leaves a path to root
-            const originalAdj = adjacency.get(sourceDeviceId);
-            const filteredAdj = originalAdj?.filter(a => a.portId !== portId) || [];
-            adjacency.set(sourceDeviceId, filteredAdj);
+            // Equal path costs - compare bridge IDs (lower MAC wins)
+            const myMac = state.macAddress || 'FFFF.FFFF.FFFF';
+            const neighborMac = neighborState?.macAddress || neighborDevice?.macAddress || 'FFFF.FFFF.FFFF';
+            const macComparison = myMac.localeCompare(neighborMac);
             
-            const altPathCost = shortestPathToRoot(sourceDeviceId).pathCost;
-            
-            // Restore adjacency
-            adjacency.set(sourceDeviceId, originalAdj || []);
-            
-            // If alternative path exists, this port creates a loop - block it
-            if (altPathCost !== Infinity) {
-              role = 'Altn';
-              portState = 'BLK';
+            if (macComparison < 0) {
+              // My MAC is lower -> I win designated
+              iAmDesignated = true;
+            } else if (macComparison > 0) {
+              // Neighbor MAC is lower -> I lose
+              iAmDesignated = false;
             } else {
-              // No alternative path - this port must be designated
-              role = 'Desg';
-              // If portfast or already forwarding, go directly to FWD
-              // Otherwise, show learning state
-              if (isPortfast || previousState === 'forwarding') {
-                portState = 'FWD';
-              } else if (previousState === 'blocking') {
-                portState = 'LRN'; // Learning state
-              } else {
-                portState = 'FWD';
-              }
+              // Equal MACs (same device?) - compare port IDs
+              const myPortNum = getPortNumber(portId);
+              const neighborPortNum = getPortNumber(neighbor.portId);
+              iAmDesignated = myPortNum < neighborPortNum;
             }
           }
+          
+          if (iAmDesignated) {
+            role = 'Desg';
+            if (isPortfast || previousState === 'forwarding') {
+              portState = 'FWD';
+            } else if (previousState === 'blocking') {
+              portState = 'LRN';
+            } else {
+              portState = 'FWD';
+            }
+          } else {
+            // I lost the election - this port is alternate (blocking)
+            role = 'Altn';
+            portState = 'BLK';
+          }
         } else {
-          // Port not connected to another switch - assume designated
+          // Port not connected to another switch (edge port) - designated
           role = 'Desg';
-          portState = 'FWD';
+          if (isPortfast || previousState === 'forwarding') {
+            portState = 'FWD';
+          } else if (previousState === 'blocking') {
+            portState = 'LRN';
+          } else {
+            portState = 'FWD';
+          }
         }
       }
     }
