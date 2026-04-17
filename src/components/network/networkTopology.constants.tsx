@@ -113,3 +113,47 @@ export const NOTE_FONTS_MOBILE = [
 ];
 export const NOTE_FONT_SIZES: Array<CanvasNote['fontSize']> = [10, 12, 16, 20];
 export const NOTE_OPACITY: Array<CanvasNote['opacity']> = [0.25, 0.5, 0.75, 1];
+
+// Port spacing constants
+export const PC_PORT_SPACING = 18;
+export const PORT_SPACING = 14;
+export const PORT_ROW_SPACING = 14;
+export const PORT_START_X = 14;
+export const PORT_START_Y = 80;
+
+// Port colors
+export const PORT_COLORS = {
+  ethernet: {
+    connected: '#3b82f6',
+    disconnected: '#1d4ed8',
+    shutdown: '#ef4444',
+  },
+  console: {
+    connected: '#06b6d4',
+    disconnected: '#0891b2',
+    shutdown: '#ef4444',
+  },
+  gigabit: {
+    connected: '#f97316',
+    disconnected: '#ea580c',
+    shutdown: '#ef4444',
+  },
+} as const;
+
+// Device status colors
+export const STATUS_COLORS = {
+  online: '#22c55e',
+  offline: '#ef4444',
+  error: '#ef4444',
+} as const;
+
+// Stroke colors for device selection
+export const STROKE_COLORS = {
+  cyan: '#06b6d4',
+  green: '#22c55e',
+  purple: '#a855f7',
+  orange: '#f97316',
+  blue: '#3b82f6',
+  slateLight: '#cbd5e1',
+  slateDark: '#0f172a',
+} as const;

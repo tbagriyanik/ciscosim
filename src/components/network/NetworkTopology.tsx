@@ -23,6 +23,8 @@ import { EnvironmentSettingsPanel } from './EnvironmentSettingsPanel';
 import { useEnvironment } from '@/lib/store/appStore';
 import { Plus, Power, Trash2, Monitor, Network, Laptop } from "lucide-react";
 import { cn } from '@/lib/utils';
+import { getDeviceWidth, getDeviceHeight, isPcLike, isSwitchDevice, isRouterDevice } from './networkTopology.helpers';
+import { CABLE_COLORS, DRAG_THRESHOLD, LONG_PRESS_DURATION, VIRTUAL_CANVAS_WIDTH_MOBILE, VIRTUAL_CANVAS_HEIGHT_MOBILE, VIRTUAL_CANVAS_WIDTH_DESKTOP, VIRTUAL_CANVAS_HEIGHT_DESKTOP, MIN_ZOOM, MAX_ZOOM, DEFAULT_ZOOM, NOTE_COLORS, NOTE_FONTS_DESKTOP as NOTE_FONTS, NOTE_FONT_SIZES, NOTE_OPACITY as NOTE_OPACITY_OPTIONS, PC_PORT_SPACING, PORT_SPACING, PORT_START_X, PORT_START_Y, PORT_COLORS, STATUS_COLORS, STROKE_COLORS } from './networkTopology.constants';
 
 const allocatedMacAddresses = new Set<string>();
 const generateMacAddress = (): string => {
@@ -115,33 +117,6 @@ const DEVICE_ICONS: Record<DeviceType | 'switch', React.ReactNode> = {
 };
 
 const isSwitchDeviceType = (type: DeviceType) => type === 'switchL2' || type === 'switchL3';
-
-const CABLE_COLORS = {
-  straight: { primary: '#3b82f6', bg: 'bg-blue-500', text: 'text-blue-400', border: 'border-blue-500/30' },
-  crossover: { primary: '#f97316', bg: 'bg-orange-500', text: 'text-orange-400', border: 'border-orange-500/30' },
-  console: { primary: '#06b6d4', bg: 'bg-cyan-500', text: 'text-cyan-400', border: 'border-cyan-500/30' },
-  wireless: { primary: '#a855f7', bg: 'bg-purple-500', text: 'text-purple-400', border: 'border-purple-500/30' },
-  error: { primary: '#ec4899', bg: 'bg-pink-500', text: 'text-pink-400', border: 'border-pink-500/30' }, // For incompatible cables
-};
-
-// Distance threshold for distinguishing drag from click (in pixels)
-const DRAG_THRESHOLD = 5;
-const LONG_PRESS_DURATION = 500; // ms
-
-// Virtual canvas dimensions (strictly enforced) - significantly increased for mobile panning
-const VIRTUAL_CANVAS_WIDTH_MOBILE = 3000;
-const VIRTUAL_CANVAS_HEIGHT_MOBILE = 2000;
-const VIRTUAL_CANVAS_WIDTH_DESKTOP = 3000;
-const VIRTUAL_CANVAS_HEIGHT_DESKTOP = 2000;
-
-// Zoom limits
-const MIN_ZOOM = 0.15;
-const MAX_ZOOM = 4.0;
-const DEFAULT_ZOOM = 1.0; // 100% default zoom
-const NOTE_COLORS = ['#fef3c7', '#dbeafe', '#dcfce7', '#fee2e2', '#f5d0fe', '#e2e8f0', '#a78bfa', '#60a5fa', '#4ade80'] as const;
-const NOTE_FONTS = ['Arial', 'Verdana', 'Trebuchet MS', 'Courier New', 'Roboto'] as const;
-const NOTE_FONT_SIZES: Array<CanvasNote['fontSize']> = [10, 12, 16, 20];
-const NOTE_OPACITY_OPTIONS: Array<CanvasNote['opacity']> = [0.25, 0.5, 0.75, 1];
 
 export function NetworkTopology({
   cableInfo,
@@ -337,7 +312,7 @@ export function NetworkTopology({
     const vDevices = devices.filter(device => {
       const x = device.x * zoom + pan.x;
       const y = device.y * zoom + pan.y;
-      const deviceWidth = ((device.type === 'pc' || device.type === 'iot') ? 90 : 130) * zoom;
+      const deviceWidth = getDeviceWidth(device.type) * zoom;
       const deviceHeight = 100 * zoom;
 
       return (
@@ -1066,7 +1041,7 @@ export function NetworkTopology({
 
           // Detect devices inside selection box (Containment check - device must be fully inside)
           const selectedIds = latestDevicesRef.current.filter(d => {
-            const deviceWidth = (d.type === 'pc' || d.type === 'iot') ? 90 : 130;
+            const deviceWidth = getDeviceWidth(d.type);
             const deviceHeight = 100;
 
             // Device bounds
@@ -1224,7 +1199,7 @@ export function NetworkTopology({
 
         // Detect devices inside selection box (Containment check - device must be fully inside)
         const selectedIds = latestDevicesRef.current.filter(d => {
-          const deviceWidth = (d.type === 'pc' || d.type === 'iot') ? 90 : 130;
+          const deviceWidth = getDeviceWidth(d.type);
           const deviceHeight = 100;
 
           // Device bounds
@@ -2003,18 +1978,18 @@ export function NetworkTopology({
       const portsPerRow = (device.type === 'pc' || device.type === 'iot') ? 2 : 8;
       const col = portIndex % portsPerRow;
       const row = Math.floor(portIndex / portsPerRow);
-      const deviceWidth = (device.type === 'pc' || device.type === 'iot') ? 90 : device.type === 'router' ? 90 : 130;
-      const deviceHeight = (device.type === 'pc' || device.type === 'iot') ? 99 : 80 + Math.ceil(device.ports.length / 8) * 14 + 5;
+      const deviceWidth = getDeviceWidth(device.type);
+      const deviceHeight = getDeviceHeight(device.type, device.ports.length);
       let portX = 0;
       let portY = 0;
 
       if (device.type === 'pc' || device.type === 'iot') {
-        const pcPortSpacing = 18;
+        const pcPortSpacing = PC_PORT_SPACING;
         const pcStartY = deviceHeight / 2 - ((device.ports.length - 1) * pcPortSpacing) / 2;
         portX = device.x + deviceWidth - 8;
         portY = device.y + pcStartY + portIndex * pcPortSpacing;
       } else {
-        portX = device.x + 14 + col * 14;
+        portX = device.x + PORT_START_X + col * PORT_SPACING;
         portY = device.y + 80 + row * 14;
       }
 
@@ -2069,8 +2044,8 @@ export function NetworkTopology({
 
     if (canvasDimensions.width > 0 && canvasDimensions.height > 0) {
       // Adjust for device size roughly (estimate center)
-      const estimatedDeviceWidth = (type === 'pc' || type === 'iot') ? 90 : 130;
-      const estimatedDeviceHeight = (type === 'pc' || type === 'iot') ? 99 : 120;
+      const estimatedDeviceWidth = getDeviceWidth(type);
+      const estimatedDeviceHeight = getDeviceHeight(type, type === 'pc' || type === 'iot' ? 2 : 24);
 
       spawnX = (canvasDimensions.width / 2 - pan.x) / zoom - estimatedDeviceWidth / 2;
       spawnY = (canvasDimensions.height / 2 - pan.y) / zoom - estimatedDeviceHeight / 2;
@@ -2693,7 +2668,7 @@ export function NetworkTopology({
 
     const currentZoom = zoomRef.current;
     const currentPan = panRef.current;
-    const deviceWidth = (device.type === 'pc' || device.type === 'iot') ? 90 : 130;
+    const deviceWidth = getDeviceWidth(device.type);
     const x = canvasRect.left + device.x * currentZoom + currentPan.x + deviceWidth * currentZoom / 2;
     const y = canvasRect.top + device.y * currentZoom + currentPan.y;
 
@@ -3529,13 +3504,13 @@ export function NetworkTopology({
 
   // Get device position (center based on device type)
   const getDeviceCenter = useCallback((device: CanvasDevice) => {
-    const deviceWidth = (device.type === 'pc' || device.type === 'iot') ? 90 : device.type === 'router' ? 90 : 130;
+    const deviceWidth = getDeviceWidth(device.type);
     const iconColor = device.status === 'online'
-      ? '#22c55e'
-      : '#ef4444';
+      ? STATUS_COLORS.online
+      : STATUS_COLORS.offline;
     const portsPerRow = 8;
     const numRows = Math.ceil(device.ports.length / portsPerRow);
-    const deviceHeight = (device.type === 'pc' || device.type === 'iot') ? 99 : 80 + numRows * 14 + 5;
+    const deviceHeight = getDeviceHeight(device.type, device.ports.length);
     return { x: device.x + deviceWidth / 2, y: device.y + deviceHeight / 2 };
   }, []);
 
@@ -3566,13 +3541,13 @@ export function NetworkTopology({
     const portIndex = device.ports.findIndex(p => p.id === portId);
     if (portIndex === -1) return getDeviceCenter(device);
 
-    const deviceWidth = (device.type === 'pc' || device.type === 'iot') ? 90 : device.type === 'router' ? 90 : 130;
+    const deviceWidth = getDeviceWidth(device.type);
     const portsPerRow = (device.type === 'pc' || device.type === 'iot') ? 2 : 8;
     const col = portIndex % portsPerRow;
     const row = Math.floor(portIndex / portsPerRow);
 
     if (device.type === 'pc' || device.type === 'iot') {
-      const pcPortSpacing = 18;
+      const pcPortSpacing = PC_PORT_SPACING;
       const pcStartY = 99 / 2 - ((device.ports.length - 1) * pcPortSpacing) / 2;
       return {
         x: device.x + deviceWidth - 8,
@@ -3580,10 +3555,10 @@ export function NetworkTopology({
       };
     }
 
-    const portSpacing = 14;
-    const rowSpacing = 14;
-    const startX = 14;
-    const startY = 80;
+    const portSpacing = PORT_SPACING;
+    const rowSpacing = PORT_SPACING;
+    const startX = PORT_START_X;
+    const startY = PORT_START_Y;
 
     return {
       x: device.x + startX + col * portSpacing,
@@ -3900,17 +3875,17 @@ export function NetworkTopology({
     // For switch/router: startX=12, portSpacing=13, portRadius=6
     // Width needed = startX + (portsPerRow - 1) * portSpacing + portRadius + margin
     // For 8 ports: 12 + 7*13 + 6 + 10 = 119, so we use 130 for more breathing room
-    const deviceWidth = isPcLike ? 90 : device.type === 'router' ? 90 : 130;
+    const deviceWidth = getDeviceWidth(device.type);
     const iconColor = isPoweredOff
-      ? '#ef4444'
+      ? STATUS_COLORS.offline
       : (hasConnection
-        ? (isSwitchDevice(device.type) && device.switchModel === 'WS-C3560-24PS' ? '#a855f7' : '#22c55e')
+        ? (isSwitchDevice(device.type) && device.switchModel === 'WS-C3560-24PS' ? '#a855f7' : STATUS_COLORS.online)
         : (device.type === 'pc'
           ? '#3b82f6'
           : device.type === 'iot'
             ? '#f97316'
             : isSwitchDevice(device.type)
-              ? (device.switchModel === 'WS-C3560-24PS' ? '#a855f7' : '#22c55e')
+              ? (device.switchModel === 'WS-C3560-24PS' ? '#a855f7' : STATUS_COLORS.online)
               : '#a855f7'));
 
     return (
@@ -4506,10 +4481,10 @@ export function NetworkTopology({
             // Port colors:
             // PC Ethernet: Blue, PC COM (Console): Turquoise
             // Shutdown or device offline: Red
-            const portColor = (isShutdown || isDeviceOffline) ? '#ef4444' :
+            const portColor = (isShutdown || isDeviceOffline) ? STATUS_COLORS.offline :
               port.id.toLowerCase().startsWith('com')
-                ? (isConnected ? '#06b6d4' : '#0891b2')  // Turquoise for console
-                : (isConnected ? '#3b82f6' : '#1d4ed8'); // Blue for ethernet
+                ? (isConnected ? PORT_COLORS.console.connected : PORT_COLORS.console.disconnected)  // Turquoise for console
+                : (isConnected ? PORT_COLORS.ethernet.connected : PORT_COLORS.ethernet.disconnected); // Blue for ethernet
 
             return (
               <g
@@ -6301,8 +6276,8 @@ export function NetworkTopology({
 
               {/* Devices */}
               {devicesSortedForRender.map((device) => {
-                const deviceWidth = (device.type === 'pc' || device.type === 'iot') ? 90 : device.type === 'router' ? 90 : 130;
-                const deviceHeight = (device.type === 'pc' || device.type === 'iot') ? 99 : 80;
+                const deviceWidth = getDeviceWidth(device.type);
+                const deviceHeight = getDeviceHeight(device.type, device.ports.length);
                 const color = device.type === 'pc'
                   ? '#3b82f6'
                   : device.type === 'iot'
