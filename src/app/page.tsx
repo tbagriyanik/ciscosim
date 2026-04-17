@@ -2886,6 +2886,69 @@ ${state.bannerMOTD}
     };
     window.addEventListener('vtp-propagation-needed', handleVtpPropagation);
 
+    // Handle STP recalculation when connection is deleted
+    const handleSTPRecalculation = (event: Event) => {
+      const { topologyDevices: updatedDevices, topologyConnections: updatedConnections } = (event as CustomEvent).detail;
+      if (updatedDevices && updatedConnections) {
+        // Update STP for all switches
+        const stpUpdatedStates = new Map(deviceStates);
+        updatedDevices.forEach((device: any) => {
+          if (device.type !== 'switchL2' && device.type !== 'switchL3') return;
+
+          const state = stpUpdatedStates.get(device.id);
+          if (!state) return;
+
+          // Create context for STP calculation
+          const ctx = {
+            connections: updatedConnections,
+            sourceDeviceId: device.id,
+            devices: updatedDevices,
+            deviceStates: stpUpdatedStates
+          };
+
+          // Calculate STP state
+          const stpState = calculateSTPState(state, ctx);
+
+          // Update port spanningTree properties
+          const updatedPorts = { ...state.ports };
+          stpState.forEach((stpInfo: any, portId: string) => {
+            const port = updatedPorts[portId];
+            if (port) {
+              const roleMap: Record<string, 'root' | 'designated' | 'alternate' | 'backup' | 'disabled'> = {
+                'Root': 'root',
+                'Desg': 'designated',
+                'Altn': 'alternate',
+                'Back': 'backup',
+                'Disa': 'disabled'
+              };
+              const stateMap: Record<string, 'forwarding' | 'blocking' | 'listening' | 'learning' | 'disabled'> = {
+                'FWD': 'forwarding',
+                'BLK': 'blocking',
+                'LIS': 'listening',
+                'LRN': 'learning',
+                'DIS': 'disabled'
+              };
+
+              updatedPorts[portId] = {
+                ...port,
+                spanningTree: {
+                  ...(port.spanningTree || {}),
+                  role: roleMap[stpInfo.role] || 'designated',
+                  state: stateMap[stpInfo.state] || 'forwarding'
+                },
+                status: port.shutdown ? 'disabled' : (stpInfo.state === 'BLK' ? 'blocked' : 'connected')
+              };
+            }
+          });
+
+          stpUpdatedStates.set(device.id, { ...state, ports: updatedPorts });
+        });
+
+        setDeviceStates(stpUpdatedStates);
+      }
+    };
+    window.addEventListener('stp-recalculation-needed', handleSTPRecalculation as EventListener);
+
     // Handle print dialog (from browser menu or Ctrl+P)
     const handleBeforePrint = () => {
       if (activeTabRef.current !== 'topology') {
@@ -2897,6 +2960,7 @@ ${state.bannerMOTD}
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('vtp-propagation-needed', handleVtpPropagation);
+      window.removeEventListener('stp-recalculation-needed', handleSTPRecalculation);
       window.removeEventListener('beforeprint', handleBeforePrint);
     };
   }, [showMobileMenu, confirmDialog, saveDialog, showPCPanel, showRouterPanel, showProjectPicker, handleSaveProject, handleNewProject, handleUndo, handleRedo, tabs, setShowMobileMenu, setConfirmDialog, setSaveDialog, setShowPCPanel, setShowRouterPanel, setShowProjectPicker, isTopologyFullscreen, setActiveTab, activeTab, topologyDevices, topologyConnections, deviceStates, setDeviceStates, handleDeviceDoubleClick, handleRefreshNetwork]);

@@ -429,7 +429,7 @@ function cmdShowVersion(
   output += '24 FastEthernet/IEEE 802.3 interface(s)\n';
   output += `${gigabitPortCount} Gigabit Ethernet/IEEE 802.3 interface(s)\n\n`;
   output += '64K bytes of flash-simulated non-volatile configuration memory.\n';
-  output += 'Base ethernet MAC Address       : 00:1A:2B:3C:4D:5E\n';
+  output += `Base ethernet MAC Address       : ${state.macAddress}\n`;
   output += 'Motherboard assembly number   : 73-10000-01\n';
   output += `Model number                  : ${switchModel}\n`;
   output += '!\n';
@@ -1117,12 +1117,13 @@ export function calculateSTPState(
   });
 
   // Check if there are multiple paths to the root bridge
-  // Root port selection: Lowest Path Cost > Lowest Neighbor BID
+  // Root port selection: Lowest Path Cost > Lowest Neighbor BID > Lowest Neighbor Port ID
   const connectionsToRoot = connectedSwitches.filter(sw => sw.deviceId === rootBridgeId);
   if (connectionsToRoot.length > 1) {
     let bestPathCost = Infinity;
     let bestNeighborPriority = Infinity;
     let bestNeighborMac = '';
+    let bestNeighborPortNum = Infinity;
     let bestPortId = '';
 
     connectionsToRoot.forEach(conn => {
@@ -1131,15 +1132,19 @@ export function calculateSTPState(
       const connectedState = deviceStates.get?.(conn.deviceId);
       const neighborPriority = connectedState?.spanningTreePriority || 32768;
       const neighborMac = conn.macAddress;
+      const neighborPortNum = getPortNumber(conn.portId);
 
-      // Compare path cost first, then neighbor BID (priority + MAC)
+      // Compare path cost first, then neighbor BID (priority + MAC), then neighbor port ID
       if (portCost < bestPathCost ||
           (portCost === bestPathCost && neighborPriority < bestNeighborPriority) ||
           (portCost === bestPathCost && neighborPriority === bestNeighborPriority &&
-           neighborMac.localeCompare(bestNeighborMac) < 0)) {
+           neighborMac.localeCompare(bestNeighborMac) < 0) ||
+          (portCost === bestPathCost && neighborPriority === bestNeighborPriority &&
+           neighborMac === bestNeighborMac && neighborPortNum < bestNeighborPortNum)) {
         bestPathCost = portCost;
         bestNeighborPriority = neighborPriority;
         bestNeighborMac = neighborMac;
+        bestNeighborPortNum = neighborPortNum;
         bestPortId = conn.portId;
       }
     });
@@ -1166,6 +1171,17 @@ export function calculateSTPState(
     const srcState = deviceStates.get?.(srcId);
     const srcPortObj = srcState?.ports?.[srcPort];
     const portCost = srcPortObj?.type === 'gigabitethernet' ? 4 : 19;
+    
+    // Check if either endpoint port is shutdown
+    const tgtState = deviceStates.get?.(tgtId);
+    const tgtPortObj = tgtState?.ports?.[tgtPort];
+    const srcPortShutdown = srcPortObj?.shutdown || false;
+    const tgtPortShutdown = tgtPortObj?.shutdown || false;
+    
+    // Skip connection if either port is shutdown
+    if (srcPortShutdown || tgtPortShutdown) {
+      return;
+    }
     
     if (!adjacency.has(srcId)) adjacency.set(srcId, []);
     if (!adjacency.has(tgtId)) adjacency.set(tgtId, []);

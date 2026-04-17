@@ -2858,8 +2858,13 @@ export function NetworkTopology({
       );
       // Bağlantıyı sil
       setConnections((prev) => prev.filter((c) => c.id !== connectionId));
+      
+      // Trigger STP recalculation for all switches
+      window.dispatchEvent(new CustomEvent('stp-recalculation-needed', {
+        detail: { topologyDevices: devices, topologyConnections: connections.filter(c => c.id !== connectionId) }
+      }));
     }
-  }, [connections, saveToHistory]);
+  }, [connections, saveToHistory, devices]);
 
   // Reset view
   const resetView = useCallback(() => {

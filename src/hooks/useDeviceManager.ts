@@ -393,7 +393,7 @@ export function useDeviceManager() {
         deviceId
       );
 
-      const { requiresConfirmation, confirmationMessage, confirmationAction, success, newState, error, triggerPingAnimation } = result as any;
+      const { requiresConfirmation, confirmationMessage, confirmationAction, success, newState, error, triggerPingAnimation, updatedDeviceStates } = result as any;
       const trimmedCommand = command.trim().toLowerCase();
       const isInternalCommand = command === '__CONSOLE_CONNECT__';
 
@@ -439,6 +439,18 @@ export function useDeviceManager() {
         } else if (result.output) {
           newOutputs.push({ id: `${now}-out`, type: 'output', content: result.output, timestamp: now });
         }
+        
+        // Apply updatedDeviceStates if present (for global STP recalculation)
+        if (updatedDeviceStates && updatedDeviceStates instanceof Map) {
+          setDeviceStates(prev => {
+            const next = new Map(prev);
+            updatedDeviceStates.forEach((state: any, id: string) => {
+              next.set(id, state);
+            });
+            return next;
+          });
+        }
+        
         if (newState) {
           const shouldPropagateVlans = !!topologyConnections && !!topologyDevices && (
             /^(no\s+)?vlan\s+\d+/i.test(command.trim()) ||

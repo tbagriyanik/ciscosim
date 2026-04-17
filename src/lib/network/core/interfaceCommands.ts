@@ -2,6 +2,7 @@ import type { CommandHandler } from './commandTypes';
 import { normalizePortId } from '../initialState';
 import { canAssignIPToPhysicalPort } from '../switchModels';
 import { buildRunningConfig } from './configBuilder';
+import { calculateSTPState } from './showCommands';
 
 // Helper function to check if in interface mode (single or range)
 function isInInterfaceMode(state: any): boolean {
@@ -231,38 +232,82 @@ function cmdShutdown(state: any, input: string, ctx: any): any {
 
   const newPorts = applyToSelectedPorts(state, (port: any) => ({ ...port, shutdown: true }));
 
-  // Recalculate STP states after shutdown with updated state
-  const { calculateSTPState } = require('./showCommands');
-  const updatedState = { ...state, ports: newPorts };
-  const stpState = calculateSTPState(updatedState, ctx);
+  // Recalculate STP states for all devices in the topology after shutdown
+  const deviceStates = ctx.deviceStates || new Map();
+  const allUpdatedStates: Map<string, any> = new Map();
   
-  // Update port states based on STP calculation
-  stpState.forEach((stpInfo: any, portId: string) => {
-    if (newPorts[portId]) {
-      const isBlocked = stpInfo.state === 'BLK';
-      const isShutdown = newPorts[portId].shutdown;
-      const stateMap: Record<string, 'forwarding' | 'blocking' | 'listening' | 'learning' | 'disabled'> = {
-        'FWD': 'forwarding',
-        'BLK': 'blocking',
-        'LIS': 'listening',
-        'LRN': 'learning',
-        'DIS': 'disabled'
-      };
-      newPorts[portId] = {
-        ...newPorts[portId],
-        spanningTree: {
-          role: stpInfo.role,
-          state: stateMap[stpInfo.state] || 'forwarding'
-        },
-        // Update status field for LED color display (only if not shutdown)
-        status: isShutdown ? 'disabled' : (isBlocked ? 'blocked' : 'connected')
-      };
+  // Update current device's ports in the deviceStates map
+  const updatedCurrentState = { ...state, ports: newPorts };
+  allUpdatedStates.set(ctx.sourceDeviceId, updatedCurrentState);
+  
+  // Recalculate STP for all devices
+  deviceStates.forEach((deviceState: any, deviceId: string) => {
+    if (deviceId === ctx.sourceDeviceId) {
+      // Use the updated state for current device
+      const stpState = calculateSTPState(updatedCurrentState, ctx);
+      
+      // Update port states based on STP calculation
+      stpState.forEach((stpInfo: any, portId: string) => {
+        if (newPorts[portId]) {
+          const isBlocked = stpInfo.state === 'BLK';
+          const isShutdown = newPorts[portId].shutdown;
+          const stateMap: Record<string, 'forwarding' | 'blocking' | 'listening' | 'learning' | 'disabled'> = {
+            'FWD': 'forwarding',
+            'BLK': 'blocking',
+            'LIS': 'listening',
+            'LRN': 'learning',
+            'DIS': 'disabled'
+          };
+          newPorts[portId] = {
+            ...newPorts[portId],
+            spanningTree: {
+              role: stpInfo.role,
+              state: stateMap[stpInfo.state] || 'forwarding'
+            },
+            // Update status field for LED color display (only if not shutdown)
+            status: isShutdown ? 'disabled' : (isBlocked ? 'blocked' : 'connected')
+          };
+        }
+      });
+      
+      allUpdatedStates.set(deviceId, { ...deviceState, ports: newPorts });
+    } else {
+      // Recalculate STP for other devices with updated topology context
+      const stpState = calculateSTPState(deviceState, { ...ctx, sourceDeviceId: deviceId });
+      
+      // Update port states based on STP calculation
+      const updatedDevicePorts = { ...deviceState.ports };
+      stpState.forEach((stpInfo: any, portId: string) => {
+        if (updatedDevicePorts[portId]) {
+          const isBlocked = stpInfo.state === 'BLK';
+          const isShutdown = updatedDevicePorts[portId].shutdown;
+          const stateMap: Record<string, 'forwarding' | 'blocking' | 'listening' | 'learning' | 'disabled'> = {
+            'FWD': 'forwarding',
+            'BLK': 'blocking',
+            'LIS': 'listening',
+            'LRN': 'learning',
+            'DIS': 'disabled'
+          };
+          updatedDevicePorts[portId] = {
+            ...updatedDevicePorts[portId],
+            spanningTree: {
+              role: stpInfo.role,
+              state: stateMap[stpInfo.state] || 'forwarding'
+            },
+            // Update status field for LED color display (only if not shutdown)
+            status: isShutdown ? 'disabled' : (isBlocked ? 'blocked' : 'connected')
+          };
+        }
+      });
+      
+      allUpdatedStates.set(deviceId, { ...deviceState, ports: updatedDevicePorts });
     }
   });
 
   return {
     success: true,
-    newState: { ports: newPorts }
+    newState: { ports: newPorts },
+    updatedDeviceStates: allUpdatedStates
   };
 }
 
@@ -289,38 +334,82 @@ function cmdNoShutdown(state: any, input: string, ctx: any): any {
 
   const newPorts = applyToSelectedPorts(state, (port: any) => ({ ...port, shutdown: false }));
 
-  // Recalculate STP states after no shutdown with updated state
-  const { calculateSTPState } = require('./showCommands');
-  const updatedState = { ...state, ports: newPorts };
-  const stpState = calculateSTPState(updatedState, ctx);
+  // Recalculate STP states for all devices in the topology after no shutdown
+  const deviceStates = ctx.deviceStates || new Map();
+  const allUpdatedStates: Map<string, any> = new Map();
   
-  // Update port states based on STP calculation
-  stpState.forEach((stpInfo: any, portId: string) => {
-    if (newPorts[portId]) {
-      const isBlocked = stpInfo.state === 'BLK';
-      const isShutdown = newPorts[portId].shutdown;
-      const stateMap: Record<string, 'forwarding' | 'blocking' | 'listening' | 'learning' | 'disabled'> = {
-        'FWD': 'forwarding',
-        'BLK': 'blocking',
-        'LIS': 'listening',
-        'LRN': 'learning',
-        'DIS': 'disabled'
-      };
-      newPorts[portId] = {
-        ...newPorts[portId],
-        spanningTree: {
-          role: stpInfo.role,
-          state: stateMap[stpInfo.state] || 'forwarding'
-        },
-        // Update status field for LED color display (only if not shutdown)
-        status: isShutdown ? 'disabled' : (isBlocked ? 'blocked' : 'connected')
-      };
+  // Update current device's ports in the deviceStates map
+  const updatedCurrentState = { ...state, ports: newPorts };
+  allUpdatedStates.set(ctx.sourceDeviceId, updatedCurrentState);
+  
+  // Recalculate STP for all devices
+  deviceStates.forEach((deviceState: any, deviceId: string) => {
+    if (deviceId === ctx.sourceDeviceId) {
+      // Use the updated state for current device
+      const stpState = calculateSTPState(updatedCurrentState, ctx);
+      
+      // Update port states based on STP calculation
+      stpState.forEach((stpInfo: any, portId: string) => {
+        if (newPorts[portId]) {
+          const isBlocked = stpInfo.state === 'BLK';
+          const isShutdown = newPorts[portId].shutdown;
+          const stateMap: Record<string, 'forwarding' | 'blocking' | 'listening' | 'learning' | 'disabled'> = {
+            'FWD': 'forwarding',
+            'BLK': 'blocking',
+            'LIS': 'listening',
+            'LRN': 'learning',
+            'DIS': 'disabled'
+          };
+          newPorts[portId] = {
+            ...newPorts[portId],
+            spanningTree: {
+              role: stpInfo.role,
+              state: stateMap[stpInfo.state] || 'forwarding'
+            },
+            // Update status field for LED color display (only if not shutdown)
+            status: isShutdown ? 'disabled' : (isBlocked ? 'blocked' : 'connected')
+          };
+        }
+      });
+      
+      allUpdatedStates.set(deviceId, { ...deviceState, ports: newPorts });
+    } else {
+      // Recalculate STP for other devices with updated topology context
+      const stpState = calculateSTPState(deviceState, { ...ctx, sourceDeviceId: deviceId });
+      
+      // Update port states based on STP calculation
+      const updatedDevicePorts = { ...deviceState.ports };
+      stpState.forEach((stpInfo: any, portId: string) => {
+        if (updatedDevicePorts[portId]) {
+          const isBlocked = stpInfo.state === 'BLK';
+          const isShutdown = updatedDevicePorts[portId].shutdown;
+          const stateMap: Record<string, 'forwarding' | 'blocking' | 'listening' | 'learning' | 'disabled'> = {
+            'FWD': 'forwarding',
+            'BLK': 'blocking',
+            'LIS': 'listening',
+            'LRN': 'learning',
+            'DIS': 'disabled'
+          };
+          updatedDevicePorts[portId] = {
+            ...updatedDevicePorts[portId],
+            spanningTree: {
+              role: stpInfo.role,
+              state: stateMap[stpInfo.state] || 'forwarding'
+            },
+            // Update status field for LED color display (only if not shutdown)
+            status: isShutdown ? 'disabled' : (isBlocked ? 'blocked' : 'connected')
+          };
+        }
+      });
+      
+      allUpdatedStates.set(deviceId, { ...deviceState, ports: updatedDevicePorts });
     }
   });
 
   return {
     success: true,
-    newState: { ports: newPorts }
+    newState: { ports: newPorts },
+    updatedDeviceStates: allUpdatedStates
   };
 }
 
