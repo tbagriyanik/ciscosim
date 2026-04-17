@@ -2,11 +2,11 @@
 
 A modern and interactive web-based Network simulator designed for students and networking enthusiasts.
 
-![Version](https://img.shields.io/badge/version-1.5.0-blue)
+![Version](https://img.shields.io/badge/version-1.5.1-blue)
 ![Tech Stack](https://img.shields.io/badge/stack-Next.js%2016.2%20|%20React%2019%20|%20TypeScript%205.9%20|%20Tailwind%204-green)
 ![FOSS](https://img.shields.io/badge/FOSS-Free%20Open%20Source-brightgreen)
-![Commits](https://img.shields.io/badge/commits-600+-orange)
-![Lines of Code](https://img.shields.io/badge/lines--of--code-54251-blueviolet)
+![Commits](https://img.shields.io/badge/commits-620+-orange)
+![Lines of Code](https://img.shields.io/badge/lines--of--code-54843-blueviolet)
 
 Network learing app [Test Address](https://network2026.vercel.app)
 
@@ -61,7 +61,7 @@ Network learing app [Test Address](https://network2026.vercel.app)
 
 ## 🗺️ Development Roadmap
 
-### ✅ Completed (v1.5.0)
+### ✅ Completed (v1.5.1)
 - Interactive network topology with drag-and-drop
 - WiFi simulation with signal strength indicators
 - IoT device management and web panel
@@ -72,6 +72,10 @@ Network learing app [Test Address](https://network2026.vercel.app)
 - Performance optimization (spatial partitioning, viewport culling)
 - Accessibility (WCAG 2.1 AA compliance)
 - Turkish/English localization
+- **22 Example Projects**: Complete lab scenarios (Basit, Orta, İleri seviye)
+- **150+ CLI Commands**: Full command reference in Help Panel
+- DHCP/DNS/HTTP system enhancements
+- IoT WiFi Lab with sensor simulation
 
 ### 🚧 In Progress (v1.6.0)
 - Advanced routing protocols (BGP, EIGRP)
@@ -309,14 +313,14 @@ Theme selection is done from the theme selector in the top right corner.
 ## 🔢 Code Metrics
 
 - Scope: `src/`
-- Source files: `170+`
-- Total lines: `54251`
-- TS/TSX files: `160+`
-- Network components: `50+`
-- Custom hooks: `20+`
-- Example projects: `8`
-- CLI commands: `110+`
-- Last updated: `2026-04-14`
+- Source files: `175+`
+- Total lines: `54843`
+- TS/TSX files: `165+`
+- Network components: `55+`
+- Custom hooks: `22+`
+- Example projects: `22`
+- CLI commands: `150+`
+- Last updated: `2026-04-17`
 
 ## 🐛 Troubleshooting
 
@@ -338,8 +342,8 @@ Contributions are welcome. Please:
 
 ---
 
-**Sürüm**: 1.5.0
-**Son Güncelleme**: 2026-04-12
+**Sürüm**: 1.5.1
+**Son Güncelleme**: 2026-04-17
 **Durum**: Production Ready
 
 GitHub: [github.com/tbagriyanik/ciscosim](https://github.com/tbagriyanik/ciscosim)
