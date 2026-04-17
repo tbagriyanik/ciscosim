@@ -25,6 +25,7 @@ import { Plus, Power, Trash2, Monitor, Network, Laptop } from "lucide-react";
 import { cn } from '@/lib/utils';
 import { getDeviceWidth, getDeviceHeight, isPcLike, isSwitchDevice, isRouterDevice } from './networkTopology.helpers';
 import { CABLE_COLORS, DRAG_THRESHOLD, LONG_PRESS_DURATION, VIRTUAL_CANVAS_WIDTH_MOBILE, VIRTUAL_CANVAS_HEIGHT_MOBILE, VIRTUAL_CANVAS_WIDTH_DESKTOP, VIRTUAL_CANVAS_HEIGHT_DESKTOP, MIN_ZOOM, MAX_ZOOM, DEFAULT_ZOOM, NOTE_COLORS, NOTE_FONTS_DESKTOP as NOTE_FONTS, NOTE_FONT_SIZES, NOTE_OPACITY as NOTE_OPACITY_OPTIONS, PC_PORT_SPACING, PORT_SPACING, PORT_START_X, PORT_START_Y, PORT_COLORS, STATUS_COLORS, STROKE_COLORS } from './networkTopology.constants';
+import { calculateSTPState } from '@/lib/network/core/showCommands';
 
 const allocatedMacAddresses = new Set<string>();
 const generateMacAddress = (): string => {
@@ -3590,6 +3591,15 @@ export function NetworkTopology({
       : true;
     const color = isCompatible ? CABLE_COLORS[conn.cableType].primary : CABLE_COLORS.error.primary;
 
+    // Check if either port is in STP blocking state
+    const sourceState = deviceStates?.get(conn.sourceDeviceId);
+    const targetState = deviceStates?.get(conn.targetDeviceId);
+    const sourcePort = sourceState?.ports?.[conn.sourcePort];
+    const targetPort = targetState?.ports?.[conn.targetPort];
+    const isSourcePortBlocked = sourcePort?.spanningTree?.state === 'blocking' || sourcePort?.spanningTree?.role === 'alternate';
+    const isTargetPortBlocked = targetPort?.spanningTree?.state === 'blocking' || targetPort?.spanningTree?.role === 'alternate';
+    const isSTPBlocked = isSourcePortBlocked || isTargetPortBlocked;
+
     // Calculate parallel offset for multiple connections between same devices
     const sameDeviceConnections = connections.filter(
       c => (c.sourceDeviceId === conn.sourceDeviceId && c.targetDeviceId === conn.targetDeviceId) ||
@@ -3636,8 +3646,8 @@ export function NetworkTopology({
           className="pointer-events-none"
         />
 
-        {/* Animated data flow - only for compatible cables */}
-        {conn.active && isCompatible && (
+        {/* Animated data flow - only for compatible cables and non-blocked ports */}
+        {conn.active && isCompatible && !isSTPBlocked && (
           <>
             <circle r="4" fill={color}>
               <animateMotion
@@ -4649,8 +4659,12 @@ export function NetworkTopology({
               const portNum = port.label.replace(/\D/g, '');
               const displayNum = isConsole ? 'C' : (portNum ? parseInt(portNum, 10).toString() : 'C');
 
+              // Check STP state for switch ports
+              const isSTPBlocked = port.spanningTree?.state === 'blocking' || port.spanningTree?.role === 'alternate';
+
               // Port colors:
               // Console: Turquoise, Fa: Blue, Gi: Orange
+              // STP Blocked: Amber (yellow/orange)
               // Shutdown or device offline: Red
               // Not connected: Gray
               let portFill: string;
@@ -4660,6 +4674,10 @@ export function NetworkTopology({
                 // Güç kapalı - içi kırmızı, çerçeve gri
                 portFill = '#ef4444';
                 portStroke = '#4b5563';
+              } else if (isSTPBlocked) {
+                // STP Bloke - Amber (sarı/turuncu) renk
+                portFill = '#f59e0b';  // Amber-500
+                portStroke = '#fbbf24';  // Amber-400
               } else if (isConnected) {
                 // Güç açık ve bağlı - içi mavi, çerçeve açık mavi
                 if (isConsole) {

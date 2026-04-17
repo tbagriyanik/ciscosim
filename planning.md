@@ -76,3 +76,130 @@ The IoT and DHCP flows were later extended with several maintenance fixes so the
     *   The IoT Wi-Fi tooltip now shows the current IP address, preferring the runtime `wlan0` IP when available.
 
 These maintenance updates make the IoT experience more realistic: devices keep their association visibility when powered off, renew IP addresses from the correct router subnet, and fall back to APIPA when DHCP is unavailable.
+
+## Spanning Tree Protocol (STP) Implementation
+
+This implementation adds STP (Spanning Tree Protocol) simulation to the network simulator, providing visual feedback for blocked ports in redundant network topologies.
+
+### 1. Core STP Algorithm
+
+**Modified File: `src/lib/network/core/showCommands.ts`**
+
+*   **`calculateSTPState(state, ctx)`** (exported function):
+    *   Implements simplified STP algorithm based on Cisco's PVST (Per-VLAN Spanning Tree)
+    *   **Root Bridge Election**: Selects root bridge based on lowest MAC address
+    *   **Port Role Determination**:
+        *   Root Port: Lowest cost path to root bridge
+        *   Designated Port: All ports on root bridge, or best path to downstream segments
+        *   Alternate Port: Redundant paths to root bridge (blocked)
+    *   **Port State Assignment**:
+        *   Forwarding (FWD): Root and Designated ports
+        *   Blocking (BLK): Alternate ports to prevent loops
+    *   Returns a `Map<portId, {role, state}>` for all switch ports
+
+*   **`cmdShowSpanningTree()`**:
+    *   Uses `calculateSTPState()` to generate output
+    *   Updates port `spanningTree` property in returned `newState`
+    *   Output format matches Cisco IOS: `Fa0/1 Desg FWD 19 128.1 P2p`
+
+### 2. Type Definitions
+
+**Modified File: `src/lib/network/types.ts`**
+
+*   Added `spanningTree` property to `Port` interface:
+    ```typescript
+    spanningTree?: {
+      role?: 'root' | 'designated' | 'alternate' | 'backup' | 'disabled';
+      state?: 'forwarding' | 'blocking' | 'listening' | 'learning' | 'disabled';
+      portfast?: boolean;
+      bpduguard?: boolean;
+    };
+    ```
+
+**Modified File: `src/components/network/networkTopology.types.ts`**
+
+*   Added `spanningTree` property to `CanvasPort` interface for topology visualization
+
+### 3. Visual Indicators
+
+**Modified File: `src/components/network/NetworkTopology.tsx`**
+
+*   **Port Coloring**: STP blocked ports shown in **amber** (`#f59e0b`)
+    *   Check: `port.spanningTree?.state === 'blocking' || port.spanningTree?.role === 'alternate'`
+    *   Applied in switch port rendering logic
+*   **Cable Animation Suppression**: 
+    *   Detects STP-blocked ports on both ends of a connection
+    *   Disables data flow animation (`animateMotion`) for blocked links
+    *   Check: `!isSTPBlocked` condition added to animation rendering
+
+**Modified File: `src/components/network/networkTopology.constants.tsx`**
+
+*   Added `blocked: '#f59e0b'` (amber) color to `PORT_COLORS` for all port types (ethernet, console, gigabit)
+
+**Modified File: `src/components/network/PortPanel.tsx`**
+
+*   **LED Color**: Blocked ports show **orange** LED indicator
+    *   Check: `port.spanningTree?.state === 'blocking' || port.spanningTree?.role === 'alternate'`
+    *   Status label: "Blocked" (localized)
+*   **Tooltip**: Shows STP role and state (e.g., "Altn BLK", "Root FWD", "Desg FWD")
+
+**Modified File: `src/components/network/RouterPanel.tsx`**
+
+*   Added STP blocking check to `getPortLEDColorClass()` for router ports
+
+### 4. Network Refresh Integration
+
+**Modified File: `src/app/page.tsx`**
+
+*   **`handleRefreshNetwork()`**:
+    *   Iterates all switches in topology
+    *   Calls `calculateSTPState()` for each switch
+    *   Updates `deviceStates` with new `spanningTree` properties
+    *   Triggered by: Refresh button, F5 key, or network changes
+    *   Applies role/state mapping: `'Altn'` → `'alternate'`, `'BLK'` → `'blocking'`, etc.
+
+### 5. Command Integration
+
+**File: `src/lib/network/core/showCommands.ts`**
+
+*   **`show spanning-tree` command**:
+    *   Calculates STP topology dynamically
+    *   Displays VLAN-specific STP information
+    *   Shows port roles (Root/Desg/Altn/Back) and states (FWD/BLK)
+    *   Example output:
+        ```
+        VLAN0001
+          Spanning tree enabled protocol ieee
+          Root ID    Priority    32769
+                     Address     0001.4203.FF01
+                     Cost        19
+                     Port        1 (FastEthernet0/1)
+                     Hello Time   2 sec  Max Age 20 sec  Forward Delay 15 sec
+          Bridge ID  Priority    32769
+                     Address     0001.4203.FF02
+                     Hello Time   2 sec  Max Age 20 sec  Forward Delay 15 sec
+          Interface           Role Sts Cost      Prio.Nbr Type
+          ------------------- ---- --- --------- -------- --------------------------------
+          Fa0/1               Root FWD 19        128.1    P2p
+          Fa0/2               Altn BLK 19       128.2    P2p
+        ```
+
+### Key Features
+
+1. **Automatic Root Bridge Election**: Lowest MAC address becomes root
+2. **Redundant Link Detection**: Multiple paths to root bridge detected
+3. **Visual Blocking Indicators**: 
+   - Amber port color in topology
+   - Orange LED in PortPanel
+   - No data animation on blocked cables
+4. **Real-time Updates**: STP recalculated on network refresh
+5. **CLI Support**: `show spanning-tree` command displays current STP state
+
+### Usage Example
+
+When two switches are connected with two redundant links:
+1. Switch with lower MAC becomes Root Bridge
+2. Lower port number (e.g., Fa0/1) becomes **Root Port** (Forwarding)
+3. Higher port number (e.g., Fa0/2) becomes **Alternate Port** (Blocking)
+4. Blocked port shown in **amber** with "Altn BLK" tooltip
+5. No data flow animation on the blocked link

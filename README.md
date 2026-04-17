@@ -6,7 +6,7 @@ A modern and interactive web-based Network simulator designed for students and n
 ![Tech Stack](https://img.shields.io/badge/stack-Next.js%2016.2%20|%20React%2019%20|%20TypeScript%205.9%20|%20Tailwind%204-green)
 ![FOSS](https://img.shields.io/badge/FOSS-Free%20Open%20Source-brightgreen)
 ![Commits](https://img.shields.io/badge/commits-620+-orange)
-![Lines of Code](https://img.shields.io/badge/lines--of--code-54843-blueviolet)
+![Lines of Code](https://img.shields.io/badge/lines--of--code-55440+-blueviolet)
 
 Network learing app [Test Address](https://network2026.vercel.app)
 
@@ -66,6 +66,12 @@ Network learing app [Test Address](https://network2026.vercel.app)
 - WiFi simulation with signal strength indicators
 - IoT device management and web panel
 - Layer 3 switching and routing (RIP/OSPF)
+- **Spanning Tree Protocol (STP) Simulation**: Visual blocking detection with amber port coloring
+  - Root bridge election based on lowest MAC address
+  - Port roles: Root, Designated, Alternate (blocked)
+  - Port states: Forwarding, Blocking
+  - Visual indicators: Amber color for blocked ports, no data animation on blocked links
+  - STP status shown in port tooltips (e.g., "Altn BLK", "Root FWD")
 - Note system with undo/redo support
 - Ping diagnostics with visual animation
 - Multi-selection and bulk operations
@@ -128,9 +134,14 @@ The simulator supports **100+ commands** across multiple configuration modes. Fo
 - **Error Checking**: Detailed error messages for invalid commands
 
 ### 🔌 Physical Device Visualization
-- **Port Panel**: Realistic port display
+- **Port Panel**: Realistic port display with STP status support
 - **LED Indicators**: Colored LEDs showing connection status
-- **Port Status**: Connected, Disconnected, and Shutdown states
+  - **Green**: Connected/Forwarding
+  - **Orange/Amber**: STP Blocked (Alternate port)
+  - **Gray**: Shutdown/Closed
+  - **White**: Idle/Not Connected
+- **Port Status**: Connected, Disconnected, Shutdown, and STP Blocked states
+- **STP Visualization**: Blocked ports shown in amber with "Altn BLK" tooltip indicator
 
 ### 🛠️ Configuration Features
 - **VLAN Management**: Create VLANs and assign ports

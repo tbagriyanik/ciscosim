@@ -26,6 +26,12 @@ export interface CanvasPort {
     channel: '2.4GHz' | '5GHz';
     mode?: 'ap' | 'client' | 'disabled' | 'sta';
   };
+  spanningTree?: {
+    role?: 'root' | 'designated' | 'alternate' | 'backup' | 'disabled';
+    state?: 'forwarding' | 'blocking' | 'listening' | 'learning' | 'disabled';
+    portfast?: boolean;
+    bpduguard?: boolean;
+  };
 }
 
 export interface NetworkTopologyProps {

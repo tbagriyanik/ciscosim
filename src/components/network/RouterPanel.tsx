@@ -143,9 +143,10 @@ export function RouterPanel({
     // Handle both Port (from routerState) and CanvasPort (from topology)
     const isShutdown = port.shutdown ?? false;
     const status = port.status ?? 'notconnect';
+    const isSTPBlocked = port.spanningTree?.state === 'blocking' || port.spanningTree?.role === 'alternate';
 
     if (isShutdown) return 'bg-gray-500';
-    if (status === 'blocked') return 'bg-orange-500';
+    if (status === 'blocked' || isSTPBlocked) return 'bg-orange-500';
     if (status === 'connected') return 'bg-green-500';
     if (status === 'notconnect') return 'bg-white';
     return 'bg-gray-400';

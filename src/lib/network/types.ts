@@ -60,6 +60,12 @@ export interface Port {
     mode: 'ap' | 'client' | 'disabled' | 'sta';
     hidden?: boolean;
   };
+  spanningTree?: {
+    role?: 'root' | 'designated' | 'alternate' | 'backup' | 'disabled';
+    state?: 'forwarding' | 'blocking' | 'listening' | 'learning' | 'disabled';
+    portfast?: boolean;
+    bpduguard?: boolean;
+  };
 }
 
 export interface Vlan {

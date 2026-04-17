@@ -195,7 +195,7 @@ export function PortPanel({ ports, t, theme, deviceName, deviceModel, activeDevi
     } else if (port.shutdown) {
       ledColor = 'gray';
       statusLabel = t.closed;
-    } else if (port.status === 'blocked') {
+    } else if (port.status === 'blocked' || port.spanningTree?.state === 'blocking' || port.spanningTree?.role === 'alternate') {
       ledColor = 'orange';
       statusLabel = t.blocked;
     } else if (port.status === 'connected' && !topologyConnections) {
@@ -242,6 +242,19 @@ export function PortPanel({ ports, t, theme, deviceName, deviceModel, activeDevi
             <div className={isDark ? 'text-slate-300' : 'text-slate-600'}>
               <span className={isDark ? 'text-slate-500' : 'text-slate-400'}>{t.status}:</span> {statusLabel}
             </div>
+            {port.spanningTree && (
+              <div className={isDark ? 'text-orange-400' : 'text-orange-500'}>
+                <span className={isDark ? 'text-slate-500' : 'text-slate-400'}>STP:</span>{' '}
+                {port.spanningTree.role === 'root' && 'Root'}{' '}
+                {port.spanningTree.role === 'designated' && 'Desg'}{' '}
+                {port.spanningTree.role === 'alternate' && 'Altn'}{' '}
+                {port.spanningTree.role === 'backup' && 'Back'}{' '}
+                {port.spanningTree.state === 'forwarding' && 'FWD'}{' '}
+                {port.spanningTree.state === 'blocking' && 'BLK'}{' '}
+                {port.spanningTree.state === 'listening' && 'LIS'}{' '}
+                {port.spanningTree.state === 'learning' && 'LRN'}
+              </div>
+            )}
             <div className={isDark ? 'text-slate-300' : 'text-slate-600'}>
               <span className={isDark ? 'text-slate-500' : 'text-slate-400'}>{t.mode}:</span> <span className="capitalize">{port.mode}</span>
             </div>

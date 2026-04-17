@@ -15,6 +15,7 @@ import { getPrompt } from '@/lib/network/executor';
 import { formatErrorForUser } from '@/lib/errors/errorHandler';
 import { checkDeviceConnectivity, getWirelessSignalStrength } from '@/lib/network/connectivity';
 import { generateRandomLinkLocalIpv4 } from '@/lib/network/linkLocal';
+import { calculateSTPState } from '@/lib/network/core/showCommands';
 import type { TerminalOutput } from '@/components/network/Terminal';
 import { BOOT_PROGRESS_MARKER } from '@/components/network/Terminal';
 import {
@@ -2542,8 +2543,70 @@ ${state.bannerMOTD}
           variant: 'default'
         });
       }
+
+    // Update STP (Spanning Tree Protocol) states for all switches
+    const updatedStates = new Map(deviceStates);
+    let stpUpdatedCount = 0;
+
+    topologyDevices.forEach((device) => {
+      if (device.type !== 'switchL2' && device.type !== 'switchL3') return;
+
+      const state = updatedStates.get(device.id);
+      if (!state) return;
+
+      // Create context for STP calculation
+      const ctx = {
+        connections: topologyConnections,
+        sourceDeviceId: device.id,
+        devices: topologyDevices,
+        deviceStates: updatedStates
+      };
+
+      // Calculate STP state
+      const stpState = calculateSTPState(state, ctx);
+
+      // Update port spanningTree properties
+      const updatedPorts = { ...state.ports };
+      stpState.forEach((stpInfo, portId) => {
+        const port = updatedPorts[portId];
+        if (port) {
+          const roleMap: Record<string, 'root' | 'designated' | 'alternate' | 'backup' | 'disabled'> = {
+            'Root': 'root',
+            'Desg': 'designated',
+            'Altn': 'alternate',
+            'Back': 'backup',
+            'Disa': 'disabled'
+          };
+          const stateMap: Record<string, 'forwarding' | 'blocking' | 'listening' | 'learning' | 'disabled'> = {
+            'FWD': 'forwarding',
+            'BLK': 'blocking',
+            'LIS': 'listening',
+            'LRN': 'learning',
+            'DIS': 'disabled'
+          };
+
+          updatedPorts[portId] = {
+            ...port,
+            spanningTree: {
+              ...(port.spanningTree || {}),
+              role: roleMap[stpInfo.role] || 'designated',
+              state: stateMap[stpInfo.state] || 'forwarding'
+            }
+          };
+        }
+      });
+
+      updatedStates.set(device.id, { ...state, ports: updatedPorts });
+      stpUpdatedCount++;
+    });
+
+    // Apply STP updates if any switches were processed
+    if (stpUpdatedCount > 0) {
+      setDeviceStates(updatedStates);
+    }
     }
   }, [topologyDevices, deviceStates, setDeviceStates, setTopologyDevices, toast, language, topologyConnections]);
+
 
   // Handle key events: ESC to close, ENTER to confirm
   useEffect(() => {

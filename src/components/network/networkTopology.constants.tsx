@@ -127,16 +127,19 @@ export const PORT_COLORS = {
     connected: '#3b82f6',
     disconnected: '#1d4ed8',
     shutdown: '#ef4444',
+    blocked: '#f59e0b',  // Amber for STP blocked
   },
   console: {
     connected: '#06b6d4',
     disconnected: '#0891b2',
     shutdown: '#ef4444',
+    blocked: '#f59e0b',
   },
   gigabit: {
     connected: '#f97316',
     disconnected: '#ea580c',
     shutdown: '#ef4444',
+    blocked: '#f59e0b',  // Amber for STP blocked
   },
 } as const;
 
