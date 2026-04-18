@@ -2,6 +2,45 @@
 
 The simulator supports **100+ commands** across multiple configuration modes.
 
+## Keyboard Shortcuts
+
+### General Navigation
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl+Z` | Undo last action |
+| `Ctrl+Y` | Redo last action |
+| `Ctrl+A` | Select all devices |
+| `Escape` | Cancel current operation / Close modal |
+| `Tab` | Auto-complete command in CLI |
+| `Shift+Tab` | Navigate backwards in CLI |
+| `Arrow Up/Down` | Navigate command history in CLI |
+| `Enter` | Execute command / Confirm action |
+| `Delete` / `Backspace` | Delete selected items |
+
+### Canvas Navigation
+| Shortcut | Action |
+|----------|--------|
+| `Left-click + Drag` | Pan canvas |
+| `Middle-click + Drag` | Rectangle selection |
+| `Right-click` | Open context menu |
+| `Mouse Wheel` | Zoom in/out |
+| `Ctrl+Mouse Wheel` | Zoom with center focus |
+
+### Device Operations
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl+C` | Copy configuration |
+| `Ctrl+V` | Paste configuration |
+| `Ctrl+S` | Save configuration |
+| `Ctrl+F` | Search in terminal |
+| `Ctrl+L` | Clear terminal |
+
+### Tab Navigation
+| Shortcut | Action |
+|----------|--------|
+| `Alt+Tab` | Switch between open device panels |
+| `Ctrl+Tab` | Switch between tabs in device panel |
+
 ## Command Overview
 
 ### System & Session Commands (User/Privileged Mode)

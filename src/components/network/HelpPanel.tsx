@@ -76,6 +76,7 @@ export function HelpPanel({ t, theme, initialOpen = false, onClose }: HelpPanelP
           isMobile ? 'bottom-4 right-4 w-10 h-10' : 'bottom-6 right-6 w-12 h-12'
         )}
         title={isTR ? 'Komut Yardımı' : 'Command Help'}
+        aria-label={isTR ? 'Komut Yardımı' : 'Command Help'}
       >
         <HelpCircle className={isMobile ? 'w-5 h-5' : 'w-6 h-6'} />
       </button>
@@ -111,6 +112,7 @@ export function HelpPanel({ t, theme, initialOpen = false, onClose }: HelpPanelP
               onClose?.();
             }}
             className={cn('p-1 rounded-full transition-colors', isDark ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-slate-100 text-slate-500')}
+            aria-label={isTR ? 'Kapat' : 'Close'}
           >
             <X className="w-5 h-5" />
           </button>
@@ -137,6 +139,7 @@ export function HelpPanel({ t, theme, initialOpen = false, onClose }: HelpPanelP
               <button
                 onClick={() => setSearchQuery('')}
                 className={cn('absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full transition-colors', isDark ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-slate-100 text-slate-500')}
+                aria-label={isTR ? 'Aramayı temizle' : 'Clear search'}
               >
                 <X className="w-3.5 h-3.5" />
               </button>

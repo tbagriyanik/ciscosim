@@ -241,6 +241,7 @@ export function ConfigPanel({ state, onExecuteCommand, isDevicePoweredOff = fals
           onClick={handleSave}
           disabled={isSaving || isDevicePoweredOff}
           className="bg-blue-600 hover:bg-blue-700 h-8 gap-2"
+          aria-label={isSaving ? t.saving : t.save}
         >
           <Save className="w-4 h-4" />
           <span className="hidden sm:inline">{isSaving ? t.saving : t.save}</span>

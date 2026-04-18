@@ -1131,7 +1131,7 @@ export function Terminal({
       <Tooltip>
         <TooltipTrigger asChild>
           <Button variant="ghost" size="icon" onClick={() => setSearchOpen(true)} className="h-8 w-8 rounded-lg">
-            <Search className="w-4 h-4" />
+            <Search className="w-4 h-4" aria-hidden="true" />
           </Button>
         </TooltipTrigger>
         <TooltipContent>{t.search}</TooltipContent>
@@ -1139,7 +1139,7 @@ export function Terminal({
       <Tooltip>
         <TooltipTrigger asChild>
           <Button variant="ghost" size="icon" onClick={handleCopyAll} className="h-8 w-8 rounded-lg">
-            <Copy className="w-4 h-4" />
+            <Copy className="w-4 h-4" aria-hidden="true" />
           </Button>
         </TooltipTrigger>
         <TooltipContent>{t.copy}</TooltipContent>
@@ -1147,7 +1147,7 @@ export function Terminal({
       <Tooltip>
         <TooltipTrigger asChild>
           <Button variant="ghost" size="icon" onClick={exportTerminal} className="h-8 w-8 rounded-lg">
-            <Download className="w-4 h-4" />
+            <Download className="w-4 h-4" aria-hidden="true" />
           </Button>
         </TooltipTrigger>
         <TooltipContent>{t.exportLabel}</TooltipContent>
@@ -1155,7 +1155,7 @@ export function Terminal({
       <Tooltip>
         <TooltipTrigger asChild>
           <Button variant="ghost" size="icon" onClick={() => setShowSettings(!showSettings)} className={cn("h-8 w-8 rounded-lg", showSettings && "bg-accent")}>
-            <Settings className="w-4 h-4" />
+            <Settings className="w-4 h-4" aria-hidden="true" />
           </Button>
         </TooltipTrigger>
         <TooltipContent>{t.settings}</TooltipContent>

@@ -4938,6 +4938,7 @@ export function NetworkTopology({
                 ? 'border-slate-700 bg-slate-800'
                 : 'border-slate-300 bg-white'
                 }`}
+              aria-label={language === 'tr' ? 'PC cihazı ekle' : 'Add PC device'}
             >
               <div className="text-blue-500">
                 {DEVICE_ICONS['pc']}
@@ -4952,6 +4953,7 @@ export function NetworkTopology({
                 ? 'border-slate-700 bg-slate-800'
                 : 'border-slate-300 bg-white'
                 }`}
+              aria-label={language === 'tr' ? 'L2 Switch ekle' : 'Add L2 Switch'}
             >
               <div className="text-green-500">
                 {DEVICE_ICONS['switch']}
@@ -4966,6 +4968,7 @@ export function NetworkTopology({
                 ? 'border-slate-700 bg-slate-800'
                 : 'border-slate-300 bg-white'
                 }`}
+              aria-label={language === 'tr' ? 'L3 Switch ekle' : 'Add L3 Switch'}
             >
               <div className="text-purple-500">
                 <svg className="w-4 h-4" fill="none" stroke="#a855f7" viewBox="0 0 24 24">
@@ -4982,6 +4985,7 @@ export function NetworkTopology({
                 ? 'border-slate-700 bg-slate-800'
                 : 'border-slate-300 bg-white'
                 }`}
+              aria-label={language === 'tr' ? 'Router ekle' : 'Add Router'}
             >
               <div className="text-purple-500">
                 {DEVICE_ICONS['router']}
@@ -4996,6 +5000,7 @@ export function NetworkTopology({
                 ? 'border-slate-700 bg-slate-800'
                 : 'border-slate-300 bg-white'
                 }`}
+              aria-label={language === 'tr' ? 'IoT cihazı ekle' : 'Add IoT device'}
             >
               <div className="text-cyan-500">
                 {DEVICE_ICONS['iot']}
@@ -5012,7 +5017,7 @@ export function NetworkTopology({
           <div className={`text-[10px] font-bold tracking-widest mb-2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
             {t.cable}
           </div>
-          <div className={`flex items-center rounded-lg border overflow-hidden ${isDark ? 'border-slate-700 bg-slate-800/50' : 'border-slate-200 bg-slate-50'}`}>
+          <div className={`flex items-center rounded-lg border overflow-hidden ${isDark ? 'border-slate-700 bg-slate-800/50' : 'border-slate-200 bg-slate-50'}`} role="group" aria-label={language === 'tr' ? 'Kablo tipi seçici' : 'Cable type selector'}>
             {(['straight', 'crossover', 'console'] as CableType[]).map((type, index) => (
               <button
                 key={type}
@@ -5029,6 +5034,8 @@ export function NetworkTopology({
                       ? (cableInfo.cableType === type ? 'text-orange-400' : 'text-orange-500 hover:text-orange-400')
                       : (cableInfo.cableType === type ? 'text-cyan-400' : 'text-cyan-500 hover:text-cyan-400')
                   }`}
+                aria-label={type === 'straight' ? (language === 'tr' ? 'Düz kablo' : 'Straight cable') : type === 'crossover' ? (language === 'tr' ? 'Çapraz kablo' : 'Crossover cable') : (language === 'tr' ? 'Konsol kablo' : 'Console cable')}
+                aria-pressed={cableInfo.cableType === type}
               >
                 <div className={`w-2 h-2 rounded-full ${type === 'straight' ? 'bg-blue-500' : type === 'crossover' ? 'bg-orange-500' : 'bg-cyan-500'}`} />
                 {type === 'straight' ? t.straight : type === 'crossover' ? t.crossover : t.console}
@@ -7085,6 +7092,8 @@ export function NetworkTopology({
       {/* Toast Notification */}
       {toast && (
         <div
+          role="alert"
+          aria-live="polite"
           className={`fixed bottom-4 left-4 px-4 py-3 rounded-lg shadow-lg text-sm font-medium transition-all duration-300 z-40 ${toast.type === 'success'
             ? isDark ? 'bg-emerald-500/20 border border-emerald-500/50 text-emerald-300' : 'bg-emerald-50 border border-emerald-200 text-emerald-700'
             : isDark ? 'bg-red-500/20 border border-red-500/50 text-red-300' : 'bg-red-50 border border-red-200 text-red-700'

@@ -170,8 +170,10 @@ export function RouterPanel({
   }
 
   return (
-    <Dialog open={isVisible} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[80vh] p-0">
+    <Dialog open={isVisible} onOpenChange={(open) => {
+      if (!open) onClose();
+    }}>
+      <DialogContent className="max-w-4xl max-h-[80vh] p-0" onPointerDownOutside={(e) => e.preventDefault()}>
         <DialogHeader className="p-4 border-b">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -188,11 +190,13 @@ export function RouterPanel({
               </div>
             </div>
             <div className="flex items-center gap-1">
-              <Button 
-                variant="ghost" 
-                size="icon" 
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={() => setIsMinimized(!isMinimized)}
                 title={isMinimized ? t.expand : t.minimize}
+                aria-label={isMinimized ? t.expand : t.minimize}
+                aria-expanded={!isMinimized}
               >
                 {isMinimized ? (
                   <ChevronUp className="w-4 h-4" />
@@ -205,7 +209,7 @@ export function RouterPanel({
         </DialogHeader>
 
         {/* Tabs */}
-        <div className={cn("flex border-b overflow-hidden transition-all duration-300", isMinimized ? "max-h-0 opacity-0 border-none" : "max-h-20 opacity-100")}>
+        <div className={cn("flex border-b overflow-hidden transition-all duration-300", isMinimized ? "max-h-0 opacity-0 border-none" : "max-h-20 opacity-100")} role="tablist" aria-label={language === 'tr' ? 'Router panel sekmeleri' : 'Router panel tabs'}>
           <Button
             variant="ghost"
             className={cn(
@@ -215,6 +219,9 @@ export function RouterPanel({
                 : "border-transparent text-muted-foreground"
             )}
             onClick={() => setActiveTab('overview')}
+            role="tab"
+            aria-selected={activeTab === 'overview'}
+            aria-controls="overview-panel"
           >
             <Activity className="w-4 h-4 mr-2" />
             {t.overview}
@@ -228,6 +235,9 @@ export function RouterPanel({
                 : "border-transparent text-muted-foreground"
             )}
             onClick={() => setActiveTab('ports')}
+            role="tab"
+            aria-selected={activeTab === 'ports'}
+            aria-controls="ports-panel"
           >
             <Network className="w-4 h-4 mr-2" />
             {t.ports}
@@ -241,6 +251,9 @@ export function RouterPanel({
                 : "border-transparent text-muted-foreground"
             )}
             onClick={() => setActiveTab('wifi')}
+            role="tab"
+            aria-selected={activeTab === 'wifi'}
+            aria-controls="wifi-panel"
           >
             <Wifi className="w-4 h-4 mr-2" />
             WiFi
@@ -254,6 +267,9 @@ export function RouterPanel({
                 : "border-transparent text-muted-foreground"
             )}
             onClick={() => setActiveTab('dhcp')}
+            role="tab"
+            aria-selected={activeTab === 'dhcp'}
+            aria-controls="dhcp-panel"
           >
             <Server className="w-4 h-4 mr-2" />
             DHCP
@@ -264,7 +280,7 @@ export function RouterPanel({
         <ScrollArea className={cn("flex-1 transition-all duration-300", isMinimized ? "h-0 opacity-0" : "h-[calc(80vh-140px)]")}>
           <div className="p-4">
             {activeTab === 'overview' && (
-              <div className="space-y-4">
+              <div id="overview-panel" role="tabpanel" className="space-y-4">
                 {/* Device Info */}
                 <div className={cn(
                   "p-4 rounded-lg border",
@@ -376,7 +392,7 @@ export function RouterPanel({
             )}
 
             {activeTab === 'ports' && (
-              <div className="space-y-2">
+              <div id="ports-panel" role="tabpanel" className="space-y-2">
                 {ports.map((port) => (
                   <div
                     key={port.id}
@@ -420,7 +436,7 @@ export function RouterPanel({
             )}
 
             {activeTab === 'wifi' && (
-              <div className="space-y-4">
+              <div id="wifi-panel" role="tabpanel" className="space-y-4">
                 {wifiConfig ? (
                   <>
                     <div className={cn(
@@ -504,7 +520,7 @@ export function RouterPanel({
             )}
 
             {activeTab === 'dhcp' && (
-              <div className="space-y-4">
+              <div id="dhcp-panel" role="tabpanel" className="space-y-4">
                 {dhcpPools.length > 0 ? (
                   dhcpPools.map((pool) => (
                     <div

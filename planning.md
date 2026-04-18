@@ -1,10 +1,10 @@
-# Recent Network CLI and Maintenance Updates
+# Recent Network CLI, Maintenance, and Accessibility Updates
 
-This note summarizes the recent CLI command fixes and code cleanup improvements in the simulator.
+This note summarizes the recent CLI command fixes, code cleanup improvements, and accessibility enhancements in the simulator.
 
 ## Overview
 
-Fixed domain lookup command handling and removed debug logging from production code to improve code quality and maintainability.
+Fixed domain lookup command handling, removed debug logging from production code, and added comprehensive ARIA labels to improve accessibility for screen readers.
 
 ## Domain Lookup Command Fixes
 
@@ -34,6 +34,20 @@ Removed debug console.log statements from production code to improve performance
 - Cleaner console output in production
 - Reduced unnecessary logging overhead
 - Improved code maintainability
+
+## Accessibility Improvements
+
+Added comprehensive ARIA labels and role attributes to improve screen reader support and keyboard navigation:
+
+### Files Modified
+- `src/components/network/NetworkTopology.tsx` - Added ARIA labels to device palette buttons (PC, L2, L3, Router, IoT) and cable type selector buttons (straight, crossover, console) with role="group" and aria-pressed
+- `src/components/network/RouterPanel.tsx` - Added ARIA labels to minimize/maximize button, tab buttons with role="tab", aria-selected, aria-controls, and tab panels with role="tabpanel" and corresponding ids
+
+### Impact
+- Improved screen reader support for device selection and cable type selection
+- Proper tab pattern implementation for RouterPanel tabs (overview, ports, wifi, dhcp)
+- Better keyboard navigation support
+- WCAG 2.1 AA compliance improvements
 
 ## Previous Updates
 

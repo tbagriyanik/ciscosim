@@ -12,6 +12,10 @@ Network learning app: [Test Address](https://network2026.vercel.app)
 
 ## Recent Updates
 
+- Fixed circular dependency in routing.ts by creating basicConnectivity.ts utility
+- Added ARIA labels to NetworkTopology device palette buttons for screen reader support
+- Added ARIA labels to cable type selector buttons with role="group" and aria-pressed
+- Added ARIA labels and role attributes to RouterPanel tab buttons and panels (tablist/tab/tabpanel pattern)
 - Fixed `no ip domain-lookup` command to properly disable DNS lookup (key mismatch resolved)
 - Added support for `ip domain-lookup` (with hyphen) to re-enable domain lookup
 - Removed debug console.log statements from production code for cleaner output
