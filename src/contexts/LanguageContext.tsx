@@ -623,7 +623,7 @@ const translations: Record<Language, Translations> = {
     noCommandsAvailable: 'Bu modda hızlı komut yok',
     tabComplete: 'komut tamamlama',
     commandHistory: 'komut geçmişi',
-    help: 'yardım',
+    help: 'Yardım',
     nosVersion: 'NOS Versiyon',
     model: 'Model',
     uptime: 'Uptime',
