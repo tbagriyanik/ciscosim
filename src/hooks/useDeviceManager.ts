@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { SwitchState } from '@/lib/network/types';
 import { createInitialState, createInitialRouterState, applyStartupConfig, buildStartupConfig } from '@/lib/network/initialState';
@@ -30,6 +30,8 @@ export function useDeviceManager() {
   const { language } = useLanguage();
 
   const [deviceStates, setDeviceStates] = useState<Map<string, SwitchState>>(new Map());
+  const deviceStatesRef = useRef<Map<string, SwitchState>>(deviceStates);
+  useEffect(() => { deviceStatesRef.current = deviceStates; }, [deviceStates]);
 
   const [deviceOutputs, setDeviceOutputs] = useState<Map<string, TerminalOutput[]>>(() => new Map());
 
@@ -341,7 +343,7 @@ export function useDeviceManager() {
     return outputs;
   }, [pcOutputs]);
 
-  const handleCommandForDevice = useCallback(async function execute(
+  const handleCommandForDevice = async function execute(
     deviceId: string,
     command: string,
     topologyDevices: CanvasDevice[] | null,
@@ -381,7 +383,9 @@ export function useDeviceManager() {
 
     setIsLoading(true);
     try {
-      const deviceState = deviceStates.get(deviceId) || (deviceId.includes('router') ? createInitialRouterState() : createInitialState());
+      // Use deviceStatesRef to get fresh state
+      const deviceState = deviceStatesRef.current.get(deviceId) || (deviceId.includes('router') ? createInitialRouterState() : createInitialState());
+      console.log('[DEBUG] handleCommandForDevice - domainLookup:', deviceState?.domainLookup, 'hostname:', deviceState?.hostname);
       const devicePrompt = getPrompt(deviceState);
       const result = executeCommand(
         deviceState,
@@ -389,7 +393,7 @@ export function useDeviceManager() {
         language,
         topologyDevices ?? undefined,
         topologyConnections ?? undefined,
-        deviceStates,
+        deviceStatesRef.current,
         deviceId
       );
 
@@ -458,11 +462,16 @@ export function useDeviceManager() {
           );
           setDeviceStates(prev => {
             const next = new Map(prev);
-            const mergedState = { ...deviceState, ...newState, runningConfig: buildRunningConfig({ ...deviceState, ...newState }) };
+            // Use deviceStatesRef to get fresh state
+            const currentState = deviceStatesRef.current.get(deviceId) || deviceState;
+            const mergedState = { ...currentState, ...newState, runningConfig: buildRunningConfig({ ...currentState, ...newState }) };
+            console.log('[DEBUG] setDeviceStates - domainLookup in newState:', newState?.domainLookup, 'in mergedState:', mergedState?.domainLookup);
             next.set(deviceId, mergedState);
+            // Update ref immediately
+            deviceStatesRef.current = next;
 
             if (shouldPropagateVlans) {
-              const beforeVlans = new Set(Object.keys(deviceState.vlans || {}).map(Number));
+              const beforeVlans = new Set(Object.keys(currentState.vlans || {}).map(Number));
               const afterVlans = new Set(Object.keys(mergedState.vlans || {}).map(Number));
               const addedVlans = Array.from(afterVlans).filter(v => !beforeVlans.has(v));
               const removedVlans = Array.from(beforeVlans).filter(v => !afterVlans.has(v));
@@ -796,7 +805,7 @@ export function useDeviceManager() {
     } finally {
       setIsLoading(false);
     }
-  }, [language, deviceStates, getOrCreateDeviceState, getOrCreateDeviceOutputs, toast]);
+  };
 
   const resetAll = () => {
     setDeviceStates(new Map([['switch-1', createInitialState()]]));
