@@ -20,6 +20,7 @@ import { cn } from '@/lib/utils';
 import { useIsMobile, useIsTablet, useIsDesktop } from '@/hooks/use-breakpoint';
 import { QuickCommands } from './QuickCommands';
 import type { CanvasDevice } from './networkTopology.types';
+import { RouterIcon, SwitchIcon } from './PCPanelWidgets';
 
 export interface TerminalOutput {
   id: string;
@@ -131,9 +132,49 @@ export function Terminal({
   });
 
   // State for displaying output
-  const [displayedLines, setDisplayedLines] = useState<Array<{ id: string, type: string, content: string, prompt?: string }>>([]);
+  const [displayedLines, setDisplayedLines] = useState<Array<{ id: string, type: string, content: string, prompt?: string }>>(() => {
+    // Initialize from output on mount to show history when terminal opens
+    const initialLines: Array<{ id: string, type: string, content: string, prompt?: string }> = [];
+    if (output && output.length > 0) {
+      output.forEach((outputItem) => {
+        if (!outputItem || !outputItem.id) return;
+        if (outputItem.content && outputItem.content.includes('\n')) {
+          const lines = outputItem.content.split('\n');
+          lines.forEach((line, index) => {
+            initialLines.push({
+              id: `${outputItem.id}-line-${index}`,
+              type: outputItem.type,
+              content: line,
+              prompt: index === 0 ? outputItem.prompt : ''
+            });
+          });
+        } else {
+          initialLines.push({
+            id: outputItem.id,
+            type: outputItem.type,
+            content: outputItem.content,
+            prompt: outputItem.prompt
+          });
+        }
+      });
+    }
+    return initialLines;
+  });
   const processedOutputIdsRef = useRef<Set<string>>(new Set());
   const cancelOutputRef = useRef(false);
+
+  // Initialize processedOutputIdsRef with existing output IDs on mount
+  useEffect(() => {
+    if (output && output.length > 0) {
+      const ids = new Set<string>();
+      output.forEach((outputItem) => {
+        if (outputItem && outputItem.id) {
+          ids.add(outputItem.id);
+        }
+      });
+      processedOutputIdsRef.current = ids;
+    }
+  }, []);
 
   // Undo/Redo state
   const [undoStack, setUndoStack] = useState<string[]>([]);
@@ -149,6 +190,23 @@ export function Terminal({
   const isMobile = useIsMobile();
   const isTablet = useIsTablet();
   const isDesktop = useIsDesktop();
+
+  // Determine device icon and color
+  const deviceIconInfo = useMemo(() => {
+    const deviceType = device?.type;
+    const switchModel = state.switchModel;
+
+    if (deviceType === 'router') {
+      return { icon: RouterIcon, color: 'text-purple-400' };
+    } else if (deviceType === 'switchL2' || switchModel === 'WS-C2960-24TT-L') {
+      return { icon: SwitchIcon, color: 'text-green-400', isL3: false };
+    } else if (deviceType === 'switchL3' || switchModel === 'WS-C3560-24PS') {
+      return { icon: SwitchIcon, color: 'text-purple-400', isL3: true };
+    } else if (deviceType === 'pc') {
+      return { icon: Laptop, color: 'text-blue-400' };
+    }
+    return null;
+  }, [device?.type, state.switchModel]);
 
   // Sync with global history
   useEffect(() => {
@@ -292,8 +350,44 @@ export function Terminal({
   // Process output lines — show all at once, no artificial delays
   const prevFirstOutputIdRef = useRef<string | null>(null);
   const prevOutputLengthRef = useRef(0);
+  const isInitializedRef = useRef(false);
 
   useEffect(() => {
+    // Don't clear on initial mount if we have displayedLines from initialization
+    if (!isInitializedRef.current) {
+      isInitializedRef.current = true;
+      // If displayedLines is empty but output has content, process it
+      if (displayedLines.length === 0 && output.length > 0) {
+        const newLines: Array<{ id: string; type: string; content: string; prompt?: string }> = [];
+        output.forEach((outputItem) => {
+          if (!outputItem || !outputItem.id) return;
+          processedOutputIdsRef.current.add(outputItem.id);
+          if (outputItem.content && outputItem.content.includes('\n')) {
+            const lines = outputItem.content.split('\n');
+            lines.forEach((line, index) => {
+              newLines.push({
+                id: `${outputItem.id}-line-${index}`,
+                type: outputItem.type,
+                content: line,
+                prompt: index === 0 ? outputItem.prompt : ''
+              });
+            });
+          } else {
+            newLines.push({
+              id: outputItem.id,
+              type: outputItem.type,
+              content: outputItem.content,
+              prompt: outputItem.prompt
+            });
+          }
+        });
+        if (newLines.length > 0) {
+          setDisplayedLines(newLines);
+        }
+      }
+      return;
+    }
+
     if (output.length === 0) {
       setDisplayedLines([]);
       processedOutputIdsRef.current.clear();
@@ -1083,6 +1177,19 @@ export function Terminal({
     <ModernPanel
       id={`terminal-${deviceId}`}
       title={title || deviceName}
+      headerStart={
+        deviceIconInfo && (
+          <span className={`shrink-0 ${deviceIconInfo.color}`}>
+            {deviceIconInfo.icon === RouterIcon ? (
+              <RouterIcon className="w-4 h-4" />
+            ) : deviceIconInfo.icon === SwitchIcon ? (
+              <SwitchIcon className="w-4 h-4" isL3={deviceIconInfo.isL3} />
+            ) : (
+              <deviceIconInfo.icon className="w-4 h-4" />
+            )}
+          </span>
+        )
+      }
       onClose={onClose}
       headerAction={headerAction}
       collapsible={false}
@@ -1131,6 +1238,17 @@ export function Terminal({
                   <div key={line.id} className="animate-in fade-in slide-in-from-left-1 duration-200">
                     {line.type === 'command' ? (
                       <div className="flex gap-2 text-cyan-500 font-bold group">
+                        {deviceIconInfo && (
+                          <span className={`shrink-0 ${deviceIconInfo.color}`}>
+                            {deviceIconInfo.icon === RouterIcon ? (
+                              <RouterIcon className="w-4 h-4" />
+                            ) : deviceIconInfo.icon === SwitchIcon ? (
+                              <SwitchIcon className="w-4 h-4" isL3={deviceIconInfo.isL3} />
+                            ) : (
+                              <deviceIconInfo.icon className="w-4 h-4" />
+                            )}
+                          </span>
+                        )}
                         <span className="shrink-0 opacity-40 select-none">{line.prompt || prompt}</span>
                         <span className={isDark ? "text-slate-100" : "text-slate-900"}>{highlightCommand(line.content)}</span>
                       </div>
@@ -1180,6 +1298,17 @@ export function Terminal({
                       : "border-input focus-within:ring-primary/50",
                   isMobile && "px-3 py-2"
                 )}>
+                  {deviceIconInfo && (
+                    <span className={`shrink-0 ${deviceIconInfo.color}`}>
+                      {deviceIconInfo.icon === RouterIcon ? (
+                        <RouterIcon className="w-4 h-4" />
+                      ) : deviceIconInfo.icon === SwitchIcon ? (
+                        <SwitchIcon className="w-4 h-4" isL3={deviceIconInfo.isL3} />
+                      ) : (
+                        <deviceIconInfo.icon className="w-4 h-4" />
+                      )}
+                    </span>
+                  )}
                   <span className={cn(
                     "font-bold text-xs select-none opacity-40 group-focus-within:opacity-100 transition-opacity shrink-0",
                     state.awaitingPassword || localPasswordPrompt || confirmDialog?.show || isReloadConfirmationPending

@@ -55,7 +55,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import { ChevronDown, ChevronUp, Menu, Plus, Save, FolderOpen, Languages, Sun, Moon, Network, ShieldCheck, Database, Info, File, Layers, Terminal as TerminalIcon, Undo2, Redo2, Link2, Pencil, StickyNote, Sparkles, Cloud, Search, Monitor, X, Compass, Leaf, Server, GripHorizontal } from "lucide-react";
-import { RouterIcon } from '@/components/network/PCPanelWidgets';
+import { RouterIcon, SwitchIcon } from '@/components/network/PCPanelWidgets';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -1453,6 +1453,12 @@ ${state.bannerMOTD}
 
     // Handle terminal tab as modal
     if (tabId === 'terminal') {
+      // Ensure boot messages are generated before showing terminal
+      const deviceObj = topologyDevices?.find(d => d.id === activeDeviceId);
+      if (deviceObj && (deviceObj.type === 'router' || deviceObj.type === 'switchL2' || deviceObj.type === 'switchL3')) {
+        const deviceState = getOrCreateDeviceState(activeDeviceId, deviceObj.type, deviceObj.name, deviceObj.macAddress, deviceObj.switchModel);
+        getOrCreateDeviceOutputs(activeDeviceId, deviceState);
+      }
       setShowTerminalModal(true);
       return;
     }
@@ -2808,6 +2814,8 @@ ${state.bannerMOTD}
           if (device) {
             // For routers and switches, open CLI terminal modal
             if (device.type === 'router' || device.type === 'switchL2' || device.type === 'switchL3') {
+              const deviceState = getOrCreateDeviceState(device.id, device.type, device.name, device.macAddress, device.switchModel);
+              getOrCreateDeviceOutputs(device.id, deviceState);
               setActiveDeviceId(device.id);
               setActiveDeviceType(device.type);
               setShowTerminalModal(true);

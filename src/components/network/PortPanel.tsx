@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Translations } from '@/contexts/LanguageContext';
 import { Database } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { RouterIcon } from './PCPanelWidgets';
+import { RouterIcon, SwitchIcon } from './PCPanelWidgets';
 
 const getPortVlan = (port: Port): number => Number(port.accessVlan || port.vlan || 1);
 
@@ -289,9 +289,13 @@ export function PortPanel({ ports, t, theme, deviceName, deviceModel, activeDevi
       <Card className={`${cardBg}`}>
         <CardHeader className={`py-3 px-5 border-b ${isDark ? 'border-slate-800/50 bg-slate-800/20' : 'border-slate-200 bg-slate-50'}`}>
           <div className="flex items-center justify-between">
-            <CardTitle className={deviceModel === 'NETWORK-1941' ? "text-purple-400 text-base sm:text-lg flex items-center gap-2" : "text-cyan-400 text-base sm:text-lg flex items-center gap-2"}>
+            <CardTitle className={deviceModel === 'NETWORK-1941' ? "text-purple-400 text-base sm:text-lg flex items-center gap-2" : deviceModel === 'WS-C3560-24PS' ? "text-purple-400 text-base sm:text-lg flex items-center gap-2" : deviceModel === 'WS-C2960-24TT-L' ? "text-green-400 text-base sm:text-lg flex items-center gap-2" : "text-cyan-400 text-base sm:text-lg flex items-center gap-2"}>
               {deviceModel === 'NETWORK-1941' ? (
                 <RouterIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+              ) : deviceModel === 'WS-C3560-24PS' ? (
+                <SwitchIcon className="w-4 h-4 sm:w-5 sm:h-5" isL3={true} />
+              ) : deviceModel === 'WS-C2960-24TT-L' ? (
+                <SwitchIcon className="w-4 h-4 sm:w-5 sm:h-5" isL3={false} />
               ) : (
                 <Database className="w-4 h-4 sm:w-5 sm:h-5" />
               )}

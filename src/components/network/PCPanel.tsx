@@ -200,6 +200,13 @@ export function PCPanel({
   const [undoStack, setUndoStack] = useState<string[]>([]);
   const [redoStack, setRedoStack] = useState<string[]>([]);
 
+  // Load history when component mounts or deviceId changes
+  useEffect(() => {
+    const globalHistory = pcHistories?.get(deviceId) || [];
+    setDesktopHistory(globalHistory);
+    setDesktopHistoryIndex(-1);
+  }, [deviceId, pcHistories]);
+
   // Sync with global history if it changes externally
   useEffect(() => {
     const globalHistory = pcHistories?.get(deviceId) || [];
