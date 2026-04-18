@@ -54,7 +54,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
-import { ChevronDown, Menu, Plus, Save, FolderOpen, Languages, Sun, Moon, Network, ShieldCheck, Database, Info, File, Layers, Terminal as TerminalIcon, Undo2, Redo2, Link2, Pencil, StickyNote, Sparkles, Cloud, Search, Monitor, X, Compass, Leaf, Server } from "lucide-react";
+import { ChevronDown, ChevronUp, Menu, Plus, Save, FolderOpen, Languages, Sun, Moon, Network, ShieldCheck, Database, Info, File, Layers, Terminal as TerminalIcon, Undo2, Redo2, Link2, Pencil, StickyNote, Sparkles, Cloud, Search, Monitor, X, Compass, Leaf, Server } from "lucide-react";
 
 import { Button } from '@/components/ui/button';
 import {
@@ -4923,6 +4923,16 @@ interface PCInfoPopoverProps {
 }
 
 function PCInfoPopover({ pc, language, isDark, onClose, handleDeviceDoubleClick, topologyDevices, deviceStates }: PCInfoPopoverProps) {
+  const [isMinimized, setIsMinimized] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('pc-info-minimized') === 'true';
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('pc-info-minimized', isMinimized.toString());
+  }, [isMinimized]);
   return (
     <div className="hidden md:block fixed bottom-24 right-4 z-[10000] animate-scale-in">
       <div className={`rounded-2xl border shadow-2xl backdrop-blur-xl min-w-[200px] max-w-[260px] liquid-glass-strong ${isDark ? 'border-slate-700/50 text-white shadow-cyan-500/10' : 'border-slate-200/50 text-slate-900 shadow-slate-200/50'}`}>
@@ -4931,14 +4941,22 @@ function PCInfoPopover({ pc, language, isDark, onClose, handleDeviceDoubleClick,
             <Monitor className="w-3.5 h-3.5 text-blue-500" />
             <span className="text-[10px] font-black tracking-wider uppercase opacity-30">{pc.name || pc.id}</span>
           </div>
-          <button
-            onClick={onClose}
-            className={`p-0.5 rounded hover:bg-slate-500/20 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}
-          >
-            <X className="w-3 h-3" />
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setIsMinimized(!isMinimized)}
+              className={`p-0.5 rounded hover:bg-slate-500/20 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}
+              title={isMinimized ? (language === 'tr' ? 'Genişlet' : 'Expand') : (language === 'tr' ? 'Küçült' : 'Minimize')}
+            >
+              {isMinimized ? (
+                <ChevronUp className="w-3 h-3" />
+              ) : (
+                <ChevronDown className="w-3 h-3" />
+              )}
+            </button>
+          </div>
         </div>
-        <div className="p-2 space-y-1 text-[10px]">
+        <div className={cn("overflow-hidden transition-all duration-300", isMinimized ? "max-h-0 opacity-0" : "max-h-[800px] opacity-100")}>
+          <div className="p-2 space-y-1 text-[10px]">
           <div className="flex justify-between items-center">
             <span className="opacity-50">IP</span>
             <span className="font-mono text-blue-500">{pc.ip || '0.0.0.0'}</span>
@@ -5026,6 +5044,7 @@ function PCInfoPopover({ pc, language, isDark, onClose, handleDeviceDoubleClick,
           </button>
         </div>
       </div>
+      </div>
     </div>
   );
 }
@@ -5041,6 +5060,16 @@ interface RouterInfoPopoverProps {
 }
 
 function RouterInfoPopover({ router, routerState, language, isDark, onClose, handleDeviceDoubleClick, topologyConnections }: RouterInfoPopoverProps) {
+  const [isMinimized, setIsMinimized] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('router-info-minimized') === 'true';
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('router-info-minimized', isMinimized.toString());
+  }, [isMinimized]);
   // Get port information
   const ports = routerState?.ports ? Object.values(routerState.ports) : (router.ports || []);
   // Router always shows 7 ports in this model (Console, 5x Gi, 1x WLAN)
@@ -5072,14 +5101,22 @@ function RouterInfoPopover({ router, routerState, language, isDark, onClose, han
             <Server className="w-3.5 h-3.5 text-emerald-500" />
             <span className="text-[10px] font-black tracking-wider uppercase opacity-30">{router.name || router.id}</span>
           </div>
-          <button
-            onClick={onClose}
-            className={`p-0.5 rounded hover:bg-slate-500/20 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}
-          >
-            <X className="w-3 h-3" />
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setIsMinimized(!isMinimized)}
+              className={`p-0.5 rounded hover:bg-slate-500/20 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}
+              title={isMinimized ? (language === 'tr' ? 'Genişlet' : 'Expand') : (language === 'tr' ? 'Küçült' : 'Minimize')}
+            >
+              {isMinimized ? (
+                <ChevronUp className="w-3 h-3" />
+              ) : (
+                <ChevronDown className="w-3 h-3" />
+              )}
+            </button>
+          </div>
         </div>
-        <div className="p-2 space-y-1 text-[10px]">
+        <div className={cn("overflow-hidden transition-all duration-300", isMinimized ? "max-h-0 opacity-0" : "max-h-[800px] opacity-100")}>
+          <div className="p-2 space-y-1 text-[10px]">
           <div className="flex justify-between items-center">
             <span className="opacity-50">{language === 'tr' ? 'Portlar' : 'Ports'}</span>
             <span className="font-mono">
@@ -5150,6 +5187,7 @@ function RouterInfoPopover({ router, routerState, language, isDark, onClose, han
           </button>
         </div>
       </div>
+    </div>
     </div>
   );
 }

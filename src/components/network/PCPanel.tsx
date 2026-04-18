@@ -105,6 +105,16 @@ export function PCPanel({
 
   const [activeTab, setActiveTab] = useState<PCActiveTab>('home');
   const activeTabRef = useRef<PCActiveTab>(activeTab);
+  const [isMinimized, setIsMinimized] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('pc-panel-minimized') === 'true';
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('pc-panel-minimized', isMinimized.toString());
+  }, [isMinimized]);
 
   useEffect(() => {
     activeTabRef.current = activeTab;
@@ -3589,31 +3599,33 @@ export function PCPanel({
             <div className={`hidden sm:block ml-2 text-xs font-mono ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
               {formatTime(currentTime)}
             </div>
-            {/* Close Button */}
+            {/* Minimize / Expand Button */}
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={onClose}
-                  className={`h-6 w-6 rounded-md ui-hover-surface ${isDark ? 'text-slate-300 hover:text-red-400' : 'text-slate-600 hover:text-red-600'}`}
-                  aria-label={language === 'tr' ? 'Kapat' : 'Close'}
+                  onClick={() => setIsMinimized(!isMinimized)}
+                  className={`h-6 w-6 rounded-md ui-hover-surface ${isDark ? 'text-slate-300 hover:text-cyan-400' : 'text-slate-600 hover:text-cyan-600'}`}
+                  aria-label={isMinimized ? (language === 'tr' ? 'Genişlet' : 'Expand') : (language === 'tr' ? 'Küçült' : 'Minimize')}
                 >
-                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="18" y1="6" x2="6" y2="18" />
-                    <line x1="6" y1="6" x2="18" y2="18" />
-                  </svg>
+                  {isMinimized ? (
+                    <ChevronUp className="w-4 h-4" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4" />
+                  )}
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>{language === 'tr' ? 'Kapat' : 'Close'}</TooltipContent>
+              <TooltipContent>{isMinimized ? (language === 'tr' ? 'Genişlet' : 'Expand') : (language === 'tr' ? 'Küçült' : 'Minimize')}</TooltipContent>
             </Tooltip>
           </div>
         </div>
 
         {/* Tablet Frame - Simple modern tablet design */}
-        <div className={`w-full
+        <div className={`w-full overflow-hidden transition-all duration-300 ease-in-out ${isMinimized ? 'h-0 opacity-0 pointer-events-none' : 'h-auto opacity-100'}
            ${isDark ? 'bg-slate-900' : 'bg-slate-100'}
            `}>
+
           {/* Screen Area - Clean and simple */}
           <div className={`
           relative

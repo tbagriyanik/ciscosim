@@ -362,13 +362,15 @@ export function NetworkTopology({
 
   // Sync internal selection with prop from parent
   useEffect(() => {
-    if (activeDeviceId !== undefined) {
+    if (activeDeviceId) {
       // Only sync if the prop device is not already part of our selection
       setSelectedDeviceIds(prev => {
-        if (activeDeviceId && prev.includes(activeDeviceId)) return prev;
-        return activeDeviceId ? [activeDeviceId] : [];
+        if (prev.includes(activeDeviceId)) return prev;
+        return [activeDeviceId];
       });
     }
+    // If activeDeviceId becomes null (panel closed), we specifically DON'T clear 
+    // the selection here to satisfy the user request.
   }, [activeDeviceId]);
 
   // Handle external focus device request (e.g., from WiFi admin panel) - selection only
@@ -935,9 +937,10 @@ export function NetworkTopology({
     const isOnNote = !!targetEl.closest('[data-note-id]');
     const isOnEditable = targetEl.tagName === 'TEXTAREA' || targetEl.tagName === 'INPUT' || (targetEl as any).isContentEditable;
 
-    if (e.button === 0 && !isOnDevice && !isOnEditable) {
-      // Left click on empty canvas - PAN
+    if (e.button === 0 && !isOnDevice && !isOnNote && !isOnEditable) {
+      // Left click on empty canvas - PAN start
       e.preventDefault();
+      
       const currentPan = panRef.current;
       const ps = { x: e.clientX - currentPan.x, y: e.clientY - currentPan.y };
       setPanStart(ps);
@@ -945,8 +948,6 @@ export function NetworkTopology({
       setIsPanning(true);
       isPanningRef.current = true;
       setContextMenu(null);
-      // Clicking on a note (but not editing text) should still allow canvas panning.
-      // Note content stops propagation when actively editing.
       return;
     } else if (e.button === 1 && !isOnEditable) {
       // Middle click on canvas - RECTANGLE SELECTION (no Shift required)
@@ -1243,6 +1244,18 @@ export function NetworkTopology({
         isSelectingRef.current = false;
         setSelectionBox(null);
         selectionBoxRef.current = null;
+      } else if (!isPanningRef.current && !isActuallyDraggingRef.current && !wasDraggingRef.current) {
+        // Simple click on background (not device, not note, not drag)
+        const targetEl = e.target as HTMLElement;
+        const isOnDevice = !!targetEl.closest?.('[data-device-id]');
+        const isOnNote = !!targetEl.closest?.('[data-note-id]');
+        const isOnMenu = !!targetEl.closest?.('.context-menu') || !!targetEl.closest?.('.palette') || !!targetEl.closest?.('.modal');
+        
+        if (!isOnDevice && !isOnNote && !isOnMenu) {
+          setSelectedDeviceIds([]);
+          selectedDeviceIdsRef.current = [];
+          if (onDeviceSelect) onDeviceSelect(null as any, null as any, undefined, null as any);
+        }
       }
 
       setIsPanning(false);

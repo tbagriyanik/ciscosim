@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { CableInfo, SwitchState, Port, getPortLEDColor, PortLEDColor } from '@/lib/network/types';
@@ -22,7 +22,9 @@ import {
   Unlock,
   CheckCircle2,
   XCircle,
-  AlertCircle
+  AlertCircle,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { CanvasDevice } from './networkTopology.types';
@@ -59,6 +61,16 @@ export function RouterPanel({
   const isDark = theme === 'dark';
 
   const [activeTab, setActiveTab] = useState<'overview' | 'ports' | 'wifi' | 'dhcp'>('overview');
+  const [isMinimized, setIsMinimized] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('router-panel-minimized') === 'true';
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('router-panel-minimized', isMinimized.toString());
+  }, [isMinimized]);
 
   // Get router device from topology
   const routerDevice = useMemo(() =>
@@ -174,14 +186,25 @@ export function RouterPanel({
                 </p>
               </div>
             </div>
-            <Button variant="ghost" size="icon" onClick={onClose}>
-              <X className="w-4 h-4" />
-            </Button>
+            <div className="flex items-center gap-1">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => setIsMinimized(!isMinimized)}
+                title={isMinimized ? (language === 'tr' ? 'Genişlet' : 'Expand') : (language === 'tr' ? 'Küçült' : 'Minimize')}
+              >
+                {isMinimized ? (
+                  <ChevronUp className="w-4 h-4" />
+                ) : (
+                  <ChevronDown className="w-4 h-4" />
+                )}
+              </Button>
+            </div>
           </div>
         </DialogHeader>
 
         {/* Tabs */}
-        <div className="flex border-b">
+        <div className={cn("flex border-b overflow-hidden transition-all duration-300", isMinimized ? "max-h-0 opacity-0 border-none" : "max-h-20 opacity-100")}>
           <Button
             variant="ghost"
             className={cn(
@@ -237,7 +260,7 @@ export function RouterPanel({
         </div>
 
         {/* Content */}
-        <ScrollArea className="flex-1 h-[calc(80vh-140px)]">
+        <ScrollArea className={cn("flex-1 transition-all duration-300", isMinimized ? "h-0 opacity-0" : "h-[calc(80vh-140px)]")}>
           <div className="p-4">
             {activeTab === 'overview' && (
               <div className="space-y-4">
