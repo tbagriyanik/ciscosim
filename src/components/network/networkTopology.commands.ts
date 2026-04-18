@@ -180,10 +180,6 @@ export function getCommandCategories(isTR: boolean): CommandDefinition[] {
         ['wifi-password <pass>', isTR ? 'WiFi şifresi' : 'WiFi password'],
         ['wifi-channel {band}', isTR ? 'WiFi bandı' : 'Set WiFi band'],
         ['wifi-mode {ap|client}', isTR ? 'WiFi modu' : 'WiFi mode'],
-        ['iot sensor <type>', isTR ? 'IoT Sensör tipi' : 'IoT Sensor type'],
-        ['iot name <text>', isTR ? 'IoT Cihaz adı' : 'IoT Device name'],
-        ['iot wifi ssid <name>', isTR ? 'IoT WiFi SSID' : 'IoT WiFi SSID'],
-        ['iot wifi password <p>', isTR ? 'IoT WiFi şifresi' : 'IoT WiFi password'],
       ]
     },
     {

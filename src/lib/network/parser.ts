@@ -2392,12 +2392,7 @@ Shortcuts:
     vtp mode <mode>           - Set VTP mode
     vtp domain <name>         - Set VTP domain
     cdp run                   - Enable CDP
-    no cdp run                - Disable CDP
-    iot sensor <type>         - Set IoT sensor type (temperature|humidity|motion|light|sound)
-    iot name <name>           - Set IoT device name
-    iot wifi ssid <ssid>      - Set IoT WiFi SSID
-    iot wifi password <pass>  - Set IoT WiFi password
-    iot wifi security <type>   - Set IoT WiFi security (open|wpa|wpa2|wpa3)
+    no cdp run                - Disable CDP   
     exit                      - Return to privileged mode
     end                       - Return to privileged mode
     do <command>              - Run privileged commands

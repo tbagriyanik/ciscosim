@@ -299,15 +299,6 @@ The simulator supports **100+ commands** across multiple configuration modes.
 | `show lldp` | Display LLDP neighbors |
 | `show authentication` | Display auth sessions |
 
-### IoT Configuration Commands (Global Config)
-| Command | Description |
-|---------|-------------|
-| `iot sensor <type>` | Set sensor type (temp, humidity, etc.) |
-| `iot name <text>` | Set IoT device display name |
-| `iot wifi ssid <name>` | Set WiFi SSID for IoT |
-| `iot wifi password <pass>` | Set WiFi password for IoT |
-| `iot wifi security <type>` | Set WiFi security (WPA2, etc.) |
-
 ## Command Modes
 - **User Mode** (`>`) - Basic monitoring commands
 - **Privileged Mode** (`#`) - All show/debug commands
