@@ -46,7 +46,7 @@ Network learning app: [Test Address](https://network2026.vercel.app)
   - **IoT Device Management**: Safely connect/disconnect or fully delete IoT devices mapping to topology
   - Bulk operations for gracefully disconnecting or removing multiple IoT devices visually
   - IP address display for connected IoT devices
-- **IoT Web Panel**: Centralized IoT device management interface accessible via `http://iot-panel`
+- **IoT Web Panel**: Centralized Internet of Things (IoT) device management interface accessible via `http://iot-panel`
   - **Password Protection**: Secure login with username/password (admin/admin)
   - **Session-Based Authentication**: Remembers login state using sessionStorage
   - **Device List**: View all connected IoT devices in the network
@@ -57,7 +57,7 @@ Network learning app: [Test Address](https://network2026.vercel.app)
   - Context Menu Restrictions: Smart right-click menu tailored to device types (e.g., disabling 'Open' for non-interactive IoT devices)
   - Save file (JSON) optimization by abstracting away redundant switch parameters for PC and IoT devices
   - Modern, responsive UI with dark/light theme support
-- **IoT WiFi Lab**: Complete lab scenario with 3 IoT device types (Temperature, Humidity, Motion sensors)
+- **IoT WiFi Lab**: Complete lab scenario with 3 Internet of Things (IoT) device types (Temperature, Humidity, Motion sensors)
   - Pre-configured example project with WiFi connectivity
   - Static IP assignment support for IoT devices
 
@@ -88,7 +88,7 @@ Network learning app: [Test Address](https://network2026.vercel.app)
 - Performance optimization (spatial partitioning, viewport culling)
 - Accessibility (WCAG 2.1 AA compliance)
 - Turkish/English localization
-- **22 Example Projects**: Complete lab scenarios (Basit, Orta, İleri seviye)
+- **24 Example Projects**: Complete lab scenarios
 - **150+ CLI Commands**: Full command reference in Help Panel
 - DHCP/DNS/HTTP system enhancements
 - IoT WiFi Lab with sensor simulation
@@ -335,11 +335,10 @@ Theme selection is done from the theme selector in the top right corner.
 
 - Scope: `src/`
 - Source files: `175+`
-- Total lines: `56249`
+- Total lines: `56586`
 - TS/TSX files: `165+`
 - Network components: `55+`
-- Custom hooks: `22+`
-- Example projects: `22`
+- Example projects: `24`
 - CLI commands: `150+`
 - Last updated: `2026-04-18`
 

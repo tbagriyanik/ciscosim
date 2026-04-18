@@ -732,6 +732,7 @@ export default function Home() {
     handlePointerDown,
     handleResizeStart,
   } = useModalDragResize();
+  const isTasksNarrow = tasksModalSize.width < 1100;
 
   // Get current state helper
   const getCurrentState = useCallback((): ProjectState => ({
@@ -4113,8 +4114,8 @@ ${state.bannerMOTD}
                   </DialogDescription>
                 </DialogHeader>
                 <div className="flex-1 overflow-y-auto p-3 sm:p-4">
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                    <div className="lg:col-span-2 overflow-y-auto custom-scrollbar">
+                  <div className={`grid gap-4 ${isTasksNarrow ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-3'}`}>
+                    <div className={`${isTasksNarrow ? '' : 'lg:col-span-2'} overflow-y-auto custom-scrollbar`}>
                       <PortPanel
                         ports={state.ports}
                         t={t}

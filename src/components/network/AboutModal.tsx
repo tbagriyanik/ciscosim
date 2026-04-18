@@ -138,18 +138,18 @@ export function AboutModal({ isOpen, onClose, onStartTour }: AboutModalProps) {
               {t.commandReference}
             </button>
             <button
-              onClick={() => setActiveTab('about')}
-              className={tabButtonClass('about')}
-            >
-              <Info className="w-4 h-4" />
-              {t.aboutTitle}
-            </button>
-            <button
               onClick={() => setActiveTab('contact')}
               className={tabButtonClass('contact')}
             >
               <Mail className="w-4 h-4" />
               {t.contactTitle}
+            </button>
+            <button
+              onClick={() => setActiveTab('about')}
+              className={tabButtonClass('about')}
+            >
+              <Info className="w-4 h-4" />
+              {t.aboutTitle}
             </button>
           </div>
           <DialogDescription className="sr-only">

@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Laptop, Monitor, Terminal as TerminalIcon, X, CornerDownLeft, Command, Globe, Network, ShieldCheck, History, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Search, Copy, Save, Trash2, Download, Settings, Wifi, Eye, EyeOff, Radio, LayoutGrid } from 'lucide-react';
+import { Laptop, Monitor, Terminal as TerminalIcon, X, CornerDownLeft, Command, Globe, Network, ShieldCheck, History, ChevronLeft, ChevronRight, Search, Copy, Save, Trash2, Download, Settings, Wifi, Eye, EyeOff, Radio, LayoutGrid } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from "@/hooks/use-toast";
 import { isValidMAC, normalizeMAC, cn } from "@/lib/utils";
@@ -98,24 +98,13 @@ export function PCPanel({
   const deviceState = useSwitchState(deviceId);
 
   const terminalBg = isDark ? 'bg-black shadow-inner' : 'bg-slate-50 shadow-inner border border-slate-200';
-  const textColor = isDark ? 'text-slate-400' : 'text-slate-600';
+  const textColor = isDark ? 'text-slate-200' : 'text-slate-600';
   const cmdColor = isDark ? 'text-slate-100' : 'text-slate-900';
   const inputBg = isDark ? 'bg-black/50' : 'bg-white';
   const inputBorder = isDark ? 'border-slate-800' : 'border-slate-300';
 
   const [activeTab, setActiveTab] = useState<PCActiveTab>('home');
   const activeTabRef = useRef<PCActiveTab>(activeTab);
-  const [isMinimized, setIsMinimized] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('pc-panel-minimized') === 'true';
-    }
-    return false;
-  });
-
-  useEffect(() => {
-    localStorage.setItem('pc-panel-minimized', isMinimized.toString());
-  }, [isMinimized]);
-
   useEffect(() => {
     activeTabRef.current = activeTab;
   }, [activeTab]);
@@ -1381,7 +1370,7 @@ export function PCPanel({
         ? 'bg-slate-900 text-white border-slate-700 shadow-sm'
         : 'bg-white text-slate-900 border-slate-200 shadow-sm'
       : isDark
-        ? 'bg-slate-950/40 text-slate-400 border-transparent hover:text-slate-200 hover:bg-slate-900/60'
+        ? 'bg-slate-950/40 text-slate-200 border-transparent hover:text-white hover:bg-slate-900/60'
         : 'bg-slate-100 text-slate-500 border-transparent hover:text-slate-700 hover:bg-slate-50'
   );
 
@@ -3661,32 +3650,25 @@ export function PCPanel({
             <div className={`hidden sm:block ml-2 text-xs font-mono ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
               {formatTime(currentTime)}
             </div>
-            {/* Minimize / Expand Button */}
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => setIsMinimized(!isMinimized)}
-                  className={`h-6 w-6 rounded-md ui-hover-surface ${isDark ? 'text-slate-300 hover:text-cyan-400' : 'text-slate-600 hover:text-cyan-600'}`}
-                  aria-label={isMinimized ? (language === 'tr' ? 'Genişlet' : 'Expand') : (language === 'tr' ? 'Küçült' : 'Minimize')}
+                  onClick={onClose}
+                  className={`ml-2 h-6 w-6 rounded-md ui-hover-surface ${isDark ? 'text-slate-300 hover:text-rose-400' : 'text-slate-600 hover:text-rose-600'}`}
+                  aria-label={language === 'tr' ? 'Kapat' : 'Close'}
                 >
-                  {isMinimized ? (
-                    <ChevronUp className="w-4 h-4" />
-                  ) : (
-                    <ChevronDown className="w-4 h-4" />
-                  )}
+                  <X className="w-4 h-4" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>{isMinimized ? (language === 'tr' ? 'Genişlet' : 'Expand') : (language === 'tr' ? 'Küçült' : 'Minimize')}</TooltipContent>
+              <TooltipContent>{language === 'tr' ? 'Kapat' : 'Close'}</TooltipContent>
             </Tooltip>
           </div>
         </div>
 
         {/* Tablet Frame - Simple modern tablet design */}
-        <div className={`w-full overflow-hidden transition-all duration-300 ease-in-out ${isMinimized ? 'h-0 opacity-0 pointer-events-none' : 'h-auto opacity-100'}
-           ${isDark ? 'bg-slate-900' : 'bg-slate-100'}
-           `}>
+        <div className={`w-full overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-slate-100'}`}>
 
           {/* Screen Area - Clean and simple */}
           <div className={`
@@ -3728,7 +3710,7 @@ export function PCPanel({
                   <DialogContent className={`${isDark ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white'} sm:max-w-md`}>
                     <DialogHeader>
                       <DialogTitle>{t.searchOutputTitle}</DialogTitle>
-                      <DialogDescription className={isDark ? 'text-slate-400' : 'text-slate-600'}>
+                      <DialogDescription className={isDark ? 'text-slate-200' : 'text-slate-600'}>
                         {t.searchOutputDescription}
                       </DialogDescription>
                     </DialogHeader>
@@ -3743,7 +3725,7 @@ export function PCPanel({
                       {searchQuery && (
                         <button
                           onClick={() => setSearchQuery('')}
-                          className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+                          className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-200 hover:text-slate-50 dark:hover:text-slate-100 transition-colors"
                         >
                           <X className="w-4 h-4" />
                         </button>
@@ -3929,17 +3911,17 @@ export function PCPanel({
                       <div className={`p-4 rounded-xl border space-y-4 ${isDark ? 'bg-slate-900/50 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
                         <div className="flex items-center justify-between gap-4">
                           <div className="space-y-1.5 flex-1">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">{t.hostname}</label>
+                            <label className="text-xs font-bold text-slate-500 ml-1">{t.hostname}</label>
                             <Input value={internalPcHostname} onChange={(e) => setPcHostname(e.target.value)} className="h-9" />
                           </div>
                           <div className="space-y-1.5 flex-1">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">MAC Address</label>
+                            <label className="text-xs font-bold text-slate-500 ml-1">MAC Address</label>
                             <Input value={pcMAC} onChange={(e) => setPcMAC(e.target.value)} placeholder="00:1A:2B:3C:4D:5E" className={`h-9 ${errors.mac ? 'border-rose-500' : ''}`} />
                           </div>
                         </div>
 
                         <div className="flex flex-col sm:flex-row items-center gap-4 py-2 border-y border-slate-800/10 dark:border-slate-800/50">
-                          <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 whitespace-nowrap">
+                          <label className="text-xs font-bold text-slate-500 ml-1 whitespace-nowrap">
                             {t.ipConfigurationLabel}
                           </label>
                           <div className={`inline-flex p-1 rounded-xl border ${isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-100 border-slate-200'}`}>
@@ -3953,7 +3935,7 @@ export function PCPanel({
                               }}
                               className={`px-4 py-1.5 text-[10px] font-bold rounded-lg transition-all ${ipConfigMode === 'dhcp'
                                 ? 'bg-cyan-500 text-white shadow-lg shadow-cyan-500/30'
-                                : (isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-800')
+                                : (isDark ? 'text-slate-200 hover:text-white' : 'text-slate-500 hover:text-slate-800')
                                 }`}
                             >
                               DHCP
@@ -3965,40 +3947,40 @@ export function PCPanel({
                               onClick={() => setIpConfigMode('static')}
                               className={`px-4 py-1.5 text-[10px] font-bold rounded-lg transition-all ${ipConfigMode === 'static'
                                 ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/30'
-                                : (isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-800')
+                                : (isDark ? 'text-slate-200 hover:text-white' : 'text-slate-500 hover:text-slate-800')
                                 }`}
                             >
-                              {t.staticLabel.toUpperCase()}
+                              {t.staticLabel}
                             </button>
                           </div>
                         </div>
 
                         <div className="grid grid-cols-2 gap-x-4 gap-y-3">
                           <div className="space-y-1.5">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">IP Address</label>
+                            <label className="text-xs font-bold text-slate-500 ml-1">IP Address</label>
                             <Input value={pcIP} onChange={(e) => setPcIP(e.target.value)} placeholder="192.168.1.100" className={`h-9 ${errors.ip ? 'border-rose-500' : ''}`} disabled={ipConfigMode === 'dhcp'} />
                           </div>
                           <div className="space-y-1.5">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Subnet Mask</label>
+                            <label className="text-xs font-bold text-slate-500 ml-1">Subnet Mask</label>
                             <Input value={pcSubnet} onChange={(e) => setPcSubnet(e.target.value)} placeholder="255.255.255.0" className={`h-9 ${errors.subnet ? 'border-rose-500' : ''}`} disabled={ipConfigMode === 'dhcp'} />
                           </div>
                           <div className="space-y-1.5">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Gateway</label>
+                            <label className="text-xs font-bold text-slate-500 ml-1">Gateway</label>
                             <Input value={pcGateway} onChange={(e) => setPcGateway(e.target.value)} placeholder="192.168.1.1" className={`h-9 ${errors.gateway ? 'border-rose-500' : ''}`} disabled={ipConfigMode === 'dhcp'} />
                           </div>
                           <div className="space-y-1.5">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">DNS Server</label>
+                            <label className="text-xs font-bold text-slate-500 ml-1">DNS Server</label>
                             <Input value={pcDNS} onChange={(e) => setPcDNS(e.target.value)} placeholder="8.8.8.8" className={`h-9 ${errors.dns ? 'border-rose-500' : ''}`} disabled={ipConfigMode === 'dhcp'} />
                           </div>
                         </div>
 
                         <div className="grid grid-cols-2 gap-x-4 pt-2 border-t border-slate-800/10 dark:border-slate-800/50">
                           <div className="space-y-1.5">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">IPv6 Address</label>
+                            <label className="text-xs font-bold text-slate-500 ml-1">IPv6 Address</label>
                             <Input value={pcIPv6} onChange={(e) => setPcIPv6(e.target.value)} placeholder="2001:db8:acad:1::10" className={`h-9 ${errors.ipv6 ? 'border-rose-500' : ''}`} />
                           </div>
                           <div className="space-y-1.5">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">IPv6 Prefix</label>
+                            <label className="text-xs font-bold text-slate-500 ml-1">IPv6 Prefix</label>
                             <Input value={pcIPv6Prefix} onChange={(e) => setPcIPv6Prefix(e.target.value)} placeholder="64" className="h-9" />
                           </div>
                         </div>
@@ -4052,7 +4034,7 @@ export function PCPanel({
                                       ? 'DNS (Domain Name System - isim çözümleme)'
                                       : 'DNS (Domain Name System - name resolution)'}
                                   </h3>
-                                  <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                                  <p className={`text-xs ${isDark ? 'text-slate-200' : 'text-slate-500'}`}>
                                     {t.dnsRecordManagerTip}
                                   </p>
                                 </div>
@@ -4149,7 +4131,7 @@ export function PCPanel({
                                       ? 'HTTP (Hypertext Transfer Protocol - web içeriği)'
                                       : 'HTTP (Hypertext Transfer Protocol - web content)'}
                                   </h3>
-                                  <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                                  <p className={`text-xs ${isDark ? 'text-slate-200' : 'text-slate-500'}`}>
                                     {t.httpServiceDescription}
                                   </p>
                                 </div>
@@ -4213,7 +4195,7 @@ export function PCPanel({
                                       ? 'DHCP (Dynamic Host Configuration Protocol - otomatik IP)'
                                       : 'DHCP (Dynamic Host Configuration Protocol - auto IP)'}
                                   </h3>
-                                  <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                                  <p className={`text-xs ${isDark ? 'text-slate-200' : 'text-slate-500'}`}>
                                     {t.dhcpPoolsDescription}
                                   </p>
                                 </div>
@@ -4367,7 +4349,7 @@ export function PCPanel({
                         </div>
 
                         {iotDevices.length === 0 ? (
-                          <div className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+                          <div className={`text-xs ${isDark ? 'text-slate-200' : 'text-slate-600'}`}>
                             {language === 'tr' ? 'Topolojide IoT nesnesi yoktur. Önce topolojiye IoT nesnesi ekleyiniz.' : 'No IoT object in topology. Add one first.'}
                           </div>
                         ) : (
@@ -4419,10 +4401,10 @@ export function PCPanel({
 
 
                             <div className="flex items-center gap-4">
-                              <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 shrink-0">
+                              <label className="text-xs font-bold text-slate-500 shrink-0">
                                 {language === 'tr' ? 'Cihaz Durumu (Aktif/Pasif)' : 'Device Status (Active/Passive)'}
                               </label>
-                              <span className={`text-[9px] font-bold ${!iotCollaborationEnabled ? 'text-rose-500' : 'text-slate-400'}`}>
+                              <span className={`text-[9px] font-bold ${!iotCollaborationEnabled ? 'text-rose-500' : 'text-slate-200'}`}>
                                 {language === 'tr' ? 'PASİF' : 'PASSIVE'}
                               </span>
                               <button
@@ -4434,16 +4416,16 @@ export function PCPanel({
                               >
                                 <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-lg transition-transform duration-300 ${iotCollaborationEnabled ? 'translate-x-8' : 'translate-x-1'}`} />
                               </button>
-                              <span className={`text-[9px] font-bold ${iotCollaborationEnabled ? 'text-cyan-500' : 'text-slate-400'}`}>
+                              <span className={`text-[9px] font-bold ${iotCollaborationEnabled ? 'text-cyan-500' : 'text-slate-200'}`}>
                                 {language === 'tr' ? 'AKTİF' : 'ACTIVE'}
                               </span>
                             </div>
 
                             <div className="flex items-center gap-4">
-                              <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 shrink-0">
+                              <label className="text-xs font-bold text-slate-500 shrink-0">
                                 {language === 'tr' ? 'Güç Durumu (Açık/Kapalı)' : 'Power Status (On/Off)'}
                               </label>
-                              <span className={`text-[9px] font-bold ${selectedIotDevice?.status === 'offline' ? 'text-rose-500' : 'text-slate-400'}`}>
+                              <span className={`text-[9px] font-bold ${selectedIotDevice?.status === 'offline' ? 'text-rose-500' : 'text-slate-200'}`}>
                                 {language === 'tr' ? 'KAPALI' : 'OFF'}
                               </span>
                               <button
@@ -4465,7 +4447,7 @@ export function PCPanel({
                               >
                                 <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-lg transition-transform duration-300 ${selectedIotDevice?.status !== 'offline' ? 'translate-x-8' : 'translate-x-1'}`} />
                               </button>
-                              <span className={`text-[9px] font-bold ${selectedIotDevice?.status !== 'offline' ? 'text-emerald-500' : 'text-slate-400'}`}>
+                              <span className={`text-[9px] font-bold ${selectedIotDevice?.status !== 'offline' ? 'text-emerald-500' : 'text-slate-200'}`}>
                                 {language === 'tr' ? 'AÇIK' : 'ON'}
                               </span>
                             </div>
@@ -4494,7 +4476,7 @@ export function PCPanel({
                                     <div className="flex items-center justify-between">
                                       <div className="flex-1">
                                         <div className="text-[11px] font-semibold text-slate-500 mb-1">IP Address</div>
-                                        <div className={`text-sm font-mono ${selectedIotDevice?.ip ? 'text-cyan-600 dark:text-cyan-400' : 'text-slate-400'}`}>
+                                        <div className={`text-sm font-mono ${selectedIotDevice?.ip ? 'text-cyan-600 dark:text-cyan-300' : 'text-slate-200'}`}>
                                           {selectedIotDevice?.ip || 'Not assigned'}
                                         </div>
                                       </div>
@@ -4502,15 +4484,15 @@ export function PCPanel({
                                     <div className="grid grid-cols-2 gap-3">
                                       <div>
                                         <div className="text-[11px] font-semibold text-slate-500 mb-1">MAC Address</div>
-                                        <div className="text-sm font-mono text-slate-600 dark:text-slate-400">{selectedIotDevice?.macAddress || 'N/A'}</div>
+                                        <div className="text-sm font-mono text-slate-600 dark:text-slate-200">{selectedIotDevice?.macAddress || 'N/A'}</div>
                                       </div>
                                       <div>
                                         <div className="text-[11px] font-semibold text-slate-500 mb-1">Gateway</div>
-                                        <div className="text-sm font-mono text-slate-600 dark:text-slate-400">{selectedIotDevice?.gateway || '-'}</div>
+                                        <div className="text-sm font-mono text-slate-600 dark:text-slate-200">{selectedIotDevice?.gateway || '-'}</div>
                                       </div>
                                       <div>
                                         <div className="text-[11px] font-semibold text-slate-500 mb-1">Subnet Mask</div>
-                                        <div className="text-sm font-mono text-slate-600 dark:text-slate-400">{selectedIotDevice?.subnet || '-'}</div>
+                                        <div className="text-sm font-mono text-slate-600 dark:text-slate-200">{selectedIotDevice?.subnet || '-'}</div>
                                       </div>
                                       <div>
                                         <div className="text-[11px] font-semibold text-slate-500 mb-1">Status</div>
@@ -4584,7 +4566,7 @@ export function PCPanel({
                               />
                             )}
 
-                            <div className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'} flex items-center gap-1`}>
+                            <div className={`text-xs ${isDark ? 'text-slate-200' : 'text-slate-500'} flex items-center gap-1`}>
                               <Save className="w-3 h-3" />
                               {language === 'tr' ? 'Değişiklikler otomatik kaydediliyor' : 'Changes are auto-saved'}
                             </div>
@@ -4641,17 +4623,17 @@ export function PCPanel({
                                       onFocus={() => setSsidDropdownOpen(true)}
                                       onBlur={() => setTimeout(() => setSsidDropdownOpen(false), 150)}
                                       placeholder={language === 'tr' ? 'Ağ seçin veya yazın...' : 'Select or type SSID...'}
-                                      className={`flex-1 bg-transparent outline-none text-sm ${isDark ? 'text-white placeholder:text-slate-600' : 'text-slate-900 placeholder:text-slate-400'}`}
+                                      className={`flex-1 bg-transparent outline-none text-sm ${isDark ? 'text-white placeholder:text-slate-500' : 'text-slate-900 placeholder:text-slate-400'}`}
                                     />
                                     {wifiSSID && (
-                                      <button type="button" onClick={() => { setWifiSSID(''); setWifiBSSID(''); }} className="text-slate-400 hover:text-slate-600 text-xs">✕</button>
+                                      <button type="button" onClick={() => { setWifiSSID(''); setWifiBSSID(''); }} className="text-slate-200 hover:text-white text-xs">✕</button>
                                     )}
-                                    <button type="button" onClick={() => setSsidDropdownOpen(o => !o)} className="text-slate-400 hover:text-slate-600 text-xs">▾</button>
+                                    <button type="button" onClick={() => setSsidDropdownOpen(o => !o)} className="text-slate-200 hover:text-white text-xs">▾</button>
                                   </div>
                                   {ssidDropdownOpen && (
                                     <div className={`absolute z-50 w-full mt-1 rounded-md border shadow-lg max-h-48 overflow-y-auto ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
                                       {filtered.length === 0 && (
-                                        <div className={`px-3 py-2 text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                                        <div className={`px-3 py-2 text-xs ${isDark ? 'text-slate-200' : 'text-slate-400'}`}>
                                           {language === 'tr' ? 'Ağ bulunamadı' : 'No networks found'}
                                         </div>
                                       )}
@@ -4710,7 +4692,7 @@ export function PCPanel({
                                 <button
                                   type="button"
                                   onClick={() => setShowWifiPassword(v => !v)}
-                                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none"
+                                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-200 hover:text-white focus:outline-none"
                                   tabIndex={-1}
                                 >
                                   {showWifiPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -4858,10 +4840,10 @@ export function PCPanel({
                                   {t.physicalConnectionDetected} {topologyDevices.find((d: any) => d.id === connectedDeviceId)?.name || connectedDeviceId}
                                 </span>
                               ) : (
-                                <span className={isDark ? 'text-slate-400' : 'text-slate-600'}>{t.noConsoleCableDetected}</span>
+                                <span className={isDark ? 'text-slate-200' : 'text-slate-600'}>{t.noConsoleCableDetected}</span>
                               )}
                             </div>
-                            <div className={`text-[10px] opacity-70 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                            <div className={`text-[10px] opacity-70 ${isDark ? 'text-slate-200' : 'text-slate-400'}`}>
                               {t.consoleConfiguration}
                             </div>
                           </div>
@@ -4906,7 +4888,7 @@ export function PCPanel({
                           <div className="flex-1 flex items-center justify-center text-slate-700">OFFLINE</div>
                         ) : gameActive && activeTab === 'desktop' ? (
                           <div className="flex-1 flex flex-col items-center justify-center gap-3">
-                            <div className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+                            <div className={`text-xs ${isDark ? 'text-slate-200' : 'text-slate-600'}`}>
                               {gameLanguage === 'tr'
                                 ? `Skor: ${gameScore} | Çıkış: ESC | Yeniden: SPACE`
                                 : `Score: ${gameScore} | Exit: ESC | Restart: SPACE`}
@@ -4999,7 +4981,7 @@ export function PCPanel({
                           ))
                         )}
                         {activeTab === 'terminal' && !isPcPoweredOff && !isConsoleConnected && (
-                          <div className={`mt-auto text-xs ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>
+                          <div className={`mt-auto text-xs ${isDark ? 'text-slate-200' : 'text-slate-500'}`}>
                             {t.waitingForConnection}
                           </div>
                         )}
@@ -5286,6 +5268,7 @@ export function PCPanel({
                   size="icon"
                   variant="outline"
                   onClick={() => {
+                    goHome();
                     setHttpAppContent(null);
                     setHttpAppDeviceId(null);
                   }}
