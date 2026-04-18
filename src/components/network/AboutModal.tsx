@@ -13,7 +13,7 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { Info, Terminal, Search, X, ChevronDown, Compass } from 'lucide-react';
+import { Info, Terminal, Search, X, ChevronDown, Compass, Mail, Loader2, MessageSquare, Bug, Lightbulb, Check } from 'lucide-react';
 import { getCommandCategories } from './networkTopology.commands';
 
 interface AboutModalProps {
@@ -22,7 +22,7 @@ interface AboutModalProps {
   onStartTour: () => void;
 }
 
-type TabType = 'help' | 'about';
+type TabType = 'help' | 'about' | 'contact';
 
 export function AboutModal({ isOpen, onClose, onStartTour }: AboutModalProps) {
   const { t } = useLanguage();
@@ -43,6 +43,47 @@ export function AboutModal({ isOpen, onClose, onStartTour }: AboutModalProps) {
 
   const toggleHelp = (id: string) => {
     setExpandedHelp(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const [contactData, setContactData] = useState({
+    name: '',
+    email: '',
+    type: 'bug' as 'bug' | 'suggestion' | 'other',
+    message: ''
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
+
+  const handleContactSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setSubmitStatus('idle');
+
+    try {
+      // Theoretically sending to a Google Apps Script Web App
+      // Or a Next.js API route
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...contactData,
+          timestamp: new Date().toISOString(),
+          userAgent: navigator.userAgent
+        })
+      });
+
+      if (response.ok) {
+        setSubmitStatus('success');
+        setContactData({ name: '', email: '', type: 'bug', message: '' });
+      } else {
+        setSubmitStatus('error');
+      }
+    } catch (error) {
+      console.error('Contact submission error:', error);
+      setSubmitStatus('error');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // Filter categories based on search query
@@ -110,9 +151,25 @@ export function AboutModal({ isOpen, onClose, onStartTour }: AboutModalProps) {
               <Info className="w-4 h-4" />
               {t.aboutTitle}
             </button>
+            <button
+              onClick={() => setActiveTab('contact')}
+              className={cn(
+                'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors',
+                activeTab === 'contact'
+                  ? isDark
+                    ? 'bg-amber-500/20 text-amber-400'
+                    : 'bg-amber-100 text-amber-700'
+                  : isDark
+                    ? 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                    : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100'
+              )}
+            >
+              <Mail className="w-4 h-4" />
+              {t.contactTitle}
+            </button>
           </div>
           <DialogDescription className="sr-only">
-            {activeTab === 'about' ? t.aboutIntro : t.commandReference}
+            {activeTab === 'about' ? t.aboutIntro : activeTab === 'contact' ? t.contactTitle : t.commandReference}
           </DialogDescription>
         </DialogHeader>
 
@@ -199,6 +256,129 @@ export function AboutModal({ isOpen, onClose, onStartTour }: AboutModalProps) {
                   </a>
                 </div>
                 <div className="text-xs text-slate-500">Version: {version}</div>
+              </div>
+            ) : activeTab === 'contact' ? (
+              <div className="space-y-6">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className={cn("p-2 rounded-xl", isDark ? "bg-amber-500/20" : "bg-amber-100")}>
+                    <MessageSquare className={cn("w-5 h-5", isDark ? "text-amber-400" : "text-amber-600")} />
+                  </div>
+                  <div>
+                    <h4 className="text-lg font-bold">{t.contactTitle}</h4>
+                    <p className="text-xs opacity-60">Google Sheets entegrasyonu ile saklanır</p>
+                  </div>
+                </div>
+
+                {submitStatus === 'success' ? (
+                  <div className={cn("p-6 rounded-2xl flex flex-col items-center text-center animate-in zoom-in-95 duration-300", isDark ? "bg-emerald-500/10 border border-emerald-500/20" : "bg-emerald-50 border border-emerald-100")}>
+                    <div className="w-12 h-12 rounded-full bg-emerald-500 flex items-center justify-center mb-4 shadow-lg shadow-emerald-500/20">
+                      <Check className="w-6 h-6 text-white" />
+                    </div>
+                    <h5 className="font-bold text-lg mb-2">{t.contactSuccessTitle}</h5>
+                    <p className="text-sm opacity-80">{t.contactSuccessDesc}</p>
+                    <Button 
+                      variant="ghost" 
+                      className="mt-6" 
+                      onClick={() => setSubmitStatus('idle')}
+                    >
+                      Yeni Mesaj
+                    </Button>
+                  </div>
+                ) : (
+                  <form onSubmit={handleContactSubmit} className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold opacity-50 px-1">{t.contactName}</label>
+                        <input
+                          required
+                          type="text"
+                          value={contactData.name}
+                          onChange={e => setContactData(prev => ({ ...prev, name: e.target.value }))}
+                          className={cn(
+                            "w-full px-4 py-2.5 rounded-xl border outline-none transition-all",
+                            isDark ? "bg-slate-900 border-slate-700 focus:border-amber-500/50" : "bg-white border-slate-200 focus:border-amber-600"
+                          )}
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold opacity-50 px-1">{t.contactEmail}</label>
+                        <input
+                          required
+                          type="email"
+                          value={contactData.email}
+                          onChange={e => setContactData(prev => ({ ...prev, email: e.target.value }))}
+                          className={cn(
+                            "w-full px-4 py-2.5 rounded-xl border outline-none transition-all",
+                            isDark ? "bg-slate-900 border-slate-700 focus:border-amber-500/50" : "bg-white border-slate-200 focus:border-amber-600"
+                          )}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold opacity-50 px-1">{t.contactType}</label>
+                      <div className="grid grid-cols-3 gap-2">
+                        {[
+                          { id: 'bug', label: t.bugReport, icon: Bug, color: 'text-red-500' },
+                          { id: 'suggestion', label: t.suggestion, icon: Lightbulb, color: 'text-amber-500' },
+                          { id: 'other', label: t.other, icon: MessageSquare, color: 'text-blue-500' }
+                        ].map(type => (
+                          <button
+                            key={type.id}
+                            type="button"
+                            onClick={() => setContactData(prev => ({ ...prev, type: type.id as any }))}
+                            className={cn(
+                              "flex flex-col items-center gap-2 p-3 rounded-xl border transition-all",
+                              contactData.type === type.id
+                                ? isDark ? "bg-amber-500/20 border-amber-500/50" : "bg-amber-50 border-amber-600 shadow-sm"
+                                : isDark ? "bg-slate-900/50 border-slate-800 hover:border-slate-700" : "bg-slate-50 border-slate-100 hover:border-slate-200"
+                            )}
+                          >
+                            <type.icon className={cn("w-4 h-4", contactData.type === type.id ? (isDark ? "text-amber-400" : "text-amber-600") : "opacity-40", type.color)} />
+                            <span className="text-[10px] font-bold">{type.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold opacity-50 px-1">{t.contactMessage}</label>
+                      <textarea
+                        required
+                        rows={5}
+                        value={contactData.message}
+                        onChange={e => setContactData(prev => ({ ...prev, message: e.target.value }))}
+                        className={cn(
+                          "w-full px-4 py-3 rounded-xl border outline-none transition-all resize-none",
+                          isDark ? "bg-slate-900 border-slate-700 focus:border-amber-500/50" : "bg-white border-slate-200 focus:border-amber-600"
+                        )}
+                        placeholder="..."
+                      />
+                    </div>
+
+                    {submitStatus === 'error' && (
+                      <p className="text-xs text-red-500 font-bold px-1">{t.contactErrorDesc}</p>
+                    )}
+
+                    <Button 
+                      type="submit" 
+                      disabled={isSubmitting}
+                      className={cn("w-full py-6 rounded-xl transition-all", isDark ? "bg-amber-600 hover:bg-amber-700" : "bg-amber-600 hover:bg-amber-700")}
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                          Gönderiliyor...
+                        </>
+                      ) : (
+                        <>
+                          <Mail className="w-4 h-4 mr-2" />
+                          {t.contactSend}
+                        </>
+                      )}
+                    </Button>
+                  </form>
+                )}
               </div>
             ) : (
               <div className="space-y-3">

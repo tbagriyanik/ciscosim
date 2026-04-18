@@ -450,6 +450,19 @@ export interface Translations {
   livingRoom: string;
   kitchen: string;
   bathroom: string;
+  contactTitle: string;
+  contactName: string;
+  contactEmail: string;
+  contactType: string;
+  contactMessage: string;
+  contactSend: string;
+  bugReport: string;
+  suggestion: string;
+  other: string;
+  contactSuccessTitle: string;
+  contactSuccessDesc: string;
+  contactErrorTitle: string;
+  contactErrorDesc: string;
 }
 
 const translations: Record<Language, Translations> = {
@@ -865,6 +878,19 @@ const translations: Record<Language, Translations> = {
     livingRoom: 'Salon',
     kitchen: 'Mutfak',
     bathroom: 'Banyo',
+    contactTitle: 'İletişim / Hata Raporu',
+    contactName: 'Adınız',
+    contactEmail: 'E-posta Adresiniz',
+    contactType: 'Konu',
+    contactMessage: 'Mesajınız',
+    contactSend: 'Gönder',
+    bugReport: 'Böcek / Hata Raporu',
+    suggestion: 'Öneri / İstek',
+    other: 'Diğer',
+    contactSuccessTitle: 'Mesaj Gönderildi',
+    contactSuccessDesc: 'Geri bildiriminiz için teşekkürler! Google Sheets üzerine kaydedildi.',
+    contactErrorTitle: 'Gönderilemedi',
+    contactErrorDesc: 'Bir ağ hatası oluştu. Lütfen sonra tekrar deneyin.',
   },
   en: {
     title: 'Network Simulator 2026',
@@ -1278,7 +1304,20 @@ const translations: Record<Language, Translations> = {
     livingRoom: 'Living Room',
     kitchen: 'Kitchen',
     bathroom: 'Bathroom',
-  }
+    contactTitle: 'Contact / Bug Report',
+    contactName: 'Your Name',
+    contactEmail: 'Your Email',
+    contactType: 'Topic',
+    contactMessage: 'Your Message',
+    contactSend: 'Send Now',
+    bugReport: 'Bug Report',
+    suggestion: 'Suggestion / Request',
+    other: 'Other',
+    contactSuccessTitle: 'Message Sent',
+    contactSuccessDesc: 'Thank you for your feedback! It has been saved to Google Sheets.',
+    contactErrorTitle: 'Send Failed',
+    contactErrorDesc: 'A network error occurred. Please try again later.',
+  },
 };
 
 interface LanguageContextType {
