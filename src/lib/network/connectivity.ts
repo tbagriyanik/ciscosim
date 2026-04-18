@@ -206,17 +206,15 @@ function simulateDnsLookup(hostname: string): string | null {
 
   // Known domain mappings (simulated DNS records)
   const knownDomains: Record<string, string> = {
-    'google.com': '142.250.185.78',
-    'github.com': '140.82.112.4',
-    'microsoft.com': '20.112.52.29',
-    'amazon.com': '52.94.236.248',
-    'facebook.com': '157.240.229.35',
-    'twitter.com': '104.244.42.1',
-    'linkedin.com': '108.174.10.10',
-    'youtube.com': '142.250.185.14',
-    'instagram.com': '157.240.229.174',
-    'wikipedia.org': '208.80.154.224',
-    'stackoverflow.com': '151.101.1.69',
+    'portal.local': '192.0.2.10',
+    'docs.local': '192.0.2.20',
+    'search.local': '192.0.2.30',
+    'mail.local': '192.0.2.40',
+    'files.local': '192.0.2.50',
+    'video.local': '192.0.2.60',
+    'social.local': '192.0.2.70',
+    'wiki.local': '192.0.2.80',
+    'forum.local': '192.0.2.90',
     'a10.com': '52.8.34.123', // Added for the specific case
   };
 

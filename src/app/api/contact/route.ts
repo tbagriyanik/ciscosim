@@ -5,10 +5,10 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { name, email, type, message, timestamp, userAgent } = body;
 
-    // The Google Apps Script Web App URL should be set in environment variables
-    const GOOGLE_SHEETS_URL = process.env.GOOGLE_SHEETS_CONTACT_URL;
+    // The external contact submission endpoint should be set in environment variables
+    const CONTACT_SUBMISSION_URL = process.env.GOOGLE_SHEETS_CONTACT_URL;
 
-    if (!GOOGLE_SHEETS_URL) {
+    if (!CONTACT_SUBMISSION_URL) {
       console.warn('GOOGLE_SHEETS_CONTACT_URL is not set. Message logged to console instead.');
       console.log('Contact Form Submission:', { name, email, type, message, timestamp, userAgent });
       
@@ -17,8 +17,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, logged: true });
     }
 
-    // Send data to Google Sheets via Google Apps Script
-    const response = await fetch(GOOGLE_SHEETS_URL, {
+    // Send data to the configured external submission endpoint
+    const response = await fetch(CONTACT_SUBMISSION_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

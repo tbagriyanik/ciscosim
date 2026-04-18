@@ -1,6 +1,6 @@
 # 🚀 Network Simulator 2026
 
-A modern and interactive web-based Network simulator designed for students and networking enthusiasts.
+A modern, interactive, browser-based network simulator for students and networking enthusiasts.
 
 ![Version](https://img.shields.io/badge/version-1.5.2-blue)
 ![Tech Stack](https://img.shields.io/badge/stack-Next.js%2016.2%20|%20React%2019%20|%20TypeScript%205.9%20|%20Tailwind%204-green)
@@ -8,7 +8,15 @@ A modern and interactive web-based Network simulator designed for students and n
 ![Commits](https://img.shields.io/badge/commits-640+-orange)
 ![Lines of Code](https://img.shields.io/badge/lines--of--code-56249-blueviolet)
 
-Network learing app [Test Address](https://network2026.vercel.app)
+Network learning app: [Test Address](https://network2026.vercel.app)
+
+## Recent Updates
+
+- DNS records now support readable chains such as `www.a10.com -> a10.com -> 192.168.1.10`.
+- DNS record lists show record types clearly: `A Record` and `CNAME Record` with TR/EN localization.
+- The Help modal tabs and PC Services tabs now use a unified Tab-style layout.
+- The IoT panel includes a short `Internet of Things` description for clearer onboarding.
+- Example projects were cleaned up so PC devices keep only their real ports instead of switch-like port dumps.
 
 ## ✨ Key Features
 
@@ -176,7 +184,7 @@ The simulator supports **100+ commands** across multiple configuration modes. Fo
 ### ⚡ Advanced Features
 - **Bulk Power Control**: Bulk power on/off for selected devices
 - **Multi-Selection 2.0**: Improved selection logic with rubber-band and Shift+Click support
-- **DNS/HTTP System**: Enhanced web simulation with domain name resolution
+- **DNS/HTTP System**: Enhanced web simulation with domain name resolution and CNAME-style alias chains
 - **Keyboard Shortcuts**: Ctrl+Z (Undo), Ctrl+Y (Redo), Ctrl+A (Select All), etc.
 - **Dark/Light Mode**: Dark and light theme support with system preference detection
 - **Turkish/English**: Full localization support with dynamic switching
@@ -259,7 +267,7 @@ For detailed installation instructions, read [INSTALL.md](INSTALL.md).
 
 ## 📚 Documentation
 
-Detailed documentation can be found in the `kiro/` and `docs/` folders:
+Detailed documentation lives in the `kiro/` and `docs/` folders:
 
 - **Performance**: [Optimization Guide](kiro/PERFORMANCE_OPTIMIZATION_GUIDE.md) | [Validation Report](kiro/PERFORMANCE_VALIDATION_REPORT.md)
 - **Accessibility**: [Implementation Guide](src/lib/accessibility/ACCESSIBILITY_GUIDE.md)

@@ -200,12 +200,12 @@ function cmdSsh(state: any, input: string, ctx: any): any {
     if (!ipRegex.test(host)) {
         const knownDomains: Record<string, string> = {
             'a10.com': '52.8.34.123',
-            'google.com': '142.250.185.78',
-            'github.com': '140.82.112.4',
-            'microsoft.com': '20.112.52.29',
-            'amazon.com': '52.94.236.248',
-            'facebook.com': '157.240.229.35',
-            'twitter.com': '104.244.42.1',
+            'portal.local': '192.0.2.10',
+            'docs.local': '192.0.2.20',
+            'search.local': '192.0.2.30',
+            'mail.local': '192.0.2.40',
+            'files.local': '192.0.2.50',
+            'social.local': '192.0.2.70',
         };
         resolvedIp = knownDomains[host.toLowerCase()] || host;
     }
@@ -567,12 +567,12 @@ function cmdTraceroute(state: any, input: string, ctx: any): any {
                 // For external domains, we'll simulate the IP
                 const knownDomains: Record<string, string> = {
                     'a10.com': '52.8.34.123',
-                    'google.com': '142.250.185.78',
-                    'github.com': '140.82.112.4',
-                    'microsoft.com': '20.112.52.29',
-                    'amazon.com': '52.94.236.248',
-                    'facebook.com': '157.240.229.35',
-                    'twitter.com': '104.244.42.1',
+                    'portal.local': '192.0.2.10',
+                    'docs.local': '192.0.2.20',
+                    'search.local': '192.0.2.30',
+                    'mail.local': '192.0.2.40',
+                    'files.local': '192.0.2.50',
+                    'social.local': '192.0.2.70',
                 };
                 resolvedIp = knownDomains[host.toLowerCase()] || 'Unknown';
             }
@@ -605,12 +605,12 @@ function cmdTraceroute(state: any, input: string, ctx: any): any {
             if (!ipRegex.test(host)) {
                 const knownDomains: Record<string, string> = {
                     'a10.com': '52.8.34.123',
-                    'google.com': '142.250.185.78',
-                    'github.com': '140.82.112.4',
-                    'microsoft.com': '20.112.52.29',
-                    'amazon.com': '52.94.236.248',
-                    'facebook.com': '157.240.229.35',
-                    'twitter.com': '104.244.42.1',
+                    'portal.local': '192.0.2.10',
+                    'docs.local': '192.0.2.20',
+                    'search.local': '192.0.2.30',
+                    'mail.local': '192.0.2.40',
+                    'files.local': '192.0.2.50',
+                    'social.local': '192.0.2.70',
                 };
                 resolvedIp = knownDomains[host.toLowerCase()] || 'Unknown';
             }
@@ -659,12 +659,12 @@ function cmdTracert(state: any, input: string, ctx: any): any {
                 // For external domains, we'll simulate the IP
                 const knownDomains: Record<string, string> = {
                     'a10.com': '52.8.34.123',
-                    'google.com': '142.250.185.78',
-                    'github.com': '140.82.112.4',
-                    'microsoft.com': '20.112.52.29',
-                    'amazon.com': '52.94.236.248',
-                    'facebook.com': '157.240.229.35',
-                    'twitter.com': '104.244.42.1',
+                    'portal.local': '192.0.2.10',
+                    'docs.local': '192.0.2.20',
+                    'search.local': '192.0.2.30',
+                    'mail.local': '192.0.2.40',
+                    'files.local': '192.0.2.50',
+                    'social.local': '192.0.2.70',
                 };
                 resolvedIp = knownDomains[host.toLowerCase()] || 'Unknown';
             }
@@ -700,12 +700,12 @@ function cmdTracert(state: any, input: string, ctx: any): any {
             if (!ipRegex.test(host)) {
                 const knownDomains: Record<string, string> = {
                     'a10.com': '52.8.34.123',
-                    'google.com': '142.250.185.78',
-                    'github.com': '140.82.112.4',
-                    'microsoft.com': '20.112.52.29',
-                    'amazon.com': '52.94.236.248',
-                    'facebook.com': '157.240.229.35',
-                    'twitter.com': '104.244.42.1',
+                    'portal.local': '192.0.2.10',
+                    'docs.local': '192.0.2.20',
+                    'search.local': '192.0.2.30',
+                    'mail.local': '192.0.2.40',
+                    'files.local': '192.0.2.50',
+                    'social.local': '192.0.2.70',
                 };
                 resolvedIp = knownDomains[host.toLowerCase()] || 'Unknown';
             }
