@@ -100,6 +100,17 @@ export function AboutModal({ isOpen, onClose, onStartTour }: AboutModalProps) {
     })).filter(cat => cat.cmds.length > 0);
   }, [searchQuery, helpCategories]);
 
+  const tabButtonClass = (tab: TabType) => cn(
+    'relative inline-flex items-center gap-2 rounded-t-xl border border-b-0 px-4 py-2 text-sm font-semibold transition-all',
+    activeTab === tab
+      ? isDark
+        ? 'bg-slate-900 text-white border-slate-700 shadow-sm'
+        : 'bg-white text-slate-900 border-slate-200 shadow-sm'
+      : isDark
+        ? 'bg-slate-950/40 text-slate-400 border-transparent hover:text-slate-200 hover:bg-slate-900/60'
+        : 'bg-slate-100 text-slate-500 border-transparent hover:text-slate-700 hover:bg-slate-50'
+  );
+
   // Auto-expand categories when searching
   useEffect(() => {
     if (searchQuery.trim()) {
@@ -118,51 +129,24 @@ export function AboutModal({ isOpen, onClose, onStartTour }: AboutModalProps) {
           <DialogTitle className="sr-only">
             {activeTab === 'about' ? t.aboutTitle : t.commandReference}
           </DialogTitle>
-          <div className="flex items-center gap-2 mb-2">
+          <div className={cn('flex items-end gap-2 mb-2 border-b', isDark ? 'border-slate-800' : 'border-slate-200')}>
             <button
               onClick={() => setActiveTab('help')}
-              className={cn(
-                'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors',
-                activeTab === 'help'
-                  ? isDark
-                    ? 'bg-emerald-500/20 text-emerald-400'
-                    : 'bg-emerald-100 text-emerald-700'
-                  : isDark
-                    ? 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
-                    : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100'
-              )}
+              className={tabButtonClass('help')}
             >
               <Terminal className="w-4 h-4" />
               {t.commandReference}
             </button>
             <button
               onClick={() => setActiveTab('about')}
-              className={cn(
-                'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors',
-                activeTab === 'about'
-                  ? isDark
-                    ? 'bg-cyan-500/20 text-cyan-400'
-                    : 'bg-cyan-100 text-cyan-700'
-                  : isDark
-                    ? 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
-                    : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100'
-              )}
+              className={tabButtonClass('about')}
             >
               <Info className="w-4 h-4" />
               {t.aboutTitle}
             </button>
             <button
               onClick={() => setActiveTab('contact')}
-              className={cn(
-                'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors',
-                activeTab === 'contact'
-                  ? isDark
-                    ? 'bg-amber-500/20 text-amber-400'
-                    : 'bg-amber-100 text-amber-700'
-                  : isDark
-                    ? 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
-                    : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100'
-              )}
+              className={tabButtonClass('contact')}
             >
               <Mail className="w-4 h-4" />
               {t.contactTitle}
@@ -285,7 +269,7 @@ export function AboutModal({ isOpen, onClose, onStartTour }: AboutModalProps) {
                     </Button>
                   </div>
                 ) : (
-                  <form onSubmit={handleContactSubmit} className="space-y-4">
+                  <form id="contact-form" onSubmit={handleContactSubmit} className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-1.5">
                         <label className="text-xs font-bold opacity-50 px-1">{t.contactName}</label>
@@ -360,23 +344,6 @@ export function AboutModal({ isOpen, onClose, onStartTour }: AboutModalProps) {
                       <p className="text-xs text-red-500 font-bold px-1">{t.contactErrorDesc}</p>
                     )}
 
-                    <Button
-                      type="submit"
-                      disabled={isSubmitting}
-                      className={cn("w-full py-6 rounded-xl transition-all", isDark ? "bg-amber-600 hover:bg-amber-700" : "bg-amber-600 hover:bg-amber-700")}
-                    >
-                      {isSubmitting ? (
-                        <>
-                          <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                          {t.sending}
-                        </>
-                      ) : (
-                        <>
-                          <Mail className="w-4 h-4 mr-2" />
-                          {t.contactSend}
-                        </>
-                      )}
-                    </Button>
                   </form>
                 )}
               </div>
@@ -426,6 +393,26 @@ export function AboutModal({ isOpen, onClose, onStartTour }: AboutModalProps) {
         </div>
 
         <div className="flex justify-end p-6 pt-2 shrink-0 gap-2">
+          {activeTab === 'contact' && submitStatus !== 'success' && (
+            <Button
+              type="submit"
+              form="contact-form"
+              disabled={isSubmitting}
+              className={cn("gap-2", isDark ? "bg-amber-600 hover:bg-amber-700" : "bg-amber-600 hover:bg-amber-700")}
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  {t.sending}
+                </>
+              ) : (
+                <>
+                  <Mail className="w-4 h-4" />
+                  {t.contactSend}
+                </>
+              )}
+            </Button>
+          )}
           <Button
             variant="outline"
             onClick={onStartTour}

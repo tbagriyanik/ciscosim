@@ -16,8 +16,11 @@ DNS servisi, alan adlarını IP adreslerine çözümlemek için kullanılır.
 ### DNS Kaydı Örneği
 
 ```
-Domain: webserver.local
-Address: 192.168.1.100
+Domain: a10.com
+Address: 192.168.1.10
+
+Domain: www.a10.com
+Address: a10.com
 ```
 
 ### DNS Kullanımı
@@ -129,13 +132,14 @@ http example.com
 2. **PC-2**'yi DNS sunucusu olarak yapılandırın:
    - IP: `192.168.1.10`
    - DNS Servisi: Etkin
-   - DNS Kaydı: `web.local → 192.168.1.100`
+   - DNS Kaydı: `a10.com → 192.168.1.10`
+   - DNS Kaydı (CNAME benzeri): `www.a10.com → a10.com`
 
 3. **PC-3**'ten erişim:
    - DNS: `192.168.1.10` olarak ayarlayın
-   - Terminal'de: `http web.local` komutunu çalıştırın
+   - Terminal'de: `http www.a10.com` ve `nslookup www.a10.com` komutlarını çalıştırın
 
-Sonuç: PC-3'te "Hoş Geldiniz! Bu test sayfası." mesajı görüntülenir.
+Sonuç: `www.a10.com`, önce `a10.com` alan adına; ardından IP adresine çözülür ve web sayfası açılır.
 
 ---
 

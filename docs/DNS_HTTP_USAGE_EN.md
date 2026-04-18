@@ -16,8 +16,11 @@ DNS service is used to resolve domain names to IP addresses.
 ### DNS Record Example
 
 ```
-Domain: webserver.local
-Address: 192.168.1.100
+Domain: a10.com
+Address: 192.168.1.10
+
+Domain: www.a10.com
+Address: a10.com
 ```
 
 ### Using DNS
@@ -129,13 +132,14 @@ http example.com
 2. Configure **PC-2** as DNS server:
    - IP: `192.168.1.10`
    - DNS Service: Enabled
-   - DNS Record: `web.local → 192.168.1.100`
+   - DNS Record: `a10.com → 192.168.1.10`
+   - DNS Record (CNAME-like): `www.a10.com → a10.com`
 
 3. Access from **PC-3**:
    - Set DNS to `192.168.1.10`
-   - Run command: `http web.local` in terminal
+   - Run commands: `http www.a10.com` and `nslookup www.a10.com` in terminal
 
-Result: "Welcome! This is a test page." message is displayed on PC-3.
+Result: `www.a10.com` resolves to `a10.com`, then to an IP address, and the web page opens.
 
 ---
 

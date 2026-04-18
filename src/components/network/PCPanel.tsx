@@ -314,7 +314,7 @@ export function PCPanel({
           } catch {
             // Invalid IP format, skip
           }
-          
+
           // Check if device is reachable via gateway
           if (/^(?:\d{1,3}\.){3}\d{1,3}$/.test(pcGateway.trim())) return true;
         }
@@ -325,7 +325,7 @@ export function PCPanel({
         }
 
         // Check if device is connected via cable to the PC or in the same network
-        if (topologyConnections.some(c => 
+        if (topologyConnections.some(c =>
           (c.sourceDeviceId === deviceId && c.targetDeviceId === device.id) ||
           (c.targetDeviceId === deviceId && c.sourceDeviceId === device.id)
         )) {
@@ -336,7 +336,7 @@ export function PCPanel({
         const connectedToSameRouter = topologyConnections.some(c => {
           const otherDeviceId = c.sourceDeviceId === deviceId ? c.targetDeviceId : c.sourceDeviceId === deviceId ? c.sourceDeviceId : null;
           if (!otherDeviceId) return false;
-          
+
           const otherDevice = topologyDevices.find(d => d.id === otherDeviceId);
           if (!otherDevice || (otherDevice.type !== 'router' && otherDevice.type !== 'switchL2' && otherDevice.type !== 'switchL3')) return false;
 
@@ -643,17 +643,17 @@ export function PCPanel({
   // Collect URL suggestions from existing IPs and predefined links
   const urlSuggestions = useMemo(() => {
     const suggestions: string[] = [];
-    
+
     // Add predefined links with http:// prefix
     suggestions.push('http://iot-panel');
-    
+
     // Add IPs from all devices in topology with http:// prefix
     topologyDevices.forEach(device => {
       if (device.ip && device.ip !== '0.0.0.0') {
         suggestions.push(`http://${device.ip}`);
       }
     });
-    
+
     // Remove duplicates
     return [...new Set(suggestions)];
   }, [topologyDevices]);
@@ -662,7 +662,7 @@ export function PCPanel({
   const filteredSuggestions = useMemo(() => {
     if (!httpAppUrl) return urlSuggestions;
     const lowerInput = httpAppUrl.toLowerCase();
-    return urlSuggestions.filter(s => 
+    return urlSuggestions.filter(s =>
       s.toLowerCase().includes(lowerInput)
     );
   }, [httpAppUrl, urlSuggestions]);
@@ -1317,11 +1317,73 @@ export function PCPanel({
     );
     if (!configuredDnsServer?.ip || !canReachTargetIp(configuredDnsServer.ip)) return null;
 
-    const record = configuredDnsServer.services?.dns?.records?.find((r) => r.domain.toLowerCase() === normalized);
-    if (!record) return null;
+    // Support CNAME-like records in PC DNS service:
+    // domain -> another domain -> ... -> final IPv4 address
+    const records = configuredDnsServer.services?.dns?.records || [];
+    const visited = new Set<string>();
+    let currentDomain = normalized;
 
-    return { address: record.address, server: configuredDnsServer };
+    for (let depth = 0; depth < 10; depth += 1) {
+      if (visited.has(currentDomain)) return null;
+      visited.add(currentDomain);
+
+      const record = records.find((r) => r.domain.toLowerCase() === currentDomain);
+      if (!record) return null;
+
+      const value = record.address.trim().toLowerCase();
+      if (!value) return null;
+      if (isValidIpv4(value)) {
+        return { address: value, server: configuredDnsServer };
+      }
+
+      currentDomain = value;
+    }
+
+    return null;
   }, [canReachTargetIp, isValidIpv4, pcDNS, topologyDevices]);
+
+  const getDnsRecordDisplay = useCallback((record: { domain: string; address: string }) => {
+    const chain: string[] = [record.domain, record.address.trim()];
+    const startAddress = record.address.trim().toLowerCase();
+    const recordType = !startAddress || isValidIpv4(startAddress)
+      ? (language === 'tr' ? 'A Kaydı (Address Record)' : 'A Record (Address Record)')
+      : (language === 'tr' ? 'CNAME Kaydı (Canonical Name Record)' : 'CNAME Record (Canonical Name Record)');
+    if (!startAddress || isValidIpv4(startAddress)) {
+      return `${recordType}: ${chain.join(' -> ')}`;
+    }
+
+    const visited = new Set<string>([record.domain.toLowerCase(), startAddress]);
+    let currentDomain = startAddress;
+
+    for (let depth = 0; depth < 10; depth += 1) {
+      const nextRecord = serviceDnsRecords.find((r) => r.domain.toLowerCase() === currentDomain);
+      if (!nextRecord) break;
+
+      const nextAddress = nextRecord.address.trim();
+      if (!nextAddress) break;
+      chain.push(nextAddress);
+
+      const normalizedNext = nextAddress.toLowerCase();
+      if (isValidIpv4(normalizedNext)) break;
+      if (visited.has(normalizedNext)) break;
+
+      visited.add(normalizedNext);
+      currentDomain = normalizedNext;
+    }
+
+    return `${recordType}: ${chain.join(' -> ')}`;
+  }, [isValidIpv4, language, serviceDnsRecords]);
+
+  const serviceTabClass = (tab: 'dns' | 'http' | 'dhcp') => cn(
+    'relative inline-flex items-center rounded-t-xl border border-b-0 px-4 py-2 text-xs font-semibold transition-all',
+    activeServiceTab === tab
+      ? isDark
+        ? 'bg-slate-900 text-white border-slate-700 shadow-sm'
+        : 'bg-white text-slate-900 border-slate-200 shadow-sm'
+      : isDark
+        ? 'bg-slate-950/40 text-slate-400 border-transparent hover:text-slate-200 hover:bg-slate-900/60'
+        : 'bg-slate-100 text-slate-500 border-transparent hover:text-slate-700 hover:bg-slate-50'
+  );
 
   const findHttpServerByTarget = useCallback((target: string) => {
     const normalizedTarget = target.trim().toLowerCase();
@@ -1411,16 +1473,16 @@ export function PCPanel({
       lookupTarget = normalizeLookupTarget(candidate);
     }
 
-  // Handle special IoT Web Panel URL
-  if (rawTarget === 'http://iot-panel' || rawTarget === 'iot-panel') {
-    // Global IoT panel always shows all devices (not filtered by router)
-    const iotPanelContent = generateIotWebPanelContent(iotDevices, language, undefined, undefined, topologyConnections);
-    setHttpAppContent(iotPanelContent);
-    setHttpAppTitle(language === 'tr' ? 'IoT Web Paneli' : 'IoT Web Panel');
-    setHttpAppDeviceId(null);
-    addLocalOutput('success', language === 'tr' ? 'IoT Web Paneli açıldı.' : 'IoT Web Panel opened.');
-    return;
-  }
+    // Handle special IoT Web Panel URL
+    if (rawTarget === 'http://iot-panel' || rawTarget === 'iot-panel') {
+      // Global IoT panel always shows all devices (not filtered by router)
+      const iotPanelContent = generateIotWebPanelContent(iotDevices, language, undefined, undefined, topologyConnections);
+      setHttpAppContent(iotPanelContent);
+      setHttpAppTitle(language === 'tr' ? 'IoT Web Paneli' : 'IoT Web Panel');
+      setHttpAppDeviceId(null);
+      addLocalOutput('success', language === 'tr' ? 'IoT Web Paneli açıldı.' : 'IoT Web Panel opened.');
+      return;
+    }
 
     // Handle special IoT Device URL
     if (rawTarget?.startsWith('iot://iot-device/')) {
@@ -2089,10 +2151,10 @@ export function PCPanel({
 
   const buildArpTableOutput = useCallback(() => {
     // Get all devices including IoT that have IP and MAC
-    const allDevices = topologyDevices.filter((d) => 
+    const allDevices = topologyDevices.filter((d) =>
       d.id !== deviceId && !!d.ip && !!d.macAddress && canReachTargetIp(d.ip)
     );
-    
+
     // Also include IoT devices that are connected to the same network
     const connectedIoTDevices = topologyDevices.filter((d) => {
       if (d.type !== 'iot') return false;
@@ -2101,11 +2163,11 @@ export function PCPanel({
       // Check if IoT is reachable (same subnet or through gateway)
       return canReachTargetIp(d.ip);
     });
-    
+
     // Combine and deduplicate
     const combinedDevices = [...allDevices, ...connectedIoTDevices];
     const uniqueDevices = Array.from(new Map(combinedDevices.map(d => [d.id, d])).values());
-    
+
     const reachableHosts = uniqueDevices.map((d) => ({
       ip: d.ip,
       mac: formatMacForArp(d.macAddress),
@@ -3951,17 +4013,12 @@ export function PCPanel({
                       style={mobileVerticalScrollStyle}
                     >
                       {/* Inner Tabs for Services */}
-                      <div className={`flex items-center gap-1 px-3 py-2 border-b ${isDark ? 'border-slate-800 bg-slate-900/40' : 'border-slate-200 bg-slate-50'}`}>
+                      <div className={`flex items-end gap-2 px-3 pt-2 border-b ${isDark ? 'border-slate-800 bg-slate-900/40' : 'border-slate-200 bg-slate-50'}`}>
                         <Button
                           variant={activeServiceTab === 'dns' ? 'secondary' : 'ghost'}
                           size="sm"
                           onClick={() => setActiveServiceTab('dns')}
-                          className={`h-8 px-3 text-xs font-medium transition-all ${activeServiceTab === 'dns'
-                            ? 'bg-purple-500/15 text-purple-600 border-purple-500/30'
-                            : serviceDnsEnabled
-                              ? 'bg-purple-500/10 text-purple-600 border border-purple-500/25 hover:bg-purple-500/15'
-                              : 'text-slate-500 hover:text-purple-500'
-                            }`}
+                          className={serviceTabClass('dns')}
                         >
                           DNS{serviceDnsEnabled ? ' (Açık)' : ''}
                         </Button>
@@ -3969,12 +4026,7 @@ export function PCPanel({
                           variant={activeServiceTab === 'http' ? 'secondary' : 'ghost'}
                           size="sm"
                           onClick={() => setActiveServiceTab('http')}
-                          className={`h-8 px-3 text-xs font-medium transition-all ${activeServiceTab === 'http'
-                            ? 'bg-emerald-500/15 text-emerald-600 border-emerald-500/30'
-                            : serviceHttpEnabled
-                              ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/25 hover:bg-emerald-500/15'
-                              : 'text-slate-500 hover:text-emerald-500'
-                            }`}
+                          className={serviceTabClass('http')}
                         >
                           HTTP{serviceHttpEnabled ? ' (Açık)' : ''}
                         </Button>
@@ -3982,12 +4034,7 @@ export function PCPanel({
                           variant={activeServiceTab === 'dhcp' ? 'secondary' : 'ghost'}
                           size="sm"
                           onClick={() => setActiveServiceTab('dhcp')}
-                          className={`h-8 px-3 text-xs font-medium transition-all ${activeServiceTab === 'dhcp'
-                            ? 'bg-sky-500/15 text-sky-600 border-sky-500/30'
-                            : serviceDhcpEnabled
-                              ? 'bg-sky-500/10 text-sky-600 border border-sky-500/25 hover:bg-sky-500/15'
-                              : 'text-slate-500 hover:text-sky-500'
-                            }`}
+                          className={serviceTabClass('dhcp')}
                         >
                           DHCP{serviceDhcpEnabled ? ' (Açık)' : ''}
                         </Button>
@@ -4071,9 +4118,7 @@ export function PCPanel({
                                 {serviceDnsRecords.map((record) => (
                                   <div key={`${record.domain}-${record.address}`} className={`flex items-center justify-between gap-3 rounded-lg px-3 py-2 ${isDark ? 'bg-slate-950 border border-slate-800' : 'bg-slate-50 border border-slate-200'}`}>
                                     <div className="text-xs font-mono">
-                                      <span>{record.domain}</span>
-                                      <span className="mx-2 opacity-30">-&gt;</span>
-                                      <span>{record.address}</span>
+                                      <span>{getDnsRecordDisplay(record)}</span>
                                     </div>
                                     <Button
                                       size="sm"
@@ -4295,9 +4340,16 @@ export function PCPanel({
                         <div className="flex items-center justify-between gap-2 text-cyan-500">
                           <div className="flex items-center gap-2">
                             <Radio className="w-5 h-5" />
-                            <h3 className="text-sm font-black tracking-widest">
-                              {language === 'tr' ? 'IoT Yönetimi' : 'IoT Management'}
-                            </h3>
+                            <div>
+                              <h3 className="text-sm font-black tracking-widest">
+                                {language === 'tr' ? 'IoT Yönetimi' : 'IoT Management'}
+                              </h3>
+                              <p className="text-[10px] font-medium tracking-normal text-cyan-500/70">
+                                {language === 'tr'
+                                  ? 'Nesneleri yönetmek için yönetim paneli'
+                                  : 'Panel for managing connected devices'}
+                              </p>
+                            </div>
                           </div>
                           <Button
                             size="sm"
@@ -5180,15 +5232,15 @@ export function PCPanel({
                         onKeyDown={(e) => {
                           e.stopPropagation();
                           const suggestions = filteredSuggestions.slice(0, 10);
-                          
+
                           if (e.key === 'ArrowDown') {
                             e.preventDefault();
-                            setSelectedSuggestionIndex(prev => 
+                            setSelectedSuggestionIndex(prev =>
                               prev < suggestions.length - 1 ? prev + 1 : prev
                             );
                           } else if (e.key === 'ArrowUp') {
                             e.preventDefault();
-                            setSelectedSuggestionIndex(prev => 
+                            setSelectedSuggestionIndex(prev =>
                               prev > 0 ? prev - 1 : -1
                             );
                           } else if (e.key === 'Enter') {
