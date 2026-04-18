@@ -351,10 +351,15 @@ export function Terminal({
   const prevFirstOutputIdRef = useRef<string | null>(null);
   const prevOutputLengthRef = useRef(0);
   const isInitializedRef = useRef(false);
+  const lastDeviceIdRef = useRef<string | null>(null);
 
   useEffect(() => {
-    // Don't clear on initial mount if we have displayedLines from initialization
-    if (!isInitializedRef.current) {
+    // Check if deviceId changed - if so, re-initialize from output
+    const deviceChanged = lastDeviceIdRef.current !== null && lastDeviceIdRef.current !== deviceId;
+    lastDeviceIdRef.current = deviceId;
+
+    // On initial mount or device change, initialize displayedLines from output if empty
+    if (!isInitializedRef.current || deviceChanged) {
       isInitializedRef.current = true;
       // If displayedLines is empty but output has content, process it
       if (displayedLines.length === 0 && output.length > 0) {
@@ -441,7 +446,7 @@ export function Terminal({
     }
 
     prevOutputLengthRef.current = output.length;
-  }, [output]);
+  }, [output, deviceId]);
 
   // Reset processed output IDs when modal opens (to re-render all output)
   useEffect(() => {
@@ -452,11 +457,8 @@ export function Terminal({
     }
   }, [output.length, displayedLines.length]);
 
-  // Clear displayed lines when switching devices
+  // Clear command queue when switching devices (displayedLines re-initialization is handled by main effect)
   useEffect(() => {
-    setDisplayedLines([]);
-    processedOutputIdsRef.current.clear();
-    prevFirstOutputIdRef.current = null;
     commandQueueRef.current = [];
     isProcessingQueueRef.current = false;
   }, [deviceId]);

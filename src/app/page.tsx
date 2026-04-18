@@ -381,6 +381,11 @@ export default function Home() {
 
   // Custom device tab setter with navigation history (for PC terminal)
   const setDeviceTabWithHistory = useCallback((tab: TabType, deviceId: string, deviceType: DeviceType) => {
+    // Ensure PC outputs are generated before showing terminal
+    if (deviceType === 'pc' && tab === 'cmd') {
+      getOrCreatePCOutputs(deviceId);
+    }
+
     if (isInternalNavRef.current) {
       isInternalNavRef.current = false;
       setActiveDeviceId(deviceId);
@@ -407,7 +412,7 @@ export default function Home() {
     setActiveDeviceId(deviceId);
     setActiveDeviceType(deviceType);
     setActiveTab(tab);
-  }, [setActiveTab, setActiveDeviceId, setActiveDeviceType]);
+  }, [setActiveTab, setActiveDeviceId, setActiveDeviceType, getOrCreatePCOutputs]);
 
   // Handle PCPanel tablet program navigation
   const handlePCPanelNavigate = useCallback((program: string) => {

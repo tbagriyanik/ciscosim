@@ -2024,7 +2024,8 @@ export function parseCommand(input: string, currentMode: CommandMode): ParsedCom
 // Komut geçerli mi kontrol et
 export function validateCommand(
   parsed: ParsedCommand,
-  currentMode: CommandMode
+  currentMode: CommandMode,
+  state?: any
 ): { valid: boolean; error?: string; matchedPattern?: string } {
 
   const input = parsed.rawInput.toLowerCase();
@@ -2050,7 +2051,7 @@ export function validateCommand(
   // Eşleşme bulunamadı
   return {
     valid: false,
-    error: getInvalidCommandError(parsed.rawInput)
+    error: getInvalidCommandError(parsed.rawInput, state)
   };
 }
 
@@ -2080,7 +2081,11 @@ Bu komut bu modda kullanılamaz. Mevcut mod: ${modeNames[currentMode]}`;
 }
 
 // Geçersiz komut hatası
-function getInvalidCommandError(input: string): string {
+function getInvalidCommandError(input: string, state?: any): string {
+  // Check if domain lookup is disabled
+  if (state?.domainLookup === false) {
+    return `% Unknown command`;
+  }
   return `Translating "${input}"...domain server (255.255.255.255)
 % Unknown command or computer name, or unable to find computer address`;
 }

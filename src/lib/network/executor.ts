@@ -764,7 +764,7 @@ export function executeCommand(
     return { success: true, output: '' };
   }
 
-  const validation = validateCommand(parsed, state.currentMode);
+  const validation = validateCommand(parsed, state.currentMode, state);
 
   if (!validation.valid) {
     return {
