@@ -203,3 +203,23 @@ When two switches are connected with two redundant links:
 3. Higher port number (e.g., Fa0/2) becomes **Alternate Port** (Blocking)
 4. Blocked port shown in **amber** with "Altn BLK" tooltip
 5. No data flow animation on the blocked link
+
+## UI/UX Refinement & Workspace Persistence (v1.5.2)
+
+This phase focuses on improving the user's workflow by making the workspace more persistent and reducing accidental actions.
+
+### 1. Panel Minimization with Persistence
+*   **State Management**: Added `isMinimized` state to `PCPanel`, `RouterPanel`, and their mini popovers in `page.tsx`.
+*   **Toggle System**: Replaced the close (X) button logic with a minimize/expand toggle using **v** (`ChevronDown`) and **^** (`ChevronUp`) icons.
+*   **Local Storage Integration**: All minimized states are saved to and loaded from `localStorage` (`pc-panel-minimized`, `router-panel-minimized`, etc.).
+*   **UI Focus**: Removed 'X' (Close) buttons from info popovers to encourage using the minimization model, ensuring device data stays accessible without cluttering the screen.
+
+### 2. Selection System Optimization
+*   **Event Handling**: Selection clearing logic on empty canvas moved from `mousedown` to `mouseup`.
+*   **Drag Awareness**: The selection is only cleared if the user performs a simple click without any movement (dragging/panning).
+*   **UI element Protection**: Added logic to prevent topology selection clearing when clicking on UI elements like menus, palettes, or dashboards.
+*   **Right-Click Stability**: Opening the context menu no longer clears the current selection group.
+
+### 3. Code Metrics Update
+*   **Total Lines of Code**: 56,249
+*   **Implementation Date**: 2026-04-18

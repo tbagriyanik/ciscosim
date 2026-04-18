@@ -2,11 +2,11 @@
 
 A modern and interactive web-based Network simulator designed for students and networking enthusiasts.
 
-![Version](https://img.shields.io/badge/version-1.5.1-blue)
+![Version](https://img.shields.io/badge/version-1.5.2-blue)
 ![Tech Stack](https://img.shields.io/badge/stack-Next.js%2016.2%20|%20React%2019%20|%20TypeScript%205.9%20|%20Tailwind%204-green)
 ![FOSS](https://img.shields.io/badge/FOSS-Free%20Open%20Source-brightgreen)
-![Commits](https://img.shields.io/badge/commits-620+-orange)
-![Lines of Code](https://img.shields.io/badge/lines--of--code-55440+-blueviolet)
+![Commits](https://img.shields.io/badge/commits-640+-orange)
+![Lines of Code](https://img.shields.io/badge/lines--of--code-56249-blueviolet)
 
 Network learing app [Test Address](https://network2026.vercel.app)
 
@@ -21,6 +21,8 @@ Network learing app [Test Address](https://network2026.vercel.app)
 - **Connection Management**: Create and manage connections between devices
 - **Visual Feedback**: Device status indicators and port labels
   - **UX Optimization**: Tooltips suppressed during active operations (panning, selecting, connecting)
+  - **NEW: Advanced Selection Logic**: Selection clearing moved to mouse-up on empty canvas, preventing accidental deselection.
+  - **Device Information Panels**: Collapsible mini-panels with persistence (minimized/maximized states saved to localStorage).
   - **Interaction Legend**: Visual guide for mouse shortcuts in the footer toolbar
   - **Task Notifications**: Context-aware success/failure alerts at the footer top-left
 - **Wireless (WiFi) Simulation**: Wireless network simulation with SSID, WPA2 security, and AP/Client modes
@@ -325,13 +327,13 @@ Theme selection is done from the theme selector in the top right corner.
 
 - Scope: `src/`
 - Source files: `175+`
-- Total lines: `54843`
+- Total lines: `56249`
 - TS/TSX files: `165+`
 - Network components: `55+`
 - Custom hooks: `22+`
 - Example projects: `22`
 - CLI commands: `150+`
-- Last updated: `2026-04-17`
+- Last updated: `2026-04-18`
 
 ## 🐛 Troubleshooting
 
@@ -353,8 +355,8 @@ Contributions are welcome. Please:
 
 ---
 
-**Sürüm**: 1.5.1
-**Son Güncelleme**: 2026-04-17
+**Sürüm**: 1.5.2
+**Son Güncelleme**: 2026-04-18
 **Durum**: Production Ready
 
 GitHub: [github.com/tbagriyanik/ciscosim](https://github.com/tbagriyanik/ciscosim)
