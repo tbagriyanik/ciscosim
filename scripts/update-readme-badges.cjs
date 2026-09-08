@@ -33,19 +33,22 @@ let readme = fs.readFileSync(README_PATH, 'utf-8');
 
 console.log(`Found ${files} source files with ${formatted} total lines in src/`);
 
-const badgeRegex = /(total--lines-)[^-\s"]+/;
+// Match total--lines-~170k-lightgrey or similar shield badge URLs
+const badgeRegex = /(total--lines-)[^-\s")]+/;
 if (badgeRegex.test(readme)) {
   readme = readme.replace(badgeRegex, `$1~${Math.round(total / 1000)}k`);
 }
 
-const tableRegex = /(Total Lines \(`src\/`\)[^|]*\|\s*)[^|\r\n]+(?=\s*\|)/;
+// Match Total Lines in Markdown Table: | Total Lines / Toplam Satır (`src/`) | ~170,067 |
+const tableRegex = /(\|\s*Total Lines[^|]*\|\s*)[^|\r\n]+(?=\|)/i;
 if (tableRegex.test(readme)) {
-  readme = readme.replace(tableRegex, `$1~${formatted}`);
+  readme = readme.replace(tableRegex, `$1~${formatted} `);
 }
 
-const sourceFilesRegex = /(Source Files[^|]*\|\s*)[^|\r\n]+(?=\s*\|)/;
+// Match Source Files in Markdown Table: | Source Files / Kaynak Dosya | 729 |
+const sourceFilesRegex = /(\|\s*Source Files[^|]*\|\s*)[^|\r\n]+(?=\|)/i;
 if (sourceFilesRegex.test(readme)) {
-  readme = readme.replace(sourceFilesRegex, `$1${files}`);
+  readme = readme.replace(sourceFilesRegex, `$1${files} `);
 }
 
 fs.writeFileSync(README_PATH, readme, 'utf-8');
