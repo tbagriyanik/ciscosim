@@ -294,17 +294,33 @@ function resolveByCommandTree(input: string, currentMode: CommandMode, capabilit
 
   for (let i = 0; i < tokens.length; i++) {
     const token = tokens[i];
-    const next: CommandTreeNode[] = [];
+    const matchedChildren: Array<{ keyword: string; child: CommandTreeNode }> = [];
     for (const node of frontier) {
       for (const [keyword, child] of node.children.entries()) {
-        if (keyword.startsWith(token)) next.push(child);
+        if (keyword.startsWith(token)) matchedChildren.push({ keyword, child });
       }
     }
-    if (next.length === 0) {
+    if (matchedChildren.length === 0) {
       failedTokenIndex = i;
       break;
     }
-    frontier = next;
+    const uniqueKeywords = Array.from(new Set(matchedChildren.map(m => m.keyword)));
+
+    // The typed token matches multiple distinct keywords but is not itself a
+    // full keyword — Cisco reports this as an ambiguous command ("co" could be
+    // configure / copy / connect). An exact full keyword wins over prefixes.
+    if (i === tokens.length - 1 && uniqueKeywords.length > 1 && !uniqueKeywords.includes(token)) {
+      return { kind: 'ambiguous', candidates: uniqueKeywords.slice(0, 8), failedTokenIndex: i };
+    }
+
+    // Advance: collapse to exact-match children when the token is a full
+    // keyword, otherwise keep all prefix-matched branches so a later token
+    // can still resolve the ambiguity (e.g. "sh ip" -> show ip).
+    if (uniqueKeywords.includes(token)) {
+      frontier = matchedChildren.filter(m => m.keyword === token).map(m => m.child);
+    } else {
+      frontier = matchedChildren.map(m => m.child);
+    }
   }
 
   if (failedTokenIndex !== -1) {
@@ -313,15 +329,15 @@ function resolveByCommandTree(input: string, currentMode: CommandMode, capabilit
 
   const terminal = frontier.flatMap(n => n.terminalPatterns);
   const hasChildren = frontier.some(n => n.children.size > 0);
+  const uniqueTerminal = Array.from(new Set(terminal));
 
-  if (terminal.length === 0 && hasChildren) {
-    const nextKeywords = Array.from(new Set(frontier.flatMap(n => Array.from(n.children.keys())))).slice(0, 8);
-    return { kind: 'incomplete', candidates: nextKeywords };
+  if (uniqueTerminal.length > 1) {
+    return { kind: 'ambiguous', candidates: uniqueTerminal.slice(0, 8), failedTokenIndex: tokens.length - 1 };
   }
 
-  if (terminal.length > 1) {
-    const unique = Array.from(new Set(terminal)).slice(0, 8);
-    return { kind: 'ambiguous', candidates: unique };
+  if (uniqueTerminal.length === 0 && hasChildren) {
+    const nextKeywords = Array.from(new Set(frontier.flatMap(n => Array.from(n.children.keys())))).slice(0, 8);
+    return { kind: 'incomplete', candidates: nextKeywords };
   }
 
   return { kind: 'ok' };
@@ -394,8 +410,10 @@ export function validateCommand(
 
   const treeResolution = resolveByCommandTree(resolvedInput, currentMode, capabilities);
   if (treeResolution.kind === 'ambiguous') {
-    const token = resolvedInput.trim().split(/\s+/)[0] || resolvedInput;
-    return { valid: false, reason: 'ambiguous', error: `% Ambiguous command: "${token}"` };
+    // Point at the token that is actually ambiguous (may not be the first one).
+    const ambiguousTokens = resolvedInput.trim().split(/\s+/);
+    const ambiguousToken = ambiguousTokens[treeResolution.failedTokenIndex ?? ambiguousTokens.length - 1] || resolvedInput;
+    return { valid: false, reason: 'ambiguous', error: `% Ambiguous command:  "${ambiguousToken}"` };
   }
   if (treeResolution.kind === 'incomplete') {
     return { valid: false, reason: 'incomplete', error: IOS_ERRORS.incomplete };

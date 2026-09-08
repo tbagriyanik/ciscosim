@@ -194,7 +194,7 @@ function resolveEgress(
       routeDecision = 'L2 Broadcast/Multicast — Flooding frame to all active ports';
     } else {
       const match = state.macAddressTable?.find(m => m.mac.toLowerCase() === frame.dstMac?.toLowerCase());
-      if (match?.port && match.port !== frame.ingressPortId) {
+      if (match?.port && match.port !== frame.ingressPortId && !state.ports?.[match.port]?.shutdown) {
         egressPorts.push(match.port);
         routeDecision = `L2 Unicast match: MAC ${frame.dstMac} learned on port ${match.port} (VLAN ${match.vlan})`;
         const conn = connectionIndex.byPort.get(`${device.id}:${match.port}`);
@@ -232,7 +232,7 @@ function resolveEgress(
     }
   } else if (device.type === 'cloud') {
     (device.ports || []).forEach(p => {
-      if (p.id !== frame.ingressPortId && p.status === 'connected') {
+      if (p.id !== frame.ingressPortId && !p.shutdown && p.status === 'connected') {
         egressPorts.push(p.id);
       }
     });
@@ -411,6 +411,9 @@ export function runHopPipeline(
 
   for (const egressPortId of egressPorts) {
     const egressPort: Port | undefined = state?.ports?.[egressPortId];
+    if (egressPort?.shutdown) {
+      return drop('egress', formatDropReason(DropReasonCode.L1_PORT_SHUTDOWN, `egress port ${egressPortId} is administratively down`));
+    }
     if (egressPort) updatePortStats(egressPort, 'tx', frame.length || 64);
 
     const conn = connectionIndex.byPort.get(`${device.id}:${egressPortId}`);
@@ -465,7 +468,8 @@ export function runFullPacketPipeline(
 
   const connectionIndex = buildConnectionIndex(connections);
 
-  const visitedDeviceIds = new Set<string>();
+  const visitedRouteKeys = new Map<string, number>();
+  const visitOrder: string[] = [];
 
   while (hopIndex < maxHops) {
     const device = deviceMap.get(currentDeviceId);
@@ -481,25 +485,34 @@ export function runFullPacketPipeline(
       };
     }
 
-    // Routing loop detection check (if we revisit an L3 device)
+    // Routing loop detection check. Key by destination so a device legitimately
+    // traversed twice for different flows is not flagged as a loop. Reaching the
+    // same (device, destination) twice means the packet is cycling.
     const isL3 = device.type === 'router' || device.type === 'firewall' || device.type === 'switchL3';
-    if (isL3 && visitedDeviceIds.has(currentDeviceId)) {
-      const loopReason = formatDropReason(DropReasonCode.MAX_HOPS_EXCEEDED, `%ROUTING-3-LOOP_DETECTED: Routing loop detected at ${device.name}`);
-      if (state) {
-        if (!state.eventLogs) state.eventLogs = [];
-        state.eventLogs.push(`%ROUTING-3-LOOP_DETECTED: Packet loop detected on device ${device.name}`);
-      }
-      return {
-        success: false,
-        hopResults,
-        allTraces,
-        capturedOnLinks,
-        dropReason: loopReason,
-        finalFrame: currentFrame
-      };
-    }
     if (isL3) {
-      visitedDeviceIds.add(currentDeviceId);
+      const dstKey = currentFrame.dstIp || currentFrame.dstMac || 'unknown';
+      const routeKey = `${currentDeviceId}:${dstKey}`;
+      visitOrder.push(device.name);
+      if (visitedRouteKeys.has(routeKey)) {
+        const firstVisit = visitedRouteKeys.get(routeKey)!;
+        const loopPath = firstVisit >= 0 ? visitOrder.slice(firstVisit).join(' \u2192 ') : visitOrder.join(' \u2192 ');
+        const loopReason = formatDropReason(DropReasonCode.ROUTING_LOOP_DETECTED, `%ROUTING-3-LOOP_DETECTED: Routing loop detected: ${loopPath}`);
+        if (state) {
+          if (!state.eventLogs) state.eventLogs = [];
+          state.eventLogs.push(`%ROUTING-3-LOOP_DETECTED: Packet loop detected on device ${device.name} (${loopPath})`);
+        }
+        const reportingIp = state?.ports ? Object.values(state.ports).find(p => p.ipAddress)?.ipAddress : undefined;
+        const icmpErr = generateIcmpUnreachable(currentFrame, 'time-exceeded', loopReason, 0, reportingIp || '127.0.0.1');
+        return {
+          success: false,
+          hopResults,
+          allTraces,
+          capturedOnLinks,
+          dropReason: loopReason,
+          finalFrame: icmpErr
+        };
+      }
+      visitedRouteKeys.set(routeKey, visitOrder.length - 1);
     }
 
     const hopResult = runHopPipeline(hopIndex, currentFrame, device, state, devices, connections, now);

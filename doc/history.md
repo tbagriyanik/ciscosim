@@ -4,15 +4,29 @@ Yeniden eskiye, tarih mevcuttur.
 
 ## v4.8.0 — 2026-09-08
 
-**Modüler Mimari, Kod Temizliği & Satır Sınırı İyileştirmeleri, O(1) Yol Komşuluk İndeksi, Mobil Dokunmatik Titreşim (Haptic) ve SVG Hassasiyeti** —
+**Cisco CLI İyileştirmeleri, Canlı Arayüz Sayaçları, Ağ Teşhis Detektörleri, STP/OSPF/EIGRP/NAT Motor Güncellemeleri ve Network Health Check** —
+- **🎯 Cisco CLI Hata Formatlama & İmleç Konumlandırması**: `% Ambiguous command: "<token>"`, `% Incomplete command.` ve `% Invalid input detected at '^' marker.` hassas imleç konum gösterimi uygulandı (`parser.ts`, `iosErrors.ts`).
+- **📊 Canlı `show interfaces` Sayaç Eşlemesi**: Arayüz paket/bayt geçişleri (`inputPackets`, `outputPackets`, `inputBytes`, `outputBytes`, `inputErrors`, `drops`) canlı veri yapısına bağlandı (`showInterfaceDisplay.ts`).
+- **📍 Tek Satır Drop Nedeni Raporlaması**: Ping ve paket izleme başarısızlıklarında düşme gerekçesi tek satırda (`Drop Reason: Inbound ACL Denied...`) raporlanıyor (`privilegedConnectivity.ts`).
+- **🗺️ Detaylı `show ip route` Formatı**: Rotalar Administrative Distance (AD), Metric, Next-Hop IP ve çıkış arayüzü bilgisiyle (`[110/2] via 10.0.0.2, GigabitEthernet0/1`) gösteriliyor (`showRoutingDisplay.ts`).
+- **⏳ Otomatik ARP / MAC / NAT Session Aging**: Zaman tabanlı yaşlanma motoru ile pasif ARP, MAC ve dinamik NAT/PAT oturumları otomatik temizleniyor ve syslog olayları üretiliyor (`agingEngine.ts`, `arp.ts`).
+- **🔍 Otomatik Ağ Teşhis Detektörleri (`vlanDiagnostics.ts`)**:
+  - **Native & Trunk VLAN Mismatch**: Native VLAN uyumsuzluğu (`%CDP-4-NATIVE_VLAN_MISMATCH`), allowed ve access VLAN farkı tespiti.
+  - **Duplicate IP & MAC Detektörü**: Çakışan IP (`%IP-4-DUPARP`) ve MAC adreslerinin (`%MAC-4-DUPLICATE`) tespiti.
+  - **Orphan Port & Bağlantısız Cihaz Detektörü**: İzole cihazlar ve konfigüre edilip kablo takılmamış boş portların tespiti.
+- **🔄 Routing Loop Detektörü & Hop-by-Hop TTL**: Katman-3 yönlendirme döngülerinin tespiti (`%ROUTING-3-LOOP_DETECTED`) ve router geçişlerinde TTL'nin hop hop eksiltilmesi (`packetPipeline.ts`).
+- **🛡️ ACL Hit Counters Eşleşmesi**: Paket geçişlerinde ilgili ACL kuralının sayaçları artırılarak `show access-lists` çıktısında `(X matches)` şeklinde gösteriliyor (`acl.ts`, `showCommands.ts`).
+- **🌳 STP Topology Change Events**: STP port durum ve köprü değişimlerinde `%STP-6-TOPOTRAP: Topology change detected` olay kaydı üretiliyor (`stp.ts`).
+- **⚡ Arayüz Shutdown / No Shutdown Otomatik Recalculation**: Port açılıp kapandığında STP (`getPvstUpdate`) ve yönlendirme durumları anında yeniden hesaplanıyor (`cmd.interface.ts`).
+- **🔗 Dinamik EtherChannel Bundle Güncellemesi**: Kapanan üye portlar bundle paketinden düşürülüp `Port-channel` durumu dinamik güncelleniyor (`etherchannel.ts`).
+- **📜 OSPF & EIGRP Komşuluk İyileştirmeleri**: OSPF komşuluk durum geçişleri (Down -> Full) `%OSPF-5-ADJCHG` olarak timeline'a ekleniyor; EIGRP hold-time zaman aşımı ve birim testleri tamamlandı (`eventPipeline.ts`, `eigrp-dual.test.ts`).
+- **🏥 Tek Komutla Network Health Check (`show network health`)**: Tüm VLAN, IP/MAC, bağlantı ve STP sorunlarını özetleyen `show network health` (ve `show health`) CLI komutu eklendi (`showCommands.ts`, `showPatterns.ts`).
 - **🧩 Modüler Kod Ayrıştırma (Satır Sınırı Optimizasyonları)**:
-  - `showCommands.ts` içerisindeki sistem/saat/flash komutları [`showSystemDisplay.ts`](file:///f:/NetworkSimulator/src/lib/network/core/showSystemDisplay.ts) dosyasına ayrıştırıldı (1412 satırdan 1027 satıra düşürüldü).
-  - `globalConfigCommands.ts` içerisindeki parola, banner ve kullanıcı güvenlik işleyicileri [`globalConfigSecurityCommands.ts`](file:///f:/NetworkSimulator/src/lib/network/core/globalConfigSecurityCommands.ts) dosyasına taşındı (1471 satırdan 1257 satıra düşürüldü).
-  - `usePCPanelCommands.ts` içerisindeki FTP sunucu/istemci oturum yönetimi ve dosya aktarım mantığı bağımsız [`usePCPanelFtpCommands.ts`](file:///f:/NetworkSimulator/src/components/network/pc-panel/usePCPanelFtpCommands.ts) hook'una bölündü.
-  - Tuval üzerindeki sürükleme hesaplamaları [`useTopologyCanvasDrag.ts`](file:///f:/NetworkSimulator/src/components/network/hooks/useTopologyCanvasDrag.ts) özel hook'una taşındı.
-- **⚡ O(1) Yol Çözümleme İndeksi (`pathResolutionCache.ts`)**: Paket simülasyonu ve yönlendirme adımlarında sıklıkla çalıştırılan dizisel tarama $O(N)$ yerine $O(1)$ sürede cihaz komşuluklarını ve port durumlarını veren `buildDeviceAdjacencyMap` komşuluk indeksi eklendi.
-- **📱 Mobil Touch UX ve Haptic Feedback**: `triggerHapticFeedback` ile mobil dokunmatik butonlarda ve silme eylemlerinde titreşim desteği eklendi. IP/Ağ geçidi alanlarına `inputMode="decimal"` ve klavye optimizasyonları uygulandı.
-- **♿ Erişilebilirlik (A11y) & SVG Hassasiyeti**: Izgara ve çizim katmanlarında SVG `shapeRendering="geometricPrecision"` ve `crispEdges` tanımlandı.
+  - `showCommands.ts` içerisindeki sistem/saat/flash komutları [`showSystemDisplay.ts`](file:///f:/NetworkSimulator/src/lib/network/core/showSystemDisplay.ts) dosyasına ayrıştırıldı.
+  - `globalConfigCommands.ts` içerisindeki parola, banner ve kullanıcı güvenlik işleyicileri [`globalConfigSecurityCommands.ts`](file:///f:/NetworkSimulator/src/lib/network/core/globalConfigSecurityCommands.ts) dosyasına taşındı.
+  - `usePCPanelCommands.ts` içerisindeki FTP oturum yönetimi [`usePCPanelFtpCommands.ts`](file:///f:/NetworkSimulator/src/components/network/pc-panel/usePCPanelFtpCommands.ts) hook'una bölündü.
+- **⚡ O(1) Yol Çözümleme İndeksi (`pathResolutionCache.ts`)**: $O(1)$ sürede cihaz komşuluklarını ve port durumlarını veren `buildDeviceAdjacencyMap` komşuluk indeksi eklendi.
+- **📱 Mobil Touch UX ve Haptic Feedback**: `triggerHapticFeedback` ile mobil titreşim desteği ve A11y SVG hassasiyeti uygulandı.
 
 ## v4.7.0 — 2026-09-07
 

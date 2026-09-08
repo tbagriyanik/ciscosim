@@ -34,6 +34,7 @@ export enum DropReasonCode {
 
   // System
   MAX_HOPS_EXCEEDED = 'MAX_HOPS_EXCEEDED',
+  ROUTING_LOOP_DETECTED = 'ROUTING_LOOP_DETECTED',
   DEVICE_NOT_FOUND = 'DEVICE_NOT_FOUND',
 }
 
@@ -157,6 +158,13 @@ export const DROP_REASON_REGISTRY: Record<DropReasonCode, DropReasonDetail> = {
     title: 'Routing Loop / Max Hops Exceeded',
     description: 'Packet exceeded maximum hop count limit in simulation',
     suggestedFix: 'Check routing protocol metrics and static route next-hops for loops',
+  },
+  [DropReasonCode.ROUTING_LOOP_DETECTED]: {
+    code: DropReasonCode.ROUTING_LOOP_DETECTED,
+    category: 'CONTROL_PLANE',
+    title: 'Routing Loop Detected',
+    description: 'Packet revisited the same device/destination while routing, indicating a routing loop',
+    suggestedFix: 'Remove conflicting static routes or fix redistribute rules that create circular next-hops',
   },
   [DropReasonCode.DEVICE_NOT_FOUND]: {
     code: DropReasonCode.DEVICE_NOT_FOUND,

@@ -466,6 +466,14 @@ export function useRefreshNetwork({
         // identities creates false collision reports (especially in WLC/AP
         // examples). Device-level MAC addresses are the authoritative values
         // for this topology-wide diagnostic.
+        const devState = deviceStates.get(device.id);
+        if (devState?.ports) {
+          Object.values(devState.ports).forEach((port) => {
+            if (port.ipAddress && !port.shutdown) {
+              rememberIdentity(`${deviceName}:${port.id}`, port.ipAddress);
+            }
+          });
+        }
       });
       // A device-level address and that same device's interface address are
       // one identity, not a conflict. Only report duplicates across devices.

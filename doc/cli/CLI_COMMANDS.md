@@ -127,13 +127,14 @@ The simulator supports **400+ commands** across multiple configuration modes.
 | `terminal width <n>` | Set terminal width |
 | `terminal monitor` | Enable terminal monitoring |
 | `terminal no monitor` | ⚠️ Stub - Disable terminal monitoring |
-| `clear arp-cache` | Clear ARP cache |
-| `clear mac address-table` | Clear MAC address table |
-| `clear counters` | Clear interface counters |
+| `clear arp-cache` / `clear arp` | Clear dynamic ARP table entries and trigger state reset |
+| `clear mac address-table` / `clear mac` | Clear MAC address table entries and reset dynamic cache |
+| `clear counters` | Reset interface packet, byte, drop, and error counters |
 | `clear line <n>` | Clear a terminal line session |
 | `clear interface <name>` | Clear interface counters and state |
 | `do <command>` | Execute privileged command from config mode |
 | `help` | Display help system information |
+| `show network health` / `show health` | Run comprehensive network diagnostic check and generate consolidated status report |
 | `show access-lists` | Display all access lists |
 
 ### Global Configuration Commands

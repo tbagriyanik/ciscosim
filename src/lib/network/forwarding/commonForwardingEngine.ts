@@ -292,7 +292,7 @@ export function forwardPacketFrame(
       });
     } else {
       const matchEntry = state?.macAddressTable?.find(m => m.mac === frame.dstMac);
-      if (matchEntry?.port && matchEntry.port !== frame.ingressPortId) {
+      if (matchEntry?.port && matchEntry.port !== frame.ingressPortId && !state?.ports?.[matchEntry.port]?.shutdown) {
         egressPorts.push(matchEntry.port);
       } else {
         // Unicast miss -> Flood
@@ -310,13 +310,17 @@ export function forwardPacketFrame(
       const fullTable = getRoutingTable(device.id, deviceMap);
       const route = findRoute(frame.dstIp, fullTable);
       if (route && (route.interfaceId || route.nextHop)) {
-        egressPorts.push(route.interfaceId || route.nextHop);
+        const portId = route.interfaceId || route.nextHop;
+        // Static routes may reference a shutdown interface; don't forward out.
+        if (!state.ports?.[portId]?.shutdown) {
+          egressPorts.push(portId);
+        }
       }
     }
   } else if (device.type === 'cloud') {
     // Cloud WAN transit bridge forwarding
     (device.ports || []).forEach(p => {
-      if (p.id !== frame.ingressPortId && p.status === 'connected') {
+      if (p.id !== frame.ingressPortId && !p.shutdown && p.status === 'connected') {
         egressPorts.push(p.id);
       }
     });

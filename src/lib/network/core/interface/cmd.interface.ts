@@ -2,7 +2,7 @@ import { iosModeError } from '../iosErrors';
 import type { CommandContext } from '../commandTypes';
 import type { SwitchState, CommandResult, Port, SpeedMode, DuplexMode } from '../../types';
 import { normalizePortId } from '../../initialState';
-import { getPvstUpdate } from '../commandHelpers';
+import { getPvstUpdate, getInterfaceStateUpdate } from '../commandHelpers';
 import {
   isInInterfaceMode,
   isVlanInterfaceName,
@@ -334,9 +334,12 @@ export function cmdShutdown(state: SwitchState, _input: string, ctx: CommandCont
 
   const newPorts = applyToSelectedPorts(state, (port: Port) => ({ ...port, shutdown: true }));
 
-  // Recalculate STP states for all devices in the topology after shutdown
+  // Recalculate STP, flush ARP/MAC tables and recalc topology-wide state
+  const changedPortIds = Object.entries(newPorts)
+    .filter(([id, p]) => p.shutdown && (!state.ports[id] || !state.ports[id].shutdown))
+    .map(([id]) => id);
   const updatedCurrentState = { ...state, ports: newPorts };
-  const pvst = getPvstUpdate(updatedCurrentState, ctx);
+  const pvst = getInterfaceStateUpdate(updatedCurrentState, ctx, changedPortIds);
   if ('error' in pvst) return pvst.error;
   const { allUpdatedStates, myUpdatedState } = pvst;
 
@@ -367,19 +370,26 @@ export function cmdNoShutdown(state: SwitchState, _input: string, ctx: CommandCo
     if (newPorts[vlanPortKey]) {
       newPorts[vlanPortKey] = { ...newPorts[vlanPortKey], shutdown: false };
     }
+    const updatedCurrentState = { ...state, ports: newPorts };
+    const pvst = getPvstUpdate(updatedCurrentState, ctx);
+    const allUpdatedStates = 'error' in pvst ? undefined : pvst.allUpdatedStates;
     const portName = state.currentInterface;
     return {
       success: true,
       output: `%LINK-3-UPDOWN: Interface ${portName}, changed state to up\n%LINEPROTO-5-UPDOWN: Line protocol on Interface ${portName}, changed state to up\n`,
-      newState: { ports: newPorts }
+      newState: { ports: newPorts },
+      deviceStates: allUpdatedStates
     };
   }
 
   const newPorts = applyToSelectedPorts(state, (port: Port) => ({ ...port, shutdown: false }));
 
-  // Recalculate STP states for all devices in the topology after no shutdown
+  // Recalculate STP, flush ARP/MAC tables and recalc topology-wide state
+  const changedPortIds = Object.entries(state.ports)
+    .filter(([id, p]) => p.shutdown && (!newPorts[id] || !newPorts[id].shutdown))
+    .map(([id]) => id);
   const updatedCurrentState = { ...state, ports: newPorts };
-  const pvst = getPvstUpdate(updatedCurrentState, ctx);
+  const pvst = getInterfaceStateUpdate(updatedCurrentState, ctx, changedPortIds);
   if ('error' in pvst) return pvst.error;
   const { allUpdatedStates, myUpdatedState } = pvst;
 

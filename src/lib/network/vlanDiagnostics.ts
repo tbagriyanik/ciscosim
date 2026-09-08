@@ -9,9 +9,10 @@
 
 import type { CanvasDevice, CanvasConnection } from '@/components/network/networkTopology.types';
 import type { SwitchState, Port } from './types';
+import { normalizeMAC } from '@/lib/utils';
 
 export interface VlanDiagnosticIssue {
-  type: 'NATIVE_VLAN_MISMATCH' | 'ACCESS_VLAN_MISMATCH' | 'TRUNK_ALLOWED_MISMATCH';
+  type: 'NATIVE_VLAN_MISMATCH' | 'ACCESS_VLAN_MISMATCH' | 'TRUNK_ALLOWED_MISMATCH' | 'TRUNK_ACCESS_MODE_MISMATCH';
   severity: 'warning' | 'error';
   connectionId: string;
   sourceDeviceName: string;
@@ -32,6 +33,12 @@ export function diagnoseVlanMismatches(
   const issues: VlanDiagnosticIssue[] = [];
   const deviceMap = new Map<string, CanvasDevice>(devices.map(d => [d.id, d]));
 
+  const resolveAllowedVlans = (port: Port): number[] | null => {
+    const allowed = port.allowedVlans;
+    if (allowed === 'all' || allowed === undefined || allowed === null) return null;
+    return Array.isArray(allowed) ? allowed.map(Number) : [];
+  };
+
   for (const conn of connections) {
     const srcDevice = deviceMap.get(conn.sourceDeviceId);
     const tgtDevice = deviceMap.get(conn.targetDeviceId);
@@ -45,8 +52,11 @@ export function diagnoseVlanMismatches(
 
     if (!srcPort || !tgtPort || srcPort.shutdown || tgtPort.shutdown) continue;
 
-    // Check Trunk Native VLAN Mismatch
-    if (srcPort.mode === 'trunk' && tgtPort.mode === 'trunk') {
+    const srcIsTrunk = srcPort.mode === 'trunk';
+    const tgtIsTrunk = tgtPort.mode === 'trunk';
+
+    // Trunk Native VLAN Mismatch
+    if (srcIsTrunk && tgtIsTrunk) {
       const srcNative = srcPort.nativeVlan ?? 1;
       const tgtNative = tgtPort.nativeVlan ?? 1;
 
@@ -66,12 +76,16 @@ export function diagnoseVlanMismatches(
         });
       }
 
-      // Check Trunk Allowed VLAN Discrepancy
-      if (Array.isArray(srcPort.allowedVlans) && Array.isArray(tgtPort.allowedVlans)) {
-        const srcSet = new Set(srcPort.allowedVlans);
-        const tgtSet = new Set(tgtPort.allowedVlans);
-        const diffSrc = srcPort.allowedVlans.filter(v => !tgtSet.has(v));
-        const diffTgt = tgtPort.allowedVlans.filter(v => !srcSet.has(v));
+      // Trunk Allowed VLAN Discrepancy. 'all'/undefined means every VLAN is
+      // allowed, so a specific list only creates a mismatch when the other side
+      // has a different explicit restriction.
+      const srcAllowed = resolveAllowedVlans(srcPort);
+      const tgtAllowed = resolveAllowedVlans(tgtPort);
+      if (srcAllowed !== null && tgtAllowed !== null) {
+        const srcSet = new Set(srcAllowed);
+        const tgtSet = new Set(tgtAllowed);
+        const diffSrc = srcAllowed.filter(v => !tgtSet.has(v));
+        const diffTgt = tgtAllowed.filter(v => !srcSet.has(v));
 
         if (diffSrc.length > 0 || diffTgt.length > 0) {
           issues.push({
@@ -80,19 +94,45 @@ export function diagnoseVlanMismatches(
             connectionId: conn.id,
             sourceDeviceName: srcDevice.name,
             sourcePortId: srcPort.id,
-            sourceVlan: srcPort.allowedVlans.join(','),
+            sourceVlan: srcAllowed.join(','),
             targetDeviceName: tgtDevice.name,
             targetPortId: tgtPort.id,
-            targetVlan: tgtPort.allowedVlans.join(','),
-            message: `Allowed VLAN mismatch between trunks ${srcDevice.name}:${srcPort.id} and ${tgtDevice.name}:${tgtPort.id}`,
+            targetVlan: tgtAllowed.join(','),
+            message: `Allowed VLAN mismatch between trunks ${srcDevice.name}:${srcPort.id} (${srcAllowed.join(',')}) and ${tgtDevice.name}:${tgtPort.id} (${tgtAllowed.join(',')})`,
             recommendation: 'Ensure both trunk ports allow the same set of VLAN IDs',
           });
         }
       }
     }
 
-    // Check Access Port VLAN Mismatch between switches
-    if (srcPort.mode !== 'trunk' && tgtPort.mode !== 'trunk') {
+    // Trunk-to-access mode mismatch: a trunk meeting a non-trunk port drops
+    // tagged frames on the access side. Only meaningful for switch-type links.
+    if (srcIsTrunk !== tgtIsTrunk) {
+      const srcIsSwitch = srcDevice.type === 'switchL2' || srcDevice.type === 'switchL3';
+      const tgtIsSwitch = tgtDevice.type === 'switchL2' || tgtDevice.type === 'switchL3';
+      if (srcIsSwitch && tgtIsSwitch) {
+        const trunkSide = srcIsTrunk ? srcDevice : tgtDevice;
+        const trunkPort = srcIsTrunk ? srcPort : tgtPort;
+        const accessSide = tgtIsTrunk ? srcDevice : tgtDevice;
+        const accessPort = tgtIsTrunk ? srcPort : tgtPort;
+        issues.push({
+          type: 'TRUNK_ACCESS_MODE_MISMATCH',
+          severity: 'error',
+          connectionId: conn.id,
+          sourceDeviceName: srcDevice.name,
+          sourcePortId: srcPort.id,
+          sourceVlan: srcPort.mode,
+          targetDeviceName: tgtDevice.name,
+          targetPortId: tgtPort.id,
+          targetVlan: tgtPort.mode,
+          message: `Trunk/Access mode mismatch: ${trunkSide.name}:${trunkPort.id} is ${trunkPort.mode} but ${accessSide.name}:${accessPort.id} is ${accessPort.mode}`,
+          recommendation: `Switch both ends to the same mode: "switchport mode trunk" or "switchport mode access"`,
+        });
+      }
+    }
+
+    // Access VLAN Mismatch between switches
+    if (!srcIsTrunk && !tgtIsTrunk) {
       const srcVlan = srcPort.accessVlan ?? srcPort.vlan ?? 1;
       const tgtVlan = tgtPort.accessVlan ?? tgtPort.vlan ?? 1;
 
@@ -170,11 +210,12 @@ export function diagnoseDuplicateAddresses(
       existing.push({ deviceId: device.id, deviceName: device.name });
       ipMap.set(device.ip, existing);
     }
-    const devMac = (device as any).mac;
+    const devMac = device.macAddress;
     if (devMac) {
-      const existing = macMap.get(String(devMac).toLowerCase()) || [];
+      const key = normalizeMAC(devMac);
+      const existing = macMap.get(key) || [];
       existing.push({ deviceId: device.id, deviceName: device.name });
-      macMap.set(String(devMac).toLowerCase(), existing);
+      macMap.set(key, existing);
     }
 
     // Port IPs & MACs
@@ -188,11 +229,11 @@ export function diagnoseDuplicateAddresses(
           }
         }
         if (port.macAddress && !port.shutdown) {
-          const cleanMac = port.macAddress.toLowerCase();
-          const existing = macMap.get(cleanMac) || [];
+          const key = normalizeMAC(port.macAddress);
+          const existing = macMap.get(key) || [];
           if (!existing.some(e => e.deviceId === device.id && e.portId === port.id)) {
             existing.push({ deviceId: device.id, deviceName: device.name, portId: port.id });
-            macMap.set(cleanMac, existing);
+            macMap.set(key, existing);
           }
         }
       });
@@ -201,7 +242,8 @@ export function diagnoseDuplicateAddresses(
 
   // Check duplicate IPs
   ipMap.forEach((entryList, ip) => {
-    if (entryList.length > 1) {
+    const uniqueDevices = new Set(entryList.map(e => e.deviceId));
+    if (entryList.length > 1 && uniqueDevices.size > 1) {
       const names = entryList.map(e => `${e.deviceName}${e.portId ? ` (${e.portId})` : ''}`).join(', ');
       const msg = `%IP-4-DUPARP: Duplicate IP address ${ip} detected on ${names}`;
       issues.push({
@@ -224,7 +266,8 @@ export function diagnoseDuplicateAddresses(
 
   // Check duplicate MACs
   macMap.forEach((entryList, mac) => {
-    if (entryList.length > 1) {
+    const uniqueDevices = new Set(entryList.map(e => e.deviceId));
+    if (entryList.length > 1 && uniqueDevices.size > 1) {
       const names = entryList.map(e => `${e.deviceName}${e.portId ? ` (${e.portId})` : ''}`).join(', ');
       const msg = `%MAC-4-DUPLICATE: Duplicate MAC address ${mac} detected on ${names}`;
       issues.push({
