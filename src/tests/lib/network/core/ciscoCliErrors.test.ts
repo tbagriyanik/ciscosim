@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { parseCommand, validateCommand } from '@/lib/network/parser';
 import { IOS_ERRORS } from '@/lib/network/core/iosErrors';
 
-describe('Cisco CLI Error Messages Completeness & Caret Accuracy', () => {
+describe('CLI Error Messages Completeness & Caret Accuracy', () => {
   it('detects invalid input with ^ marker for unrecognized command', () => {
     const parsed = parseCommand('invalidcommand123', 'privileged');
     expect(parsed).not.toBeNull();

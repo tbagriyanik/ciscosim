@@ -4,8 +4,8 @@ Yeniden eskiye, tarih mevcuttur.
 
 ## v4.8.0 — 2026-09-08
 
-**Cisco CLI İyileştirmeleri, Canlı Arayüz Sayaçları, Ağ Teşhis Detektörleri, STP/OSPF/EIGRP/NAT Motor Güncellemeleri ve Network Health Check** —
-- **🎯 Cisco CLI Hata Formatlama & İmleç Konumlandırması**: `% Ambiguous command: "<token>"`, `% Incomplete command.` ve `% Invalid input detected at '^' marker.` hassas imleç konum gösterimi uygulandı (`parser.ts`, `iosErrors.ts`).
+**CLI İyileştirmeleri, Canlı Arayüz Sayaçları, Ağ Teşhis Detektörleri, STP/OSPF/EIGRP/NAT Motor Güncellemeleri ve Network Health Check** —
+- **🎯 CLI Hata Formatlama & İmleç Konumlandırması**: `% Ambiguous command: "<token>"`, `% Incomplete command.` ve `% Invalid input detected at '^' marker.` hassas imleç konum gösterimi uygulandı (`parser.ts`, `iosErrors.ts`).
 - **📊 Canlı `show interfaces` Sayaç Eşlemesi**: Arayüz paket/bayt geçişleri (`inputPackets`, `outputPackets`, `inputBytes`, `outputBytes`, `inputErrors`, `drops`) canlı veri yapısına bağlandı (`showInterfaceDisplay.ts`).
 - **📍 Tek Satır Drop Nedeni Raporlaması**: Ping ve paket izleme başarısızlıklarında düşme gerekçesi tek satırda (`Drop Reason: Inbound ACL Denied...`) raporlanıyor (`privilegedConnectivity.ts`).
 - **🗺️ Detaylı `show ip route` Formatı**: Rotalar Administrative Distance (AD), Metric, Next-Hop IP ve çıkış arayüzü bilgisiyle (`[110/2] via 10.0.0.2, GigabitEthernet0/1`) gösteriliyor (`showRoutingDisplay.ts`).

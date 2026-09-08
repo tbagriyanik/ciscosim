@@ -307,7 +307,7 @@ function resolveByCommandTree(input: string, currentMode: CommandMode, capabilit
     const uniqueKeywords = Array.from(new Set(matchedChildren.map(m => m.keyword)));
 
     // The typed token matches multiple distinct keywords but is not itself a
-    // full keyword — Cisco reports this as an ambiguous command ("co" could be
+    // full keyword — reports this as an ambiguous command ("co" could be
     // configure / copy / connect). An exact full keyword wins over prefixes.
     if (i === tokens.length - 1 && uniqueKeywords.length > 1 && !uniqueKeywords.includes(token)) {
       return { kind: 'ambiguous', candidates: uniqueKeywords.slice(0, 8), failedTokenIndex: i };

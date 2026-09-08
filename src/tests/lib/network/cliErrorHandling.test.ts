@@ -5,7 +5,7 @@ vi.mock('@/lib/network/capabilities', () => ({
   getDeviceCapabilities: vi.fn(() => undefined),
 }));
 
-describe('Cisco CLI Error Handling (Invalid / Incomplete / Ambiguous)', () => {
+describe('CLI Error Handling (Invalid / Incomplete / Ambiguous)', () => {
   const privilegedState = {
     switchModel: 'WS-C2960-24TT-L' as const,
     switchLayer: 'L2' as const,
@@ -27,7 +27,7 @@ describe('Cisco CLI Error Handling (Invalid / Incomplete / Ambiguous)', () => {
     return validateCommand(parsed!, mode, state);
   }
 
-  it('flags "co" as ambiguous (configure/copy/connect) with the caret-free Cisco message', () => {
+  it('flags "co" as ambiguous (configure/copy/connect) with the caret-free message', () => {
     const res = validate('co', 'privileged');
     expect(res.valid).toBe(false);
     expect(res.reason).toBe('ambiguous');
