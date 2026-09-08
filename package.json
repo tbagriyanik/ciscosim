@@ -9,6 +9,7 @@
     "start": "cross-env NODE_ENV=production next start",
     "lint": "oxlint",
     "test": "vitest run",
+    "update-readme": "node scripts/update-readme-badges.cjs",
     "check": "tsc --noEmit && next build && oxlint && vitest run"
   },
   "dependencies": {

@@ -6,7 +6,7 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-7.0.2-3178C6?logo=typescript&logoColor=white)
 ![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-4.3.3-06B6D4?logo=tailwindcss&logoColor=white)
 ![FOSS](https://img.shields.io/badge/FOSS-Free%20Open%20Source-brightgreen)
-![Total Lines](https://img.shields.io/badge/total--lines-~170k-lightgrey)
+![Total Lines](https://img.shields.io/badge/total--lines-~169k-lightgrey)
 
 A comprehensive, client-side, browser-based network simulator for learning switching, routing, wireless, security, IoT, CLI terminal workflows.
 
@@ -32,27 +32,12 @@ npx tsc --noEmit
 npm run check
 ```
 
-## 🚀 Key Features & Version Highlights (v4.7.0)
+## 🚀 Key Features / Öne Çıkan Özellikler
 
-- **📶 WLC Wi-Fi SSID & Güvenlik Yansıması:** WLC'de tanımlı ve aktif WLAN'ların SSID, parola ve güvenlik modu bilgisi kablosuz ağ yapılandırmasına (AP) otomatik yansıtılıyor; WLC varsayılan yönetim IP'si `192.168.1.1` olarak düzeltildi (`wireless.ts`, `initialState.ts`).
-- **🖥️ PC HTTP Servisi — Varsayılan Açık & Kararlı Toggle:** İlk eklenen PC'lerde HTTP servisi varsayılan `enabled: true` geliyor; PC panelindeki HTTP Aç/Kapa düğmesinin anında geri kapanmasını engelleyen runtime (SwitchState)–topoloji senkronizasyon hatası giderildi. Araç çubuğu, boş proje, senaryo üretici ve örnek projelerde tüm PC'lerde HTTP varsayılan açıktır (`useProjectReset.ts`, `usePageNetworkLogic.ts`, `useDeviceManager.ts`, `useCanvasActions.ts`).
-- **⌨️ Terminal UX Modülarizasyonu (8 Claude Önerisi):** `Terminal.tsx` monoliti bölümlendi; `BootProgressBar.tsx` (önyükleme animasyonu), `TerminalHeaderActions.tsx` (kopyala/temizle/indir/yazı boyutu), `useTerminalTabCompletion.ts` (Tab ile bağlama duyarlı komut tamamlama), `PythonInputModal.tsx`, `PCPanelDialogs.tsx` + `PCPanelContext.tsx` eklendi.
-- **🛡️ Firewall Tip Güvenliği & Güvenlik Düzeltmeleri:** ASA `same-security-traffic` komutu tip güvenli `SwitchState.sameSecurityTraffic` alanını kullanıyor; `as unknown as Partial<SwitchState>` cast'leri temizlendi; sanitize edilen HTTP içeriklerde HTML entity çözümü (`decodeHTMLEntities`) eklendi (`firewallCommands.ts`, `sanitizer.ts`).
-- **🪄 Deterministik Simülasyon Rastgeleliği:** Kablosuz ping gecikmesi ve hop sürelerinde tekrarlanabilir çıktı için tohumlanabilir PRNG (`deterministicRandom`) kullanıldı; test kararlılığı artırıldı (`privilegedConnectivity.ts`).
-- **🌩️ Bulut Bağlantısız Durum Denetimi:** Cloud/WAN cihazına kablo bağlı değilken kamu DNS adreslerine tarayıcı/ping trafiği "Bulut (Cloud) cihazı ağa bağlı değil." hatası ve özel "Bulut Bağlantısız" ekranı ile açıklanıyor (`usePCPanelBrowser.ts`, `pathResolution.ts`).
-- **🧹 Silinen Cihaz Geçmişi Temizleme:** Proje geçmişine kopyalama sırasında topolojide artık olmayan cihazların konsol çıktıları ve komut geçmişleri artık taşınmıyor (`historySerialization.ts`).
-- **🔀 Connectivity Ayıklaması:** QoS/IPsec trafik çözümleme (`resolvePathTraffic`) bağımsız modüle taşındı, döngüsel bağımlılık riski azaltıldı.
-
----
-
-## 📊 Stats / İstatistikler
-## 🚀 Key Features & Version Highlights (v4.8.0)
-
-| Özellik / Feature | Açıklama / Description |
-| --- | --- |
-| **Gelişmiş CLI & IOS Komutları** | Switch (L2/L3), Router, Firewall, WLC, PC, IoT ve Hub cihaz desteği; VLAN, VTP, STP/RSTP/MSTP, EtherChannel, L3 routing (OSPF, EIGRP, BGP, Static), DHCP, NAT, ACL (IPv4/IPv6), Port Security, Dot1x, QoS/MQC, IP SLA, Track. |
-| **Parçalı & Modüler Mimari** | Satır limiti kurallarına uygun modüler kod tabanı, $O(1)$ yol çözümlenebilir komşuluk indeksi ve optimize edilmiş tuval bileşenleri. |
-| **Gelişmiş Mobil & A11y Uyumluluğu** | Dokunmatik titreşim geribildirimi (haptic feedback), mobil klavye optimizasyonları ve yüksek çözünürlüklü SVG hassasiyeti. |
+- **💻 Gelişmiş Cisco CLI & IOS Simülasyonu:** Switch (L2/L3), Router, ASA Firewall, WLC, PC, IoT ve Hub cihazları için tam kapsamlı terminal ve komut motoru.
+- **🌐 Geniş Protokol Desteği:** VLAN, VTP, STP/RSTP/MSTP, EtherChannel, L3 Rotalama (OSPF, EIGRP, BGP, Static), DHCP, NAT, ACL (IPv4/IPv6), Port Security, IP SLA ve QoS.
+- **🔍 Gelişmiş Teşhis & Sağlık Denetimi:** Native VLAN mismatch, çakışan IP/MAC tespiti, routing loop tespiti, orphan port denetimi ve tek komutla `show network health` raporu.
+- **⚡ Performanslı & Modüler Mimari:** $O(1)$ komşuluk indeksi, deterministik simülasyon motoru, mobil haptic geribildirim ve tam erişilebilirlik (A11y) uyumluluğu.
 
 ---
 
@@ -61,8 +46,8 @@ npm run check
 | Metrik / Metric | Değer / Value |
 | --- | --- |
 | Version / Sürüm | 4.8.0 |
-| Total Lines / Toplam Satır (`src/`) | ~170,000 |
-| Source Files / Kaynak Dosya | 728 |
+| Total Lines / Toplam Satır (`src/`) | ~169,220 |
+| Source Files / Kaynak Dosya | 728|
 | Documentation Files / Dokümantasyon Dosya | 32 |
 | Example Projects / Örnek Proje | 46 |
 | Guided Lessons / Rehberli Ders | 19 |
