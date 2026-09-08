@@ -23,6 +23,7 @@ export function cmdShowInterfaces(
     const port = state.ports[portName];
     const description = port.description || port.name || '';
     const stats = port.statistics || {};
+    const s = port.stats || {};
     const displayName = formatPortName(portName);
 
     // Admin and operational status
@@ -99,7 +100,7 @@ export function cmdShowInterfaces(
     const ingressQ = port.qos?.ingressQueue || 75;
     const egressQ = port.qos?.egressQueue || 40;
     output += `  Queueing strategy: fifo\n`;
-    output += `  Output queue 0/${egressQ}, ${stats.drops || 0} drops; input queue 0/${ingressQ}, ${stats.drops || 0} drops\n`;
+output += `  Output queue 0/${egressQ}, ${s.txDrops || 0} drops; input queue 0/${ingressQ}, ${s.rxDrops || 0} drops\n`;
 
     output += `  5 minute input rate ${stats.inputBytes || 0} bits/sec, ${stats.inputPackets || 0} packets/sec\n`;
     output += `  5 minute output rate ${stats.outputBytes || 0} bits/sec, ${stats.outputPackets || 0} packets/sec\n`;
@@ -251,6 +252,7 @@ export function cmdShowInterface(
   }
 
   const stats = port.statistics || {};
+  const s = port.stats || {};
 
   if (port.mode === 'trunk' && port.encapsulation) {
     output += `  Encapsulation ${port.encapsulation}\n`;
@@ -274,7 +276,7 @@ export function cmdShowInterface(
   const ingressQ = port.qos?.ingressQueue || 75;
   const egressQ = port.qos?.egressQueue || 40;
   output += `  Queueing strategy: fifo\n`;
-  output += `  Output queue 0/${egressQ}, ${stats.drops || 0} drops; input queue 0/${ingressQ}, ${stats.drops || 0} drops\n`;
+  output += `  Output queue 0/${egressQ}, ${s.txDrops || 0} drops; input queue 0/${ingressQ}, ${s.rxDrops || 0} drops\n`;
 
   output += `  5 minute input rate ${stats.inputBytes || 0} bits/sec, ${stats.inputPackets || 0} packets/sec\n`;
   output += `  5 minute output rate ${stats.outputBytes || 0} bits/sec, ${stats.outputPackets || 0} packets/sec\n`;

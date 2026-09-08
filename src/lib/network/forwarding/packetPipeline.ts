@@ -150,20 +150,37 @@ function checkVlan(port: Port, frame: NetworkPacketFrame): { allowed: boolean; r
   };
 }
 
-function updatePortStats(port: Port | undefined, type: 'rx' | 'tx' | 'drop', bytes: number = 64): void {
+type PortStatKind = 'rx' | 'tx' | 'drop' | 'txdrop';
+
+function updatePortStats(port: Port | undefined, type: PortStatKind, bytes: number = 64): void {
   if (!port) return;
   if (!port.stats) {
     port.stats = { rxPackets: 0, rxBytes: 0, txPackets: 0, txBytes: 0, rxDrops: 0, txDrops: 0, rxErrors: 0, txErrors: 0 };
   }
+  if (!port.statistics) {
+    port.statistics = {};
+  }
   const s = port.stats;
+  const st = port.statistics;
+  const now = Date.now();
   if (type === 'rx') {
     s.rxPackets = (s.rxPackets ?? 0) + 1;
     s.rxBytes = (s.rxBytes ?? 0) + bytes;
+    st.inputPackets = (st.inputPackets ?? 0) + 1;
+    st.inputBytes = (st.inputBytes ?? 0) + bytes;
+    st.lastInput = now;
   } else if (type === 'tx') {
     s.txPackets = (s.txPackets ?? 0) + 1;
     s.txBytes = (s.txBytes ?? 0) + bytes;
+    st.outputPackets = (st.outputPackets ?? 0) + 1;
+    st.outputBytes = (st.outputBytes ?? 0) + bytes;
+    st.lastOutput = now;
   } else if (type === 'drop') {
     s.rxDrops = (s.rxDrops ?? 0) + 1;
+    st.drops = (st.drops ?? 0) + 1;
+  } else if (type === 'txdrop') {
+    s.txDrops = (s.txDrops ?? 0) + 1;
+    st.drops = (st.drops ?? 0) + 1;
   }
 }
 
@@ -398,6 +415,7 @@ export function runHopPipeline(
         frame.ipProtocol === 6 ? 'tcp' : frame.ipProtocol === 17 ? 'udp' : 'icmp'
       );
       if (aclResult === 'deny') {
+        updatePortStats(egressPort, 'txdrop');
         return drop('acl-egress', formatDropReason(DropReasonCode.ACL_DENY_EGRESS, `ACL ${egressPort.accessGroupOut} denied ${frame.srcIp}→${frame.dstIp}`), 13);
       }
       traces.push(makeTrace(hopIndex, device, egressPortId, 'acl-egress', 'pass',
@@ -412,6 +430,7 @@ export function runHopPipeline(
   for (const egressPortId of egressPorts) {
     const egressPort: Port | undefined = state?.ports?.[egressPortId];
     if (egressPort?.shutdown) {
+      updatePortStats(egressPort, 'txdrop');
       return drop('egress', formatDropReason(DropReasonCode.L1_PORT_SHUTDOWN, `egress port ${egressPortId} is administratively down`));
     }
     if (egressPort) updatePortStats(egressPort, 'tx', frame.length || 64);

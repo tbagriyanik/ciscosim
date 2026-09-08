@@ -4,6 +4,7 @@ import { generateIcmpUnreachable, getIcmpCodeDetails } from '@/lib/network/forwa
 import { findRouteDetailed, detectRoutingLoops, Route } from '@/lib/network/routing';
 import { learnMacAddress, onMacLifecycleEvent, MacLifecycleEvent } from '@/lib/network/macLearning';
 import { diagnoseVlanMismatches, diagnoseDuplicateAddresses } from '@/lib/network/vlanDiagnostics';
+import { cmdShowInterfaces } from '@/lib/network/core/showInterfaceDisplay';
 import { runAgingTick } from '@/lib/network/agingEngine';
 import type { CanvasDevice, CanvasConnection } from '@/components/network/networkTopology.types';
 import type { SwitchState } from '@/lib/network/types';
@@ -214,6 +215,89 @@ describe('Advanced Packet Forwarding & Diagnostics Engine', () => {
     expect(sw1Port?.stats).toBeDefined();
     expect(sw1Port?.stats?.rxPackets).toBeGreaterThan(0);
     expect(sw1Port?.stats?.rxBytes).toBeGreaterThan(0);
+
+    // Bridge from port.stats to port.statistics — show interfaces must reflect real traffic
+    expect(sw1Port?.statistics?.inputPackets).toBeGreaterThan(0);
+    expect(sw1Port?.statistics?.inputBytes).toBeGreaterThan(0);
+    expect(sw1Port?.statistics?.lastInput).toBeDefined();
+    const sw1Egress = deviceStates.get('SW1')?.ports['Fa0/2'];
+    expect(sw1Egress?.stats?.txPackets).toBeGreaterThan(0);
+    expect(sw1Egress?.statistics?.outputPackets).toBeGreaterThan(0);
+    expect(sw1Egress?.statistics?.lastOutput).toBeDefined();
+  });
+
+  it('Feature 21: show interfaces reflects real rx/tx counters after traffic', () => {
+    const frame = {
+      srcMac: '00:11:22:33:44:55',
+      dstMac: 'AA:BB:CC:DD:EE:FF',
+      srcIp: '10.0.0.2',
+      dstIp: '192.168.1.2',
+      protocol: 'ICMP',
+      ttl: 64,
+      length: 128,
+      vlanId: 1,
+      ingressPortId: 'Fa0/1',
+    };
+
+    runFullPacketPipeline(frame as any, 'SW1', devices, deviceStates, connections);
+
+    const sw1State = deviceStates.get('SW1')!;
+    const res = cmdShowInterfaces(sw1State, 'show interfaces', {} as any);
+    expect(res.success).toBe(true);
+    expect(res.output).toMatch(/FastEthernet0\/1 is up/);
+    expect(res.output).toMatch(/FastEthernet0\/2 is up/);
+
+    // Fa0/1 received the frame, Fa0/2 transmitted it — each block reflects real traffic
+    const fa01Text = res.output!.split('FastEthernet0/2 is')[0];
+    expect(fa01Text).toMatch(/[1-9]\d* packets input, [1-9]\d* bytes, 0 no buffer/);
+    const fa02Text = res.output!.split('FastEthernet0/2 is')[1];
+    expect(fa02Text).toMatch(/[1-9]\d* packets output, [1-9]\d* bytes,/);
+
+    // last input/output reflect activity timestamps
+    const fa01 = sw1State.ports['Fa0/1'];
+    expect(fa01?.statistics?.lastInput).toBeDefined();
+  });
+
+  it('Feature 21b: Egress drops are counted on the egress port (txDrops)', () => {
+    const sw1State = deviceStates.get('SW1')!;
+    sw1State.ports['Fa0/2'] = {
+      ...sw1State.ports['Fa0/2'],
+      accessGroupOut: 'DENY-ALL',
+    };
+    sw1State.accessLists = {
+      'DENY-ALL': [
+        'deny ip any any',
+        'permit ip any any',
+      ],
+    };
+    sw1State.namedAclTypes = { 'DENY-ALL': 'extended' };
+
+    const frame = {
+      srcMac: '00:11:22:33:44:55',
+      dstMac: 'AA:BB:CC:DD:EE:FF',
+      srcIp: '10.0.0.2',
+      dstIp: '192.168.1.2',
+      protocol: 'ICMP',
+      ttl: 64,
+      length: 128,
+      vlanId: 1,
+      ingressPortId: 'Fa0/1',
+    };
+
+    runFullPacketPipeline(frame as any, 'SW1', devices, deviceStates, connections);
+
+    const ingress = sw1State.ports['Fa0/1'];
+    const egress = sw1State.ports['Fa0/2'];
+    // Ingress count happens before ACL egress stage
+    expect(ingress?.stats?.rxPackets).toBeGreaterThan(0);
+    expect(ingress?.stats?.rxDrops).toBeGreaterThan(0);
+    // Egress drop counted on the egress port itself (not just ingress)
+    expect(egress?.stats?.txDrops).toBe(1);
+    expect(egress?.statistics?.drops).toBe(1);
+
+    const res = cmdShowInterfaces(sw1State, 'show interfaces', {} as any);
+    // Output queue drops distinct from input queue drops
+    expect(res.output).toMatch(/Output queue 0\/40, 1 drops; input queue 0\/75, 0 drops/);
   });
 
   it('Feature 10: Detects duplicate device IPs across devices', () => {
