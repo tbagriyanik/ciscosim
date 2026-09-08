@@ -58,8 +58,8 @@ export function RefreshReportPanel({
         }`}
       style={{
         zIndex: 100,
-        maxHeight: 'calc(100vh - 20px)',
-        resize: 'both',
+        maxHeight: isMobile ? 'calc(100dvh - 100px)' : 'calc(100vh - 20px)',
+        resize: isMobile ? 'none' : 'both',
         overflow: 'hidden',
       }}
       onMouseDown={() => setFocusedOverlay('refresh')}

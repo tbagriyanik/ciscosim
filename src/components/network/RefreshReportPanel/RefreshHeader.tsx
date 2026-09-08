@@ -47,32 +47,44 @@ export const RefreshHeader: React.FC<RefreshHeaderProps> = ({
       <h3 className="text-sm font-bold flex items-center gap-2 pointer-events-none" aria-live="polite">
         {title}
       </h3>
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1 no-drag">
         <TooltipWrapper title={language === 'tr' ? 'Ağı Yenile' : 'Refresh Network'}>
           <button
+            type="button"
             aria-label={language === 'tr' ? 'Ağı Yenile' : 'Refresh Network'}
-            onClick={onRefresh}
-            className="w-5 h-5 rounded-md bg-primary-500 hover:bg-primary-600 cursor-pointer transition-colors inline-flex items-center justify-center shrink-0"
+            onClick={(e) => {
+              e.stopPropagation();
+              onRefresh();
+            }}
+            className="w-6 h-6 rounded-md bg-primary-500 hover:bg-primary-600 active:bg-primary-700 cursor-pointer transition-colors inline-flex items-center justify-center shrink-0 touch-manipulation"
           >
-            <RefreshCw className="w-3 h-3 text-white pointer-events-none" />
+            <RefreshCw className="w-3.5 h-3.5 text-white pointer-events-none" />
           </button>
         </TooltipWrapper>
         <TooltipWrapper title={language === 'tr' ? 'Kapat' : 'Close'}>
           <button
+            type="button"
             aria-label={language === 'tr' ? 'Kapat' : 'Close'}
-            onClick={onClose}
-            className="w-5 h-5 rounded-md bg-error-500 hover:bg-error-600 cursor-pointer transition-colors inline-flex items-center justify-center shrink-0"
+            onClick={(e) => {
+              e.stopPropagation();
+              onClose();
+            }}
+            className="w-6 h-6 rounded-md bg-error-500 hover:bg-error-600 active:bg-error-700 cursor-pointer transition-colors inline-flex items-center justify-center shrink-0 touch-manipulation"
           >
-            <X className="w-3 h-3 text-white pointer-events-none" />
+            <X className="w-3.5 h-3.5 text-white pointer-events-none" />
           </button>
         </TooltipWrapper>
         <TooltipWrapper title={isCollapsed ? (language === 'tr' ? 'Genişlet' : 'Expand') : (language === 'tr' ? 'Daralt' : 'Collapse')}>
           <button
+            type="button"
             aria-label={isCollapsed ? (language === 'tr' ? 'Genişlet' : 'Expand') : (language === 'tr' ? 'Daralt' : 'Collapse')}
-            className="p-1 rounded hover:bg-secondary-100/50 dark:hover:bg-secondary-800/50 transition-colors"
-            onClick={onToggleCollapse}
+            className="w-6 h-6 rounded-md hover:bg-secondary-100/50 dark:hover:bg-secondary-800/50 active:bg-secondary-200/50 transition-colors inline-flex items-center justify-center shrink-0 touch-manipulation"
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleCollapse();
+            }}
           >
-            {isCollapsed ? <ChevronDown className="w-3 h-3 text-secondary-500 dark:text-secondary-400" /> : <ChevronUp className="w-3 h-3 text-secondary-500 dark:text-secondary-400" />}
+            {isCollapsed ? <ChevronDown className="w-4 h-4 text-secondary-500 dark:text-secondary-400 pointer-events-none" /> : <ChevronUp className="w-4 h-4 text-secondary-500 dark:text-secondary-400 pointer-events-none" />}
           </button>
         </TooltipWrapper>
       </div>
