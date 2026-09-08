@@ -62,7 +62,7 @@ npm run check
 | --- | --- |
 | Version / Sürüm | 4.8.0 |
 | Total Lines / Toplam Satır (`src/`) | ~170,000 |
-| Source Files / Kaynak Dosya | 722 |
+| Source Files / Kaynak Dosya | 728 |
 | Documentation Files / Dokümantasyon Dosya | 32 |
 | Example Projects / Örnek Proje | 46 |
 | Guided Lessons / Rehberli Ders | 19 |
