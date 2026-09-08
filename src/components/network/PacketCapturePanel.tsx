@@ -6,6 +6,7 @@ import { CABLE_COLORS } from './networkTopology.constants';
 import { getConnectionStatusMessage } from './networkTopology.helpers';
 import { DraggableWindowWrapper } from './DraggableWindowWrapper';
 import { useDrag } from '@/hooks/useDrag';
+import { useIsMobile } from '@/hooks/use-breakpoint';
 import { ProtocolTreeDetails } from './ProtocolTreeDetails';
 import { PacketHexDump } from './PacketHexDump';
 import type { CanvasConnection } from './networkTopology.types';
@@ -38,6 +39,7 @@ export const PacketCapturePanel = ({
   const storedConnections = useAppStore(state => state.topology.connections);
   const connections = connectionList || storedConnections;
   const { language } = useLanguage();
+  const isMobile = useIsMobile();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [excludeQuery, setExcludeQuery] = useState('cdp');
@@ -196,7 +198,9 @@ export const PacketCapturePanel = ({
       id="packetCapture"
       className={graphicsQuality === 'low'
         ? `graphics-low-solid ${isDark ? '!bg-secondary-950 !border-secondary-800' : '!bg-white !border-secondary-200'}`
-        : `liquid-glass-light ${isDark ? '!bg-secondary-950/40 border-emerald-950/80 shadow-[0_8px_32px_0_rgba(0,0,0,0.5)]' : '!bg-white/60 border-emerald-950/80 shadow-[0_8px_28px_rgba(15,23,42,0.12)]'}`}
+        : isMobile
+          ? `${isDark ? '!bg-secondary-950/80 !border-secondary-700' : '!bg-white/80 !border-secondary-300'}`
+          : `liquid-glass-light ${isDark ? '!bg-secondary-950/40 border-emerald-950/80 shadow-[0_8px_32px_0_rgba(0,0,0,0.5)]' : '!bg-white/60 border-emerald-950/80 shadow-[0_8px_28px_rgba(15,23,42,0.12)]'}`}
       title={
         <div className="flex flex-col gap-0.5 pointer-events-none">
           <div className="flex items-center gap-2">
@@ -247,7 +251,7 @@ export const PacketCapturePanel = ({
     >
       <div className="flex-1 flex flex-col min-h-0 relative h-full">
         {/* Filter Bar */}
-        <div className={`p-1.5 border-b flex flex-col gap-1.5 text-[11px] shrink-0 ${graphicsQuality === 'low' ? (isDark ? 'border-secondary-800 bg-secondary-950' : 'border-secondary-200 bg-white') : (isDark ? 'border-secondary-800 bg-secondary-900/60' : 'border-secondary-200 bg-secondary-50/60')}`}>
+        <div className={`p-1.5 border-b flex flex-col gap-1.5 text-[11px] shrink-0 ${graphicsQuality === 'low' ? (isDark ? 'border-secondary-800 bg-secondary-950' : 'border-secondary-200 bg-white') : isMobile ? (isDark ? 'border-secondary-700 bg-secondary-900' : 'border-secondary-300 bg-secondary-50') : (isDark ? 'border-secondary-800 bg-secondary-900/60' : 'border-secondary-200 bg-secondary-50/60')}`}>
           <div className="flex items-center gap-1.5 w-full">
             <Search className="w-3.5 h-3.5 opacity-50 shrink-0" />
             <input
@@ -308,7 +312,7 @@ export const PacketCapturePanel = ({
           <div className="flex-1 flex flex-col min-h-0">
             <div className="custom-scrollbar flex-1 overflow-auto w-full">
               <table className="w-full text-[10px] text-left border-collapse">
-                <thead className={`sticky top-0 z-10 ${graphicsQuality === 'low' ? (isDark ? 'bg-secondary-950' : 'bg-secondary-100') : (isDark ? 'bg-secondary-950/90' : 'bg-secondary-100/90')} ${graphicsQuality === 'high' ? 'backdrop-blur-sm' : ''}`}>
+                <thead className={`sticky top-0 z-10 ${graphicsQuality === 'low' ? (isDark ? 'bg-secondary-950' : 'bg-secondary-100') : isMobile ? (isDark ? 'bg-secondary-900' : 'bg-secondary-100') : (isDark ? 'bg-secondary-950/90' : 'bg-secondary-100/90')} ${graphicsQuality === 'high' && !isMobile ? 'backdrop-blur-sm' : ''}`}>
                   <tr>
                     {columnOrder.map((col, idx) => renderHeader(col, idx))}
                   </tr>
@@ -383,7 +387,7 @@ export const PacketCapturePanel = ({
 
             {/* Pagination Bar */}
             {filteredPackets.length > 0 && (
-              <div className={`px-2 py-1 border-t flex items-center justify-between text-[10px] select-none shrink-0 ${graphicsQuality === 'low' ? (isDark ? 'border-secondary-800 bg-secondary-950' : 'border-secondary-200 bg-secondary-100') : (isDark ? 'border-secondary-800 bg-secondary-950/60' : 'border-secondary-200 bg-secondary-100/60')}`}>
+              <div className={`px-2 py-1 border-t flex items-center justify-between text-[10px] select-none shrink-0 ${graphicsQuality === 'low' ? (isDark ? 'border-secondary-800 bg-secondary-950' : 'border-secondary-200 bg-secondary-100') : isMobile ? (isDark ? 'border-secondary-700 bg-secondary-900' : 'border-secondary-300 bg-secondary-50') : (isDark ? 'border-secondary-800 bg-secondary-950/60' : 'border-secondary-200 bg-secondary-100/60')}`}>
                 <span className="opacity-60">
                   {language === 'tr'
                     ? `Toplam ${filteredPackets.length} paket (Sayfa ${currentPage} / ${totalPages})`

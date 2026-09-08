@@ -2,6 +2,7 @@ import React from 'react';
 import { X, Trash2 } from "lucide-react";
 import { TooltipWrapper } from "@/components/ui/TooltipWrapper";
 import { logger } from '@/lib/logger';
+import { triggerHapticFeedback } from '@/lib/utils';
 import { CanvasDevice, DeviceType } from '../networkTopology.types';
 
 export interface TopologySelectionToolbarProps {
@@ -63,7 +64,7 @@ export const TopologySelectionToolbar: React.FC<TopologySelectionToolbarProps> =
             saveToHistory();
             handleAlign('left');
           }}
-          className={`p-1.5 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 ${isDark ? 'hover:bg-secondary-700 text-secondary-300' : 'hover:bg-secondary-100 text-secondary-600'}`}
+          className={`p-2 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 ${isDark ? 'hover:bg-secondary-700 text-secondary-300' : 'hover:bg-secondary-100 text-secondary-600'}`}
         >
           <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <line x1="4" y1="2" x2="4" y2="22" />
@@ -84,7 +85,7 @@ export const TopologySelectionToolbar: React.FC<TopologySelectionToolbarProps> =
             saveToHistory();
             handleAlign('h-center');
           }}
-          className={`p-1.5 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 ${isDark ? 'hover:bg-secondary-700 text-secondary-300' : 'hover:bg-secondary-100 text-secondary-600'}`}
+          className={`p-2 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 ${isDark ? 'hover:bg-secondary-700 text-secondary-300' : 'hover:bg-secondary-100 text-secondary-600'}`}
         >
           <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <line x1="12" y1="2" x2="12" y2="22" strokeDasharray="2 2" />
@@ -105,7 +106,7 @@ export const TopologySelectionToolbar: React.FC<TopologySelectionToolbarProps> =
             saveToHistory();
             handleAlign('right');
           }}
-          className={`p-1.5 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 ${isDark ? 'hover:bg-secondary-700 text-secondary-300' : 'hover:bg-secondary-100 text-secondary-600'}`}
+          className={`p-2 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 ${isDark ? 'hover:bg-secondary-700 text-secondary-300' : 'hover:bg-secondary-100 text-secondary-600'}`}
         >
           <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <line x1="20" y1="2" x2="20" y2="22" />
@@ -126,7 +127,7 @@ export const TopologySelectionToolbar: React.FC<TopologySelectionToolbarProps> =
             saveToHistory();
             handleAlign('top');
           }}
-          className={`p-1.5 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 ${isDark ? 'hover:bg-secondary-700 text-secondary-300' : 'hover:bg-secondary-100 text-secondary-600'}`}
+          className={`p-2 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 ${isDark ? 'hover:bg-secondary-700 text-secondary-300' : 'hover:bg-secondary-100 text-secondary-600'}`}
         >
           <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <line x1="2" y1="4" x2="22" y2="4" />
@@ -147,7 +148,7 @@ export const TopologySelectionToolbar: React.FC<TopologySelectionToolbarProps> =
             saveToHistory();
             handleAlign('v-center');
           }}
-          className={`p-1.5 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 ${isDark ? 'hover:bg-secondary-700 text-secondary-300' : 'hover:bg-secondary-100 text-secondary-600'}`}
+          className={`p-2 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 ${isDark ? 'hover:bg-secondary-700 text-secondary-300' : 'hover:bg-secondary-100 text-secondary-600'}`}
         >
           <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <line x1="2" y1="12" x2="22" y2="12" strokeDasharray="2 2" />
@@ -172,7 +173,7 @@ export const TopologySelectionToolbar: React.FC<TopologySelectionToolbarProps> =
             setSelectedDeviceIds(firstId ? [firstId] : []);
             if (firstDevice) onDeviceSelect(firstDevice.type === 'router' ? 'router' : firstDevice.type, firstId, undefined, firstDevice.name);
           }}
-          className={`p-1.5 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 ${isDark ? 'hover:bg-secondary-700 text-secondary-200' : 'hover:bg-secondary-100 text-secondary-600'}`}
+          className={`p-2 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 ${isDark ? 'hover:bg-secondary-700 text-secondary-200' : 'hover:bg-secondary-100 text-secondary-600'}`}
         >
           <X className="w-4 h-4" />
         </button>
@@ -184,11 +185,12 @@ export const TopologySelectionToolbar: React.FC<TopologySelectionToolbarProps> =
             e.stopPropagation();
             e.preventDefault();
             logger.debug('[Toolbar] Delete clicked');
+            triggerHapticFeedback('medium');
             saveToHistory();
             selectedDeviceIds.forEach(id => deleteDevice(id));
             setSelectedDeviceIds([]);
           }}
-          className="p-1.5 rounded-lg hover:bg-error-500/20 text-error-500 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-error-500"
+          className="p-2 rounded-lg hover:bg-error-500/20 text-error-500 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-error-500"
         >
           <Trash2 className="w-4 h-4" />
         </button>

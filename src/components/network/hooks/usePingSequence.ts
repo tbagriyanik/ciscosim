@@ -284,8 +284,28 @@ export function usePingSequence(deps: PingSequenceDeps) {
       ? connectivity.capturedPackets?.filter(packet => packet.protocol !== 'ARP')
       : connectivity.capturedPackets;
 
-    if (capturedPackets?.length) {
-      dispatchCapturedPackets(capturedPackets);
+    const path = connectivity.hopIds;
+
+    const packetsByHop = new Map<number, typeof capturedPackets>();
+    if (capturedPackets?.length && path.length >= 2) {
+      const connByHop = new Map<string, number>();
+      for (let i = 0; i < path.length - 1; i++) {
+        const fromId = path[i];
+        const toId = path[i + 1];
+        const conn = connections.find(c =>
+          ((c.sourceDeviceId === fromId && c.targetDeviceId === toId) ||
+            (c.sourceDeviceId === toId && c.targetDeviceId === fromId)) && c.active !== false
+        );
+        if (conn) connByHop.set(conn.id, i);
+      }
+      for (const pkt of capturedPackets) {
+        const hopIdx = connByHop.get(pkt.connectionId);
+        if (hopIdx !== undefined) {
+          const arr = packetsByHop.get(hopIdx) || [];
+          arr.push(pkt);
+          packetsByHop.set(hopIdx, arr);
+        }
+      }
     }
 
     if (!connectivity.success) {
@@ -369,6 +389,10 @@ export function usePingSequence(deps: PingSequenceDeps) {
             return;
           }
           if (currentHop < partialPath.length - 2) {
+            const failedHopPackets = packetsByHop.get(currentHop);
+            if (failedHopPackets?.length) {
+              dispatchCapturedPackets(failedHopPackets);
+            }
             currentHop++;
             startTime = Date.now();
             const shouldPause = pingIsPausedRef.current || pingStepModeRef.current;
@@ -380,6 +404,10 @@ export function usePingSequence(deps: PingSequenceDeps) {
               pingResumeCallbackRef.current = () => { startTime = Date.now(); pingAnimationRef.current = requestAnimationFrame(animateFailed); };
             }
             return;
+          }
+          const lastFailedHopPackets = packetsByHop.get(currentHop);
+          if (lastFailedHopPackets?.length) {
+            dispatchCapturedPackets(lastFailedHopPackets);
           }
           flushSync(() => { setPingAnimation((prev: any) => prev ? { ...prev, currentHopIndex: currentHop, progress: 1, frame: frameCount, success: false, isPaused: false } : null); });
           setErrorToast({ message: isTR ? 'Ping başarısız!' : 'Ping failed!', details: errorMessage });
@@ -396,7 +424,6 @@ export function usePingSequence(deps: PingSequenceDeps) {
       return;
     }
 
-    const path = connectivity.hopIds;
     pingPathRef.current = path;
 
     // Dispatch ARP update event so source PC and target PC record each other in their ARP tables
@@ -494,6 +521,10 @@ export function usePingSequence(deps: PingSequenceDeps) {
     };
 
     const advanceToNextHop = (hopCountIncrement: number) => {
+      const completedHopPackets = packetsByHop.get(currentHop);
+      if (completedHopPackets?.length) {
+        dispatchCapturedPackets(completedHopPackets);
+      }
       if (currentHop < path.length - 2) {
         currentHop++;
         startTime = Date.now();
@@ -516,7 +547,12 @@ export function usePingSequence(deps: PingSequenceDeps) {
           let returnFrameCount = frameCount;
           setPingAnimation((prev) => prev ? { ...prev, path: returnPath, currentHopIndex: 0, progress: 0, hopCount: prev.hopCount + hopCountIncrement, isPaused: pingStepModeRef.current, isReturn: true, broadcastTargets: [], broadcastAnim: [], broadcastProgress: 0 } : null);
           setHopPacketInfos(returnPacketInfos);
-          const finishSuccess = () => { setPingAnimation((prev) => prev ? { ...prev, success: true, isPaused: false, broadcastTargets: [], broadcastAnim: [], broadcastProgress: 0 } : null); setPingMode(false); };
+          const finishSuccess = () => {
+            const lastRetPackets = packetsByHop.get(0);
+            if (lastRetPackets?.length) {
+              dispatchCapturedPackets(lastRetPackets);
+            }
+            setPingAnimation((prev) => prev ? { ...prev, success: true, isPaused: false, broadcastTargets: [], broadcastAnim: [], broadcastProgress: 0 } : null); setPingMode(false); };
           const animateReturn = () => {
             pingSkipCallbackRef.current = () => {
               returnStartTime = 0;
@@ -537,6 +573,10 @@ export function usePingSequence(deps: PingSequenceDeps) {
               flushSync(() => { setPingAnimation((prev) => prev ? { ...prev, currentHopIndex: returnHop, progress: prog, frame: returnFrameCount, broadcastProgress: prog } : null); });
               pingAnimationRef.current = requestAnimationFrame(animateReturn);
             } else if (returnHop < returnPath.length - 2) {
+              const retPackets = packetsByHop.get(path.length - 2 - returnHop);
+              if (retPackets?.length) {
+                dispatchCapturedPackets(retPackets);
+              }
               returnHop++;
               returnStartTime = Date.now();
               const shouldPause = pingIsPausedRef.current || pingStepModeRef.current;

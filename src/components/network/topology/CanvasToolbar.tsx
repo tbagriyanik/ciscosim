@@ -49,7 +49,7 @@ export function CanvasToolbar({
   const { language } = useLanguage();
   return (
     <div
-      className={`fixed bottom-[60px] right-[10px] items-center gap-1 px-2 py-1 rounded-xl border ${isDark ? 'bg-secondary-800/90 border-secondary-700/50 shadow-lg' : 'bg-white/95 border-secondary-200/60 shadow-md'
+      className={`fixed bottom-[50px] right-[10px] items-center gap-1 px-2 py-1 rounded-xl border ${isDark ? 'bg-secondary-800/90 border-secondary-700/50 shadow-lg' : 'bg-white/95 border-secondary-200/60 shadow-md'
         } flex z-40`}
     >
       <TooltipWrapper
@@ -76,7 +76,7 @@ export function CanvasToolbar({
               return newZoom;
             })
           }
-          className={`w-7 h-7 flex items-center justify-center rounded ${isDark ? 'hover:bg-secondary-700 text-secondary-300' : 'hover:bg-secondary-100 text-secondary-600'
+          className={`w-8 h-8 flex items-center justify-center rounded text-lg font-bold ${isDark ? 'hover:bg-secondary-700 text-secondary-300' : 'hover:bg-secondary-100 text-secondary-600'
             }`}
         >
           −
@@ -123,7 +123,7 @@ export function CanvasToolbar({
               return newZoom;
             })
           }
-          className={`w-7 h-7 flex items-center justify-center rounded ${isDark ? 'hover:bg-secondary-700 text-secondary-300' : 'hover:bg-secondary-100 text-secondary-600'
+          className={`w-8 h-8 flex items-center justify-center rounded text-lg font-bold ${isDark ? 'hover:bg-secondary-700 text-secondary-300' : 'hover:bg-secondary-100 text-secondary-600'
             }`}
         >
           +
@@ -153,7 +153,7 @@ export function CanvasToolbar({
           <button
             aria-label={language === 'tr' ? 'Tümünü Ekrana Sığdır' : 'Zoom to Fit'}
             onClick={zoomToFit}
-            className={`w-7 h-7 flex items-center justify-center rounded transition-colors ${isDark ? 'hover:bg-secondary-700 text-secondary-300' : 'hover:bg-secondary-100 text-secondary-600'
+            className={`w-8 h-8 flex items-center justify-center rounded transition-colors ${isDark ? 'hover:bg-secondary-700 text-secondary-300' : 'hover:bg-secondary-100 text-secondary-600'
               }`}
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -172,7 +172,7 @@ export function CanvasToolbar({
           <button
             aria-label={language === 'tr' ? 'Mini Haritayı Aç/Kapat' : 'Toggle Mini-map'}
             onClick={onToggleMinimap}
-            className={`w-7 h-7 flex items-center justify-center rounded transition-colors ${isMinimapOpen
+            className={`w-8 h-8 flex items-center justify-center rounded transition-colors ${isMinimapOpen
                 ? 'bg-primary-500 text-white'
                 : isDark
                   ? 'hover:bg-secondary-700 text-secondary-300'

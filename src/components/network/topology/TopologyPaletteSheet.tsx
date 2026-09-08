@@ -90,7 +90,7 @@ export const TopologyPaletteSheet: React.FC<TopologyPaletteSheetProps> = ({
             {isTR ? 'Palet' : 'Palette'}
           </SheetTitle>
         </SheetHeader>
-        <div className="p-4 space-y-6 overflow-y-auto max-h-[calc(100vh-5rem)]">
+        <div className="p-4 space-y-6 overflow-y-auto max-h-[calc(100dvh-5rem-env(safe-area-inset-bottom,0px))]">
 
           {/* ── Devices Section ── */}
           <div className="space-y-3">

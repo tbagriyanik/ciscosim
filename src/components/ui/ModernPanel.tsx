@@ -197,9 +197,10 @@ export function ModernPanel({
         overlayMobileStyle.width = 'calc(100vw - 10px)';
         overlayMobileStyle.left = "5px";
         overlayMobileStyle.right = "5px";
-        overlayMobileStyle.top = "5px";
+        // Respect the fixed header height (h-14 = 56px on mobile) + small gap
+        overlayMobileStyle.top = "calc(56px + 8px)";
         overlayMobileStyle.bottom = "5px";
-        overlayMobileStyle.maxHeight = 'calc(100vh - 10px)';
+        overlayMobileStyle.maxHeight = 'calc(100vh - 56px - 13px)';
     }
 
     // Drag handling with performance optimization - uses top/left instead of transform

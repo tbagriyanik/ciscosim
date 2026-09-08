@@ -10,10 +10,17 @@ export function EnvNotifier() {
   useEffect(() => {
     let mounted = true;
 
+    // Only notify in development mode or if explicitly enabled to prevent unnecessary toasts for end-users
+    if (process.env.NODE_ENV !== 'development') return;
+
+    // Check session storage to only trigger once per session
+    if (typeof window !== 'undefined' && sessionStorage.getItem('env_notified')) return;
+
     async function verifyEnv() {
       try {
         const status = await checkEnvStatus();
         if (!mounted) return;
+        sessionStorage.setItem('env_notified', 'true');
 
         if (!status.hasEnv) {
           toast({
@@ -26,24 +33,21 @@ export function EnvNotifier() {
 
         const missingParts: string[] = [];
         if (!status.hasSheetsKey) {
-          missingParts.push('Google Sheets Key (GOOGLE_SHEETS_CONTACT_URL)');
+          missingParts.push('GOOGLE_SHEETS_CONTACT_URL');
         }
         if (!status.hasKvKeys) {
-          missingParts.push('KV Anahtarları (KV_REST_API_URL / KV_REST_API_TOKEN)');
+          missingParts.push('KV_REST_API_URL / KV_REST_API_TOKEN');
         }
         if (!status.hasCertSecret) {
-          missingParts.push('Sertifika Gizli Anahtarı (CERTIFICATE_SECRET)');
+          missingParts.push('CERTIFICATE_SECRET');
         }
         if (!status.hasExamHmacKey) {
-          missingParts.push('Sınav HMAC Anahtarı (EXAM_HMAC_KEY)');
+          missingParts.push('EXAM_HMAC_KEY');
         }
 
         if (missingParts.length > 0) {
-          toast({
-            variant: 'destructive',
-            title: 'Eksik Çevre Değişkenleri',
-            description: `Aşağıdaki servis anahtarları tanımlı değil: ${missingParts.join(', ')}`,
-          });
+          // Log to console in dev mode instead of blocking full screen with destructive toasts
+          console.warn(`[Dev Warning] Missing ENV variables: ${missingParts.join(', ')}`);
         }
       } catch (error) {
         console.error('Env status check failed:', error);

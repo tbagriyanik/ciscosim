@@ -69,11 +69,11 @@ export const CanvasDefs: React.FC<CanvasDefsProps> = ({
       </radialGradient>
       {/* Grid pattern with improved visibility */}
       <pattern id="gridPattern" width="16" height="16" patternUnits="userSpaceOnUse">
-        <circle cx="8" cy="8" r="1" style={{ fill: isDark ? 'var(--color-secondary-600)' : 'var(--color-secondary-500)' }} opacity="0.6" />
+        <circle cx="8" cy="8" r="1" style={{ fill: isDark ? 'var(--color-secondary-600)' : 'var(--color-secondary-500)', shapeRendering: 'geometricPrecision' }} opacity="0.6" />
       </pattern>
       {/* Major grid lines pattern */}
       <pattern id="majorGridPattern" width="80" height="80" patternUnits="userSpaceOnUse">
-        <rect width="80" height="80" fill="none" style={{ stroke: isDark ? 'var(--color-secondary-700)' : 'var(--color-secondary-300)' }} strokeWidth="0.5" opacity="0.3" />
+        <rect width="80" height="80" fill="none" style={{ stroke: isDark ? 'var(--color-secondary-700)' : 'var(--color-secondary-300)', shapeRendering: 'crispEdges' }} strokeWidth="0.5" opacity="0.3" />
       </pattern>
       {/* Device 3D Gradients for Dark Mode */}
       <linearGradient id="pcGradientDark" x1="0%" y1="0%" x2="0%" y2="100%">

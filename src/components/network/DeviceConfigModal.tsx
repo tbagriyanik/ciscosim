@@ -186,6 +186,8 @@ export function DeviceConfigModal({
               <input
                 ref={configInputRef}
                 type="text"
+                autoCapitalize="off"
+                autoCorrect="off"
                 value={tempNameValue}
                 onChange={(e) => setTempNameValue(e.target.value)}
                 className={`w-full ${isMobile ? 'px-4 py-2.5' : 'px-4 py-3'} rounded-2xl border transition-all duration-300 font-bold ${isDark
@@ -224,6 +226,9 @@ export function DeviceConfigModal({
                   </label>
                   <input
                     type="text"
+                    inputMode="decimal"
+                    autoCapitalize="off"
+                    autoCorrect="off"
                     value={ipValue}
                     onChange={(e) => setIpValue(e.target.value)}
                     className={`w-full px-4 ${isMobile ? 'py-2' : 'py-2.5'} rounded-xl border font-mono font-bold transition-all duration-300 ${isDark
@@ -240,6 +245,9 @@ export function DeviceConfigModal({
                   </label>
                   <input
                     type="text"
+                    inputMode="decimal"
+                    autoCapitalize="off"
+                    autoCorrect="off"
                     value={subnetValue}
                     onChange={(e) => setSubnetValue(e.target.value)}
                     className={`w-full px-4 ${isMobile ? 'py-2' : 'py-2.5'} rounded-xl border font-mono font-bold transition-all duration-300 ${isDark
@@ -256,6 +264,9 @@ export function DeviceConfigModal({
                   </label>
                   <input
                     type="text"
+                    inputMode="decimal"
+                    autoCapitalize="off"
+                    autoCorrect="off"
                     value={gatewayValue}
                     onChange={(e) => setGatewayValue(e.target.value)}
                     className={`w-full px-4 ${isMobile ? 'py-2' : 'py-2.5'} rounded-xl border font-mono font-bold transition-all duration-300 ${isDark
@@ -272,6 +283,9 @@ export function DeviceConfigModal({
                   </label>
                   <input
                     type="text"
+                    inputMode="text"
+                    autoCapitalize="off"
+                    autoCorrect="off"
                     value={ipv6Value}
                     onChange={(e) => setIpv6Value(e.target.value)}
                     className={`w-full px-4 ${isMobile ? 'py-2' : 'py-2.5'} rounded-xl border font-mono font-bold transition-all duration-300 ${isDark

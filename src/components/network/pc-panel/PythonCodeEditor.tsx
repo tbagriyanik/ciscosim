@@ -27,12 +27,6 @@ const CODE_WORDS = [
   'function', 'const', 'let', 'var', 'console', 'log', 'return', 'echo',
 ];
 
-function escapeHtml(value: string): string {
-  return value.replace(/[&<>"']/g, (char) => (
-    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char] || char
-  ));
-}
-
 export const SYNTAX_COLORS = {
   keyword: colors.purple[400],
   builtin: colors.theme.accent,
@@ -50,8 +44,8 @@ function highlightCode(code: string): string {
   let match: RegExpExecArray | null;
 
   while ((match = token.exec(code))) {
-    output += escapeHtml(code.slice(lastIndex, match.index));
-    const text = escapeHtml(match[0]);
+    output += code.slice(lastIndex, match.index);
+    const text = match[0];
     const raw = match[0];
 
     let kind = 'keyword';
@@ -73,7 +67,7 @@ function highlightCode(code: string): string {
     lastIndex = match.index + raw.length;
   }
 
-  const result = output + escapeHtml(code.slice(lastIndex)) + (code.endsWith('\n') ? ' ' : '');
+  const result = output + code.slice(lastIndex) + (code.endsWith('\n') ? ' ' : '');
   return result;
 }
 

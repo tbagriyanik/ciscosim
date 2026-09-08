@@ -89,3 +89,31 @@ export function generateUniqueMacAddress(reservedOrUsedMacs?: Set<string> | stri
   }
   return generateMacAddress();
 }
+
+/**
+ * Triggers a light haptic feedback vibration on supported mobile devices.
+ * Type options: 'light' (10ms), 'medium' (25ms), 'heavy' (50ms), 'success' ([15, 30, 15]ms)
+ */
+export function triggerHapticFeedback(type: 'light' | 'medium' | 'heavy' | 'success' = 'light'): void {
+  if (typeof window !== 'undefined' && 'navigator' in window && typeof window.navigator.vibrate === 'function') {
+    try {
+      switch (type) {
+        case 'light':
+          window.navigator.vibrate(10);
+          break;
+        case 'medium':
+          window.navigator.vibrate(25);
+          break;
+        case 'heavy':
+          window.navigator.vibrate(50);
+          break;
+        case 'success':
+          window.navigator.vibrate([15, 30, 15]);
+          break;
+      }
+    } catch {
+      // Ignore vibration errors on unsupported environments
+    }
+  }
+}
+
