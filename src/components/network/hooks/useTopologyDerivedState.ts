@@ -55,18 +55,19 @@ export function useTopologyDerivedState({
           )
       )
       .map((connection) => {
-        const clientDevice = topologyDevices.find(
-          (d) =>
-            (d.id === connection.sourceDeviceId && (d.type === 'pc' || d.type === 'iot')) ||
-            (d.id === connection.targetDeviceId && (d.type === 'pc' || d.type === 'iot'))
-        );
+        const sourceDev = deviceMap.get(connection.sourceDeviceId);
+        const targetDev = deviceMap.get(connection.targetDeviceId);
+        const clientDevice =
+          (sourceDev && (sourceDev.type === 'pc' || sourceDev.type === 'iot')) ? sourceDev :
+          (targetDev && (targetDev.type === 'pc' || targetDev.type === 'iot')) ? targetDev : null;
+
         if (clientDevice && clientDevice.wifi?.powerDisabled) {
           return { ...connection, active: false };
         }
         return connection;
       });
     return [...topologyConnections, ...implicitWireless];
-  }, [topologyConnections, topologyDevices, deviceStates]);
+  }, [topologyConnections, topologyDevices, deviceStates, deviceMap]);
 
   // Connection map for O(1) lookups during culling
   const connectionMap = useMemo(() => {

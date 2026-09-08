@@ -22,6 +22,7 @@ import {
 import { portsFormTrunk, getVlanSpecificSTPBlocking } from './vlanAndSwitching';
 import { checkPortSecurityViolation, checkSerialEncapsulation } from './security';
 import { evaluateAcl, evaluateIpv6Acl } from './acl';
+import { evaluateNatForHop } from './natEvaluation';
 
 /**
  * Robust Network connectivity checker for simulation
@@ -1310,9 +1311,6 @@ export function checkConnectivity(
   // Fallback for simple topologies without advanced device states
   const basicConnectivityPossible = !deviceStates && !routingRequired;
 
-  // Track which router in the path applied NAT (for reverse-path verification)
-  let natTranslatedAt: string | null = null;
-
   // Track packet addresses as they are translated while traversing the path.
   let currentSourceIp = getPrimaryDeviceIp(sourceId, devices, safeDeviceStates, resolvedTargetIp.includes(':'));
   let currentTargetIp = resolvedTargetIp;
@@ -1454,107 +1452,28 @@ export function checkConnectivity(
       }
 
       // 7.1.5 NAT Logic (Inside -> Outside or Outside -> Inside)
-      if (ingressPort?.natSide && egressPort?.natSide && ingressPort.natSide !== egressPort.natSide) {
-        if (ingressPort.natSide === 'inside' && egressPort.natSide === 'outside') {
-          // Source NAT (Inside -> Outside)
-          let translated = false;
-
-          // 1. Static NAT
-          if (state.natStaticTranslations) {
-            const staticEntry = state.natStaticTranslations.find(t => t.localIp === currentSourceIp);
-            if (staticEntry) {
-              currentSourceIp = staticEntry.globalIp;
-              translated = true;
-            }
-          }
-
-          // 2. Dynamic PAT (Overload) / Pool
-          if (!translated && state.natDynamicRules) {
-            for (const rule of state.natDynamicRules) {
-              const aclResult = evaluateAcl(rule.aclId, state, currentSourceIp, currentTargetIp, options?.protocol, options?.port);
-              if (aclResult === 'permit') {
-                if (rule.overload && rule.interface) {
-                  const outPort = state.ports[rule.interface];
-                  if (outPort?.ipAddress) {
-                    currentSourceIp = outPort.ipAddress;
-                    translated = true;
-                    break;
-                  }
-                } else if (rule.poolName && state.natPools?.[rule.poolName]) {
-                  currentSourceIp = state.natPools[rule.poolName].startIp;
-                  translated = true;
-                  break;
-                }
-              }
-            }
-          }
-
-          // 3. Drop if no translation found and only static NAT is configured (no dynamic rules)
-          //    This enforces strict static NAT behaviour: only mapped addresses may exit.
-          const hasOnlyStaticNat = (state.natStaticTranslations?.length ?? 0) > 0 && !state.natDynamicRules?.length;
-          if (!translated && hasOnlyStaticNat) {
-            return {
-              success: false,
-              hops: hopNames.slice(0, i + 1),
-              hopIds: path.slice(0, i + 1),
-              targetId: targetDevice.id,
-              error: language === 'tr'
-                ? `NAT: ${currentSourceIp} için statik çevrim bulunamadı — paket düşürüldü.`
-                : `NAT: no static translation for ${currentSourceIp} — packet dropped.`
-            };
-          }
-
-          // Record translation for reverse-path verification
-          if (translated && state.natStaticTranslations?.length) {
-            natTranslatedAt = stepDeviceId;
-          }
-        } else if (ingressPort.natSide === 'outside' && egressPort.natSide === 'inside') {
-          // Destination NAT (Outside -> Inside) - Typically for return traffic or port forwarding
-          let translated = false;
-
-          // 1. Static NAT (Outside -> Inside)
-          if (state.natStaticTranslations) {
-            const staticEntry = state.natStaticTranslations.find(t => t.globalIp === currentTargetIp);
-            if (staticEntry) {
-              currentTargetIp = staticEntry.localIp;
-              translated = true;
-            }
-          }
-
-          // 2. Check Translation Table (Return traffic)
-          if (!translated && state.natTranslations) {
-            const entry = state.natTranslations.find(t => t.globalIp === currentTargetIp && t.remoteIp === currentSourceIp);
-            if (entry) {
-              currentTargetIp = entry.localIp;
-              translated = true;
-            }
-          }
-
-          // Record for reverse-path tracking
-          if (translated) {
-            natTranslatedAt = stepDeviceId;
-          }
-        }
-      }
-
-      // 7.1.6 Reverse NAT verification
-      // Verify that return traffic can be reverse-translated.
-      // If dynamic NAT is configured, we assume stateful reverse translation succeeds.
-      if (natTranslatedAt === stepDeviceId && state.natStaticTranslations) {
-        const hasStaticReverse = state.natStaticTranslations.some(t => t.globalIp === currentSourceIp);
-        const hasDynamicNat = state.natDynamicRules && state.natDynamicRules.length > 0;
-
-        if (!hasStaticReverse && !hasDynamicNat) {
+      if (ingressPortId && egressPortId) {
+        const natResult = evaluateNatForHop(
+          stepDeviceId,
+          state,
+          ingressPortId,
+          egressPortId,
+          currentSourceIp,
+          currentTargetIp,
+          options,
+          language
+        );
+        if (natResult.error) {
           return {
             success: false,
             hops: hopNames.slice(0, i + 1),
             hopIds: path.slice(0, i + 1),
             targetId: targetDevice.id,
-            error: language === 'tr'
-              ? `NAT çevrimi tamamlanamıyor: ${currentSourceIp} için ters çevrim bulunamadı.`
-              : `NAT translation incomplete: no reverse mapping for ${currentSourceIp}.`
+            error: natResult.error,
           };
         }
+        if (natResult.newSourceIp) currentSourceIp = natResult.newSourceIp;
+        if (natResult.newTargetIp) currentTargetIp = natResult.newTargetIp;
       }
 
       // 7.2. Check Outbound ACLs

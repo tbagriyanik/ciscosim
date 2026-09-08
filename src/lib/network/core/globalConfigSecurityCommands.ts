@@ -2,6 +2,7 @@ import { IOS_ERRORS, iosModeError } from './iosErrors';
 import type { CommandContext } from './commandTypes';
 import type { SwitchState, CommandResult } from '../types';
 import { getPvstUpdate } from './commandHelpers';
+import { encryptMd5Password, encryptType7Password } from '../crypto';
 
 /**
  * No Spanning-Tree - Disable spanning-tree globally or per-VLAN
@@ -307,5 +308,228 @@ export function cmdCryptoKeyZeroizeRsa(state: SwitchState, input: string, ctx: C
     requiresConfirmation: true,
     confirmationMessage: `All RSA keys (${keyName}) will be removed. Continue?`,
     confirmationAction: 'crypto-key-zeroize'
+  };
+}
+
+export function cmdUsername(state: SwitchState, input: string, _ctx: CommandContext): CommandResult {
+  if (state.currentMode !== 'config') {
+    return { success: false, error: iosModeError() };
+  }
+
+  const match = input.match(/^username\s+(\S+)(?:\s+privilege\s+(\d+))?(?:\s+(secret|password)\s+(.+))?$/i);
+  if (!match) {
+    return { success: false, error: IOS_ERRORS.invalidInput };
+  }
+
+  const username = match[1];
+  const privilege = match[2] ? parseInt(match[2]) : 0;
+  const password = match[4] || '';
+  const currentUsers = Array.isArray(state.security?.users) ? state.security.users : [];
+  const normalizedUsername = username.toLowerCase();
+  const newUsers = currentUsers.filter((user: { username: string; password: string; privilege: number }) => (user?.username || '').toLowerCase() !== normalizedUsername);
+  newUsers.push({
+    username,
+    password,
+    privilege
+  });
+
+  return {
+    success: true,
+    newState: {
+      security: {
+        ...state.security,
+        users: newUsers
+      }
+    }
+  };
+}
+
+export function cmdServicePasswordEncryption(state: SwitchState, _input: string, _ctx: CommandContext): CommandResult {
+  if (state.currentMode !== 'config') {
+    return { success: false, error: iosModeError() };
+  }
+
+  return {
+    success: true,
+    newState: {
+      security: {
+        ...state.security,
+        servicePasswordEncryption: true
+      }
+    }
+  };
+}
+
+export function cmdNoServicePasswordEncryption(state: SwitchState, _input: string, _ctx: CommandContext): CommandResult {
+  if (state.currentMode !== 'config') {
+    return { success: false, error: iosModeError() };
+  }
+
+  return {
+    success: true,
+    newState: {
+      security: {
+        ...state.security,
+        servicePasswordEncryption: false
+      }
+    }
+  };
+}
+
+export function cmdEnableSecret(state: SwitchState, input: string, _ctx: CommandContext): CommandResult {
+  if (state.currentMode !== 'config') {
+    return { success: false, error: iosModeError() };
+  }
+
+  const match = input.match(/^enable\s+secret\s+(.+)$/i);
+  if (!match) {
+    return { success: false, error: "% Invalid input detected at '^' marker." };
+  }
+
+  const password = match[1];
+  const encryptedPassword = encryptMd5Password(password);
+
+  return {
+    success: true,
+    newState: {
+      security: {
+        ...state.security,
+        enableSecret: encryptedPassword,
+        enableSecretEncrypted: true
+      }
+    }
+  };
+}
+
+export function cmdEnablePassword(state: SwitchState, input: string, _ctx: CommandContext): CommandResult {
+  if (state.currentMode !== 'config') {
+    return { success: false, error: iosModeError() };
+  }
+
+  const match = input.match(/^enable\s+password\s+(.+)$/i);
+  if (!match) {
+    return { success: false, error: '% Invalid enable password command' };
+  }
+
+  const password = match[1];
+  const encryptedPassword = state.security?.servicePasswordEncryption
+    ? encryptType7Password(password)
+    : password;
+
+  return {
+    success: true,
+    newState: {
+      security: {
+        ...state.security,
+        enablePassword: encryptedPassword
+      }
+    }
+  };
+}
+
+export function cmdNoEnableSecret(state: SwitchState, _input: string, _ctx: CommandContext): CommandResult {
+  if (state.currentMode !== 'config') {
+    return { success: false, error: iosModeError() };
+  }
+
+  const newSecurity = { ...state.security };
+  delete newSecurity.enableSecret;
+  return {
+    success: true,
+    newState: { security: newSecurity }
+  };
+}
+
+export function cmdNoEnablePassword(state: SwitchState, _input: string, _ctx: CommandContext): CommandResult {
+  if (state.currentMode !== 'config') {
+    return { success: false, error: iosModeError() };
+  }
+
+  const newSecurity = { ...state.security };
+  delete newSecurity.enablePassword;
+  return {
+    success: true,
+    newState: { security: newSecurity }
+  };
+}
+
+export function cmdBannerMotd(state: SwitchState, input: string, _ctx: CommandContext): CommandResult {
+  if (state.currentMode !== 'config') {
+    return { success: false, error: iosModeError() };
+  }
+
+  const match = input.match(/^banner\s+motd\s+(.)([\s\S]*?)\1\s*$/i);
+  if (!match) {
+    return { success: false, error: "% Invalid input detected at '^' marker." };
+  }
+
+  return {
+    success: true,
+    newState: { bannerMOTD: match[2] }
+  };
+}
+
+export function cmdNoBannerMotd(state: SwitchState, _input: string, _ctx: CommandContext): CommandResult {
+  if (state.currentMode !== 'config') {
+    return { success: false, error: iosModeError() };
+  }
+
+  return {
+    success: true,
+    newState: { bannerMOTD: undefined }
+  };
+}
+
+export function cmdBannerLogin(state: SwitchState, input: string, _ctx: CommandContext): CommandResult {
+  if (state.currentMode !== 'config') {
+    return { success: false, error: iosModeError() };
+  }
+
+  const match = input.match(/^banner\s+login\s+(.)([\s\S]*?)\1\s*$/i);
+  if (!match) {
+    return { success: false, error: '% Invalid banner command. Use: banner login #message#' };
+  }
+
+  return {
+    success: true,
+    newState: { bannerLogin: match[2] }
+  };
+}
+
+export function cmdNoBannerLogin(state: SwitchState, _input: string, _ctx: CommandContext): CommandResult {
+  if (state.currentMode !== 'config') {
+    return { success: false, error: iosModeError() };
+  }
+
+  return {
+    success: true,
+    newState: { bannerLogin: undefined }
+  };
+}
+
+export function cmdBannerExec(state: SwitchState, input: string, _ctx: CommandContext): CommandResult {
+  if (state.currentMode !== 'config') {
+    return { success: false, error: iosModeError() };
+  }
+
+  const match = input.match(/^banner\s+exec\s+(.)([\s\S]*?)\1\s*$/i);
+  if (!match) {
+    return { success: false, error: '% Invalid banner command. Use: banner exec #message#' };
+  }
+
+  return {
+    success: true,
+    newState: { bannerExec: match[2] }
+  };
+}
+
+export function cmdNoBannerExec(state: SwitchState, _input: string, _ctx: CommandContext): CommandResult {
+  if (state.currentMode !== 'config') {
+    return { success: false, error: iosModeError() };
+  }
+
+  return {
+    success: true,
+    newState: { bannerExec: undefined }
   };
 }

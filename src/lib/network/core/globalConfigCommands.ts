@@ -5,7 +5,6 @@ import type { SwitchState, CommandResult, Route } from '../types';
 import type { CanvasDevice } from '@/components/network/networkTopology.types';
 import { buildRunningConfig } from './configBuilder';
 import { canAssignIPToPhysicalPort, isLayer3Switch } from '../switchModels';
-import { encryptMd5Password, encryptType7Password } from '../crypto';
 import { getPvstUpdate } from './commandHelpers';
 import { getDeviceCapabilities } from '../capabilities';
 import { validateIpRoutingSupport } from './L3Validation';
@@ -33,6 +32,7 @@ import {
 import {
   cmdNoSpanningTree,
   cmdNoUsername,
+  cmdUsername,
   cmdNoInterface,
   cmdSpanningTreeVlan,
   cmdSpanningTreePortfastDefault,
@@ -41,7 +41,19 @@ import {
   cmdIpArpInspection,
   cmdNoIpArpInspection,
   cmdCryptoKeyGenerateRsa,
-  cmdCryptoKeyZeroizeRsa
+  cmdCryptoKeyZeroizeRsa,
+  cmdServicePasswordEncryption,
+  cmdNoServicePasswordEncryption,
+  cmdEnableSecret,
+  cmdEnablePassword,
+  cmdNoEnableSecret,
+  cmdNoEnablePassword,
+  cmdBannerMotd,
+  cmdNoBannerMotd,
+  cmdBannerLogin,
+  cmdNoBannerLogin,
+  cmdBannerExec,
+  cmdNoBannerExec
 } from './globalConfigSecurityCommands';
 import {
   cmdIpAccessList,
@@ -624,41 +636,7 @@ function cmdMlsQos(state: SwitchState, _input: string, _ctx: CommandContext): Co
   };
 }
 
-/**
- * Username - Create username
- */
-function cmdUsername(state: SwitchState, input: string, _ctx: CommandContext): CommandResult {
-  if (state.currentMode !== 'config') {
-    return { success: false, error: iosModeError() };
-  }
 
-  const match = input.match(/^username\s+(\S+)(?:\s+privilege\s+(\d+))?(?:\s+(secret|password)\s+(.+))?$/i);
-  if (!match) {
-    return { success: false, error: IOS_ERRORS.invalidInput };
-  }
-
-  const username = match[1];
-  const privilege = match[2] ? parseInt(match[2]) : 0;
-  const password = match[4] || '';
-  const currentUsers = Array.isArray(state.security?.users) ? state.security.users : [];
-  const normalizedUsername = username.toLowerCase();
-  const newUsers = currentUsers.filter((user: { username: string; password: string; privilege: number }) => (user?.username || '').toLowerCase() !== normalizedUsername);
-  newUsers.push({
-    username,
-    password,
-    privilege
-  });
-
-  return {
-    success: true,
-    newState: {
-      security: {
-        ...state.security,
-        users: newUsers
-      }
-    }
-  };
-}
 
 /**
  * VLAN - Create/enter VLAN configuration
@@ -914,233 +892,6 @@ function cmdSpanningTreeMode(state: SwitchState, input: string, _ctx: CommandCon
   return {
     success: true,
     newState: { spanningTreeMode: match[1].toLowerCase() as 'pvst' | 'rapid-pvst' | 'mst' }
-  };
-}
-
-/**
- * Service Password-Encryption
- */
-function cmdServicePasswordEncryption(state: SwitchState, _input: string, _ctx: CommandContext): CommandResult {
-  if (state.currentMode !== 'config') {
-    return { success: false, error: iosModeError() };
-  }
-
-  return {
-    success: true,
-    newState: {
-      security: {
-        ...state.security,
-        servicePasswordEncryption: true
-      }
-    }
-  };
-}
-
-/**
- * No Service Password-Encryption
- */
-function cmdNoServicePasswordEncryption(state: SwitchState, _input: string, _ctx: CommandContext): CommandResult {
-  if (state.currentMode !== 'config') {
-    return { success: false, error: iosModeError() };
-  }
-
-  return {
-    success: true,
-    newState: {
-      security: {
-        ...state.security,
-        servicePasswordEncryption: false
-      }
-    }
-  };
-}
-
-/**
- * Enable Secret
- */
-function cmdEnableSecret(state: SwitchState, input: string, _ctx: CommandContext): CommandResult {
-  if (state.currentMode !== 'config') {
-    return { success: false, error: iosModeError() };
-  }
-
-  const match = input.match(/^enable\s+secret\s+(.+)$/i);
-  if (!match) {
-    return { success: false, error: "% Invalid input detected at '^' marker." };
-  }
-
-  const password = match[1];
-  const encryptedPassword = encryptMd5Password(password);
-
-  return {
-    success: true,
-    newState: {
-      security: {
-        ...state.security,
-        enableSecret: encryptedPassword,
-        enableSecretEncrypted: true
-      }
-    }
-  };
-}
-
-/**
- * Enable Password
- */
-function cmdEnablePassword(state: SwitchState, input: string, _ctx: CommandContext): CommandResult {
-  if (state.currentMode !== 'config') {
-    return { success: false, error: iosModeError() };
-  }
-
-  const match = input.match(/^enable\s+password\s+(.+)$/i);
-  if (!match) {
-    return { success: false, error: '% Invalid enable password command' };
-  }
-
-  const password = match[1];
-  // Encrypt with Type 7 if service password encryption is enabled
-  const encryptedPassword = state.security?.servicePasswordEncryption
-    ? encryptType7Password(password)
-    : password;
-
-  return {
-    success: true,
-    newState: {
-      security: {
-        ...state.security,
-        enablePassword: encryptedPassword
-      }
-    }
-  };
-}
-
-/**
- * No Enable Secret
- */
-function cmdNoEnableSecret(state: SwitchState, _input: string, _ctx: CommandContext): CommandResult {
-  if (state.currentMode !== 'config') {
-    return { success: false, error: iosModeError() };
-  }
-
-  const newSecurity = { ...state.security };
-  delete newSecurity.enableSecret;
-  return {
-    success: true,
-    newState: { security: newSecurity }
-  };
-}
-
-/**
- * No Enable Password
- */
-function cmdNoEnablePassword(state: SwitchState, _input: string, _ctx: CommandContext): CommandResult {
-  if (state.currentMode !== 'config') {
-    return { success: false, error: iosModeError() };
-  }
-
-  const newSecurity = { ...state.security };
-  delete newSecurity.enablePassword;
-  return {
-    success: true,
-    newState: { security: newSecurity }
-  };
-}
-
-/**
- * Banner MOTD
- */
-function cmdBannerMotd(state: SwitchState, input: string, _ctx: CommandContext): CommandResult {
-  if (state.currentMode !== 'config') {
-    return { success: false, error: iosModeError() };
-  }
-
-  const match = input.match(/^banner\s+motd\s+(.)([\s\S]*?)\1\s*$/i);
-  if (!match) {
-    return { success: false, error: "% Invalid input detected at '^' marker." };
-  }
-
-  return {
-    success: true,
-    newState: { bannerMOTD: match[2] }
-  };
-}
-
-/**
- * No Banner MOTD
- */
-function cmdNoBannerMotd(state: SwitchState, _input: string, _ctx: CommandContext): CommandResult {
-  if (state.currentMode !== 'config') {
-    return { success: false, error: iosModeError() };
-  }
-
-  return {
-    success: true,
-    newState: { bannerMOTD: undefined }
-  };
-}
-
-/**
- * Banner Login
- */
-function cmdBannerLogin(state: SwitchState, input: string, _ctx: CommandContext): CommandResult {
-  if (state.currentMode !== 'config') {
-    return { success: false, error: iosModeError() };
-  }
-
-  const match = input.match(/^banner\s+login\s+(.)([\s\S]*?)\1\s*$/i);
-  if (!match) {
-    return { success: false, error: '% Invalid banner command. Use: banner login #message#' };
-  }
-
-  return {
-    success: true,
-    newState: { bannerLogin: match[2] }
-  };
-}
-
-/**
- * No Banner Login
- */
-function cmdNoBannerLogin(state: SwitchState, _input: string, _ctx: CommandContext): CommandResult {
-  if (state.currentMode !== 'config') {
-    return { success: false, error: iosModeError() };
-  }
-
-  return {
-    success: true,
-    newState: { bannerLogin: undefined }
-  };
-}
-
-/**
- * Banner Exec
- */
-function cmdBannerExec(state: SwitchState, input: string, _ctx: CommandContext): CommandResult {
-  if (state.currentMode !== 'config') {
-    return { success: false, error: iosModeError() };
-  }
-
-  const match = input.match(/^banner\s+exec\s+(.)([\s\S]*?)\1\s*$/i);
-  if (!match) {
-    return { success: false, error: '% Invalid banner command. Use: banner exec #message#' };
-  }
-
-  return {
-    success: true,
-    newState: { bannerExec: match[2] }
-  };
-}
-
-/**
- * No Banner Exec
- */
-function cmdNoBannerExec(state: SwitchState, _input: string, _ctx: CommandContext): CommandResult {
-  if (state.currentMode !== 'config') {
-    return { success: false, error: iosModeError() };
-  }
-
-  return {
-    success: true,
-    newState: { bannerExec: undefined }
   };
 }
 

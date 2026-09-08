@@ -124,28 +124,20 @@
 
 ## EN: PC CMD Commands / TR: PC CMD Komutları
 
+PC panelinde aşağıdaki komutları kullanabilirsiniz:
+
 | Command / Komut | EN | TR |
 |---|---|---|
-| `ipconfig [/all] [/release] [/renew]` | IP configuration | IP yapılandırması |
-| `ping [-n count] [-l size] [-w timeout] [-a] [-t] [-4\|-6] <host>` | Test connectivity | Bağlantı testi |
-| `tracert [-d] [-h max_hops] [-w timeout] [-4\|-6] <host>` | Trace route | Rota izleme |
-| `netstat [-a] [-n] [-o] [-p tcp\|udp] [-r] [-s] [-e]` | Network statistics | Ağ istatistikleri |
-| `nslookup [-type=A\|AAAA\|CNAME\|MX\|NS\|PTR\|TXT] <domain\|ip> [server]` | DNS lookup | DNS sorgusu |
-| `telnet <host> [port]` | Telnet connection | Telnet bağlantısı |
-| `ssh [-l user] <host>` | SSH connection | SSH bağlantısı |
-| `curl` / `wget <url>` | View web page | Web sayfası görüntüle |
-| `ftp` | FTP session / FTP oturumu |
-| `arp [-a] [-g] [-v] [-d [*]] [-s <ip> <mac>]` | ARP table | ARP tablosu |
-| `nbtstat [-n] [-c] [-r] [-R] [-RR] [-S] [-s] [-a name] [-A ip] [-L name]` | NetBIOS status | NetBIOS durumu |
-| `hostname` | Computer name | Bilgisayar adı |
-| `dir` | Directory listing | Dosya listesi |
-| `type <file>` | Display file contents | Dosya içeriğini göster |
-| `copy <src> <dest>` | Copy file | Dosya kopyala |
-| `move <src> <dest>` | Move file or directory | Dosya/klasör taşı |
-| `ren <old> <new>` | Rename file or directory | Yeniden adlandır |
-| `ver` | Version info | Versiyon bilgisi |
-| `cls` | Clear screen | Ekranı temizle |
-| `help` / `?` | Desktop command help | PC komut yardımı |
+| `ipconfig` | IP configuration | IP yapılandırması |
+| `ping` | Test connectivity | Bağlantı testi |
+| `tracert` | Trace route | Rota izleme |
+| `netstat` | Network statistics | Ağ istatistikleri |
+| `nslookup` | DNS lookup | DNS sorgusu |
+| `ssh` / `telnet` | Remote connection | Uzaktan bağlantı |
+| `arp` | ARP table | ARP tablosu |
+| `dir` / `type` / `copy` | File operations | Dosya işlemleri |
+
+Tüm parametreler ve detaylı kullanım için → [PC_CMD_REFERENCE.md](PC_CMD_REFERENCE.md)
 
 ---
 

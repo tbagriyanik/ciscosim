@@ -14,7 +14,7 @@ const DEVICE_DIMENSIONS = {
   wlc: { width: 90, height: 80 },
 } as const;
 
-const getDeviceDimensions = (type: string) => {
+const getDeviceDimensions = (type: DeviceType | string) => {
   if (type === 'mobile') return DEVICE_DIMENSIONS.mobile;
   if (type === 'pc' || type === 'iot') return DEVICE_DIMENSIONS.pc;
   if (type === 'router') return DEVICE_DIMENSIONS.router;
@@ -23,11 +23,11 @@ const getDeviceDimensions = (type: string) => {
   return DEVICE_DIMENSIONS.switch;
 };
 
-export const getDeviceWidth = (type: string): number => {
+export const getDeviceWidth = (type: DeviceType | string): number => {
   return getDeviceDimensions(type).width;
 };
 
-export const getDeviceHeight = (deviceType: string, portCount: number): number => {
+export const getDeviceHeight = (deviceType: DeviceType | string, portCount: number): number => {
   const dims = getDeviceDimensions(deviceType);
   if (deviceType === 'pc' || deviceType === 'iot') return dims.height;
   const numRows = Math.ceil(portCount / 8);

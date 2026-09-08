@@ -4,7 +4,7 @@ import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Laptop, Terminal as TerminalIcon, CornerDownLeft, Trash2, Pin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ShortcutBadge } from '@/components/ui/ShortcutBadge';
-import { cn } from '@/lib/utils';
+import { cn, triggerHapticFeedback } from '@/lib/utils';
 import { secureStorage } from '@/lib/storage/secureStorage';
 import type { OutputLine, FtpSession, PythonSession } from './PCPanel.types';
 import { executeLinuxCommand, formatLinuxPath, getLinuxSuggestions } from './pcLinuxExecutor';
@@ -500,7 +500,14 @@ export function CommandLineTab({
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => activeTerminalTab === 'cmd' ? setPcOutput([]) : setLinuxOutput([])}
+            onClick={() => {
+              triggerHapticFeedback('light');
+              if (activeTerminalTab === 'cmd') {
+                setPcOutput([]);
+              } else {
+                setLinuxOutput([]);
+              }
+            }}
             className="h-7 text-[10px] font-black tracking-widest text-error-500 gap-1.5"
           >
             <Trash2 className="w-3 h-3" />

@@ -8,6 +8,7 @@ export type CanvasWifiConfig = Partial<WifiConfig> & {
 };
 
 export type DeviceType = 'pc' | 'iot' | 'switchL2' | 'switchL3' | 'router' | 'firewall' | 'wlc' | 'hub' | 'cloud' | 'mobile' | 'printer';
+export type PortType = 'ethernet' | 'fastEthernet' | 'gigabitEthernet' | 'tenGigabitEthernet' | 'serial' | 'wireless' | 'console' | string;
 
 export type CanvasPortMode = PortMode;
 export type CanvasPortStatus = PortStatus;
@@ -16,7 +17,7 @@ export interface CanvasPort {
   id: string;
   label: string;
   status: CanvasPortStatus;
-  type?: string;
+  type?: PortType;
   adminStatus?: 'up' | 'down';
   operStatus?: 'up' | 'down';
   linkStatus?: 'up' | 'down' | 'blocked' | 'err-disabled' | 'disconnected';

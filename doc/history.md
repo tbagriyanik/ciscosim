@@ -1,6 +1,18 @@
 # 📅 Network Simulator — Proje Geçmişi
 
-Yeniden eskiye, tarih ve özellik listesi.
+Yeniden eskiye, tarih mevcuttur.
+
+## v4.8.0 — 2026-09-08
+
+**Modüler Mimari, Kod Temizliği & Satır Sınırı İyileştirmeleri, O(1) Yol Komşuluk İndeksi, Mobil Dokunmatik Titreşim (Haptic) ve SVG Hassasiyeti** —
+- **🧩 Modüler Kod Ayrıştırma (Satır Sınırı Optimizasyonları)**:
+  - `showCommands.ts` içerisindeki sistem/saat/flash komutları [`showSystemDisplay.ts`](file:///f:/NetworkSimulator/src/lib/network/core/showSystemDisplay.ts) dosyasına ayrıştırıldı (1412 satırdan 1027 satıra düşürüldü).
+  - `globalConfigCommands.ts` içerisindeki parola, banner ve kullanıcı güvenlik işleyicileri [`globalConfigSecurityCommands.ts`](file:///f:/NetworkSimulator/src/lib/network/core/globalConfigSecurityCommands.ts) dosyasına taşındı (1471 satırdan 1257 satıra düşürüldü).
+  - `usePCPanelCommands.ts` içerisindeki FTP sunucu/istemci oturum yönetimi ve dosya aktarım mantığı bağımsız [`usePCPanelFtpCommands.ts`](file:///f:/NetworkSimulator/src/components/network/pc-panel/usePCPanelFtpCommands.ts) hook'una bölündü.
+  - Tuval üzerindeki sürükleme hesaplamaları [`useTopologyCanvasDrag.ts`](file:///f:/NetworkSimulator/src/components/network/hooks/useTopologyCanvasDrag.ts) özel hook'una taşındı.
+- **⚡ O(1) Yol Çözümleme İndeksi (`pathResolutionCache.ts`)**: Paket simülasyonu ve yönlendirme adımlarında sıklıkla çalıştırılan dizisel tarama $O(N)$ yerine $O(1)$ sürede cihaz komşuluklarını ve port durumlarını veren `buildDeviceAdjacencyMap` komşuluk indeksi eklendi.
+- **📱 Mobil Touch UX ve Haptic Feedback**: `triggerHapticFeedback` ile mobil dokunmatik butonlarda ve silme eylemlerinde titreşim desteği eklendi. IP/Ağ geçidi alanlarına `inputMode="decimal"` ve klavye optimizasyonları uygulandı.
+- **♿ Erişilebilirlik (A11y) & SVG Hassasiyeti**: Izgara ve çizim katmanlarında SVG `shapeRendering="geometricPrecision"` ve `crispEdges` tanımlandı.
 
 ## v4.7.0 — 2026-09-07
 
@@ -400,7 +412,3 @@ Görev yöneticisi pencere listesi modernleştirildi; eksik örnek açıklamalar
 ---
 
 *Bu dosya [doc/history.md](history.md) — Network Simulator proje değişiklik günlüğü.*
-# 3.3.3
-
-- Dokümantasyon kitapçığı tek güncel ana belge olarak düzenlendi.
-- Paket yakalama OSI katman ayrıştırması, GRE Tunnel ve PPPoE CHAP yapılandırmaları güncellendi.

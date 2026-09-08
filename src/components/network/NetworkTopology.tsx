@@ -760,7 +760,9 @@ export function NetworkTopology({
     isPanningRef.current = isPanning;
     panStartRef.current = panStart;
     zoomRef.current = zoom;
-    panRef.current = pan;
+    if (!isPanning && !isActuallyDragging && !touchMomentumFrameRef.current) {
+      panRef.current = pan;
+    }
     draggedDeviceRef.current = draggedDevice;
     isActuallyDraggingRef.current = isActuallyDragging;
     snapToGridRef.current = snapToGrid;
@@ -773,6 +775,7 @@ export function NetworkTopology({
   useLayoutEffect(() => {
     if (isPanning || isActuallyDragging) return;
     if (wheelSyncTimerRef.current) return;
+    if (touchMomentumFrameRef.current) return;
     const g = svgContentGroupRef.current;
     if (!g) return;
     g.style.transform = `translate3d(${pan.x}px, ${pan.y}px, 0px) scale(${zoom})`;
@@ -976,6 +979,7 @@ export function NetworkTopology({
     handleTouchEnd,
     isTouchDragging,
     touchDraggedDevice,
+    touchMomentumFrameRef,
   } = useTopologyTouch({
     canvasRef,
     deviceMap,

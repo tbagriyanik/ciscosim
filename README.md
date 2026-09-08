@@ -1,12 +1,12 @@
 # Network Simulator
 
-![Version](https://img.shields.io/badge/version-4.7.0-blue)
+![Version](https://img.shields.io/badge/version-4.8.0-blue)
 ![Next.js](https://img.shields.io/badge/Next.js-16.3.4-black?logo=next.js)
 ![React](https://img.shields.io/badge/React-19.2.8-61DAFB?logo=react&logoColor=black)
 ![TypeScript](https://img.shields.io/badge/TypeScript-7.0.2-3178C6?logo=typescript&logoColor=white)
 ![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-4.3.3-06B6D4?logo=tailwindcss&logoColor=white)
 ![FOSS](https://img.shields.io/badge/FOSS-Free%20Open%20Source-brightgreen)
-![Total Lines](https://img.shields.io/badge/total--lines-168,616-lightgrey)
+![Total Lines](https://img.shields.io/badge/total--lines-~170k-lightgrey)
 
 A comprehensive, client-side, browser-based network simulator for learning switching, routing, wireless, security, IoT, CLI terminal workflows.
 
@@ -46,11 +46,22 @@ npm run check
 ---
 
 ## 📊 Stats / İstatistikler
+## 🚀 Key Features & Version Highlights (v4.8.0)
 
-| Metric / Metrik | Value / Değer |
-| --- | ---: |
-| Version / Sürüm | 4.7.0 |
-| Total Lines / Toplam Satır (`src/`) | 168,616 |
+| Özellik / Feature | Açıklama / Description |
+| --- | --- |
+| **Gelişmiş CLI & IOS Komutları** | Switch (L2/L3), Router, Firewall, WLC, PC, IoT ve Hub cihaz desteği; VLAN, VTP, STP/RSTP/MSTP, EtherChannel, L3 routing (OSPF, EIGRP, BGP, Static), DHCP, NAT, ACL (IPv4/IPv6), Port Security, Dot1x, QoS/MQC, IP SLA, Track. |
+| **Parçalı & Modüler Mimari** | Satır limiti kurallarına uygun modüler kod tabanı, $O(1)$ yol çözümlenebilir komşuluk indeksi ve optimize edilmiş tuval bileşenleri. |
+| **Gelişmiş Mobil & A11y Uyumluluğu** | Dokunmatik titreşim geribildirimi (haptic feedback), mobil klavye optimizasyonları ve yüksek çözünürlüklü SVG hassasiyeti. |
+
+---
+
+## 📊 Proje Durumu / Project Status
+
+| Metrik / Metric | Değer / Value |
+| --- | --- |
+| Version / Sürüm | 4.8.0 |
+| Total Lines / Toplam Satır (`src/`) | ~170,000 |
 | Source Files / Kaynak Dosya | 722 |
 | Documentation Files / Dokümantasyon Dosya | 32 |
 | Example Projects / Örnek Proje | 46 |
@@ -63,8 +74,7 @@ npm run check
 
 | Bölüm / Section | Doküman / Document | Açıklama / Description |
 | --- | --- | --- |
-| **Ana kaynak / Main guide** | [NETWORK_SIMULATOR_REHBERI.md](doc/training/NETWORK_SIMULATOR_REHBERI.md) | Uygulama Tanıtımı, CMD, Linux, Python, Bash, Kısayollar ve Örnek Lablar |
-|  | [NETWORK_SIMULATOR_KITAPCIK.md](doc/training/NETWORK_SIMULATOR_KITAPCIK.md) | Tüm özellikler, eğitim ve laboratuvarlar / Complete guide, features and labs |
+| **Ana kaynak / Main guide** | [NETWORK_SIMULATOR_KITAPCIK.md](doc/training/NETWORK_SIMULATOR_KITAPCIK.md) | Tüm özellikler, eğitim ve laboratuvarlar / Complete guide, features and labs |
 | **Kurulum / Setup** | [INSTALL.md](INSTALL.md) | Kurulum ve derleme / Installation and build |
 | **Başlangıç / Getting started** | [USAGE.md](doc/getting-started/USAGE.md) | Kullanım ve klavye kısayolları / Usage and shortcuts |
 |  | [PC_CMD_REFERENCE.md](doc/getting-started/PC_CMD_REFERENCE.md) | PC CMD komutları / PC CMD commands |

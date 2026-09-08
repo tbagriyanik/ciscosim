@@ -139,11 +139,19 @@ export const secureStorage = {
 
   removeItem(key: string): void {
     if (typeof window === 'undefined' || !window.localStorage) return;
-    window.localStorage.removeItem(key);
+    try {
+      window.localStorage.removeItem(key);
+    } catch (e) {
+      logger.error(`Error removing secureStorage key ${key}`, e);
+    }
   },
 
   clear(): void {
     if (typeof window === 'undefined' || !window.localStorage) return;
-    window.localStorage.clear();
+    try {
+      window.localStorage.clear();
+    } catch (e) {
+      logger.error('Error clearing secureStorage', e);
+    }
   }
 };

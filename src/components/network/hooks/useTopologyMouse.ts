@@ -712,6 +712,7 @@ export function useTopologyMouse(props: UseTopologyMouseProps) {
       setIsPanning(false);
       isPanningRef.current = false;
       if (pendingPanRef.current) {
+        panRef.current = pendingPanRef.current;
         setPan(pendingPanRef.current);
         pendingPanRef.current = null;
       }

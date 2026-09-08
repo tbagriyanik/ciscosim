@@ -395,6 +395,7 @@ export function useTopologyTouch({
         const newPan = { x: deltaX + smoothedPanDeltaX, y: deltaY + smoothedPanDeltaY };
         setZoom(newZoom);
         setPan(newPan);
+        pendingPanRef.current = newPan;
         const g = svgContentGroupRef.current;
         if (g) {
           g.style.transform = `translate3d(${newPan.x}px, ${newPan.y}px, 0px) scale(${newZoom})`;
@@ -402,6 +403,7 @@ export function useTopologyTouch({
       } else {
         const newPan = { x: currentPan.x + smoothedPanDeltaX, y: currentPan.y + smoothedPanDeltaY };
         setPan(newPan);
+        pendingPanRef.current = newPan;
         const g = svgContentGroupRef.current;
         if (g) {
           g.style.transform = `translate3d(${newPan.x}px, ${newPan.y}px, 0px) scale(${zoomRef.current})`;
@@ -432,6 +434,7 @@ export function useTopologyTouch({
       isPanningRef.current = false;
 
       if (pendingPanRef.current) {
+        panRef.current = pendingPanRef.current;
         setPan(pendingPanRef.current);
         pendingPanRef.current = null;
       }
@@ -655,5 +658,6 @@ export function useTopologyTouch({
     handleTouchEnd,
     isTouchDragging,
     touchDraggedDevice,
+    touchMomentumFrameRef,
   };
 }
