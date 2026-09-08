@@ -7,7 +7,6 @@ import { portsFormTrunk } from '../connectivity';
 import {
   formatPortName, isPhysicalEthernetPort, getAllowedVlansString, getNativeVlanString,
 } from './showHelpers';
-import { calculateSubnet } from '@/lib/network/subnetting';
 
 /**
  * Show Interfaces
@@ -64,17 +63,14 @@ export function cmdShowInterfaces(
 
       output += `  Description: ${description}\n`;
 
-      // MTU and Bandwidth
       const mtu = port.mtu || 1500;
       const bandwidth = port.bandwidth || (port.type === 'gigabitethernet' ? 1000000 : 100000);
       output += `  MTU ${mtu} bytes, BW ${bandwidth} Kbit/sec\n`;
 
-      // Speed and Duplex
       const actualSpeed = port.speed === 'auto' ? (port.type === 'gigabitethernet' ? '1000' : '100') : port.speed;
       const duplexMode = port.duplex === 'half' ? 'Half' : 'Full';
       output += `  ${duplexMode}-duplex, ${actualSpeed}Mb/s\n`;
 
-      // Encapsulation for trunks
       if (port.mode === 'trunk' && port.encapsulation) {
         output += `  Encapsulation ${port.encapsulation}\n`;
       }
@@ -82,7 +78,6 @@ export function cmdShowInterfaces(
 
     output += `  input flow-control is off, output flow-control is unsupported\n`;
     output += `  ARP type: ARPA, ARP Timeout ${port.arpTimeout || '04:00:00'}\n`;
-
     // Last input/output times - nOS uses elapsed HH:MM:SS format, not locale time
     const fmtElapsed = (ts: number | undefined): string => {
       if (!ts) return 'never';
@@ -399,16 +394,16 @@ export function cmdShowIpInterfaceBrief(
     return cmdShowIpInterface(state, input, ctx);
   }
 
-  let output = '\nInterface              IP-Address      OK? Method Status                Protocol \n';
+  let output = 'Interface              IP-Address      OK? Method Status                Protocol\n';
   const modelName = String(state?.version?.modelName || '');
   const isRouter = isRouterModel(modelName) || isRouterModel(state?.switchModel) || state?.deviceType === 'router';
   const toDisplayName = (portName: string) => {
-    if (!isRouter) return portName;
+    if (!isRouter) return formatPortName(portName);
     const p = String(portName);
     if (/^gi\d+\/\d+$/i.test(p)) return `GigabitEthernet${p.slice(2)}`;
     if (/^fa\d+\/\d+$/i.test(p)) return `FastEthernet${p.slice(2)}`;
     if (/^vlan\d+$/i.test(p)) return `Vlan${p.slice(4)}`;
-    return p;
+    return formatPortName(p);
   };
 
   // Build channel groups map
@@ -423,13 +418,13 @@ export function cmdShowIpInterfaceBrief(
 
   // Show port-channel interfaces first
   Object.entries(channelGroups).forEach(([group, ports]) => {
-    const poName = `Po${group}`;
+    const poName = `Port-channel${group}`;
     const poPort = state.ports[`po${group}`];
     const status = poPort?.shutdown ? 'administratively down' : 'up';
     const protocol = ports.every(p => !state.ports[p]?.shutdown) ? 'up' : 'down';
     const ipStr = (poPort?.ipAddress && poPort?.subnetMask) ? poPort.ipAddress : 'unassigned';
     const ipMethod = (poPort?.ipAddress && poPort?.subnetMask) ? 'manual' : 'unset';
-    output += `${poName.padEnd(22)} ${ipStr.padEnd(15)} YES ${ipMethod.padEnd(6)} ${status.padEnd(23)} ${protocol.padEnd(8)} \n`;
+    output += `${poName.padEnd(22)} ${ipStr.padEnd(15)} YES ${ipMethod.padEnd(6)} ${status.padEnd(21)} ${protocol}\n`;
   });
 
   // Show regular interfaces
@@ -442,21 +437,11 @@ export function cmdShowIpInterfaceBrief(
     const protocol = port.shutdown ? 'down' : 'up';
     const displayPortName = toDisplayName(portName);
 
-    if (port.ipAddress && port.subnetMask) {
-      output += `${displayPortName.padEnd(22)} ${port.ipAddress.padEnd(15)} YES manual ${status.padEnd(23)} ${protocol.padEnd(8)} \n`;
-      const subnet = calculateSubnet(port.ipAddress, port.subnetMask);
-      if (subnet) {
-        output += `  Subnet: ${subnet.network}/${subnet.prefixLength}  Broadcast: ${subnet.broadcast}  Hosts: ${subnet.firstHost}-${subnet.lastHost} (${subnet.usableHosts})\n`;
-      }
-    } else {
-      output += `${displayPortName.padEnd(22)} unassigned      YES unset  ${status.padEnd(23)} ${protocol.padEnd(8)} \n`;
-    }
-  });
+    const ipStr = (port.ipAddress && port.subnetMask) ? port.ipAddress : 'unassigned';
+    const ipMethod = (port.ipAddress && port.subnetMask) ? 'manual' : 'unset';
 
-  // Add summary lines for better compatibility
-  const totalInterfaces = Object.keys(state.ports || {}).length;
-  const upInterfaces = Object.values(state.ports || {}).filter(p => !p.shutdown).length;
-  output += `   ${totalInterfaces} total, ${upInterfaces} ${upInterfaces === 1 ? 'up' : 'up'}, ${totalInterfaces - upInterfaces} ${totalInterfaces - upInterfaces === 1 ? 'down' : 'down'}\n`;
+    output += `${displayPortName.padEnd(22)} ${ipStr.padEnd(15)} YES ${ipMethod.padEnd(6)} ${status.padEnd(21)} ${protocol}\n`;
+  });
 
   output += '!\n';
   return { success: true, output };

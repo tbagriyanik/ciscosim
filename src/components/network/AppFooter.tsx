@@ -55,7 +55,7 @@ export function AppFooter({
   return (
     <>
       {/* Desktop Footer */}
-      <footer className={`hidden md:block fixed bottom-0 inset-x-0 z-40 border-t transition-all h-[44px] pb-safe ${isDark ? 'bg-secondary-950/95 border-secondary-900' : 'bg-white/95 border-secondary-200'
+      <footer className={`hidden md:block fixed bottom-0 inset-x-0 z-40 border-t transition-all min-h-[48px] pb-3 pb-safe ${isDark ? 'bg-secondary-950/95 border-secondary-900' : 'bg-white/95 border-secondary-200'
         } ${showProjectPicker || showOnboarding ? 'hidden' : ''}`}>
         {hasOpenWindows && (
           <div className={`fixed left-0 top-1/2 z-50 flex -translate-y-1/2 flex-col items-center gap-1 rounded-r-lg border border-l-0 px-1.5 py-2 shadow-lg backdrop-blur-xl ${isDark ? 'bg-secondary-950/95 border-secondary-800' : 'bg-white/95 border-secondary-200'}`}>
@@ -84,7 +84,7 @@ export function AppFooter({
             })}
           </div>
         )}
-        <div className="w-full px-5 py-2 pb-[10px]">
+        <div className="w-full px-5 py-2 pb-3">
           <div className="flex items-center justify-between gap-4">
             {/* Save Status */}
             <div className="flex items-center gap-3">
@@ -169,7 +169,7 @@ export function AppFooter({
       </footer>
 
       {/* Mobile Footer — status bar / informational messages */}
-      <footer className={`md:hidden fixed bottom-0 inset-x-0 z-2 border-t backdrop-blur-xl transition-all h-[40px] flex items-center px-3 text-[11px] select-none pb-safe ${isDark ? 'bg-secondary-900/95 border-secondary-800 text-secondary-300' : 'bg-white/95 border-secondary-200 text-secondary-600'
+      <footer className={`md:hidden fixed bottom-0 inset-x-0 z-2 border-t backdrop-blur-xl transition-all min-h-[44px] pb-3 flex items-center px-3 text-[11px] select-none pb-safe ${isDark ? 'bg-secondary-900/95 border-secondary-800 text-secondary-300' : 'bg-white/95 border-secondary-200 text-secondary-600'
         } ${showProjectPicker || showOnboarding ? 'hidden' : ''}`}>
         <div className="w-full flex items-center justify-between gap-2 overflow-hidden">
           {/* Status & Device count */}

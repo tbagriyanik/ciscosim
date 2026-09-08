@@ -56,8 +56,8 @@ describe('SSH Full Flow (crypto key -> ip ssh version -> line vty -> login local
   });
 });
 
-describe('show ip interface brief subnet information', () => {
-  it('includes network/broadcast/usable host range for interfaces with an IP', () => {
+describe('show ip interface brief formatting', () => {
+  it('displays IP interface brief standard output for configured interfaces', () => {
     const state = {
       ...createInitialState(),
       currentMode: 'privileged',
@@ -76,10 +76,8 @@ describe('show ip interface brief subnet information', () => {
     const result = executeCommand({ ...state, currentMode: 'privileged' }, 'show ip interface brief', 'en');
     expect(result.success).toBe(true);
     expect(result.output).toContain('192.168.1.150');
-    expect(result.output).toContain('Subnet:');
-    expect(result.output).toContain('192.168.1.0');
-    expect(result.output).toContain('192.168.1.255');
-    expect(result.output).toContain('192.168.1.1-192.168.1.254');
-    expect(result.output).toContain('(254)');
+    expect(result.output).toContain('Interface              IP-Address');
+    expect(result.output).toContain('manual');
+    expect(result.output).toContain('up');
   });
 });

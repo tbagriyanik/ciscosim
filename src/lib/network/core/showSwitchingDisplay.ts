@@ -3,7 +3,7 @@ import type { SwitchState, CommandResult } from '../types';
 import type { CanvasDevice, CanvasConnection } from '@/components/network/networkTopology.types';
 import { detectEtherChannelBundles, getLoadBalanceAlgorithm, formatLoadBalance } from '../etherchannel';
 import {
-  formatMacAddressSimple, getPortNumber,
+  formatMacAddressSimple, getPortNumber, formatPortName,
 } from './showHelpers';
 
 /**
@@ -31,25 +31,26 @@ export function cmdShowVlan(
 
   // Default VLAN 1
   const vlan1Ports = vlanPortMap['1'] || [];
-  output += `1    default                          active    ${vlan1Ports.join(', ') || '-'}\n`;
+  output += `1    default                          active    ${vlan1Ports.join(', ')}\n`;
 
   // Other VLANs from state.vlans
   knownVlanIds.forEach(vlanId => {
     if (vlanId !== '1') {
       const vlan = state.vlans[Number(vlanId)];
       const vlanName = (vlan?.name || `VLAN${vlanId}`).padEnd(32);
-      const vlanStatus = vlan?.status || 'active';
-      const ports = vlanPortMap[vlanId] || [];
-      output += `${vlanId.padEnd(4)} ${vlanName} ${vlanStatus.padEnd(9)} ${ports.join(', ') || '-'}\n`;
+      const vlanStatus = (vlan?.status || 'active').padEnd(9);
+      const ports = (vlanPortMap[vlanId] || []).join(', ');
+      output += `${vlanId.padEnd(4)} ${vlanName} ${vlanStatus} ${ports}\n`;
     }
   });
 
-
-  // nOS only shows VLANs defined in state.vlans - ports assigned to undefined VLANs
-  // are NOT shown as separate entries (no phantom VLANs)
-
-  // Only show SAID/MTU table in full mode (not brief), matching real nOS behavior
+  // Default token ring/fddi VLANs for full show vlan
   if (!isBrief) {
+    if (!state.vlans?.[1002]) output += `1002 fddi-default                     act/unsup\n`;
+    if (!state.vlans?.[1003]) output += `1003 token-ring-default               act/unsup\n`;
+    if (!state.vlans?.[1004]) output += `1004 fddinet-default                  act/unsup\n`;
+    if (!state.vlans?.[1005]) output += `1005 trnet-default                    act/unsup\n`;
+
     output += '\nVLAN Type  SAID       MTU   Parent RingNo BridgeNo Stp  BrdgMode Trans1 Trans2\n';
     output += '---- ----- ---------- ----- ------ ------ -------- ---- -------- ------ ------\n';
     output += `1    enet  100001     1500  -      -      -        -    -        0      0\n`;
@@ -61,7 +62,6 @@ export function cmdShowVlan(
     });
   }
 
-  output += '!\n';
   return { success: true, output };
 }
 
@@ -73,7 +73,7 @@ export function cmdShowMacAddressTable(
   _input: string,
   ctx: CommandContext
 ): CommandResult {
-  let output = '\nMac Address Table\n';
+  let output = '          Mac Address Table\n';
   output += '-------------------------------------------\n\n';
   output += 'Vlan    Mac Address       Type        Ports\n';
   output += '----    -----------       --------    -----\n';
@@ -88,7 +88,7 @@ export function cmdShowMacAddressTable(
     { vlan: 'All', mac: '0100.0ccc.cccd', port: 'CPU', type: 'STATIC' },
     { vlan: 'All', mac: '0180.c200.0000', port: 'CPU', type: 'STATIC' },
   ];
-  cpuMacs.forEach(e => { output += `${String(e.vlan).padEnd(8)}${e.mac.padEnd(18)}${e.type.padEnd(11)}${e.port}\n`; });
+  cpuMacs.forEach(e => { output += `${String(e.vlan).padEnd(8)}${e.mac.padEnd(18)}${e.type.padEnd(12)}${e.port}\n`; });
 
   // Collect MAC entries from connections only - no legacy data
   const macTable: { vlan: number; mac: string; port: string; type: string }[] = [];
@@ -102,7 +102,7 @@ export function cmdShowMacAddressTable(
     deviceConnections.forEach((conn: CanvasConnection) => {
       // Determine which port on the device is connected
       const isSource = conn.sourceDeviceId === sourceDeviceId;
-      const portId = isSource ? conn.sourcePort : conn.targetPort;
+      const portId = formatPortName(isSource ? conn.sourcePort : conn.targetPort);
 
       // Get the connected device's MAC address
       const connectedDeviceId = isSource ? conn.targetDeviceId : conn.sourceDeviceId;
@@ -113,39 +113,23 @@ export function cmdShowMacAddressTable(
         const mac = formatMacAddressSimple(connectedDevice.macAddress);
 
         // Get VLAN from the port - check if trunk mode
-        const portState = state.ports?.[portId];
+        const rawPortId = isSource ? conn.sourcePort : conn.targetPort;
+        const portState = state.ports?.[rawPortId];
 
         if (portState?.mode === 'trunk') {
           // For trunk ports, show all VLANs
           const vlans = Object.keys(state.vlans || {}).filter(v => v !== '1').slice(0, 5);
           if (vlans.length === 0) {
-            // Default VLAN 1 for trunk
-            macTable.push({
-              vlan: 1,
-              mac: mac,
-              port: portId,
-              type: 'DYNAMIC'
-            });
+            macTable.push({ vlan: 1, mac, port: portId, type: 'DYNAMIC' });
           } else {
-            // Add entries for each VLAN on trunk
             vlans.forEach((vlanId) => {
-              macTable.push({
-                vlan: parseInt(vlanId),
-                mac: mac,
-                port: portId,
-                type: 'DYNAMIC'
-              });
+              macTable.push({ vlan: parseInt(vlanId), mac, port: portId, type: 'DYNAMIC' });
             });
           }
         } else {
           // Access port - get VLAN from accessVlan or default to 1
           const vlan = Number(portState?.accessVlan || portState?.vlan || 1);
-          macTable.push({
-            vlan: vlan,
-            mac: mac,
-            port: portId,
-            type: 'DYNAMIC'
-          });
+          macTable.push({ vlan, mac, port: portId, type: 'DYNAMIC' });
         }
       }
     });
@@ -159,14 +143,11 @@ export function cmdShowMacAddressTable(
   // Show learned MAC addresses from connections
   if (uniqueMacTable.length > 0) {
     uniqueMacTable.forEach((entry) => {
-      output += `${String(entry.vlan).padEnd(8)}${entry.mac.padEnd(18)}${entry.type.padEnd(11)}${entry.port}\n`;
+      output += `${String(entry.vlan).padEnd(8)}${entry.mac.padEnd(18)}${entry.type.padEnd(12)}${entry.port}\n`;
     });
   }
 
-  // If no MAC addresses found, show nothing (matching real behavior)
-
-  output += '\nTotal Mac Addresses for this criterion: ' + uniqueMacTable.length + '\n';
-  output += '!\n';
+  output += '\nTotal Mac Addresses for this criterion: ' + (uniqueMacTable.length + cpuMacs.length) + '\n';
   return { success: true, output };
 }
 
