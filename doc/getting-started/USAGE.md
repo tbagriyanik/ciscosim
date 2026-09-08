@@ -91,7 +91,7 @@
 | `Double-click (Window Title)` | Collapse / expand floating panel | Yüzen pencereyi daralt / genişlet |
 | `Ctrl + S` | Save project | Projeyi kaydet |
 | `Ctrl + O` | Open project file | Proje dosyasını aç |
-| `Ctrl + N` / `Alt + N` | New project | Yeni proje |
+| `Alt + N` | New project | Yeni proje |
 | `Ctrl + P` | Print topology | Topolojiyi yazdır |
 | `Ctrl + F` | Toggle fullscreen | Tam ekrana geç / çık |
 | `Alt + M` | Toggle Minimap display | Minimap (Harita) göster / gizle |

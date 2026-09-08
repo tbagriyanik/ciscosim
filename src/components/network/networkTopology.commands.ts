@@ -28,7 +28,7 @@ export function getCommandCategories(isTR: boolean): CommandDefinition[] {
         ['Alt + F', isTR ? 'Tüm cihazları ekrana sığdır (Fit View)' : 'Zoom to fit all devices'],
         ['Ctrl + S', isTR ? 'Projeyi kaydet' : 'Save project'],
         ['Ctrl + O', isTR ? 'Proje aç' : 'Open project'],
-        ['Ctrl + N / Alt + N', isTR ? 'Yeni proje oluştur' : 'Create new project'],
+        ['Alt + N', isTR ? 'Yeni proje oluştur' : 'Create new project'],
         ['Ctrl + Z', isTR ? 'Geri al (Topoloji & Hizalama Hareketi)' : 'Undo (Undo topology & alignment)'],
         ['Ctrl + Y / Ctrl + Shift + Z', isTR ? 'İleri al (Redo / Yeniden yap)' : 'Redo'],
         ['Ctrl + C', isTR ? 'Seçili cihazı kopyala' : 'Copy selected device'],
