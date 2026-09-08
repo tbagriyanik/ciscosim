@@ -465,6 +465,8 @@ export function runFullPacketPipeline(
 
   const connectionIndex = buildConnectionIndex(connections);
 
+  const visitedDeviceIds = new Set<string>();
+
   while (hopIndex < maxHops) {
     const device = deviceMap.get(currentDeviceId);
     const state = deviceStates.get(currentDeviceId);
@@ -477,6 +479,27 @@ export function runFullPacketPipeline(
         capturedOnLinks,
         dropReason: formatDropReason(DropReasonCode.DEVICE_NOT_FOUND, `Device ${currentDeviceId} not found in topology`)
       };
+    }
+
+    // Routing loop detection check (if we revisit an L3 device)
+    const isL3 = device.type === 'router' || device.type === 'firewall' || device.type === 'switchL3';
+    if (isL3 && visitedDeviceIds.has(currentDeviceId)) {
+      const loopReason = formatDropReason(DropReasonCode.MAX_HOPS_EXCEEDED, `%ROUTING-3-LOOP_DETECTED: Routing loop detected at ${device.name}`);
+      if (state) {
+        if (!state.eventLogs) state.eventLogs = [];
+        state.eventLogs.push(`%ROUTING-3-LOOP_DETECTED: Packet loop detected on device ${device.name}`);
+      }
+      return {
+        success: false,
+        hopResults,
+        allTraces,
+        capturedOnLinks,
+        dropReason: loopReason,
+        finalFrame: currentFrame
+      };
+    }
+    if (isL3) {
+      visitedDeviceIds.add(currentDeviceId);
     }
 
     const hopResult = runHopPipeline(hopIndex, currentFrame, device, state, devices, connections, now);
@@ -514,7 +537,7 @@ export function runFullPacketPipeline(
         const nextPortId = conn.sourceDeviceId === currentDeviceId ? conn.targetPort : conn.sourcePort;
 
         // Decrement TTL for routed hops
-        if (device.type === 'router' || device.type === 'firewall' || device.type === 'switchL3') {
+        if (isL3) {
           const newTtl = (currentFrame.ttl ?? 64) - 1;
           currentFrame = { ...currentFrame, ttl: newTtl };
           if (newTtl <= 0) {

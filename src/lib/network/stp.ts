@@ -523,12 +523,18 @@ function syncPortStatusVlan1(state: SwitchState, vlanStpState: StpVlanState) {
     const port = state.ports[pId];
     if (port) {
       if (!port.spanningTree) port.spanningTree = {};
+      const oldState = port.spanningTree.state;
       port.spanningTree.role = pInfo.role;
       port.spanningTree.state = pInfo.state;
       if (!port.shutdown) {
         port.status = pInfo.state === 'blocking' ? 'blocked' : 'connected';
       }
       processedPorts.add(pId);
+
+      if (oldState && oldState !== pInfo.state) {
+        if (!state.eventLogs) state.eventLogs = [];
+        state.eventLogs.push(`%STP-6-TOPOTRAP: Topology change detected on interface ${pId} (${oldState} -> ${pInfo.state})`);
+      }
     }
   });
 

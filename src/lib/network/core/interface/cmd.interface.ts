@@ -320,11 +320,15 @@ export function cmdShutdown(state: SwitchState, _input: string, ctx: CommandCont
     if (newPorts[vlanPortKey]) {
       newPorts[vlanPortKey] = { ...newPorts[vlanPortKey], shutdown: true };
     }
+    const updatedCurrentState = { ...state, ports: newPorts };
+    const pvst = getPvstUpdate(updatedCurrentState, ctx);
+    const allUpdatedStates = 'error' in pvst ? undefined : pvst.allUpdatedStates;
     const portName = state.currentInterface;
     return {
       success: true,
       output: `%LINK-5-CHANGED: Interface ${portName}, changed state to administratively down\n%LINEPROTO-5-UPDOWN: Line protocol on Interface ${portName}, changed state to down\n`,
-      newState: { ports: newPorts }
+      newState: { ports: newPorts },
+      deviceStates: allUpdatedStates
     };
   }
 

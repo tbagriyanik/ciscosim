@@ -543,6 +543,7 @@ export interface SwitchState {
   runningConfig: string[];
   commandHistory: string[];
   historyIndex: number;
+  eventLogs?: string[];
   debugs?: Record<string, boolean>;
   bannerMOTD?: string;
   bannerLogin?: string;

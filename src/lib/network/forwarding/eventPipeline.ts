@@ -176,7 +176,15 @@ export function runNetworkEventPipeline(
       for (const [nbrId, nbr] of Object.entries(nextState.ospfNeighborStates)) {
         const res = ospfTickDeadTimer(nbr, SIM_SECONDS_PER_TICK, now, myRouterId);
         updatedNeighbors[nbrId] = res.nextState;
-        if (res.events.length > 0) stateChanged = true;
+        if (res.events.length > 0 || nbr.state !== res.nextState.state) {
+          stateChanged = true;
+          if (nbr.state !== res.nextState.state) {
+            const intfName = res.nextState.interfaceId || 'Gi0/0';
+            const logLine = `%OSPF-5-ADJCHG: Process 1, Nbr ${nbrId} on ${intfName} from ${nbr.state.toUpperCase()} to ${res.nextState.state.toUpperCase()}`;
+            if (!nextState.eventLogs) nextState.eventLogs = [];
+            nextState.eventLogs.push(logLine);
+          }
+        }
       }
       nextState.ospfNeighborStates = updatedNeighbors;
 

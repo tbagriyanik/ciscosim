@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { SwitchState } from '../../../lib/network/types';
 import { buildEigrpTopologyTable, runEigrpDual, buildEigrp6TopologyTable, calculateEigrp6Routes } from '../../../lib/network/eigrp-dual';
+import { eigrpTickHoldTimer } from '../../../lib/network/protocols/protocolStateMachines';
 
 
 describe('EIGRP DUAL Algorithm', () => {
@@ -203,6 +204,33 @@ describe('EIGRP DUAL Algorithm', () => {
 
     const routes = calculateEigrp6Routes('r1', deviceStates);
     expect(routes.some((r: { destination: string }) => r.destination === '2001:db8:2::1')).toBe(true);
+  });
+
+  it('should countdown holdTimer and trigger HoldExpired transition when holdTimer reaches 0', () => {
+    const nbrRecord = {
+      neighborIp: '10.0.0.2',
+      interfaceId: 'gi0/0',
+      asNumber: 100,
+      state: 'Up' as const,
+      holdTime: 15,
+      holdTimer: 15,
+      kValues: [1, 0, 1, 0, 0] as [number, number, number, number, number],
+      srtt: 10,
+      rto: 200,
+      seqNumber: 1,
+      lastHelloAt: Date.now(),
+    };
+
+    // Tick 5 seconds -> holdTimer becomes 10
+    const tick1 = eigrpTickHoldTimer(nbrRecord, 5, Date.now());
+    expect(tick1.nextNeighbor.holdTimer).toBe(10);
+    expect(tick1.neighborLost).toBe(false);
+
+    // Tick 10 seconds -> holdTimer becomes 0 and triggers HoldExpired
+    const tick2 = eigrpTickHoldTimer(tick1.nextNeighbor, 10, Date.now());
+    expect(tick2.nextNeighbor.holdTimer).toBe(0);
+    expect(tick2.nextNeighbor.state).toBe('Down');
+    expect(tick2.neighborLost).toBe(true);
   });
 });
 

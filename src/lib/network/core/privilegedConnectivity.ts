@@ -238,10 +238,12 @@ export function cmdPing(state: SwitchState, input: string, ctx: CommandContext):
             }
             let failOutput = `\nType escape sequence to abort.\nSending ${count}, ${size}-byte ICMP Echos to ${host}, timeout is 2 seconds:\n${packetLine}\n`;
             failOutput += `Success rate is 0 percent (0/${n})\n`;
+            const dropReasonStr = connectivity?.error || 'Destination host unreachable.';
+            failOutput += `Drop Reason: ${dropReasonStr}\n`;
             return {
                 success: false,
                 output: failOutput,
-                error: connectivity.error || `Destination host unreachable.`,
+                error: dropReasonStr,
                 deviceStates: updatedDeviceStates
             };
         }

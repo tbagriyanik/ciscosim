@@ -4,6 +4,7 @@ import { buildRunningConfig } from './configBuilder';
 import { SwitchState, CommandResult } from '../types';
 import { getSwitchDisplayProfile } from './showHelpers';
 import { formatIpSlaStatistics } from '../ipSla';
+import { diagnoseVlanMismatches, diagnoseDuplicateAddresses, diagnoseOrphanDevices } from '../vlanDiagnostics';
 import {
   cmdShowWireless, cmdShowWlanSummary,
   cmdShowApSummary, cmdShowApConfig, cmdShowApJoinStats,
@@ -58,6 +59,8 @@ import {
 
 
 export const showHandlers: Record<string, CommandHandler> = {
+  'show network health': cmdShowNetworkHealth,
+  'show health': cmdShowNetworkHealth,
   'show running-config': cmdShowRunningConfig,
   'show running-config interface': cmdShowRunningConfigInterface,
   'show startup-config': cmdShowStartupConfig,
@@ -1015,6 +1018,70 @@ Buffer logging: level debugging, 0 messages logged
 Trap logging: level ${trapLevel}, 0 message lines logged
 ${host}
 `;
+  return { success: true, output };
+}
+
+export function cmdShowNetworkHealth(
+  _state: SwitchState,
+  _input: string,
+  ctx: CommandContext
+): CommandResult {
+  const devices = ctx.devices || [];
+  const connections = ctx.connections || [];
+  const deviceStates = ctx.deviceStates || new Map<string, SwitchState>();
+
+  const vlanIssues = diagnoseVlanMismatches(devices, connections, deviceStates);
+  const dupIssues = diagnoseDuplicateAddresses(devices, deviceStates);
+  const orphanIssues = diagnoseOrphanDevices(devices, connections, deviceStates);
+
+  const totalWarnings = vlanIssues.length + dupIssues.length + orphanIssues.filter(o => o.type === 'ORPHAN_PORT').length;
+  const totalErrors = orphanIssues.filter(o => o.type === 'ORPHAN_DEVICE').length;
+
+  let overallStatus = 'PASSED';
+  if (totalErrors > 0) overallStatus = 'CRITICAL';
+  else if (totalWarnings > 0) overallStatus = 'WARNING';
+
+  let output = '\n';
+  output += '=====================================================\n';
+  output += '            NETWORK HEALTH CHECK REPORT              \n';
+  output += '=====================================================\n';
+  output += `Overall Status : ${overallStatus}\n`;
+  output += `Total Devices  : ${devices.length}\n`;
+  output += `Total Links    : ${connections.length}\n`;
+  output += `Health Issues  : ${vlanIssues.length + dupIssues.length + orphanIssues.length} found\n`;
+  output += '-----------------------------------------------------\n\n';
+
+  output += '1. VLAN & Trunk Configuration:\n';
+  if (vlanIssues.length === 0) {
+    output += '   [OK] No VLAN or Native VLAN mismatches detected.\n';
+  } else {
+    vlanIssues.forEach(issue => {
+      output += `   [!] ${issue.message}\n       Fix: ${issue.recommendation}\n`;
+    });
+  }
+  output += '\n';
+
+  output += '2. IP & MAC Address Integrity:\n';
+  if (dupIssues.length === 0) {
+    output += '   [OK] All assigned IP and MAC addresses are unique.\n';
+  } else {
+    dupIssues.forEach(issue => {
+      output += `   [!] ${issue.message}\n`;
+    });
+  }
+  output += '\n';
+
+  output += '3. Device & Port Connectivity:\n';
+  if (orphanIssues.length === 0) {
+    output += '   [OK] All devices and configured ports are properly connected.\n';
+  } else {
+    orphanIssues.forEach(issue => {
+      output += `   [!] ${issue.message}\n`;
+    });
+  }
+  output += '\n';
+
+  output += '=====================================================\n';
   return { success: true, output };
 }
 

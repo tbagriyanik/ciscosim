@@ -394,7 +394,8 @@ export function validateCommand(
 
   const treeResolution = resolveByCommandTree(resolvedInput, currentMode, capabilities);
   if (treeResolution.kind === 'ambiguous') {
-    return { valid: false, reason: 'ambiguous', error: IOS_ERRORS.ambiguous };
+    const token = resolvedInput.trim().split(/\s+/)[0] || resolvedInput;
+    return { valid: false, reason: 'ambiguous', error: `% Ambiguous command: "${token}"` };
   }
   if (treeResolution.kind === 'incomplete') {
     return { valid: false, reason: 'incomplete', error: IOS_ERRORS.incomplete };

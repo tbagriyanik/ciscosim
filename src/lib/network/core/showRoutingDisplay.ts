@@ -196,8 +196,14 @@ export function cmdShowIpRoute(
         const network = route.network || route.destination;
         if (mask && network) {
           const prefixLength = getPrefixLength(mask);
-          const metric = route.metric || 1;
-          output += `S     ${network}/${prefixLength} [${metric}/0] via ${route.nextHop}${route.interface ? ` ${route.interface}` : ''}\n`;
+          const ad = (route as any).distance ?? (route as any).ad ?? 1;
+          const metric = route.metric ?? 0;
+          const outInt = route.interface ? formatPortName(route.interface) : '';
+          if (route.nextHop) {
+            output += `S     ${network}/${prefixLength} [${ad}/${metric}] via ${route.nextHop}${outInt ? `, ${outInt}` : ''}\n`;
+          } else if (outInt) {
+            output += `S     ${network}/${prefixLength} is directly connected, ${outInt}\n`;
+          }
         }
       });
     }
@@ -226,7 +232,8 @@ export function cmdShowIpRoute(
 
         if (!filter || filter === protocol) {
           const metric = route.metric || 1;
-          output += `${code.padEnd(6)}${network}/${prefixLength} [${ad}/${metric}] via ${route.nextHop}, 00:00:11, ${route.interface || ''}\n`;
+          const outInt = route.interface ? formatPortName(route.interface) : '';
+          output += `${code.padEnd(6)}${network}/${prefixLength} [${ad}/${metric}] via ${route.nextHop}, 00:00:11${outInt ? `, ${outInt}` : ''}\n`;
         }
       }
     });

@@ -97,6 +97,10 @@ export function detectEtherChannelBundles(
       const targetState = deviceStates.get(conn.targetDeviceId);
       if (!sourceState || !targetState) continue;
 
+      const srcPort = sourceState.ports?.[conn.sourcePort];
+      const tgtPort = targetState.ports?.[conn.targetPort];
+      if (srcPort?.shutdown || tgtPort?.shutdown) continue;
+
       const sourceGroup = getPortChannelGroup(sourceState, conn.sourcePort);
       const targetGroup = getPortChannelGroup(targetState, conn.targetPort);
 

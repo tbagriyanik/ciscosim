@@ -11,8 +11,11 @@ import { cleanExpiredArpEntries } from './arp';
 export interface AgingResult {
   agedMacCount: number;
   agedArpCount: number;
+  agedNatCount: number;
   events: MacLifecycleEvent[];
 }
+
+const NAT_SESSION_TIMEOUT = 300000; // 5 minutes in ms
 
 /**
  * Execute real-time aging tick across all device states.
@@ -20,6 +23,7 @@ export interface AgingResult {
 export function runAgingTick(deviceStates: Map<string, SwitchState>): AgingResult {
   let agedMacCount = 0;
   let agedArpCount = 0;
+  let agedNatCount = 0;
   const events: MacLifecycleEvent[] = [];
 
   for (const [deviceId, state] of deviceStates.entries()) {
@@ -39,15 +43,26 @@ export function runAgingTick(deviceStates: Map<string, SwitchState>): AgingResul
 
     // ARP aging
     if (state.arpCache && state.arpCache.length > 0) {
-      const prevArpCount = state.arpCache.length;
-      cleanExpiredArpEntries(state);
-      const afterArpCount = state.arpCache.length;
-      const removedArp = prevArpCount - afterArpCount;
-      if (removedArp > 0) {
-        agedArpCount += removedArp;
+      const expiredArp = cleanExpiredArpEntries(state);
+      if (expiredArp.length > 0) {
+        agedArpCount += expiredArp.length;
+      }
+    }
+
+    // NAT translation session aging
+    if (state.natTranslations && state.natTranslations.length > 0) {
+      const now = Date.now();
+      const initialNatCount = state.natTranslations.length;
+      state.natTranslations = state.natTranslations.filter(t => {
+        const entryTime = (t as any).timestamp || (now - 1000);
+        return (now - entryTime) < NAT_SESSION_TIMEOUT;
+      });
+      const removedNat = initialNatCount - state.natTranslations.length;
+      if (removedNat > 0) {
+        agedNatCount += removedNat;
       }
     }
   }
 
-  return { agedMacCount, agedArpCount, events };
+  return { agedMacCount, agedArpCount, agedNatCount, events };
 }

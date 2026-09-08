@@ -21,6 +21,12 @@ export const showPatterns: Record<string, CommandPattern> = {
     minArgs: 0,
     maxArgs: 0
   },
+  'show network health': {
+    pattern: /^show\s+(network\s+health|health)$/i,
+    modes: ['user', 'privileged'],
+    minArgs: 0,
+    maxArgs: 1
+  },
   'show interfaces status': {
     pattern: /^show\s+interfaces?\s+status$/i,
     modes: ['user', 'privileged'],

@@ -7,53 +7,66 @@ import { clearMacTable, clearDynamicMacEntries, clearStaticMacEntries } from '..
 /**
  * Clear ARP Cache
  */
-export function cmdClearArpCache(_state: SwitchState, _input: string, ctx: CommandContext): CommandResult {
+export function cmdClearArpCache(state: SwitchState, _input: string, ctx: CommandContext): CommandResult {
     const deviceId = ctx.sourceDeviceId;
     const deviceStates = ctx.deviceStates;
+
+    const newState = { ...state, arpCache: [] };
 
     if (deviceId && deviceStates) {
         clearArpCache(deviceId, deviceStates);
     }
 
-    return { success: true, output: '' };
+    return { success: true, output: '', newState };
 }
 
 /**
  * Clear IPv6 Neighbors Cache
  */
-export function cmdClearIpv6Neighbors(_state: SwitchState, _input: string, ctx: CommandContext): CommandResult {
+export function cmdClearIpv6Neighbors(state: SwitchState, _input: string, ctx: CommandContext): CommandResult {
     const deviceId = ctx.sourceDeviceId;
     const deviceStates = ctx.deviceStates;
+
+    const newState = { ...state, ndpCache: [] };
 
     if (deviceId && deviceStates) {
         clearNdpCache(deviceId, deviceStates);
     }
 
-    return { success: true, output: '' };
+    return { success: true, output: '', newState };
 }
 
 /**
  * Clear MAC Address-Table
  */
-export function cmdClearMacAddressTable(_state: SwitchState, input: string, ctx: CommandContext): CommandResult {
+export function cmdClearMacAddressTable(state: SwitchState, input: string, ctx: CommandContext): CommandResult {
     const deviceId = ctx.sourceDeviceId;
     const deviceStates = ctx.deviceStates;
     const args = input.trim().split(/\s+/).slice(2); // Skip "clear mac address-table"
 
+    let newMacTable = [...(state.macAddressTable || [])];
+
+    if (args.length === 0 || args[0] === '') {
+        newMacTable = [];
+    } else if (args[0] === 'dynamic') {
+        newMacTable = newMacTable.filter(e => e.type !== 'dynamic');
+    } else if (args[0] === 'static') {
+        newMacTable = newMacTable.filter(e => e.type !== 'static');
+    }
+
+    const newState = { ...state, macAddressTable: newMacTable };
+
     if (deviceId && deviceStates) {
         if (args.length === 0 || args[0] === '') {
-            // Clear all entries
             clearMacTable(deviceId, deviceStates);
         } else if (args[0] === 'dynamic') {
-            // Clear only dynamic entries
             clearDynamicMacEntries(deviceId, deviceStates);
         } else if (args[0] === 'static') {
-            // Clear only static entries
             clearStaticMacEntries(deviceId, deviceStates);
         }
     }
 
-    return { success: true, output: '' };
+    return { success: true, output: '', newState };
 }
 
 /**
