@@ -24,10 +24,10 @@ export const DEVICE_ICON_COLORS = {
   router: 'var(--color-warning-600)',
   firewall: 'var(--color-error-500)',
   wlc: 'var(--color-indigo-500)',
-  hub: '#14b8a6',
+  hub: 'var(--color-teal-500)',
   cloud: 'var(--color-sky-500)',
   mobile: 'var(--color-sky-400)',
-  printer: '#ec4899',
+  printer: 'var(--color-pink-500)',
 } as const;
 
 export const DEVICE_ICONS = {

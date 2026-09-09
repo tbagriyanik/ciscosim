@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { getDeviceSnmpOids, snmpGet, snmpGetNext, snmpWalk } from '../../../../src/lib/network/snmp';
+import { getDeviceSnmpOids, snmpGet, snmpGetNext, snmpWalk, type SnmpOidEntry } from '../../../../src/lib/network/snmp';
 import { SwitchState } from '../../../../src/lib/network/types';
 
 describe('SNMP Engine', () => {
@@ -10,15 +10,15 @@ describe('SNMP Engine', () => {
     mockState = {
       hostname: 'Switch1',
       macAddress: '00:11:22:33:44:55',
-      switchModel: { id: 'test-model', layer: 'L2', ports: 24, type: 'switchL2' } as any,
+      switchModel: { id: 'test-model', layer: 'L2', ports: 24, type: 'switchL2' } as unknown as SwitchState['switchModel'],
       switchLayer: 'L2',
       currentMode: 'user',
       ports: {
-        'fa0/1': { id: 'fa0/1', status: 'connected', operStatus: 'up' } as any,
-        'fa0/2': { id: 'fa0/2', status: 'notconnect', operStatus: 'down' } as any
+        'fa0/1': { id: 'fa0/1', status: 'connected', operStatus: 'up' } as unknown as SwitchState['ports'][string],
+        'fa0/2': { id: 'fa0/2', status: 'notconnect', operStatus: 'down' } as unknown as SwitchState['ports'][string]
       },
       vlans: {},
-      security: { enableSecretEncrypted: false, servicePasswordEncryption: false, users: [], consoleLine: {} as any, vtyLines: {} as any },
+      security: { enableSecretEncrypted: false, servicePasswordEncryption: false, users: [], consoleLine: {} as unknown as SwitchState['security']['consoleLine'], vtyLines: {} as unknown as SwitchState['security']['vtyLines'] },
       runningConfig: [],
       commandHistory: [],
       historyIndex: 0,
@@ -33,27 +33,27 @@ describe('SNMP Engine', () => {
       },
       snmpContact: 'admin@test.com',
       snmpLocation: 'Datacenter 1'
-    };
+    } as unknown as SwitchState;
     deviceStates = new Map([['device1', mockState]]);
   });
 
   it('retrieves basic OIDs', () => {
     const oids = getDeviceSnmpOids('device1', deviceStates);
 
-    const sysDescr = oids.find((o: any) => o.oid === '.1.3.6.1.2.1.1.1.0');
+    const sysDescr = oids.find((o: SnmpOidEntry) => o.oid === '.1.3.6.1.2.1.1.1.0');
     expect(sysDescr).toBeDefined();
     expect(sysDescr?.value).toContain('Switch 2960');
 
-    const sysName = oids.find((o: any) => o.oid === '.1.3.6.1.2.1.1.5.0');
+    const sysName = oids.find((o: SnmpOidEntry) => o.oid === '.1.3.6.1.2.1.1.5.0');
     expect(sysName?.value).toBe('Switch1');
 
-    const ifNumber = oids.find((o: any) => o.oid === '.1.3.6.1.2.1.2.1.0');
+    const ifNumber = oids.find((o: SnmpOidEntry) => o.oid === '.1.3.6.1.2.1.2.1.0');
     expect(ifNumber?.value).toBe(2);
 
-    const ifOperStatus1 = oids.find((o: any) => o.oid === '.1.3.6.1.2.1.2.2.1.8.1');
+    const ifOperStatus1 = oids.find((o: SnmpOidEntry) => o.oid === '.1.3.6.1.2.1.2.2.1.8.1');
     expect(ifOperStatus1?.value).toBe(1); // up
 
-    const ifOperStatus2 = oids.find((o: any) => o.oid === '.1.3.6.1.2.1.2.2.1.8.2');
+    const ifOperStatus2 = oids.find((o: SnmpOidEntry) => o.oid === '.1.3.6.1.2.1.2.2.1.8.2');
     expect(ifOperStatus2?.value).toBe(2); // down
   });
 

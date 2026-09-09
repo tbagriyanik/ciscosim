@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { recalculateStp } from '@/lib/network/stp';
-import { SwitchState } from '@/lib/network/types';
+import { recalculateStp, computeStpTopologyChanges } from '@/lib/network/stp';
+import { SwitchState, StpVlanState } from '@/lib/network/types';
 import { CanvasConnection } from '@/components/network/networkTopology.types';
 
 describe('STP Algorithm', () => {
@@ -249,5 +249,137 @@ describe('STP Algorithm', () => {
     expect(stp1?.isRoot).toBe(true);
     expect(stp1?.ports['fa0/1'].role).toBe('designated');
     expect(stp1?.ports['fa0/1'].state).toBe('forwarding');
+  });
+});
+
+describe('STP Topology-Change Detection', () => {
+  const baseSwitch = (id: string, mac: string, priority: number = 32768): SwitchState =>
+    createMockSwitchFactory(id, mac, priority);
+
+  // createMockSwitch lives in the describe above; alias to it for reuse
+  function createMockSwitchFactory(id: string, mac: string, priority: number): SwitchState {
+    return {
+      hostname: id,
+      macAddress: mac,
+      switchModel: 'WS-C2960-24TT-L',
+      switchLayer: 'L2',
+      deviceType: 'switch',
+      currentMode: 'user',
+      ports: {
+        'fa0/1': { id: 'fa0/1', name: 'Fa0/1', status: 'notconnect', vlan: 1, mode: 'access', duplex: 'auto', speed: '100', shutdown: false, type: 'fastethernet' },
+        'fa0/2': { id: 'fa0/2', name: 'Fa0/2', status: 'notconnect', vlan: 1, mode: 'access', duplex: 'auto', speed: '100', shutdown: false, type: 'fastethernet' },
+      },
+      vlans: { 1: { id: 1, name: 'default', status: 'active', ports: ['fa0/1', 'fa0/2'] } },
+      security: { enableSecretEncrypted: false, servicePasswordEncryption: false, users: [], consoleLine: { login: false, transportInput: [] }, vtyLines: { login: false, transportInput: [] } },
+      runningConfig: [],
+      commandHistory: [],
+      historyIndex: -1,
+      version: { nosVersion: '1.0', modelName: 'Mock', serialNumber: 'SN', uptime: '1d' },
+      macAddressTable: [],
+      arpCache: [],
+      bootTime: Date.now(),
+      ipRouting: false,
+      spanningTreePriority: priority,
+    };
+  }
+
+  const vlanState = (over: Partial<StpVlanState> = {}): StpVlanState => ({
+    vlanId: 1,
+    bridgeId: '32768.0000.0000.0001',
+    rootBridgeId: '4096.0000.0000.0001',
+    isRoot: false,
+    rootCost: 19,
+    ports: {
+      'fa0/1': { role: 'root', state: 'forwarding', cost: 19 },
+      'fa0/2': { role: 'alternate', state: 'blocking', cost: 19 },
+    },
+    ...over,
+  });
+
+  const withStp = (state: SwitchState, v: StpVlanState): SwitchState => ({
+    ...state,
+    stpState: { [v.vlanId]: v },
+  });
+
+  it('reports a port blocking -> forwarding transition as a topology change', () => {
+    const sw = baseSwitch('sw1', '0000.0000.0001');
+    const prevState = withStp(sw, vlanState());
+    const nextState = withStp(sw, vlanState({
+      ports: { 'fa0/2': { role: 'designated', state: 'forwarding', cost: 19 } },
+    }));
+
+    const changes = computeStpTopologyChanges(
+      new Map([['sw1', prevState]]),
+      new Map([['sw1', nextState]])
+    );
+
+    expect(changes).toHaveLength(1);
+    expect(changes[0].type).toBe('port-state-change');
+    expect(changes[0].portId).toBe('fa0/2');
+    expect(changes[0].oldState).toBe('blocking');
+    expect(changes[0].newState).toBe('forwarding');
+    expect(changes[0].message).toContain('%STP-1-TOPOLOGYCHANGE');
+    expect(changes[0].message).toContain('fa0/2 changed state from blocking to forwarding');
+  });
+
+  it('reports a root bridge change with previous and new root IDs', () => {
+    const sw = baseSwitch('sw1', '0000.0000.0001');
+    const prevState = withStp(sw, vlanState({ isRoot: false, rootBridgeId: '4096.0000.0000.0001' }));
+    const nextState = withStp(sw, vlanState({ isRoot: true, rootBridgeId: '32768.0000.0000.0001' }));
+
+    const changes = computeStpTopologyChanges(
+      new Map([['sw1', prevState]]),
+      new Map([['sw1', nextState]])
+    );
+
+    expect(changes).toHaveLength(1);
+    expect(changes[0].type).toBe('root-bridge-change');
+    expect(changes[0].previousRootBridgeId).toBe('4096.0000.0000.0001');
+    expect(changes[0].rootBridgeId).toBe('32768.0000.0000.0001');
+    expect(changes[0].isRoot).toBe(true);
+    expect(changes[0].message).toContain('root bridge for VLAN 1 is now 32768.0000.0000.0001 (this switch)');
+    expect(changes[0].detail).toContain('Previous root: 4096.0000.0000.0001');
+  });
+
+  it('reports no changes for an identical STP state', () => {
+    const sw = baseSwitch('sw1', '0000.0000.0001');
+    const state = withStp(sw, vlanState());
+    const changes = computeStpTopologyChanges(
+      new Map([['sw1', state]]),
+      new Map([['sw1', { ...state, stpState: { ...state.stpState } }]])
+    );
+    expect(changes).toHaveLength(0);
+  });
+
+  it('skips devices that had no prior STP state (first calculation)', () => {
+    const sw = baseSwitch('sw1', '0000.0000.0001');
+    const prevState: SwitchState = { ...sw, stpState: undefined };
+    const nextState = withStp(sw, vlanState());
+    const changes = computeStpTopologyChanges(
+      new Map([['sw1', prevState]]),
+      new Map([['sw1', nextState]])
+    );
+    expect(changes).toHaveLength(0);
+  });
+
+  it('emits changes for multiple devices/VLANs in one diff', () => {
+    const sw1 = baseSwitch('sw1', '0000.0000.0001');
+    const sw2 = baseSwitch('sw2', '0000.0000.0002');
+    const prevMap = new Map<string, SwitchState>([
+      ['sw1', withStp(sw1, vlanState())],
+      ['sw2', withStp(sw2, vlanState())],
+    ]);
+    const nextMap = new Map<string, SwitchState>([
+      ['sw1', withStp(sw1, vlanState({
+        ports: { 'fa0/2': { role: 'designated', state: 'forwarding', cost: 19 } },
+      }))],
+      ['sw2', withStp(sw2, vlanState({ isRoot: true, rootBridgeId: '32768.0000.0000.0002' }))],
+    ]);
+
+    const changes = computeStpTopologyChanges(prevMap, nextMap);
+    expect(changes.length).toBe(2);
+    expect(changes.find(c => c.deviceId === 'sw1')?.type).toBe('port-state-change');
+    expect(changes.find(c => c.deviceId === 'sw2')?.type).toBe('root-bridge-change');
+    expect(changes.every(c => c.vlanId === 1)).toBe(true);
   });
 });

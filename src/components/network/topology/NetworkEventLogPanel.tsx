@@ -21,6 +21,7 @@ export function NetworkEventLogPanel({ isOpen, onClose, isDark }: NetworkEventLo
   const clearLogs = useAppStore(state => state.clearNetworkEventLogs);
   const { language } = useLanguage();
   const [filter, setFilter] = useState<'all' | 'error' | 'warning' | 'info'>('all');
+  const [categoryFilter, setCategoryFilter] = useState('all');
 
   const dragProps = useDrag({
     storageKey: 'networkEventLog',
@@ -35,9 +36,12 @@ export function NetworkEventLogPanel({ isOpen, onClose, isDark }: NetworkEventLo
   if (!isOpen) return null;
 
   const filteredLogs = logs.filter(log => {
-    if (filter === 'all') return true;
-    return log.level === filter;
+    if (filter !== 'all' && log.level !== filter) return false;
+    if (categoryFilter !== 'all' && log.category !== categoryFilter) return false;
+    return true;
   });
+
+  const availableCategories = Array.from(new Set(logs.map(l => l.category).filter(Boolean))).sort();
 
   const getIcon = (level: string) => {
     switch (level) {
@@ -115,6 +119,25 @@ export function NetworkEventLogPanel({ isOpen, onClose, isDark }: NetworkEventLo
                 <SelectItem value="info" className="cursor-pointer text-xs py-1.5">{language === 'tr' ? 'Sadece Bilgilendirme' : 'Info Only'}</SelectItem>
                 <SelectItem value="warning" className="cursor-pointer text-xs py-1.5">{language === 'tr' ? 'Sadece Uyarılar' : 'Warnings Only'}</SelectItem>
                 <SelectItem value="error" className="cursor-pointer text-xs py-1.5">{language === 'tr' ? 'Sadece Hatalar' : 'Errors Only'}</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={categoryFilter} onValueChange={(val) => setCategoryFilter(val as string)}>
+              <SelectTrigger className={cn(
+                "h-8 text-xs font-medium border px-2.5 py-1 w-[118px] shrink-0 cursor-pointer shadow-sm tracking-wide",
+                isDark
+                  ? "bg-slate-900 border-slate-700 text-slate-100 hover:border-slate-600 focus:ring-1 focus:ring-primary/60"
+                  : "bg-white border-slate-300 text-slate-800 hover:border-slate-400 focus:ring-1 focus:ring-primary/60"
+              )}>
+                <SelectValue placeholder={language === 'tr' ? 'Kategori...' : 'Category...'} />
+              </SelectTrigger>
+              <SelectContent className={cn(
+                "z-[10002] text-xs font-medium border shadow-xl rounded-lg overflow-hidden",
+                isDark ? "bg-slate-900 border-slate-700 text-slate-100" : "bg-white border-slate-200 text-slate-900"
+              )}>
+                <SelectItem value="all" className="cursor-pointer text-xs py-1.5">{language === 'tr' ? 'Tümü' : 'All'}</SelectItem>
+                {availableCategories.map(cat => (
+                  <SelectItem key={cat} value={cat} className="cursor-pointer text-xs py-1.5">{cat}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

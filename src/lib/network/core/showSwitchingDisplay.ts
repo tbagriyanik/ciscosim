@@ -571,6 +571,19 @@ export function cmdShowEtherchannel(state: SwitchState, input: string, _ctx: Com
     }
   }
 
+  // Per-member P/D resolution: a local port is P when its bundle member is live.
+  const sourceDeviceId = _ctx.sourceDeviceId;
+  const memberIsUp = (portId: string): boolean => {
+    for (const b of bundles) {
+      for (const m of b.members) {
+        if (b.sourceDeviceId === sourceDeviceId && m.sourcePort === portId) return m.up;
+        if (b.targetDeviceId === sourceDeviceId && m.targetPort === portId) return m.up;
+        if (!sourceDeviceId && (m.sourcePort === portId || m.targetPort === portId)) return m.up;
+      }
+    }
+    return true;
+  };
+
   const getBundleInfoForGroup = (groupId: number) => {
     const info = bundleByGroup.get(`${groupId}`);
     if (info) {
@@ -610,7 +623,7 @@ export function cmdShowEtherchannel(state: SwitchState, input: string, _ctx: Com
         output += `  Protocol: ${protocol}\n`;
         const mode = state.ports[ports[0]]?.channelMode || 'on';
         output += `  Mode: ${mode.toUpperCase()}\n`;
-        output += `  Member ports: ${ports.join(', ')}\n\n`;
+        output += `  Member ports: ${ports.map(p => (memberIsUp(p) ? p : `${p} (down)`)).join(', ')}\n\n`;
       });
     }
     return { success: true, output };
@@ -633,9 +646,8 @@ export function cmdShowEtherchannel(state: SwitchState, input: string, _ctx: Com
       const poPort = state.ports[`po${group}`];
       const isLayer3 = poPort?.mode === 'routed' || poPort?.isRoutedPort;
       const layerFlag = isLayer3 ? 'R' : 'S';
-      const bundleFlag = info.bundled ? 'P' : 'D';
       const protocol = info.protocol === 'static' ? '-' : info.protocol.toUpperCase();
-      output += `${group.padEnd(7)}Po${group}(${layerFlag}).padEnd(13)${protocol.padEnd(12)}${ports.map(p => `${bundleFlag}(${p})`).join(' ')}\n`;
+      output += `${group.padEnd(7)}Po${group}(${layerFlag}).padEnd(13)${protocol.padEnd(12)}${ports.map(p => `${memberIsUp(p) ? 'P' : 'D'}(${p})`).join(' ')}\n`;
     });
 
     return { success: true, output };
@@ -667,13 +679,12 @@ export function cmdShowEtherchannel(state: SwitchState, input: string, _ctx: Com
     output += 'Group Port-channel     Protocol Ports\n';
     output += '------+---------------+---------+------------------------\n';
     Object.entries(groups).forEach(([group, ports]) => {
-      const info = getBundleInfoForGroup(parseInt(group));
       const poPort = state.ports[`po${group}`];
       const isLayer3 = poPort?.mode === 'routed' || poPort?.isRoutedPort;
       const layerFlag = isLayer3 ? 'R' : 'S';
       const mode = state.ports[ports[0]]?.channelMode || 'on';
       output += `${group.padEnd(7)}Po${group.padEnd(14)}${mode.toUpperCase().padEnd(10)}`;
-      output += ports.map(p => `${info.bundled ? 'P' : 'D'}(${p})`).join(', ');
+      output += ports.map(p => `${memberIsUp(p) ? 'P' : 'D'}(${p})`).join(', ');
       output += ` [${layerFlag}]\n`;
     });
     return { success: true, output };
@@ -693,11 +704,10 @@ export function cmdShowEtherchannel(state: SwitchState, input: string, _ctx: Com
   Object.entries(groups).forEach(([group, ports]) => {
     const info = getBundleInfoForGroup(parseInt(group));
     const poPort = state.ports[`po${group}`];
-    const isLayer3 = poPort?.mode === 'routed' || poPort?.isRoutedPort;
-    const layerFlag = isLayer3 ? 'R' : 'S';
-    const bundleFlag = info.bundled ? 'P' : 'D';
-    const protocol = info.protocol === 'static' ? '-' : info.protocol.toUpperCase();
-    output += `${group.padEnd(7)}Po${group.padEnd(13)}${protocol.padEnd(12)}${ports.map(p => `${bundleFlag}(${p})`).join(', ')} [${layerFlag}]\n`;
+const isLayer3 = poPort?.mode === 'routed' || poPort?.isRoutedPort;
+      const layerFlag = isLayer3 ? 'R' : 'S';
+      const protocol = info.protocol === 'static' ? '-' : info.protocol.toUpperCase();
+      output += `${group.padEnd(7)}Po${group.padEnd(13)}${protocol.padEnd(12)}${ports.map(p => `${memberIsUp(p) ? 'P' : 'D'}(${p})`).join(', ')} [${layerFlag}]\n`;
   });
 
   return { success: true, output };

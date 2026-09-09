@@ -576,3 +576,74 @@ function isPortVlanMember(port: Port, vlanId: number): boolean {
   }
   return Number(port.accessVlan || port.vlan || 1) === vlanId;
 }
+
+export interface StpTopologyChangeEvent {
+  deviceId: string;
+  vlanId: number;
+  type: 'root-bridge-change' | 'port-state-change';
+  portId?: string;
+  oldState?: string;
+  newState?: string;
+  isRoot?: boolean;
+  rootBridgeId?: string;
+  previousRootBridgeId?: string;
+  message: string;
+  detail?: string;
+}
+
+/**
+ * Diff previous vs next STP state maps and report topology-change events
+ * (root bridge changes and per-port state transitions). Used to feed the
+ * live event timeline. Skips devices/VLANs that had no prior STP state to
+ * avoid a noisy baseline on first calculation.
+ */
+export function computeStpTopologyChanges(
+  prevStates: Map<string, SwitchState>,
+  nextStates: Map<string, SwitchState>
+): StpTopologyChangeEvent[] {
+  const changes: StpTopologyChangeEvent[] = [];
+
+  nextStates.forEach((nextState, deviceId) => {
+    const prevState = prevStates.get(deviceId);
+    const nextStp = nextState.stpState;
+    if (!nextStp || Object.keys(nextStp).length === 0) return;
+    const prevStp = prevState?.stpState;
+
+    Object.entries(nextStp).forEach(([vlanIdStr, nextVlan]) => {
+      const vlanId = Number(vlanIdStr);
+      const prevVlan = prevStp?.[vlanId];
+      if (!prevVlan) return;
+
+      if (prevVlan.rootBridgeId !== nextVlan.rootBridgeId) {
+        changes.push({
+          deviceId,
+          vlanId,
+          type: 'root-bridge-change',
+          isRoot: nextVlan.isRoot,
+          rootBridgeId: nextVlan.rootBridgeId,
+          previousRootBridgeId: prevVlan.rootBridgeId,
+          message: `%STP-1-TOPOLOGYCHANGE: ${deviceId}: root bridge for VLAN ${vlanId} is now ${nextVlan.rootBridgeId}${nextVlan.isRoot ? ' (this switch)' : ''}`,
+          detail: `Previous root: ${prevVlan.rootBridgeId}; root cost ${nextVlan.rootCost}`,
+        });
+      }
+
+      const prevPorts = prevVlan.ports || {};
+      Object.entries(nextVlan.ports || {}).forEach(([portId, nextPort]) => {
+        const prevPort = prevPorts[portId];
+        if (!prevPort || prevPort.state === nextPort.state) return;
+        changes.push({
+          deviceId,
+          vlanId,
+          type: 'port-state-change',
+          portId,
+          oldState: prevPort.state,
+          newState: nextPort.state,
+          message: `%STP-1-TOPOLOGYCHANGE: ${deviceId}: port ${portId} changed state from ${prevPort.state} to ${nextPort.state}`,
+          detail: `VLAN ${vlanId}; role ${nextPort.role}`,
+        });
+      });
+    });
+  });
+
+  return changes;
+}

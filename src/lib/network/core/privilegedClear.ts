@@ -42,16 +42,16 @@ export function cmdClearIpv6Neighbors(state: SwitchState, _input: string, ctx: C
 export function cmdClearMacAddressTable(state: SwitchState, input: string, ctx: CommandContext): CommandResult {
     const deviceId = ctx.sourceDeviceId;
     const deviceStates = ctx.deviceStates;
-    const args = input.trim().split(/\s+/).slice(2); // Skip "clear mac address-table"
+    const args = input.trim().split(/\s+/).slice(3); // Skip "clear mac address-table"
 
     let newMacTable = [...(state.macAddressTable || [])];
 
     if (args.length === 0 || args[0] === '') {
         newMacTable = [];
-    } else if (args[0] === 'dynamic') {
-        newMacTable = newMacTable.filter(e => e.type !== 'dynamic');
-    } else if (args[0] === 'static') {
-        newMacTable = newMacTable.filter(e => e.type !== 'static');
+    } else if (args[0].toLowerCase() === 'dynamic') {
+        newMacTable = newMacTable.filter(e => (e.type || '').toLowerCase() !== 'dynamic');
+    } else if (args[0].toLowerCase() === 'static') {
+        newMacTable = newMacTable.filter(e => (e.type || '').toLowerCase() !== 'static');
     }
 
     const newState = { ...state, macAddressTable: newMacTable };
@@ -59,15 +59,46 @@ export function cmdClearMacAddressTable(state: SwitchState, input: string, ctx: 
     if (deviceId && deviceStates) {
         if (args.length === 0 || args[0] === '') {
             clearMacTable(deviceId, deviceStates);
-        } else if (args[0] === 'dynamic') {
+        } else if (args[0].toLowerCase() === 'dynamic') {
             clearDynamicMacEntries(deviceId, deviceStates);
-        } else if (args[0] === 'static') {
+        } else if (args[0].toLowerCase() === 'static') {
             clearStaticMacEntries(deviceId, deviceStates);
         }
     }
 
     return { success: true, output: '', newState };
 }
+
+const resetCounters = (port: SwitchState['ports'][string]): void => {
+    port.statistics = {
+        inputPackets: 0,
+        outputPackets: 0,
+        inputBytes: 0,
+        outputBytes: 0,
+        inputErrors: 0,
+        outputErrors: 0,
+        crcErrors: 0,
+        collisions: 0,
+        runts: 0,
+        giants: 0,
+        throttles: 0,
+        resets: 1,
+        drops: 0,
+        overruns: 0,
+        underruns: 0,
+        lastCleared: Date.now()
+    };
+    port.stats = {
+        rxPackets: 0,
+        rxBytes: 0,
+        txPackets: 0,
+        txBytes: 0,
+        rxDrops: 0,
+        txDrops: 0,
+        rxErrors: 0,
+        txErrors: 0,
+    };
+};
 
 /**
  * Clear Counters
@@ -79,34 +110,20 @@ export function cmdClearCounters(state: SwitchState, input: string, _ctx: Comman
 
     const newState = structuredClone(state);
 
+    const findPortKey = (name: string): string | undefined =>
+        Object.keys(newState.ports || {}).find(k => k.toLowerCase().replace(/\s+/g, '') === name.toLowerCase().replace(/\s+/g, ''));
+
     if (interfaceName) {
         // Clear counters for specific interface
-        const port = newState.ports?.[interfaceName.toLowerCase()];
+        const portKey = findPortKey(interfaceName);
+        const port = portKey ? newState.ports?.[portKey] : undefined;
         if (!port) {
             return { success: false, error: `% Interface ${interfaceName} not found` };
         }
-        // Reset statistics for this port
-        port.statistics = {
-            inputPackets: 0,
-            outputPackets: 0,
-            inputBytes: 0,
-            outputBytes: 0,
-            inputErrors: 0,
-            outputErrors: 0,
-            crcErrors: 0,
-            collisions: 0,
-            runts: 0,
-            giants: 0,
-            throttles: 0,
-            resets: 1,
-            drops: 0,
-            overruns: 0,
-            underruns: 0,
-            lastCleared: Date.now()
-        };
+        resetCounters(port);
         return {
             success: true,
-            output: `Clear "show interface" counters on interface ${interfaceName}\n`,
+            output: `Clear "show interface" counters on interface ${portKey}\n`,
             newState
         };
     } else {
@@ -114,24 +131,7 @@ export function cmdClearCounters(state: SwitchState, input: string, _ctx: Comman
         Object.keys(newState.ports || {}).forEach(portName => {
             const port = newState.ports[portName];
             if (port) {
-                port.statistics = {
-                    inputPackets: 0,
-                    outputPackets: 0,
-                    inputBytes: 0,
-                    outputBytes: 0,
-                    inputErrors: 0,
-                    outputErrors: 0,
-                    crcErrors: 0,
-                    collisions: 0,
-                    runts: 0,
-                    giants: 0,
-                    throttles: 0,
-                    resets: 1,
-                    drops: 0,
-                    overruns: 0,
-                    underruns: 0,
-                    lastCleared: Date.now()
-                };
+                resetCounters(port);
             }
         });
         return {

@@ -111,6 +111,32 @@ export function usePeriodicNetworkPackets({
         const pipelineRes = runNetworkEventPipeline(currentStates, currentDevices, currentConnections);
         updatedStates = pipelineRes.updatedStates;
         packetsToDispatch.push(...pipelineRes.dispatchedPackets);
+
+        // Surface OSPF/EIGRP adjacency state changes into the Network Event Log timeline
+        if (pipelineRes.protocolEvents && pipelineRes.protocolEvents.length > 0) {
+          const addNetworkEventLog = useAppStore.getState().addNetworkEventLog;
+          for (const ev of pipelineRes.protocolEvents) {
+            addNetworkEventLog({
+              level: ev.level,
+              category: ev.protocol,
+              message: ev.message,
+              detail: `${ev.deviceId} | neighbor ${ev.neighbor}`,
+            });
+          }
+        }
+
+        // Surface real-time ARP/MAC aging events (entries timed out) into the timeline
+        if (pipelineRes.agingEvents && pipelineRes.agingEvents.length > 0) {
+          const addNetworkEventLog = useAppStore.getState().addNetworkEventLog;
+          for (const ev of pipelineRes.agingEvents) {
+            addNetworkEventLog({
+              level: ev.level,
+              category: ev.category,
+              message: ev.message,
+              detail: ev.detail,
+            });
+          }
+        }
       }
 
 

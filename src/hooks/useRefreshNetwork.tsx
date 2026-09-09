@@ -7,7 +7,7 @@ import type { PCOutputLine } from '@/app/page.types';
 
 import type { RefreshNetworkReport } from '@/hooks/useRefreshReport';
 import { isSwitchDeviceType, isWirelessMatch, validateTopologyConnections, releaseDisconnectedPorts, getEffectiveWifi, hasValidIp, isIpInPoolRange, buildRefreshDeviceSummaries, propagateVtpVlans } from '@/app/refreshNetworkUtils';
-import { recalculateStp } from '@/lib/network/stp';
+import { recalculateStp, computeStpTopologyChanges } from '@/lib/network/stp';
 import { evaluateSlaacForDevice, evaluateDhcpv6ForDevice } from '@/lib/network/eui64';
 import { recalculateBgpNeighbors } from '@/lib/network/routing';
 import { evaluatePppoeSessions } from '@/lib/network/pppoeEngine';
@@ -149,7 +149,19 @@ export function useRefreshNetwork({
       });
 
       const vtpUpdatedStates = propagateVtpVlans(refreshedDevices, releasedDeviceStates, sanitizedConnections);
-      const stpUpdatedStates = recalculateStp(vtpUpdatedStates, sanitizedConnections);
+      const stpPrevStates = vtpUpdatedStates;
+      const stpUpdatedStates = recalculateStp(stpPrevStates, sanitizedConnections);
+      for (const change of computeStpTopologyChanges(stpPrevStates, stpUpdatedStates)) {
+        const isForwardingTransition =
+          change.type === 'port-state-change' &&
+          (change.newState === 'forwarding' || change.oldState === 'forwarding');
+        addNetworkEventLog({
+          level: change.type === 'root-bridge-change' || isForwardingTransition ? 'warning' : 'info',
+          category: 'STP',
+          message: change.message,
+          detail: change.detail,
+        });
+      }
       const bgpUpdatedStates = recalculateBgpNeighbors(stpUpdatedStates);
       const pppoeUpdatedStates = evaluatePppoeSessions(bgpUpdatedStates, sanitizedConnections);
       const stpUpdatedCount = Array.from(vtpUpdatedStates.keys()).filter(id => {

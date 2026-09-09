@@ -111,6 +111,26 @@ export interface NetworkPacketFrame {
   info: string;
 }
 
+export interface ProtocolNeighborChangeEvent {
+  deviceId: string;
+  protocol: 'OSPF' | 'EIGRP';
+  neighbor: string;
+  interfaceId: string;
+  oldState: string;
+  newState: string;
+  asNumber?: number;
+  level: 'info' | 'warning';
+  message: string;
+}
+
+export interface AgingChangeEvent {
+  deviceId: string;
+  category: 'ARP' | 'MAC';
+  level: 'info' | 'warning';
+  message: string;
+  detail?: string;
+}
+
 export interface PipelineExecutionResult {
   updatedStates: Map<string, SwitchState>;
   dispatchedPackets: Array<{
@@ -122,5 +142,7 @@ export interface PipelineExecutionResult {
     info: string;
   }>;
   processedFrames: NetworkPacketFrame[];
+  protocolEvents?: ProtocolNeighborChangeEvent[];
+  agingEvents?: AgingChangeEvent[];
 }
 

@@ -18,8 +18,9 @@
 
 import type { CanvasDevice, CanvasConnection } from '@/components/network/networkTopology.types';
 import type { SwitchState } from '@/lib/network/types';
-import type { NetworkPacketFrame, PipelineExecutionResult } from './packetFrame';
+import type { NetworkPacketFrame, PipelineExecutionResult, ProtocolNeighborChangeEvent, AgingChangeEvent } from './packetFrame';
 import { forwardPacketFrame } from './commonForwardingEngine';
+import { runAgingTick } from '@/lib/network/agingEngine';
 import { evaluateIpSlaOperations } from '@/lib/network/ipSlaEngine';
 import { evaluateDhcpv6ForDevice } from '@/lib/network/eui64';
 import { evaluatePppoeSessions } from '@/lib/network/pppoeEngine';
@@ -40,6 +41,10 @@ export function runNetworkEventPipeline(
   connections: CanvasConnection[],
   now: number = Date.now()
 ): PipelineExecutionResult {
+  // Snapshot the input states BEFORE any in-place mutation (the pipeline works
+  // on the same object references), so protocol neighbor changes can be diffed.
+  const prevStates = new Map<string, SwitchState>();
+  deviceStates.forEach((state, deviceId) => prevStates.set(deviceId, { ...state }));
   let updatedStates = new Map<string, SwitchState>(deviceStates);
   const dispatchedPackets: PipelineExecutionResult['dispatchedPackets'] = [];
   const processedFrames: NetworkPacketFrame[] = [];
@@ -248,11 +253,129 @@ export function runNetworkEventPipeline(
   // when we detect that two active protocol routers are directly connected.
   _processProtocolNeighborDiscovery(updatedStates, devices, connections, now);
 
+  // 7. Diff prior vs updated OSPF/EIGRP neighbor states and surface adjacency
+  // changes (Full/Up established, Dead/Hold expiry) as timeline events.
+  const protocolEvents = computeProtocolNeighborChanges(prevStates, updatedStates);
+
+  // 8. Real-time ARP/MAC aging: prune expired entries on every live tick and
+  // surface the aged entries as timeline events (2-min ARP / 5-min MAC).
+  const agingResult = runAgingTick(updatedStates);
+  const agingEvents: AgingChangeEvent[] = [];
+  for (const ev of agingResult.events) {
+    agingEvents.push({
+      deviceId: ev.deviceId,
+      category: 'MAC',
+      level: 'info',
+      message: ev.message,
+      detail: `${ev.deviceId}|${ev.mac}|VLAN ${ev.vlan}`,
+    });
+  }
+  for (const ev of agingResult.arpEvents) {
+    agingEvents.push({
+      deviceId: ev.deviceId,
+      category: 'ARP',
+      level: 'info',
+      message: `%ARP-6-AGE: Entry ${ev.ip} (${ev.mac}) on ${ev.interface} timed out`,
+      detail: `${ev.deviceId}|${ev.ip}`,
+    });
+  }
+
   return {
     updatedStates,
     dispatchedPackets,
-    processedFrames
+    processedFrames,
+    protocolEvents,
+    agingEvents: agingEvents.length > 0 ? agingEvents : undefined,
   };
+}
+
+export function computeProtocolNeighborChanges(
+  prevStates: Map<string, SwitchState>,
+  nextStates: Map<string, SwitchState>
+): ProtocolNeighborChangeEvent[] {
+  const events: ProtocolNeighborChangeEvent[] = [];
+
+  nextStates.forEach((next, deviceId) => {
+    const prev = prevStates.get(deviceId);
+
+    // ── OSPF ─────────────────────────────────────────────────────────────
+    const nextOspf = next.ospfNeighborStates || {};
+    const prevOspf = prev?.ospfNeighborStates || {};
+    for (const [nbrId, nbr] of Object.entries(nextOspf)) {
+      const prevNbr = prevOspf[nbrId];
+      const prevState = prevNbr ? prevNbr.state : 'Down';
+      if (prevState === nbr.state) continue;
+      const intf = nbr.interfaceId || 'Gi0/0';
+      events.push({
+        deviceId,
+        protocol: 'OSPF',
+        neighbor: nbrId,
+        interfaceId: intf,
+        oldState: prevState,
+        newState: nbr.state,
+        level: nbr.state === 'Down' ? 'warning' : 'info',
+        message: `%OSPF-5-ADJCHG: Process 1, Nbr ${nbrId} on ${intf} from ${prevState.toUpperCase()} to ${nbr.state.toUpperCase()}`,
+      });
+    }
+    for (const nbrId of Object.keys(prevOspf)) {
+      if (nextOspf[nbrId]) continue;
+      const prevNbr = prevOspf[nbrId];
+      if (prevNbr.state === 'Down') continue;
+      events.push({
+        deviceId,
+        protocol: 'OSPF',
+        neighbor: nbrId,
+        interfaceId: prevNbr.interfaceId || 'Gi0/0',
+        oldState: prevNbr.state,
+        newState: 'Down',
+        level: 'warning',
+        message: `%OSPF-5-ADJCHG: Process 1, Nbr ${nbrId} on ${prevNbr.interfaceId || 'Gi0/0'} from ${prevNbr.state.toUpperCase()} to DOWN`,
+      });
+    }
+
+    // ── EIGRP ────────────────────────────────────────────────────────────
+    const nextEigrp = next.eigrpNeighborStates || {};
+    const prevEigrp = prev?.eigrpNeighborStates || {};
+    for (const [nbrIp, nbr] of Object.entries(nextEigrp)) {
+      const prevNbr = prevEigrp[nbrIp];
+      const prevState = prevNbr ? prevNbr.state : 'Down';
+      if (prevState === nbr.state) continue;
+      const intf = nbr.interfaceId || 'Gi0/0';
+      const as = nbr.asNumber ?? 100;
+      const isUp = nbr.state === 'Up';
+      events.push({
+        deviceId,
+        protocol: 'EIGRP',
+        neighbor: nbrIp,
+        interfaceId: intf,
+        oldState: prevState,
+        newState: nbr.state,
+        asNumber: as,
+        level: nbr.state === 'Down' ? 'warning' : 'info',
+        message: isUp && prevState === 'Down'
+          ? `%DUAL-5-NBRCHANGE: IP-EIGRP AS ${as}: Neighbor ${nbrIp} (${intf}) is up: new adjacency`
+          : `%DUAL-5-NBRCHANGE: IP-EIGRP AS ${as}: Neighbor ${nbrIp} (${intf}) is down: state change`,
+      });
+    }
+    for (const nbrIp of Object.keys(prevEigrp)) {
+      if (nextEigrp[nbrIp]) continue;
+      const prevNbr = prevEigrp[nbrIp];
+      if (prevNbr.state === 'Down') continue;
+      events.push({
+        deviceId,
+        protocol: 'EIGRP',
+        neighbor: nbrIp,
+        interfaceId: prevNbr.interfaceId || 'Gi0/0',
+        oldState: prevNbr.state,
+        newState: 'Down',
+        asNumber: prevNbr.asNumber ?? 100,
+        level: 'warning',
+        message: `%DUAL-5-NBRCHANGE: IP-EIGRP AS ${prevNbr.asNumber ?? 100}: Neighbor ${nbrIp} (${prevNbr.interfaceId || 'Gi0/0'}) is down: state change`,
+      });
+    }
+  });
+
+  return events;
 }
 
 /**

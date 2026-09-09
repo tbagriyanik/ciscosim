@@ -695,9 +695,9 @@ export const DeviceRenderer = React.memo(function DeviceRenderer({
                     <path d="M3.5 3.5C3.5 3.22 3.72 3 4 3H5.3C5.54 3 5.74 3.17 5.79 3.41L6.18 5.37C6.22 5.59 6.14 5.81 5.97 5.95L5.11 6.67C5.77 8.01 6.87 9.1 8.21 9.77L8.93 8.91C9.07 8.74 9.29 8.66 9.51 8.7L11.47 9.09C11.71 9.14 11.88 9.34 11.88 9.58V10.88C11.88 11.16 11.66 11.38 11.38 11.38C7.03 11.38 3.5 7.85 3.5 3.5Z" fill="white" />
                     {/* Direction arrow: outgoing = green (#22c55e), incoming = red (#ef4444) */}
                     {isCaller ? (
-                      <path d="M11 1L16 1L16 6M16 1L11 6" stroke="#22c55e" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M11 1L16 1L16 6M16 1L11 6" stroke="var(--color-success-500)" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
                     ) : (
-                      <path d="M16 6L11 6L11 1M11 6L16 1" stroke="#ef4444" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M16 6L11 6L11 1M11 6L16 1" stroke="var(--color-error-500)" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
                     )}
                   </g>
                 );
@@ -705,11 +705,11 @@ export const DeviceRenderer = React.memo(function DeviceRenderer({
             )}
           </g>
         ) : device.type === 'printer' ? (
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" style={{ stroke: isPoweredOff ? STATUS_COLORS.offline : isDark ? '#fbcfe8' : '#be185d' }} strokeWidth="1.5">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" style={{ stroke: isPoweredOff ? STATUS_COLORS.offline : isDark ? 'var(--color-pink-200)' : 'var(--color-pink-700)' }} strokeWidth="1.5">
             <path strokeLinecap="round" strokeLinejoin="round" d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6z" />
           </svg>
         ) : device.type === 'hub' ? (
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" style={{ stroke: isPoweredOff ? STATUS_COLORS.offline : isDark ? '#99f6e4' : '#0f766e' }} strokeWidth="1.5">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" style={{ stroke: isPoweredOff ? STATUS_COLORS.offline : isDark ? 'var(--color-teal-200)' : 'var(--color-teal-700)' }} strokeWidth="1.5">
             <rect x="2" y="7" width="20" height="10" rx="2" />
             <circle cx="6" cy="12" r="1" fill="currentColor" />
             <circle cx="10" cy="12" r="1" fill="currentColor" />
@@ -735,7 +735,7 @@ export const DeviceRenderer = React.memo(function DeviceRenderer({
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 5v14M5 12h14M12 5l-2 2m2-2l2 2m-2 12l-2-2m2 2l2-2M5 12l2-2m-2 2l2 2M19 12l-2-2m2 2l-2 2" />
           </svg>
         ) : device.type === 'wlc' ? (
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" style={{ stroke: isPoweredOff ? STATUS_COLORS.offline : isDark ? 'var(--color-indigo-200)' : '#4f46e5' }} strokeWidth="1.5">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" style={{ stroke: isPoweredOff ? STATUS_COLORS.offline : isDark ? 'var(--color-indigo-200)' : 'var(--color-indigo-600)' }} strokeWidth="1.5">
             <circle cx="12" cy="12" r="9" />
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 5v14M5 12h14M12 5l-2 2m2-2l2 2m-2 12l-2-2m2 2l2-2M5 12l2-2m-2 2l2 2M19 12l-2-2m2 2l-2 2" />
             <circle cx="12" cy="12" r="3" fill="currentColor" opacity="0.3" />
@@ -835,7 +835,7 @@ export const DeviceRenderer = React.memo(function DeviceRenderer({
         </text>
       )}
       {device.type === 'printer' && (
-        <text x={deviceWidth / 2} y={81} style={{ fill: isDark ? '#f472b6' : '#be185d' }} fontSize="9" textAnchor="middle" fontFamily="var(--font-geist-mono)" className="select-none pointer-events-none">
+        <text x={deviceWidth / 2} y={81} style={{ fill: isDark ? 'var(--color-pink-400)' : 'var(--color-pink-700)' }} fontSize="9" textAnchor="middle" fontFamily="var(--font-geist-mono)" className="select-none pointer-events-none">
           {(() => {
             const completedCount = (device.printJobs || []).filter(j => j.status === 'completed').length;
             const activeCount = (device.printJobs || []).filter(j => j.status === 'printing' || j.status === 'queued').length;

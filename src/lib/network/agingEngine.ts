@@ -8,11 +8,19 @@ import { SwitchState } from './types';
 import { cleanExpiredMacEntries, MacLifecycleEvent } from './macLearning';
 import { cleanExpiredArpEntries } from './arp';
 
+export interface AgingArpEvent {
+  deviceId: string;
+  ip: string;
+  mac: string;
+  interface: string;
+}
+
 export interface AgingResult {
   agedMacCount: number;
   agedArpCount: number;
   agedNatCount: number;
   events: MacLifecycleEvent[];
+  arpEvents: AgingArpEvent[];
 }
 
 const NAT_SESSION_TIMEOUT = 300000; // 5 minutes in ms
@@ -25,6 +33,7 @@ export function runAgingTick(deviceStates: Map<string, SwitchState>): AgingResul
   let agedArpCount = 0;
   let agedNatCount = 0;
   const events: MacLifecycleEvent[] = [];
+  const arpEvents: AgingArpEvent[] = [];
 
   for (const [deviceId, state] of deviceStates.entries()) {
     if (!state) continue;
@@ -46,6 +55,7 @@ export function runAgingTick(deviceStates: Map<string, SwitchState>): AgingResul
       const expiredArp = cleanExpiredArpEntries(state);
       if (expiredArp.length > 0) {
         agedArpCount += expiredArp.length;
+        arpEvents.push(...expiredArp.map(e => ({ deviceId, ip: e.ip, mac: e.mac, interface: e.interface })));
       }
     }
 
@@ -54,7 +64,10 @@ export function runAgingTick(deviceStates: Map<string, SwitchState>): AgingResul
       const now = Date.now();
       const initialNatCount = state.natTranslations.length;
       state.natTranslations = state.natTranslations.filter(t => {
-        const entryTime = (t as any).timestamp || (now - 1000);
+        // Entries without an explicit timestamp are never aged (they carry no
+        // session clock); only timestamped dynamic sessions expire.
+        const entryTime = (t as { timestamp?: number }).timestamp;
+        if (entryTime == null) return true;
         return (now - entryTime) < NAT_SESSION_TIMEOUT;
       });
       const removedNat = initialNatCount - state.natTranslations.length;
@@ -64,5 +77,5 @@ export function runAgingTick(deviceStates: Map<string, SwitchState>): AgingResul
     }
   }
 
-  return { agedMacCount, agedArpCount, agedNatCount, events };
+  return { agedMacCount, agedArpCount, agedNatCount, events, arpEvents };
 }

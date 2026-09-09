@@ -182,7 +182,7 @@ export function UnifiedDevicePanel({
                         <Tabs value={activeTab} onValueChange={(v: string) => onTabChange(v as 'console' | 'settings' | 'stp')} className="min-w-0">
                             <TabsList className={cn("h-7 p-0.5", isDark ? "bg-secondary-800" : "bg-secondary-100")}>
                                 <TabsTrigger value="console" className="flex items-center gap-1.5 px-2 h-6 text-xs">
-                                    {deviceType === 'hub' ? <DeviceIcon type="hub" size={14} color="#14b8a6" /> : deviceType === 'cloud' ? <Globe className="w-3 h-3 text-cyan-400" /> : deviceType === 'printer' ? <PrinterIcon className="w-3 h-3 text-purple-400" /> : deviceType === 'mobile' ? <Smartphone className="w-3 h-3 text-sky-400" /> : <TerminalIcon className="w-3 h-3" />}
+                                    {deviceType === 'hub' ? <DeviceIcon type="hub" size={14} color="var(--color-teal-500)" /> : deviceType === 'cloud' ? <Globe className="w-3 h-3 text-cyan-400" /> : deviceType === 'printer' ? <PrinterIcon className="w-3 h-3 text-purple-400" /> : deviceType === 'mobile' ? <Smartphone className="w-3 h-3 text-sky-400" /> : <TerminalIcon className="w-3 h-3" />}
                                     <span className="hidden sm:inline">
                                         {deviceType === 'hub' ? (language === 'tr' ? 'Hub Durumu' : 'Hub Status')
                                             : deviceType === 'cloud' ? (language === 'tr' ? 'Bulut & WAN' : 'Cloud & WAN')
@@ -238,7 +238,7 @@ export function UnifiedDevicePanel({
                         {deviceType === 'hub' ? (
                             <div className="h-full overflow-y-auto p-6 flex flex-col items-center justify-center text-center space-y-4">
                                 <div className="w-14 h-14 rounded-2xl bg-teal-500/10 border border-teal-500/30 flex items-center justify-center text-teal-400">
-                                    <DeviceIcon type="hub" size={28} color="#14b8a6" />
+                                    <DeviceIcon type="hub" size={28} color="var(--color-teal-500)" />
                                 </div>
                                 <div className="space-y-1">
                                     <h3 className="text-sm font-bold">Layer-1 Multiport Hub</h3>
