@@ -122,6 +122,7 @@ interface AppState {
     clearCapturedPackets: (connectionId: string) => void;
     clearAllCapturedPackets: () => void;
     addNetworkEventLog: (log: Omit<NetworkEventLog, 'id' | 'timestamp'>) => void;
+    removeNetworkEventLog: (logId: string) => void;
     clearNetworkEventLogs: () => void;
     setNotes: (notes: CanvasNote[] | ((prev: CanvasNote[]) => CanvasNote[])) => void;
     addDevice: (device: CanvasDevice) => void;
@@ -372,6 +373,14 @@ const createActions = (set: (partial: Partial<AppState> | ((state: AppState) => 
             topology: {
                 ...get().topology,
                 networkEventLogs: [newLog, ...get().topology.networkEventLogs].slice(0, 200),
+            }
+        });
+    },
+    removeNetworkEventLog: (logId: string) => {
+        set({
+            topology: {
+                ...get().topology,
+                networkEventLogs: get().topology.networkEventLogs.filter(log => log.id !== logId),
             }
         });
     },

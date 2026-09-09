@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { AlertTriangle, Info, AlertCircle, Trash2, Filter } from 'lucide-react';
+import { AlertTriangle, Info, AlertCircle, Trash2, Filter, X } from 'lucide-react';
 import { useNetworkEventLogs, useAppStore } from '@/lib/store/appStore';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -19,6 +19,7 @@ interface NetworkEventLogPanelProps {
 export function NetworkEventLogPanel({ isOpen, onClose, isDark }: NetworkEventLogPanelProps) {
   const logs = useNetworkEventLogs();
   const clearLogs = useAppStore(state => state.clearNetworkEventLogs);
+  const removeLog = useAppStore(state => state.removeNetworkEventLog);
   const { language } = useLanguage();
   const [filter, setFilter] = useState<'all' | 'error' | 'warning' | 'info'>('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
@@ -186,12 +187,25 @@ export function NetworkEventLogPanel({ isOpen, onClose, isDark }: NetworkEventLo
                     )}>
                       {log.category}
                     </span>
-                    <span className={cn(
-                      "text-[10px] whitespace-nowrap font-mono opacity-80",
-                      isDark ? "text-slate-400" : "text-slate-500"
-                    )}>
-                      {new Date(log.timestamp).toLocaleTimeString()}
-                    </span>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <span className={cn(
+                        "text-[10px] whitespace-nowrap font-mono opacity-80",
+                        isDark ? "text-slate-400" : "text-slate-500"
+                      )}>
+                        {new Date(log.timestamp).toLocaleTimeString()}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => removeLog(log.id)}
+                        title={language === 'tr' ? 'Olayı Sil' : 'Delete Event'}
+                        className={cn(
+                          "p-0.5 rounded transition-colors opacity-60 hover:opacity-100",
+                          isDark ? "hover:bg-slate-800 text-slate-400 hover:text-red-400" : "hover:bg-slate-200 text-slate-500 hover:text-red-600"
+                        )}
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
                   <p className={cn(
                     "text-xs font-medium leading-snug",
